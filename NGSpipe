@@ -213,12 +213,12 @@ cat << EOF
     
   Other options:
   
-    -c, --ConfigFile         Specify the path of ConfigFile. A templet config file 
-                             will be created by <CreateConfigFile> MODE.
-                                       
-    -h, --help               Show this message.
+    -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
+                              will be created by <CreateConfigFile> MODE.
+
+    -h, --help                Show this message.
     
-    -v, --version            Show the version of NGSpipe.
+    -v, --version             Show the version of NGSpipe.
 
 EOF
 }
@@ -228,7 +228,7 @@ version_info()
 {
 cat <<- EOF
 ############################
-   NGSpipe vsersion: 0.1
+    NGSpipe vsersion: 0.1
 ############################
 
 EOF
@@ -315,5 +315,5 @@ while true;do
       break ;;
     -*) echo "error: no such option $1.\n"; exit 1;;
     *) echo "error: no such option $1.\n"; exit 1;;
-   esac
+  esac
 done
