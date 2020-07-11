@@ -34,7 +34,7 @@ for sample in ${arr[@]};do
   dir=$work_dir/$sample
   mkdir -p $dir/$aligner; cd $dir/$aligner
   
- 	echo "+++++ Alignment: $sample +++++"
+  echo "+++++ Alignment: $sample +++++"
   if [[ $layout == "SE" ]]; then
     fq1=$dir/${sample}_trim.fq.gz
     if [[ "$aligner" = "bwa" ]];then
@@ -49,12 +49,12 @@ for sample in ${arr[@]};do
       tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
       mv accepted_hits.sam ${sample}.${aligner}.bam
     elif [[ "$aligner" == "star" ]];then
-      STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000 \
-           --outSAMunmapped Within  --outFilterType BySJout  --outSAMattributes NH HI AS NM MD  \
-           --outFilterMultimapNmax 20  --outFilterMismatchNmax 999  --outFilterMismatchNoverReadLmax 0.04 \
-           --alignIntronMin 20  --alignIntronMax 1000000  --alignMatesGapMax 1000000   \
-           --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-           --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
+      STAR  --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000 \
+            --outSAMunmapped Within  --outFilterType BySJout  --outSAMattributes NH HI AS NM MD  \
+            --outFilterMultimapNmax 20  --outFilterMismatchNmax 999  --outFilterMismatchNoverReadLmax 0.04 \
+            --alignIntronMin 20  --alignIntronMax 1000000  --alignMatesGapMax 1000000   \
+            --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
+            --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
       mv Aligned.sortedByCoord.out.bam ${sample}.${aligner}.bam  
     elif [[ "$aligner" == "bismark_bowtie2" ]];then
       bismark --bowtie2 --multicore $((($threads)/8)) -p 3 --genome $index ${fq1} --quiet \
@@ -83,12 +83,12 @@ for sample in ${arr[@]};do
       tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2} 
       mv accepted_hits.sam ${sample}.${aligner}.bam
     elif [[ "$aligner" == "star" ]];then
-      STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} ${fq2} --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000 \
-           --outSAMunmapped Within  --outFilterType BySJout  --outSAMattributes NH HI AS NM MD  \
-           --outFilterMultimapNmax 20  --outFilterMismatchNmax 999  --outFilterMismatchNoverReadLmax 0.04 \
-           --alignIntronMin 20  --alignIntronMax 1000000  --alignMatesGapMax 1000000   \
-           --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-           --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
+      STAR  --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} ${fq2} --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000 \
+            --outSAMunmapped Within  --outFilterType BySJout  --outSAMattributes NH HI AS NM MD  \
+            --outFilterMultimapNmax 20  --outFilterMismatchNmax 999  --outFilterMismatchNoverReadLmax 0.04 \
+            --alignIntronMin 20  --alignIntronMax 1000000  --alignMatesGapMax 1000000   \
+            --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
+            --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
       mv Aligned.sortedByCoord.out.bam ${sample}.${aligner}.bam  
     elif [[ "$aligner" == "bismark_bowtie2" ]];then
       bismark --bowtie2 --multicore $((($threads)/8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
@@ -105,7 +105,7 @@ for sample in ${arr[@]};do
   
   echo "+++++ $sample: $aligner done +++++"
 
- 	echo "+++++ Bam processing: $sample +++++"
+  echo "+++++ Bam processing: $sample +++++"
   if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
     bam=$(ls ./*.bam)
     samtools stats -@ $threads $bam >${bam}.stats
@@ -154,12 +154,12 @@ for sample in ${arr[@]};do
     splitting_report=$(ls $dir/$aligner/bismark_methylation_extractor/*_splitting_report.txt)
     mbias_report=$(ls $dir/$aligner/bismark_methylation_extractor/*M-bias.txt)
     nucleotide_report=$(ls $dir/$aligner/*.nucleotide_stats.txt)
-    bismark2report --dir $dir/$aligner/bismark2report \
-                   --alignment_report $alignment_report \
-                   --dedup_report $dedup_report \
-                   --splitting_report $splitting_report \
-                   --mbias_report $mbias_report \
-                   --nucleotide_report $nucleotide_report
+    bismark2report  --dir $dir/$aligner/bismark2report \
+                    --alignment_report $alignment_report \
+                    --dedup_report $dedup_report \
+                    --splitting_report $splitting_report \
+                    --mbias_report $mbias_report \
+                    --nucleotide_report $nucleotide_report
     
   fi
   

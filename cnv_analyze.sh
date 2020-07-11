@@ -54,7 +54,7 @@ for sample in ${arr[@]};do
   {
   dir=$data_dir/$sample
   mkdir -p $dir/$aligner; cd $dir/$aligner
- 	echo "===== $sample ====="
+  echo "===== $sample ====="
 
 
 #####
