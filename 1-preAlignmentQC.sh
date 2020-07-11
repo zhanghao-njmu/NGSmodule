@@ -38,7 +38,7 @@ do
  	echo "+++++ $sample +++++"
   
   if [[ $layout == "SE" ]]; then
-    fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_\d.fastq.gz)|(_R\d.fastq.gz)|(_\d.fq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
+    fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
     mkdir -p $dir/PreAlignmentQC/fastqc
     fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
    	echo "+++++ $sample: FastQC done +++++"
