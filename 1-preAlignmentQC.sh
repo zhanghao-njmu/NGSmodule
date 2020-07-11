@@ -67,7 +67,7 @@ do
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
       time sortmerna --ref ${SortmeRNA_ref} \
-                     --reads $fq1 \
+                     --reads ${sample}.fq \
                      --threads $threads \
                      --workdir $dir/PreAlignmentQC/sortmerna_tmp \
                      --fastx \
@@ -125,7 +125,7 @@ do
       rm -rf $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
-      reformat.sh in1=$fq1 in2=$fq2 out=${sample}.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_merge.log
+      reformat.sh in1=$fq1 in2=$fq2 out=$dir/${sample}.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_merge.log
       sortmerna --ref ${SortmeRNA_ref} \
                 --reads ${sample}.fq --paired_in \
                 --threads $threads \
