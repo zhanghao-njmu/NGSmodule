@@ -35,13 +35,13 @@ do
   dir=$work_dir/$sample
 	cd $dir
   mkdir -p $dir/PreAlignmentQC
- 	echo "+++++ $sample +++++"
+  echo "+++++ $sample +++++"
   
   if [[ $layout == "SE" ]]; then
     fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
     mkdir -p $dir/PreAlignmentQC/fastqc
     fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-   	echo "+++++ $sample: FastQC done +++++"
+    echo "+++++ $sample: FastQC done +++++"
     
     mkdir -p $dir/PreAlignmentQC/fastp
     fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
@@ -58,23 +58,23 @@ do
     fq1=$dir/${sample}.fq
     
     mkdir -p $dir/PreAlignmentQC/fastq_screen
-    fastq_screen --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
-                 --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
+    fastq_screen  --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
+                  --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
     echo "+++++ $sample: FastQ_Screen done +++++"
     
     if [[ -f $SortmeRNA_ref ]];then
       rm -rf $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
-      time sortmerna --ref ${SortmeRNA_ref} \
-                     --reads ${sample}.fq \
-                     --threads $threads \
-                     --workdir $dir/PreAlignmentQC/sortmerna_tmp \
-                     --fastx \
-                     --num_alignments 1 \
-                     --aligned aligned \
-                     --other other \
-                     -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
+      time sortmerna  --ref ${SortmeRNA_ref} \
+                      --reads ${sample}.fq \
+                      --threads $threads \
+                      --workdir $dir/PreAlignmentQC/sortmerna_tmp \
+                      --fastx \
+                      --num_alignments 1 \
+                      --aligned aligned \
+                      --other other \
+                      -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
       size=$(du -sb other.fq | awk '{ print $1 }')
       if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
         mv other.fq $dir/${sample}_trim.fq
@@ -90,7 +90,7 @@ do
     fi
     
   elif [[ $layout == "PE" ]]; then
-  	fq1=$dir/$(ls |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
+    fq1=$dir/$(ls |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
     fq2=$dir/$(ls |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
     
     ##To verify that reads appear to be correctly paired 
@@ -99,7 +99,7 @@ do
     
     mkdir -p $dir/PreAlignmentQC/fastqc
     fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-   	echo "+++++ $sample: FastQC done +++++"
+    echo "+++++ $sample: FastQC done +++++"
     
     mkdir -p $dir/PreAlignmentQC/fastp
     fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
@@ -117,8 +117,8 @@ do
     fq2=$dir/${sample}_2_trim.fq
     
     mkdir -p $dir/PreAlignmentQC/fastq_screen
-    fastq_screen --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
-                 --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
+    fastq_screen  --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
+                  --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
     echo "+++++ $sample: FastQ_Screen done +++++"
     
     if [[ -f $SortmeRNA_ref ]];then
