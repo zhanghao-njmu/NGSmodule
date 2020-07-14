@@ -37,6 +37,8 @@ for sample in ${arr[@]};do
   read -u1000
   {
   echo "+++++ $sample +++++"
+  layout=${Layout_dict[$sample]}
+
   dir=$work_dir/$sample
   if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
     bam=$(ls $dir/$aligner/*.bam)

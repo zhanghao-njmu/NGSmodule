@@ -21,10 +21,11 @@ for file in ${arr[@]};do
     samplename=${Sample_dict[$sampleid]}
     if [[ $samplename == "" ]];then
       samplename=$sampleid
-      echo -e "Cannot find the SampleName for SampleID: $samplename. Please check the SampleInfoFile."
+      echo -e "Warning! Cannot find the SampleName for SampleID: $samplename. Please check the SampleInfoFile."
     fi
   else
-    samplename=$sampleid
+    echo -e "Error! Cannot find the layout info. Please check the SampleInfoFile."
+    exit 1
   fi
   
   fqU=$(echo "${file##*/}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_\d.fastq.gz)|(_R\d.fastq.gz)|(_\d.fq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")

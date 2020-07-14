@@ -36,7 +36,8 @@ do
 	cd $dir
   mkdir -p $dir/PreAlignmentQC
   echo "+++++ $sample +++++"
-  
+  layout=${Layout_dict[$sample]}
+
   if [[ $layout == "SE" ]]; then
     fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
     mkdir -p $dir/PreAlignmentQC/fastqc
