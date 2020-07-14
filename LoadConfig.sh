@@ -28,7 +28,7 @@ fi
 declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]];then
-  while IFS=',' read -r SampleID SampleName Group Layout; do
+  while IFS=',' read -r SampleID SampleName Group Layout Batch; do
       Sample_dict[$SampleID]=$SampleName
       Layout_dict[$SampleName]=$Layout
   done < $SampleInfoFile
