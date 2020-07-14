@@ -19,8 +19,9 @@ SampleGrepPattern=""                          ## Perl-compatible regexps used fo
 ### Example: R19051060_BKDL190818861-1a_1.fq.gz and R19051060_BKDL190818861-1a_2.fq.gz
 ### SampleIdPattern="R.*-1a"
 ### SampleSufixPattern="_BKDL.*_\d\.fq\.gz"
-SampleIdPattern="R.*"                         ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
-SampleSufixPattern="_BKDL.*_\d\.fq\.gz"       ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
+
+SampleIdPattern="R.*"                            ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
+SampleSufixPattern="_BKDL.*(_\d|)\.fq\.gz"       ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
 
 
 ############# preAlignmentQC Paramaters ###################################################################
@@ -73,3 +74,4 @@ DGEs_multi_compare=1                               ## Whether to compare DGEs am
 
 EOF
 echo -e "Task finished \nConfigFile: $1\n"
+
