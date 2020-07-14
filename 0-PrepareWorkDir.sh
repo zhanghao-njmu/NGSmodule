@@ -16,9 +16,9 @@ fi
 
 
 for file in ${arr[@]};do
-  file=${file##*/}
-  SampleSufix=(`echo "${file}" | grep -oP "$SampleSufixPattern"`)
-  sampleid=${file%%$SampleSufix}
+  file_sim=${file_sim}
+  SampleSufix=(`echo "${file_sim}" | grep -oP "$SampleSufixPattern"`)
+  sampleid=${file_sim%%$SampleSufix}
 
   if [[ "${#Sample_dict[@]}" != 0 ]];then
     samplename=${Sample_dict[$sampleid]}
@@ -31,9 +31,9 @@ for file in ${arr[@]};do
     exit 1
   fi
   
-  fqU=$(echo "${file}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "|(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
-  fq1=$(echo "${file}"  |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
-  fq2=$(echo "${file}"  |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
+  fqU=$(echo "${file_sim}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "|(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
+  fq1=$(echo "${file_sim}"  |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
+  fq2=$(echo "${file_sim}"  |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
   
   if [[ $fqU ]];then
     fq=${samplename}.fq.gz
@@ -43,7 +43,7 @@ for file in ${arr[@]};do
     fq=${samplename}_2.fq.gz
   fi
 
-  echo "File: ${file}  SampleID: ${sampleid}  SampleName: ${samplename}"
+  echo "File: ${file_sim}  SampleID: ${sampleid}  SampleName: ${samplename}"
   
   mkdir -p ${work_dir}/$samplename
   ln -s $file ${work_dir}/$samplename/$fq
