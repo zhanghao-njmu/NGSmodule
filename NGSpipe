@@ -28,7 +28,6 @@ CheckConfigFile()
 CreateSampleInfoFile()
 {
   shell_folder=$(dirname $(readlink -f "$0"))
-  source $1
   source $shell_folder/CreateSampleInfoFile.sh
 }
 
