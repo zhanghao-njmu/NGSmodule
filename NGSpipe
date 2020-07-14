@@ -141,7 +141,7 @@ version_info()
 {
 cat <<- EOF
 ############################
-    NGSpipe vsersion: 0.1
+    NGSpipe vsersion: 0.0.1
 ############################
 EOF
 }

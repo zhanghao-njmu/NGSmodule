@@ -2,7 +2,7 @@
 
 tmp=(`date +"%Y%m%d%H%M%S"`)
 cat << EOF >temp_${tmp}.Sample_info.csv
-SampleID(required),SampleName(required),Group(required),Layout(required,PE/SE)
+SampleID,SampleName,Group,Layout(PE/SE)
 R19051073,Hom1-80S,Hom-80S,PE
 R19051077,Hom2-80S,Hom-80S,PE
 R19051085,Hom3-80S,Hom-80S,PE
