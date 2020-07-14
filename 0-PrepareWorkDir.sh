@@ -16,7 +16,7 @@ fi
 
 
 for file in ${arr[@]};do
-  file_sim=${file_sim}
+  file_sim=${file##*/}
   SampleSufix=(`echo "${file_sim}" | grep -oP "$SampleSufixPattern"`)
   sampleid=${file_sim%%$SampleSufix}
 
