@@ -7,11 +7,11 @@ Rscript="/usr/local/bin/Rscript"
 
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"  ## Absolute path.
-rawdata_dir="$(pwd)/rawdata/" ## ## Absolute path of dir containing the raw fastq.gz data.
-total_threads=380                             ## Total threads for use.
+rawdata_dir="$(pwd)/rawdata/" ## Absolute path of dir containing the raw fastq.gz data.
+total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
-SampleGrepPattern=""                          ## Perl-compatible regexps used for matching the SampleName under the work dir.
+SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleName under the work dir.
 
 
 ############# PrepareWorkDir Paramaters ###################################################################
