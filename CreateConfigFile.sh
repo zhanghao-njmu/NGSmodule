@@ -20,8 +20,8 @@ SampleGrepPattern=""                          ## Optional. Perl-compatible regex
 ### SampleIdPattern="R.*-1a"
 ### SampleSufixPattern="_BKDL.*_\d\.fq\.gz"
 
-SampleIdPattern="R.*"                            ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
-SampleSufixPattern="_BKDL.*(_\d|)\.fq\.gz"       ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
+SampleIdPattern="R.*"                                              ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
+SampleSufixPattern="(_BKDL.*_\d\.fastq\.gz|_BKDL.*\.fastq\.gz)"    ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
 
 
 ############# preAlignmentQC Paramaters ###################################################################
