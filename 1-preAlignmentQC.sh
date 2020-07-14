@@ -28,15 +28,6 @@ echo -e "#######################################################################
 echo -e "****************** Start preAlignmentQC ******************\n"
 SECONDS=0
 
-###### fifo ######
-tempfifo=$$.fifo
-trap "exec 1000>&-;exec 1000<&-;exit 0" 2
-mkfifo $tempfifo;exec 1000<>$tempfifo;rm -rf $tempfifo
-for ((i=1; i<=$ntask_per_run; i++));do
-    echo >&1000
-done
-
-
 for sample in ${arr[@]}
 do
   read -u1000
