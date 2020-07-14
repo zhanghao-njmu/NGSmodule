@@ -16,19 +16,19 @@ fi
 
 
 for file in ${arr[@]};do
-  sampleid=(`echo "${file##*/}" | grep -oP "${SampleIdPattern}(?=$SampleSufixPattern)"`)
+  sampleid=(`echo "${file##*/}" | grep -voP "$SampleSufixPattern" | grep -oP "${SampleIdPattern}"`)
   if [[ "${#Sample_dict[@]}" != 0 ]];then
     samplename=${Sample_dict[$sampleid]}
     if [[ $samplename == "" ]];then
       samplename=$sampleid
-      echo -e "Warning! Cannot find the SampleName for SampleID: $samplename. Please check the SampleInfoFile."
+      echo -e "Warning! Cannot find the SampleName for SampleID: $sampleid. Please check the SampleInfoFile."
     fi
   else
     echo -e "Error! Cannot find the layout info. Please check the SampleInfoFile."
     exit 1
   fi
   
-  fqU=$(echo "${file##*/}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_\d.fastq.gz)|(_R\d.fastq.gz)|(_\d.fq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
+  fqU=$(echo "${file##*/}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "|(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
   fq1=$(echo "${file##*/}"  |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
   fq2=$(echo "${file##*/}"  |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
   
