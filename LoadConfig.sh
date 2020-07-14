@@ -26,12 +26,15 @@ fi
 
 ############# Load SampleInfoFile ###################################################################
 declare -A Sample_dict
+declare -A Layout_dict
 if [[ -f $SampleInfoFile ]];then
-  while IFS=',' read -r SampleID SampleName Group; do
+  while IFS=',' read -r SampleID SampleName Group Layout; do
       Sample_dict[$SampleID]=$SampleName
-  done < $SampleInfoFile  
+      Layout_dict[$SampleName]=$Layout
+  done < $SampleInfoFile
 else
-  echo -e "Warning: Cannot find SampleInfoFile. SampleID will be set as SampleID matched with SampleIdPattern .\n"
+  echo -e "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
+  exit 1
 fi
 
 
@@ -68,10 +71,10 @@ fi
 
 
 if [[ ! -f $genome ]];then
-  echo -e "ERROR!Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 elif [[ ! -f $gtf ]];then
-  echo -e "ERROR!Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 fi
 

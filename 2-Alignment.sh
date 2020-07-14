@@ -33,8 +33,9 @@ for sample in ${arr[@]};do
   {
   dir=$work_dir/$sample
   mkdir -p $dir/$aligner; cd $dir/$aligner
-  
   echo "+++++ Alignment: $sample +++++"
+  layout=${Layout_dict[$sample]}
+  
   if [[ $layout == "SE" ]]; then
     fq1=$dir/${sample}_trim.fq.gz
     if [[ "$aligner" = "bwa" ]];then
