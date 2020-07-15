@@ -38,7 +38,7 @@ for file in ${arr[@]};do
     fq=${samplename}.fq.gz
   elif [[ $fq1 ]] && [[ "${layout}" == "PE" ]];then
     fq=${samplename}_1.fq.gz
-  elif [[ $fq2 ]] && [[ "${layout}" == "PE" ]];;then
+  elif [[ $fq2 ]] && [[ "${layout}" == "PE" ]];then
     fq=${samplename}_2.fq.gz
   else
     echo -e "Error! Cannot get the layout information of the file: ${file_sim}"
