@@ -69,6 +69,10 @@ if [[ -d $work_dir ]];then
   else
     threads_featurecounts=$threads
   fi
+else
+  total_task="Waiting for the preparation of the workdir"
+  ntask_per_run="Waiting for the preparation of the workdir"
+  threads="1"
 fi
 
 if [[ ! -f $genome ]];then
