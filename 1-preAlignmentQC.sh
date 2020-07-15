@@ -67,15 +67,15 @@ do
       rm -rf $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
-      time sortmerna  --ref ${SortmeRNA_ref} \
-                      --reads ${sample}.fq \
-                      --threads $threads \
-                      --workdir $dir/PreAlignmentQC/sortmerna_tmp \
-                      --fastx \
-                      --num_alignments 1 \
-                      --aligned aligned \
-                      --other other \
-                      -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
+      sortmerna --ref ${SortmeRNA_ref} \
+                --reads ${sample}.fq \
+                --threads $threads \
+                --workdir $dir/PreAlignmentQC/sortmerna_tmp \
+                --fastx \
+                --num_alignments 1 \
+                --aligned aligned \
+                --other other \
+                -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
       size=$(du -sb other.fq | awk '{ print $1 }')
       if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
         mv other.fq $dir/${sample}_trim.fq
