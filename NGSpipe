@@ -95,7 +95,7 @@ DifferentialExpression()
 help()
 {
 cat << EOF
-  Desc: Universal pipeline for next generation sequencing data.
+  Desc: A flexible, automation and pragmatic workflow tool to efficiently process the NGS data in batches.
   
   Author: ZhangHao
 
