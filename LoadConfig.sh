@@ -45,7 +45,11 @@ if [[ -d $work_dir ]];then
   if [[ "$ntask_per_run" =~ ^[0-9]+$ ]];then
     ntask_per_run=$ntask_per_run
   elif [[ "$ntask_per_run" = "ALL" ]]; then
-    ntask_per_run=$total_task
+    if (( total_task > total_threads ));then
+      ntask_per_run=$total_threads
+    else
+      ntask_per_run=$total_task
+    fi
   else
     echo "ERROR! ntask_per_run should be 'ALL' or an interger!"
     exit 1
