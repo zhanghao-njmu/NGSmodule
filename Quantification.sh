@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$maindir" |grep -P "(featureCounts)|(Rscript)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(featureCounts)|(Rscript)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 
 featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }

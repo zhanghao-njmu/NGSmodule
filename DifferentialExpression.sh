@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$maindir" |grep -P "Rscript"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'j=`ps aux | grep -P "$work_dir" |grep -P "Rscript"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 $Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
 R_packages=("BiocParallel" "edgeR" "DESeq2" "stringr" "scales" "RColorBrewer" "ggpubr" "ggsci" "ggforce" "reshape2" "VennDiagram" "gridExtra" "gplots" "dplyr" "openxlsx" "ggalluvial" "ggfittext" "ComplexHeatmap" "circlize" "nord" "ggupset")

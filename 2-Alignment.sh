@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$maindir" |grep -P "(bwa)|(bowtie)|(hisat)|(tophat)|(STAR)|(bismark)|(samtools)|(sambamba)|(picard)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(bwa)|(bowtie)|(hisat)|(tophat)|(STAR)|(bismark)|(samtools)|(sambamba)|(picard)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 
 bwa &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bwa.\n";exit 1; }
