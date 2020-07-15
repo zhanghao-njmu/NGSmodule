@@ -39,36 +39,37 @@ fi
 
 
 ###### START ######
-rawfiles_arr=(` find $rawdata_dir -mindepth 1 -type l -o -type d -o -type f -printf '%P\n' | grep -oP "${SampleIdPattern}(?=$SampleSufixPattern)" | uniq | grep -P "$SampleGrepPattern" `)
-total_task=${#rawfiles_arr[@]}
-if [[ "$ntask_per_run" =~ ^[0-9]+$ ]];then
-  ntask_per_run=$ntask_per_run
-elif [[ "$ntask_per_run" = "ALL" ]]; then
-  ntask_per_run=$total_task
-else
-  echo "ERROR! ntask_per_run should be 'ALL' or an interger!"
-  exit 1
-fi
-threads=$((($total_threads+$ntask_per_run-1)/$ntask_per_run))
+if [[ -d $work_dir ]];then
+  arr=(` find $work_dir -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern" `)
+  total_task=${#arr[@]}
+  if [[ "$ntask_per_run" =~ ^[0-9]+$ ]];then
+    ntask_per_run=$ntask_per_run
+  elif [[ "$ntask_per_run" = "ALL" ]]; then
+    ntask_per_run=$total_task
+  else
+    echo "ERROR! ntask_per_run should be 'ALL' or an interger!"
+    exit 1
+  fi
+  threads=$((($total_threads+$ntask_per_run-1)/$ntask_per_run))
 
-if (( threads > 120 ));then
-  threads=120
-else
-  threads=$threads
-fi
+  if (( threads > 120 ));then
+    threads=120
+  else
+    threads=$threads
+  fi
 
-if (( threads > 16 ));then
-  threads_fastp=16
-else
-  threads_fastp=$threads
-fi
+  if (( threads > 16 ));then
+    threads_fastp=16
+  else
+    threads_fastp=$threads
+  fi
 
-if (( threads > 64 ));then
-  threads_featurecounts=64
-else
-  threads_featurecounts=$threads
+  if (( threads > 64 ));then
+    threads_featurecounts=64
+  else
+    threads_featurecounts=$threads
+  fi
 fi
-
 
 if [[ ! -f $genome ]];then
   echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
@@ -99,10 +100,6 @@ processbar() {
 bar=0
 
 ################################################################################################################
-if [[ -d $work_dir ]];then
-  arr=(` find $work_dir -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern" `)
-fi
-
 echo -e "########################### Global config patameters ###########################\n"
 echo -e "  maindir: ${maindir}\n  rawdata_dir: ${rawdata_dir}\n  work_dir: ${work_dir}\n  SampleInfoFile: ${SampleInfoFile}\n  SampleGrepPattern: ${SampleGrepPattern}\n\n  Total_tasks: ${total_task}\n  nTask_per_run: ${ntask_per_run}\n  Total_threads: ${total_threads}\n  Threads_per_task: ${threads} (max=120)\n\n"
 echo -e "################################################################################\n\n\n"

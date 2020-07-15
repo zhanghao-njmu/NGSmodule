@@ -8,12 +8,10 @@ if [[ -d $work_dir ]];then
   mkdir ${work_dir}
 fi
 
-
 arr=(` find $rawdata_dir -type f  | grep -P "${SampleIdPattern}${SampleSufixPattern}" `)
 if [[ ${#arr} == 0 ]];then
   echo -e "Cannot find the rawdata.\nPlease check the SampleIdPattern and SampleSufixPattern in the ConfigFile!\n"
 fi
-
 
 for file in ${arr[@]};do
   file_sim=${file##*/}
@@ -22,6 +20,7 @@ for file in ${arr[@]};do
 
   if [[ "${#Sample_dict[@]}" != 0 ]];then
     samplename=${Sample_dict[$sampleid]}
+    layout=${Layout_dict[$samplename]}    
     if [[ $samplename == "" ]];then
       samplename=$sampleid
       echo -e "Warning! Cannot find the SampleName for SampleID: $sampleid. Please check the SampleInfoFile."
@@ -35,17 +34,20 @@ for file in ${arr[@]};do
   fq1=$(echo "${file_sim}"  |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
   fq2=$(echo "${file_sim}"  |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
   
-  if [[ $fqU ]];then
+  if [[ $fqU ]]  && [[ "${layout}" == "SE" ]];then
     fq=${samplename}.fq.gz
-  elif [[ $fq1 ]];then
+  elif [[ $fq1 ]] && [[ "${layout}" == "PE" ]];then
     fq=${samplename}_1.fq.gz
-  elif [[ $fq2 ]];then
+  elif [[ $fq2 ]] && [[ "${layout}" == "PE" ]];;then
     fq=${samplename}_2.fq.gz
+  else
+    echo -e "Error! Cannot get the layout information of the file: ${file_sim}"
   fi
 
   echo "File: ${file_sim}  SampleID: ${sampleid}  SampleName: ${samplename}"
-  
-  mkdir -p ${work_dir}/$samplename
-  ln -s $file ${work_dir}/$samplename/$fq
+  mkdir -p ${work_dir}/${samplename}
+  ln -s $file ${work_dir}/$samplename/${fq}
+
 done
+echo -e ""
 echo -e "\n****************** PrepareWorkDir Done ******************\n"
