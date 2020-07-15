@@ -126,7 +126,7 @@ cat << EOF
   Other options:
   
     -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
-                              will be created by <CreateConfigFile> MODE.
+                              will be created with <CreateConfigFile> MODE.
 
     -h, --help                Show this message.
     
