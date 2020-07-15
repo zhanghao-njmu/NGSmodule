@@ -43,7 +43,7 @@ for file in ${arr[@]};do
     fq=${samplename}_2.fq.gz
   fi
 
-  echo "File: ${file_sim}  SampleID: ${sampleid}  SampleName: ${samplename}"
+  echo "File: ${file_sim}  SampleID: ${sampleid}  SampleName: ${samplename} fq:${fq}"
   
   mkdir -p ${work_dir}/$samplename
   ln -s $file ${work_dir}/$samplename/$fq
