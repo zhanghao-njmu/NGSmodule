@@ -7,7 +7,7 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
-trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(fastqc)|(fastp)|(fastq_screen)|(reformat.sh)|(sortmerna)|(bgzip)|(bbmap)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(fastqc)|(fastp)|(fastq_screen)|(reformat.sh)|(sortmerna)|(bgzip)|(pigz)|(bbmap)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 fastqc --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastqc.\n";exit 1; }
 fastp --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastp.\n";exit 1; }
@@ -18,6 +18,15 @@ pigz --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command pi
 v=$(sortmerna --version 2>/dev/null |grep -oP "(?<=SortMeRNA version ).*"|cut -d. -f1)
 (( v < 4 )) || [[ $v == "" ]] && { echo -e "sortmerna vertsion need to be updated to 4.x.x(https://github.com/biocore/sortmerna).\n";exit 1; }
 
+if [[ ! -f $SortmeRNA_ref ]];then
+  echo -e "Cannot find the SortmeRNA_ref file: ${SortmeRNA_ref}"
+  exit 1
+fi
+
+if [[ ! -f $FastqScreen_config ]];then
+  echo -e "Cannot find the FastqScreen_config file: ${FastqScreen_config}"
+  exit 1
+fi
 
 echo -e "########################### preAlignmentQC Parameters ##########################\n"
 echo -e "Fastp\n  trim_front1: ${trim_front1}\n  trim_tail1: ${trim_tail1}\n  trim_front2: ${trim_front2}\n  trim_tail2: ${trim_tail2}\n  qualified_quality_phred: ${qualified_quality_phred}\n  unqualified_percent_limit: ${unqualified_percent_limit}\n  read_cutting: ${read_cutting}\n  cut_window_size: ${cut_window_size}\n  cut_mean_quality: ${cut_mean_quality}\n  length_required: ${length_required}\n"
@@ -27,6 +36,7 @@ echo -e "#######################################################################
 
 echo -e "****************** Start preAlignmentQC ******************\n"
 SECONDS=0
+
 
 for sample in ${arr[@]}
 do
