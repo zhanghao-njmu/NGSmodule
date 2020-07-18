@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
 
 work_dir=$maindir/NGSpipe_work/
-
+if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]
+  echo -e "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSpipe PrepareWorkDir -c <Config_file>' first!"
+  exit 1
+fi
 ################################################################################################################
 declare -A Species_arr=( ["human"]="Homo_sapiens" ["mouse"]="Mus_musculus" ["machin"]="Macaca_fascicularis" ["rhesus"]="Macaca_mulatta" ["fly"]="Drosophila_melanogaster" )
-if [[ $SortmeRNA_ref == "" ]];then
+if [[ $SortmeRNA_ref_direct == "" ]];then
   SortmeRNA_ref="$SortmeRNA_Dir/$SortmeRNA_Type.${Species_arr[$Species]}.${SortmeRNA_DataVersion}.fa"
+else
+  SortmeRNA_ref=$SortmeRNA_ref_direct
 fi
-genome="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/WholeGenomeFasta/$Genome_name"
-gtf="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Annotation/Genes/genes.gtf"
-bwa_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BWAIndex/$Genome_name"
-bowtie_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BowtieIndex/${Genome_name%%.fa}"
-bowtie2_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Bowtie2Index/${Genome_name%%.fa}"
-hisat2_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Hisat2Index/${Genome_name%%.fa}"
-star_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/STARIndex/${Genome_name%%.fa}"
-bismark_bowtie2_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/bowtie2"
-bismark_hisat2_index="$iGenomes_Dir/$Species/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/hisat2"
+genome="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/WholeGenomeFasta/$Genome_name"
+gtf="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Annotation/Genes/genes.gtf"
+bwa_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BWAIndex/$Genome_name"
+bowtie_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BowtieIndex/${Genome_name%%.fa}"
+bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Bowtie2Index/${Genome_name%%.fa}"
+hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Hisat2Index/${Genome_name%%.fa}"
+star_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/STARIndex/${Genome_name%%.fa}"
+bismark_bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/bowtie2"
+bismark_hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/hisat2"
 tophat2_index=$bowtie2_index
 if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
   FastqScreen_mode="--bisulfite"

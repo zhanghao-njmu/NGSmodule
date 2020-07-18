@@ -2,8 +2,6 @@
 
 cat << EOF >$1
 #!/usr/bin/env bash
-############# Rscript path ################################################################################
-Rscript="/usr/local/bin/Rscript"
 
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"  ## Absolute path.
@@ -13,13 +11,15 @@ ntask_per_run="ALL"                           ## "ALL" or numeric value to speci
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleName under the work dir.
 
+############# Rscript path ################################################################################
+Rscript="/usr/local/bin/Rscript"
+
 
 ############# PrepareWorkDir Paramaters ###################################################################
 ### raw_file_name= SampleIdPattern  + SampleSufixPattern
 ### Example: R19051060_BKDL190818861-1a_1.fq.gz and R19051060_BKDL190818861-1a_2.fq.gz
 ### SampleIdPattern="R.*-1a"
 ### SampleSufixPattern="_BKDL.*_\d\.fq\.gz"
-
 SampleIdPattern="R.*"                                              ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
 SampleSufixPattern="(_BKDL.*_\d\.fastq\.gz|_BKDL.*\.fastq\.gz)"    ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
 
@@ -37,17 +37,19 @@ cut_window_size=4              ## the window size option shared by cut_front, cu
 cut_mean_quality=20            ## the mean quality requirement option shared by cut_front, cut_tail or cut_sliding. Range: 1~36.
 length_required=20             ## reads shorter than length_required will be discarded.
 
+
 ### FastqScreen ###
 FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
-### SortmeRNA ###
 
+### SortmeRNA ###
 SortmeRNA_Dir="/data/database/SortmeRNA"       ## SortmeRNA_ref: the dir containing the reference sequence.
 SortmeRNA_Type="rRNA"                          ## SortmeRNA_ref: rRNA,Mt_tRNA,Mt_rRNA
 SortmeRNA_Species="mouse"                      ## SortmeRNA_ref: human,mouse,machin,rhesus,fly
 SortmeRNA_DataVersion="EnsemblGenes98"         ## SortmeRNA_ref: version of sortmerna fetched sequence 
 
-SortmeRNA_ref=""                               ## Directly specify the path of the SortmeRNA_ref sequence file. 
+SortmeRNA_ref_direct=""                        ## Optional. Directly specify the path of the SortmeRNA_ref sequence file. 
+
 
 ############# Alignment Paramaters ##########################################################################
 Sequencing="rnaseq"                            ## rnaseq,wgs,bsseq
@@ -56,7 +58,7 @@ iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
 Species="mouse"                                ## human,mouse,machin,rhesus,fly
 Database="Ensembl"                             ## Ensembl,NCBI,UCSC
 Genome_build="GRCm38"                          ## The genome version under the dir GenomeDir/Species/Species_arr[Species]/Database.
-Genome_name="genome.fa"                        ## genome.fa,genome_main.fa 
+Genome_name="genome.fa"                        ## genome.fa,genome_main.fa
 
 
 ############# Quantification Paramaters ######################################################################

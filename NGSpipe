@@ -36,7 +36,7 @@ PrepareWorkDir()
 {
   shell_folder=$(dirname $(readlink -f "$0"))
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh prepare
   source $shell_folder/PrepareWorkDir.sh
 }
 
