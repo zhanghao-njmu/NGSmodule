@@ -162,7 +162,7 @@ while true;do
     --)
       shift
       if [[ $# == 0 ]];then
-        echo -e "Please select a MODE. Try '$0 --help' for more information.\n"
+        echo -e "Please select a MODE option. Try '$0 --help' for more information.\n"
         exit 1
       elif [[ $1 == "CreateConfigFile" ]];then
         if [[ $ConfigFile != "" ]];then
