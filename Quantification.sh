@@ -26,14 +26,14 @@ for sample in ${arr[@]};do
   {
   echo "+++++ $sample +++++"
   dir=$work_dir/$sample
-  bam=$dir/$aligner/${sample}.${aligner}.bam
+  bam=$dir/$Aligner/${sample}.${Aligner}.bam
   if [[ ! -f $bam ]];then
     echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
     exit 1
   fi
   
-  mkdir -p $dir/$aligner/Quantification; cd $dir/$aligner/Quantification
-  $Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${aligner} &>Quantification.R.log 
+  mkdir -p $dir/$Aligner/Quantification; cd $dir/$Aligner/Quantification
+  $Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log 
   
   echo >&1000
   }&
@@ -54,8 +54,8 @@ else
   echo -e "No additional annotation for species: $Species or for databse: $Database\n"
 fi
 
-$Rscript $2 $work_dir $gtf $aligner $Species_anno $Database &>Annotation.R.log 
-echo -e "Integrated quantification matrix: $maindir/NGSpipe_analysis/Quantification/Quantification.${aligner}.*.tab\n"
+$Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log 
+echo -e "Integrated quantification matrix: $maindir/NGSpipe_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"

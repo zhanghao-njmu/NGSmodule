@@ -11,6 +11,7 @@ ntask_per_run="ALL"                           ## "ALL" or numeric value to speci
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleName under the work dir.
 
+
 ############# Rscript path ################################################################################
 Rscript="/usr/local/bin/Rscript"
 
@@ -53,12 +54,12 @@ SortmeRNA_ref_direct=""                        ## Optional. Directly specify the
 
 ############# Alignment Paramaters ##########################################################################
 Sequencing="rnaseq"                            ## rnaseq,wgs,bsseq
-aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
 Species="mouse"                                ## human,mouse,machin,rhesus,fly
 Database="Ensembl"                             ## Ensembl,NCBI,UCSC
-Genome_build="GRCm38"                          ## The genome version under the dir GenomeDir/Species/Species_arr[Species]/Database.
+Genome_build="GRCm38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
 Genome_name="genome.fa"                        ## genome.fa,genome_main.fa
+Aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 
 
 ############# Quantification Paramaters ######################################################################

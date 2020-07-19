@@ -22,7 +22,7 @@ mkdir -p $maindir/NGSpipe_analysis/DifferentialExpression/DGEs_plot
 mkdir -p $maindir/NGSpipe_analysis/DifferentialExpression/DGEs_rds
 cd $maindir/NGSpipe_analysis/DifferentialExpression
 
-$Rscript $1 $maindir $aligner $SampleInfoFile $group_compare $max_padj $min_fc $min_count $DGEs_multi_compare $1
+$Rscript $1 $maindir $Aligner $SampleInfoFile $group_compare $max_padj $min_fc $min_count $DGEs_multi_compare $1
 
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"

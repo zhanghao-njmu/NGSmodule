@@ -22,7 +22,7 @@ star_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Seque
 bismark_bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/bowtie2"
 bismark_hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/hisat2"
 tophat2_index=$bowtie2_index
-if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
+if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
   FastqScreen_mode="--bisulfite"
 else 
   FastqScreen_mode=""

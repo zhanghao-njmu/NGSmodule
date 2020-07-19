@@ -18,7 +18,7 @@ for package in ${R_packages[@]};do
 done
 
 echo -e "########################## postAlignmentQC Parameters ##########################\n"
-echo -e "  Sequencing: ${Sequencing}\n  Aligner: ${aligner}\n"
+echo -e "  Sequencing: ${Sequencing}\n  Aligner: ${Aligner}\n"
 echo -e "  GTF_File: ${gtf}\n "
 echo -e "################################################################################\n"
 
@@ -40,57 +40,57 @@ for sample in ${arr[@]};do
   layout=${Layout_dict[$sample]}
 
   dir=$work_dir/$sample
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
-    bam=$(ls $dir/$aligner/*.bam)
+  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
+    bam=$(ls $dir/$Aligner/*.bam)
   else 
-    bam=$dir/$aligner/${sample}.${aligner}.bam
+    bam=$dir/$Aligner/${sample}.${Aligner}.bam
   fi
   if [[ ! -f $bam ]];then
     echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
     exit 1
   fi
   
-  mkdir -p $dir/$aligner/postAlignmentQC/RSeQC; cd $dir/$aligner/postAlignmentQC/RSeQC
-  bam_stat.py -i $bam >${sample}.${aligner}.bam_stat.txt 2>bam_stat.log &
-  infer_experiment.py -r $genes_bed -i $bam >${sample}.${aligner}.infer_experiment.txt 2>infer_experiment.log &
-  inner_distance.py -r $genes_bed -i $bam -o ${sample}.${aligner} &>inner_distance.log  &
-  read_distribution.py -r $genes_bed -i $bam >${sample}.${aligner}.read_distribution.txt 2>read_distribution.log &
-  read_duplication.py -i $bam -o ${sample}.${aligner} &>read_duplication.log &
-  read_GC.py -i $bam -o ${sample}.${aligner} &>read_GC.log &
+  mkdir -p $dir/$Aligner/postAlignmentQC/RSeQC; cd $dir/$Aligner/postAlignmentQC/RSeQC
+  bam_stat.py -i $bam >${sample}.${Aligner}.bam_stat.txt 2>bam_stat.log &
+  infer_experiment.py -r $genes_bed -i $bam >${sample}.${Aligner}.infer_experiment.txt 2>infer_experiment.log &
+  inner_distance.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>inner_distance.log  &
+  read_distribution.py -r $genes_bed -i $bam >${sample}.${Aligner}.read_distribution.txt 2>read_distribution.log &
+  read_duplication.py -i $bam -o ${sample}.${Aligner} &>read_duplication.log &
+  read_GC.py -i $bam -o ${sample}.${Aligner} &>read_GC.log &
   if [[ $Sequencing == "rnaseq" ]];then
-    geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${aligner} &>geneBody_coverage.log  &
-    junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${aligner} &>${sample}.${aligner}.log  &
-    junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${aligner} &>junction_saturation.log  &
+    geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>geneBody_coverage.log  &
+    junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>${sample}.${Aligner}.log  &
+    junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>junction_saturation.log  &
   fi
   
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$aligner" =~ bismark_* ]];then
+  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
     echo "+++++ Waiting for the background processes..........+++++"
   else
-    mkdir -p $dir/$aligner/postAlignmentQC/Preseq; cd $dir/$aligner/postAlignmentQC/Preseq
-    preseq lc_extrap -B $bam -o ${sample}.${aligner}.txt &>preseq_lc_extrap.log 
-    mkdir -p $dir/$aligner/postAlignmentQC/goleft; cd $dir/$aligner/postAlignmentQC/goleft
+    mkdir -p $dir/$Aligner/postAlignmentQC/Preseq; cd $dir/$Aligner/postAlignmentQC/Preseq
+    preseq lc_extrap -B $bam -o ${sample}.${Aligner}.txt &>preseq_lc_extrap.log 
+    mkdir -p $dir/$Aligner/postAlignmentQC/goleft; cd $dir/$Aligner/postAlignmentQC/goleft
     goleft indexcov --directory ./ $bam &>goleft_indexcov.log 
-    mkdir -p $dir/$aligner/postAlignmentQC/mosdepth; cd $dir/$aligner/postAlignmentQC/mosdepth
-    mosdepth -t $threads -n --fast-mode ${sample}.${aligner} $bam &>mosdepth.log
-    mkdir -p $dir/$aligner/postAlignmentQC/dupRadar; cd $dir/$aligner/postAlignmentQC/dupRadar
-    $Rscript $1 $bam $gtf $strandspecific $layout $threads_featurecounts $dir/$aligner/postAlignmentQC/dupRadar ${sample}.${aligner}
+    mkdir -p $dir/$Aligner/postAlignmentQC/mosdepth; cd $dir/$Aligner/postAlignmentQC/mosdepth
+    mosdepth -t $threads -n --fast-mode ${sample}.${Aligner} $bam &>mosdepth.log
+    mkdir -p $dir/$Aligner/postAlignmentQC/dupRadar; cd $dir/$Aligner/postAlignmentQC/dupRadar
+    $Rscript $1 $bam $gtf $strandspecific $layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
   fi
   
-##  mkdir -p $dir/$aligner/Qualimap; cd $dir/$aligner/Qualimap #### too slow!!!
+##  mkdir -p $dir/$Aligner/Qualimap; cd $dir/$Aligner/Qualimap #### too slow!!!
 ##  unset DISPLAY
 ##  if [[ $layout == "SE" && $Sequencing == "rnaseq" ]];then
-##    qualimap rnaseq -bam $bam -gtf $gtf -outdir ${sample}.${aligner} -outformat HTML --java-mem-size=10G  &
+##    qualimap rnaseq -bam $bam -gtf $gtf -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G  &
 ##  elif [[ $layout == "PE" && $Sequencing == "rnaseq" ]];then
-##    qualimap rnaseq -bam $bam -gtf $gtf --paired -outdir ${sample}.${aligner} -outformat HTML --java-mem-size=10G &
+##    qualimap rnaseq -bam $bam -gtf $gtf --paired -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G &
 ##  fi
 ##  wait
-##  qualimap bamqc -bam $bam -gff $gtf -nt $threads -nr 100000 -nw 300 -outdir ${sample}.${aligner} -outformat HTML java_options="-Djava.awt.headless=true -Xmx$JAVA_MEM_SIZE -XX:MaxPermSize=10G"
+##  qualimap bamqc -bam $bam -gff $gtf -nt $threads -nr 100000 -nw 300 -outdir ${sample}.${Aligner} -outformat HTML java_options="-Djava.awt.headless=true -Xmx$JAVA_MEM_SIZE -XX:MaxPermSize=10G"
 #  
-##  mkdir -p $dir/$aligner/deepTools; cd $dir/$aligner/deepTools
-##  bamPEFragmentSize -p $threads -b $bam  --table ${sample}.${aligner}.table.txt --outRawFragmentLengths ${sample}.${aligner}.RawFragmentLengths.txt
-##  estimateReadFiltering -p $threads -b $bam >${sample}.${aligner}.estimateRead.txt
-##  plotCoverage -p $threads -b $bam --outRawCounts ${sample}.${aligner}.CoverageRawCounts.txt  
-##  plotFingerprint -p $threads -b $bam --outRawCounts ${sample}.${aligner}.FingerprintRawCounts.txt  --outQualityMetrics ${sample}.${aligner}.FingerprintQualityMetrics.txt
+##  mkdir -p $dir/$Aligner/deepTools; cd $dir/$Aligner/deepTools
+##  bamPEFragmentSize -p $threads -b $bam  --table ${sample}.${Aligner}.table.txt --outRawFragmentLengths ${sample}.${Aligner}.RawFragmentLengths.txt
+##  estimateReadFiltering -p $threads -b $bam >${sample}.${Aligner}.estimateRead.txt
+##  plotCoverage -p $threads -b $bam --outRawCounts ${sample}.${Aligner}.CoverageRawCounts.txt  
+##  plotFingerprint -p $threads -b $bam --outRawCounts ${sample}.${Aligner}.FingerprintRawCounts.txt  --outQualityMetrics ${sample}.${Aligner}.FingerprintQualityMetrics.txt
 
 
   wait
