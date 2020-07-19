@@ -5,7 +5,7 @@
 trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(featureCounts)|(Rscript)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 
-featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
+#featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
 $Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
