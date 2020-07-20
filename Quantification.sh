@@ -11,7 +11,14 @@ $Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscrip
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
 for package in ${R_packages[@]};do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null
-  [ $? -ne 0 ] && { echo -e "Cannot find the R package $package.\nPlease install it in the R environment using \"remotes::install_version('$package')\" ";exit 1; }
+  if [ $? -ne 0 ];then
+    echo -e "Cannot find the R package $package.\n"
+    if [[ $package == "refGenome" ]];then
+      echo -e "Please install it in the R environment using \"remotes::install_version('$package')\" "
+    else
+      echo -e "Please install it in the R environment using \"BiocManager::install('$package')\" "
+    fi
+    exit 1
 done
 
 echo -e "########################## Quantification Parameters ###########################\n"
