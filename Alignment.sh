@@ -16,7 +16,7 @@ bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User c
 
 eval "index=\${${Aligner}_index}"
 echo -e "############################# Alignment Parameters #############################\n"
-echo -e "  Sequencing: ${Sequencing}\n  Aligner: ${Aligner}\n  iGenomes_Dir: ${iGenomes_Dir}\n  Species: ${Species}(${Species_arr[$Species]})\n  Database: ${Database}\n  Genome_build: ${Genome_build}\n  Genome_name: ${Genome_name}\n"
+echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n  iGenomes_Dir: ${iGenomes_Dir}\n  Species: ${Species}(${Species_arr[$Species]})\n  Database: ${Database}\n  Genome_build: ${Genome_build}\n  Genome_name: ${Genome_name}\n"
 echo -e "  Genome_File: ${genome}\n  GTF_File: ${gtf}\n  Aligner_Index: ${index}\n"
 echo -e "################################################################################\n"
 
@@ -107,7 +107,7 @@ for sample in ${arr[@]};do
   echo "+++++ $sample: $Aligner done +++++"
 
   echo "+++++ Bam processing: $sample +++++"
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
+  if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
     bam=$(ls ./*.bam)
     samtools stats -@ $threads $bam >${bam}.stats
     samtools flagstat -@ $threads $bam >${bam}.flagstat
@@ -118,7 +118,7 @@ for sample in ${arr[@]};do
     samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat
   fi
   
-  if [[ "$Sequencing" == "wgs" ]];then
+  if [[ "$SequenceType" == "dna" ]];then
     echo "+++++ WGS deduplication: $sample +++++"
     sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam
     picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample
@@ -127,14 +127,14 @@ for sample in ${arr[@]};do
     samtools index -@ $threads ${sample}.${Aligner}.dedup.bam
   fi
   
-  if [[ "$Sequencing" == "rnaseq" ]];then
+  if [[ "$SequenceType" == "rna" ]];then
     echo "+++++ RNAseq Mark Duplicates: $sample +++++"
     bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log
     mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
     samtools index -@ $threads ${sample}.${Aligner}.bam
   fi
   
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
+  if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
     echo "+++++ BS-seq deduplication: $sample +++++"
     mkdir -p $dir/$Aligner/deduplicate_bismark
     bam=$(ls $dir/$Aligner/*.bam)

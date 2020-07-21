@@ -6,6 +6,7 @@ cat << EOF >$1
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"  ## Absolute path.
 rawdata_dir="$(pwd)/rawdata/" ## Absolute path of dir containing the raw fastq.gz data.
+SequenceType="rna"                              ## rna,dna,BSdna
 total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
@@ -53,7 +54,6 @@ SortmeRNA_ref_direct=""                        ## Optional. Directly specify the
 
 
 ############# Alignment Paramaters ##########################################################################
-Sequencing="rnaseq"                            ## rnaseq,wgs,bsseq
 iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
 Species="mouse"                                ## human,mouse,machin,rhesus,fly
 Database="Ensembl"                             ## Ensembl,NCBI,UCSC

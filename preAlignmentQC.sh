@@ -75,30 +75,33 @@ do
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
       echo "+++++ $sample: FastQ_Screen done +++++"
       
-
-      rm -rf $dir/PreAlignmentQC/sortmerna_tmp
-      mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
-      mkdir -p $dir/PreAlignmentQC/sortmerna
-      sortmerna --ref ${SortmeRNA_ref} \
-                --reads ${sample}.fq \
-                --threads $threads \
-                --workdir $dir/PreAlignmentQC/sortmerna_tmp \
-                --fastx \
-                --num_alignments 1 \
-                --aligned aligned \
-                --other other \
-                -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
-      size=$(du -sb other.fq | awk '{ print $1 }')
-      if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
-        mv other.fq $dir/${sample}_trim.fq
-        rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
-        pigz -p $threads -f $dir/${sample}_trim.fq
-        mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
-        echo "+++++ $sample: SortMeRNA done +++++"
+      if [[ "$SequenceType" == "rna" ]];then
+        rm -rf $dir/PreAlignmentQC/sortmerna_tmp
+        mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
+        mkdir -p $dir/PreAlignmentQC/sortmerna
+        sortmerna --ref ${SortmeRNA_ref} \
+                  --reads ${sample}.fq \
+                  --threads $threads \
+                  --workdir $dir/PreAlignmentQC/sortmerna_tmp \
+                  --fastx \
+                  --num_alignments 1 \
+                  --aligned aligned \
+                  --other other \
+                  -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
+        size=$(du -sb other.fq | awk '{ print $1 }')
+        if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
+          mv other.fq $dir/${sample}_trim.fq
+          rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
+          pigz -p $threads -f $dir/${sample}_trim.fq
+          mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
+          echo "+++++ $sample: SortMeRNA done +++++"
+        else
+          echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
+        fi
       else
-        echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
+        mv ${sample}.fq $dir/${sample}_trim.fq
+        pigz -p $threads -f $dir/${sample}_trim.fq
       fi
-
       
     elif [[ $layout == "PE" ]]; then
       fq1=$dir/$(ls |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
@@ -132,29 +135,32 @@ do
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
       echo "+++++ $sample: FastQ_Screen done +++++"
       
-
-      rm -rf $dir/PreAlignmentQC/sortmerna_tmp
-      mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
-      mkdir -p $dir/PreAlignmentQC/sortmerna
-      reformat.sh in1=$fq1 in2=$fq2 out=$dir/${sample}.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_merge.log
-      sortmerna --ref ${SortmeRNA_ref} \
-                --reads ${sample}.fq --paired_in \
-                --threads $threads \
-                --workdir $dir/PreAlignmentQC/sortmerna_tmp \
-                --fastx \
-                --num_alignments 1 \
-                --aligned aligned \
-                --other other \
-                -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
-      size=$(du -sb other.fq | awk '{ print $1 }')
-      if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
-        reformat.sh in=other.fq out1=$fq1 out2=$fq2 overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
-        rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp 
-        pigz -p $threads -f $fq1 $fq2 
-        mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
-        echo "+++++ $sample: SortMeRNA done +++++"
+      if [[ "$SequenceType" == "rna" ]];then
+        rm -rf $dir/PreAlignmentQC/sortmerna_tmp
+        mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
+        mkdir -p $dir/PreAlignmentQC/sortmerna
+        reformat.sh in1=$fq1 in2=$fq2 out=$dir/${sample}.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_merge.log
+        sortmerna --ref ${SortmeRNA_ref} \
+                  --reads ${sample}.fq --paired_in \
+                  --threads $threads \
+                  --workdir $dir/PreAlignmentQC/sortmerna_tmp \
+                  --fastx \
+                  --num_alignments 1 \
+                  --aligned aligned \
+                  --other other \
+                  -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
+        size=$(du -sb other.fq | awk '{ print $1 }')
+        if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
+          reformat.sh in=other.fq out1=$fq1 out2=$fq2 overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
+          rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp 
+          pigz -p $threads -f $fq1 $fq2 
+          mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
+          echo "+++++ $sample: SortMeRNA done +++++"
+        else
+          echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
+        fi
       else
-        echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
+        pigz -p $threads -f $fq1 $fq2 
       fi
 
     fi

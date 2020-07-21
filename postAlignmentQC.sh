@@ -18,7 +18,7 @@ for package in ${R_packages[@]};do
 done
 
 echo -e "########################## postAlignmentQC Parameters ##########################\n"
-echo -e "  Sequencing: ${Sequencing}\n  Aligner: ${Aligner}\n"
+echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
 echo -e "  GTF_File: ${gtf}\n "
 echo -e "################################################################################\n"
 
@@ -40,7 +40,7 @@ for sample in ${arr[@]};do
   layout=${Layout_dict[$sample]}
 
   dir=$work_dir/$sample
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
+  if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
     bam=$(ls $dir/$Aligner/*.bam)
   else 
     bam=$dir/$Aligner/${sample}.${Aligner}.bam
@@ -57,13 +57,13 @@ for sample in ${arr[@]};do
   read_distribution.py -r $genes_bed -i $bam >${sample}.${Aligner}.read_distribution.txt 2>read_distribution.log &
   read_duplication.py -i $bam -o ${sample}.${Aligner} &>read_duplication.log &
   read_GC.py -i $bam -o ${sample}.${Aligner} &>read_GC.log &
-  if [[ $Sequencing == "rnaseq" ]];then
+  if [[ $SequenceType == "rna" ]];then
     geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>geneBody_coverage.log  &
     junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>${sample}.${Aligner}.log  &
     junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>junction_saturation.log  &
   fi
   
-  if [[ "$Sequencing" == "bsseq" ]] && [[ "$Aligner" =~ bismark_* ]];then
+  if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
     echo "+++++ Waiting for the background processes..........+++++"
   else
     mkdir -p $dir/$Aligner/postAlignmentQC/Preseq; cd $dir/$Aligner/postAlignmentQC/Preseq
@@ -78,9 +78,9 @@ for sample in ${arr[@]};do
   
 ##  mkdir -p $dir/$Aligner/Qualimap; cd $dir/$Aligner/Qualimap #### too slow!!!
 ##  unset DISPLAY
-##  if [[ $layout == "SE" && $Sequencing == "rnaseq" ]];then
+##  if [[ $layout == "SE" && $SequenceType == "rna" ]];then
 ##    qualimap rnaseq -bam $bam -gtf $gtf -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G  &
-##  elif [[ $layout == "PE" && $Sequencing == "rnaseq" ]];then
+##  elif [[ $layout == "PE" && $SequenceType == "rna" ]];then
 ##    qualimap rnaseq -bam $bam -gtf $gtf --paired -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G &
 ##  fi
 ##  wait
