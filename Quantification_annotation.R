@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 
 library(refGenome)
+library(data.table)
+
 
 args <- commandArgs( trailingOnly = TRUE )
 work_dir <- args[1]
@@ -27,7 +29,7 @@ if (species!="") {
   library(AnnotationDbi)
   org <- switch(species,"human"="org.Hs.eg.db","mouse"="org.Mm.eg.db","rhesus"="org.Mmu.eg.db","fly"="org.Dm.eg.db")
   library(org,character.only = T)
-  idtype <- switch(database,"Ensembl"="ENSEMBL","NCBI"="ENTREZID")
+  idtype <- switch(database,"Ensembl"="ENSEMBL","NCBI"="ENTREZID","UCSC"="SYMBOL")
   keys <- keys(get(org),keytype = idtype)
   columns_select <- c("SYMBOL","ALIAS","GENENAME","ENTREZID","ENSEMBL")
   bioc_anno <- AnnotationDbi::select(get(org), keys=keys, keytype = idtype,columns =columns_select)

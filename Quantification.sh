@@ -55,11 +55,11 @@ mkdir -p $maindir/NGSpipe_analysis/Quantification
 cd $maindir/NGSpipe_analysis/Quantification
 
 species_arr=('human' 'mouse' 'rhesus' 'fly')
-if [[ "${species_arr[@]}" =~ "${Species}" ]] && [[ $Database != "UCSC" ]]  ; then
+if [[ "${species_arr[@]}" =~ "${Species}" ]]; then
   Species_anno=$Species
 else
   Species_anno=""
-  echo -e "No additional annotation for species: $Species or for databse: $Database\n"
+  echo -e "No additional annotation for species: $Species in database: $Database\n"
 fi
 
 $Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log 
