@@ -32,6 +32,7 @@ dgeList = DGEList(counts=fCountsList$counts, genes=fCountsList$annotation)
 logcpm = cpm(dgeList,log = TRUE,prior.count = 2)
 fpkm = rpkm(dgeList, dgeList$genes$Length)
 tpm = exp(log(fpkm) - log(sum(fpkm)) + log(1e6))
+
 write(paste("Status",bamFile,sep="\t"),file=outStatsFilePath)
 write.table(fCountsList$stat, outStatsFilePath, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE,append=T)
 
