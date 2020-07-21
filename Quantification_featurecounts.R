@@ -40,8 +40,8 @@ colnames(featureCounts) <- c("GeneID",outCountsFilePath)
 write.table(featureCounts, outCountsFilePath, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
 
 featureCPM = cbind(fCountsList$annotation[,1], logcpm)
-colnames(featureCounts) <- c("GeneID",outCpmFilePath)
-write.table(featureCounts, outCpmFilePath, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
+colnames(featureCPM) <- c("GeneID",outCpmFilePath)
+write.table(featureCPM, outCpmFilePath, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
 
 featureFPKM<-cbind(fCountsList$annotation[,1], fpkm)
 colnames(featureFPKM) <- c("GeneID",outFpkmFilePath)
