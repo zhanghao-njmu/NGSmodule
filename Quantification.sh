@@ -9,7 +9,8 @@ trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(featureCounts)|(Rscript)"| awk 
 $Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
-for package in ${R_packages[@]};do
+for package in ${R_packages[@]};
+do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null
   if [ $? -ne 0 ];then
     echo -e "Cannot find the R package $package.\n"
@@ -19,6 +20,7 @@ for package in ${R_packages[@]};do
       echo -e "Please install it in the R environment using \"BiocManager::install('$package')\" "
     fi
     exit 1
+  fi
 done
 
 echo -e "########################## Quantification Parameters ###########################\n"
