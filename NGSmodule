@@ -95,13 +95,13 @@ DifferentialExpression()
 help()
 {
 cat << EOF
-  Desc: A flexible, automation and pragmatic workflow tool to efficiently process the NGS data in batches.
+  Desc: A flexible, modularization, automation, and pragmatic workflow tool to efficiently process the NGS data in batches.
   
   Author: ZhangHao
 
   Usage: 
   
-    NGSpipe <MODE> [-c <Config_file>]
+    NGSmodule <MODE> [-c <Config_file>]
   
   MODE options:
     
@@ -130,7 +130,7 @@ cat << EOF
 
     -h, --help                Show this message.
     
-    -v, --version             Show the version of NGSpipe.
+    -v, --version             Show the version of NGSmodule.
 
 EOF
 }
@@ -140,7 +140,7 @@ version_info()
 {
 cat <<- EOF
 ############################
-    NGSpipe vsersion: 0.0.1
+    NGSmodule vsersion: 0.0.1
 ############################
 EOF
 }
