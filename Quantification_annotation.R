@@ -12,7 +12,7 @@ species <- args[4]
 database <- args[5]
 
 ######### example 1 ############
-# work_dir <- "/data/lab/HeXi/Rpl39l/RNC-seq/NGSpipe_work/"
+# work_dir <- "/data/lab/HeXi/Rpl39l/RNC-seq/NGSmodule_work/"
 # gtfFile <- "/data/database/iGenomes/mouse/Mus_musculus/Ensembl/GRCm38/Annotation/Genes/genes.gtf"
 # aligner <- "hisat2"
 # species <- "mouse"

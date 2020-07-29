@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-work_dir=$maindir/NGSpipe_work/
+work_dir=$maindir/NGSmodule_work/
 if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]];then
-  echo -e "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSpipe PrepareWorkDir -c <Config_file>' first!"
+  echo -e "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!"
   exit 1
 fi
 ################################################################################################################

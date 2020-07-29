@@ -19,8 +19,8 @@ echo -e "#######################################################################
 echo -e "****************** Start postQuantificationQC ******************\n"
 SECONDS=0
 
-mkdir -p $maindir/NGSpipe_analysis/Quantification/postQuantificationQC 
-cd $maindir/NGSpipe_analysis/Quantification/postQuantificationQC
+mkdir -p $maindir/NGSmodule_analysis/Quantification/postQuantificationQC 
+cd $maindir/NGSmodule_analysis/Quantification/postQuantificationQC
 
 $Rscript $1 $maindir $Aligner $SampleInfoFile
 

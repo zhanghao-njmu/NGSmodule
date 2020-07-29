@@ -17,10 +17,10 @@ echo -e "#######################################################################
 echo -e "****************** Start DifferentialExpression analysis ******************\n"
 SECONDS=0
 
-mkdir -p $maindir/NGSpipe_analysis/DifferentialExpression/DGEs_data 
-mkdir -p $maindir/NGSpipe_analysis/DifferentialExpression/DGEs_plot  
-mkdir -p $maindir/NGSpipe_analysis/DifferentialExpression/DGEs_rds
-cd $maindir/NGSpipe_analysis/DifferentialExpression
+mkdir -p $maindir/NGSmodule_analysis/DifferentialExpression/DGEs_data 
+mkdir -p $maindir/NGSmodule_analysis/DifferentialExpression/DGEs_plot  
+mkdir -p $maindir/NGSmodule_analysis/DifferentialExpression/DGEs_rds
+cd $maindir/NGSmodule_analysis/DifferentialExpression
 
 $Rscript $1 $maindir $Aligner $SampleInfoFile $group_compare $max_padj $min_fc $min_count $DGEs_multi_compare $1
 

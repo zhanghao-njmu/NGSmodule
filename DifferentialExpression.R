@@ -17,7 +17,7 @@ DGEs_multi_compare <- as.numeric(args[8])
 script_path <- as.character(args[9])
 
 ######## example 1 ############
-# setwd("/data/lab/ZhangHao/tmp/NGSpipe_analysis/DifferentialExpression/")
+# setwd("/data/lab/ZhangHao/tmp/NGSmodule_analysis/DifferentialExpression/")
 # maindir <- "/data/lab/ZhangHao/tmp/"
 # aligner <- "hisat2"
 # SampleInfoFile <- "/data/lab/ZhangHao/tmp/temp_20200413205117.Sample_info.csv"
@@ -26,11 +26,11 @@ script_path <- as.character(args[9])
 # min_fc <- 2
 # min_count <- 10
 # DGEs_multi_compare <- 1
-# script_path <- "/data/lab/ZhangHao/NGSpipe/DifferentialExpression.R"
+# script_path <- "/data/lab/ZhangHao/NGSmodule/DifferentialExpression.R"
 ##############################
 
 ######### example 2 ############
-# setwd("/data/lab/HeXi/Rpl39l/RNC-seq/NGSpipe_analysis/DifferentialExpression/")
+# setwd("/data/lab/HeXi/Rpl39l/RNC-seq/NGSmodule_analysis/DifferentialExpression/")
 # maindir <- "/data/lab/HeXi/Rpl39l/RNC-seq/"
 # aligner <- "hisat2"
 # SampleInfoFile <- "/data/lab/HeXi/Rpl39l/RNC-seq/Sample_info.csv"
@@ -39,7 +39,7 @@ script_path <- as.character(args[9])
 # min_fc <- 2
 # min_count <- 10
 # DGEs_multi_compare <- 1
-# script_path <- "/data/lab/ZhangHao/NGSpipe/DifferentialExpression.R"
+# script_path <- "/data/lab/ZhangHao/NGSmodule/DifferentialExpression.R"
 ##############################
 
 ##### source plot function #####
@@ -49,10 +49,10 @@ source(paste0(script_dir,"/DifferentialExpression_function.R"))
 
 ##### Load data ######
 
-count_file <- paste0(maindir,"/NGSpipe_analysis/Quantification/Quantification.",aligner,".count.tab")
+count_file <- paste0(maindir,"/NGSmodule_analysis/Quantification/Quantification.",aligner,".count.tab")
 
 if (!file.exists(count_file)) {
-  print(paste0("Can not find count file: ",count_file,"\nPlease run NGSpipe Quantification first!\n"))
+  print(paste0("Can not find count file: ",count_file,"\nPlease run NGSmodule Quantification first!\n"))
   quit(status=1)
 }
 if (!file.exists(SampleInfoFile)) {
@@ -101,7 +101,7 @@ for (compare in comparison_list) {
   res_plot[[paste0("general_p1-",label)]] <- general_p1
   res_plot[[paste0("general_p2-",label)]] <- general_p2
   
-  wb <- createWorkbook(title="NGSpipe DifferentialExpression analysis")
+  wb <- createWorkbook(title="NGSmodule DifferentialExpression analysis")
   if (min(length(sample1),length(sample2))==1) {
     
     ##### edgeR #####

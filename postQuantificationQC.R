@@ -17,7 +17,7 @@ SampleInfoFile <- args[3]
 ################################
 
 ######### example 2 ############
-# setwd("/data/lab/HeXi/Rpl39l/RNC-seq/NGSpipe_analysis/Quantification/postQuantificationQC/")
+# setwd("/data/lab/HeXi/Rpl39l/RNC-seq/NGSmodule_analysis/Quantification/postQuantificationQC/")
 # maindir <- "/data/lab/HeXi/Rpl39l/RNC-seq/"
 # aligner <- "hisat2"
 # SampleInfoFile <- "/data/lab/HeXi/Rpl39l/RNC-seq/Sample_info.csv"
@@ -25,10 +25,10 @@ SampleInfoFile <- args[3]
 
 
 
-count_file <- paste0(maindir,"/NGSpipe_analysis/Quantification/Quantification.",aligner,".count.tab")
+count_file <- paste0(maindir,"/NGSmodule_analysis/Quantification/Quantification.",aligner,".count.tab")
 
 if (!file.exists(count_file)) {
-  print(paste0("Can not find count file: ",count_file,"\nPlease run NGSpipe Quantification first!\n"))
+  print(paste0("Can not find count file: ",count_file,"\nPlease run NGSmodule Quantification first!\n"))
   quit(status=1)
 }
 if (!file.exists(SampleInfoFile)) {
@@ -97,7 +97,7 @@ plot(hmap$rowDendrogram, main="Sample Pearson's Correlation Clustering")
 invisible(dev.off())
 
 
-##### main NGSpipe QC #####
+##### main NGSmodule QC #####
 setwd(QCpath)
 
 col_color <- if(length(unique(sample_info[,3]))<=5){

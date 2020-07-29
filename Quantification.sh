@@ -53,8 +53,8 @@ done
 wait
 
 echo -e "\nIntegrating and annotating the matrix....\n"
-mkdir -p $maindir/NGSpipe_analysis/Quantification
-cd $maindir/NGSpipe_analysis/Quantification
+mkdir -p $maindir/NGSmodule_analysis/Quantification
+cd $maindir/NGSmodule_analysis/Quantification
 
 species_arr=('human' 'mouse' 'rhesus' 'fly')
 if [[ "${species_arr[@]}" =~ "${Species}" ]]; then
@@ -65,7 +65,7 @@ else
 fi
 
 $Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log 
-echo -e "Integrated quantification matrix: $maindir/NGSpipe_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
+echo -e "Integrated quantification matrix: $maindir/NGSmodule_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
