@@ -24,7 +24,6 @@ SampleInfoFile <- args[3]
 ################################
 
 
-
 count_file <- paste0(maindir,"/NGSmodule_analysis/Quantification/Quantification.",aligner,".count.tab")
 
 if (!file.exists(count_file)) {
@@ -46,7 +45,13 @@ colnames(count_matrix) <- gsub(x=colnames(count_matrix),pattern = paste0(".",ali
 count_matrix <- count_matrix[,sample_info[,2]]
 count_matrix <- count_matrix[rowSums(count_matrix)>0,]
 
-logcpm <- cpm(count_matrix,log = TRUE,prior.count = 2)
+logcpm_file <- paste0(maindir,"/NGSmodule_analysis/Quantification/Quantification.",aligner,".log2CPM.tab")
+if (!file.exists(logcpm_file)) {
+  cat(paste0("Can not find logcpm_file: ",logcpm_file,"\nWill do transformation on the count_matrix into log2CPM!\n"))
+  logcpm <- cpm(count_matrix,log = TRUE,prior.count = 2)
+}else{
+  logcpm <- read.table(file = logcpm_file, header = T,sep = "\t",row.names = 1,stringsAsFactors = F,check.names=F)
+}
 logcpm_scale <- t(scale(t(logcpm)))
 
 start<- which(str_detect(colnames(count_matrix_raw),">>"))[1]
@@ -74,8 +79,6 @@ if (ncol(df)>=3) {
                                quote=FALSE, row.names=T, col.names=NA, append=TRUE))
 }
 
-logcpm <- cpm(df, prior.count=2, log=TRUE)
-
 # Calculate the Pearsons correlation between samples
 # Plot a heatmap of correlations
 pdf('edgeR_log2CPM_sample_correlation_heatmap.pdf')
@@ -99,15 +102,27 @@ invisible(dev.off())
 
 ##### main NGSmodule QC #####
 setwd(QCpath)
-
-col_color <- if(length(unique(sample_info[,3]))<=5){
-  nord("aurora")[1:length(unique(sample_info[,3]))]
-} else{
-  colorRampPalette(pal_nejm("default")(length(unique(sample_info[,3]))))(length(unique(sample_info[,3])))
+group_num <- length(unique(sample_info[,3]))
+if(group_num<=5){
+  col_color <- nord("mountain_forms")[1:group_num]
+} 
+if(group_num>5 & group_num<=8){
+  col_color <- pal_nejm("default")(group_num)
 }
+if(group_num>8 & group_num<=16){
+  col_color <- pal_simpsons("springfield")(group_num)
+}
+if(group_num>16 & group_num<=20){
+  col_color <- pal_d3("category20")(group_num)
+}
+if(group_num>20 & group_num<=51){
+  col_color <- pal_igv("default")(group_num)
+}
+
 names(col_color)<- unique(sample_info[,3])
 
 plot_list <- list()
+
 ##### Dendrogram #####
 cat(">>> Hierarchical Clustering\n")
 hc<- hclust(dist(t(logcpm_scale),method = "euclidean")) ## sqrt(sum((x_i - y_i)^2)). Large expressed genes -large vars. 
