@@ -5,7 +5,7 @@ SampleGrepPattern=""
 total_threads=380
 ntask_per_run="ALL"
 
-aligner="bwa"
+Aligner="bwa"
 #gsnap_index="/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/gmap/genome_rmchrM.fa"
 #gem_index="/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome_rmchrM.fa.gem"
 #baseqCNV_config="/home/reprod/bin/singlecellseqcnv-code/baseqCNV/baseqCNV.ini"
@@ -53,7 +53,7 @@ for sample in ${arr[@]};do
   read -u1000
   {
   dir=$data_dir/$sample
-  mkdir -p $dir/$aligner; cd $dir/$aligner
+  mkdir -p $dir/$Aligner; cd $dir/$Aligner
   echo "===== $sample ====="
 
 
@@ -62,10 +62,10 @@ for sample in ${arr[@]};do
 mkdir -p HMMcopy
 cd HMMcopy
 ####Use readCounter in HMMcopy to generate a wiggle file for each BAM file.
-#readCounter -w 1000000 ../${sample}.${aligner}.rmdup.bam >${sample}.${aligner}.1M_input.wig
+#readCounter -w 1000000 ../${sample}.${Aligner}.rmdup.bam >${sample}.${Aligner}.1M_input.wig
 eval "$(conda shell.bash hook)"
 conda activate HmmCopy
-run_hmmcopy.r 0.995 ${sample}.${aligner}.1M_input.wig "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_1M.gc.wig" "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_40mer_1M.map.wig" 1 ${sample}.${aligner}.HMMcopy
+run_hmmcopy.r 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_1M.gc.wig" "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_40mer_1M.map.wig" 1 ${sample}.${Aligner}.HMMcopy
 conda deactivate
 
 ##### 

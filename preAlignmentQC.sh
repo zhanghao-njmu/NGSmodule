@@ -71,7 +71,7 @@ do
       fq1=$dir/${sample}.fq
       
       mkdir -p $dir/PreAlignmentQC/fastq_screen
-      fastq_screen  --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
+      fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
       echo "+++++ $sample: FastQ_Screen done +++++"
       
@@ -131,7 +131,7 @@ do
       fq2=$dir/${sample}_2_trim.fq
       
       mkdir -p $dir/PreAlignmentQC/fastq_screen
-      fastq_screen  --force --aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
+      fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
       echo "+++++ $sample: FastQ_Screen done +++++"
       

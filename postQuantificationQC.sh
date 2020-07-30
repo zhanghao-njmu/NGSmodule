@@ -11,7 +11,7 @@ for package in ${R_packages[@]};do
 done
 
 echo -e "######################## postQuantificationQC Parameters #######################\n"
-echo -e "  Aligner: ${aligner}\n"
+echo -e "  Aligner: ${Aligner}\n"
 echo -e "  SampleInfoFile: ${SampleInfoFile}\n"
 echo -e "################################################################################\n"
 
