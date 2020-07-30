@@ -24,10 +24,10 @@ SampleInfoFile <- args[3]
 ################################
 
 ######### example 3 ############
-setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
-maindir <- "/data/database/SRR_collection/human/early_embyro"
-aligner <- "hisat2"
-SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
+# maindir <- "/data/database/SRR_collection/human/early_embyro"
+# aligner <- "hisat2"
+# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
 ################################
 
 
