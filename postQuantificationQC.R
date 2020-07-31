@@ -24,10 +24,10 @@ SampleInfoFile <- args[3]
 ################################
 
 ######### example 3 ############
-setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
-maindir <- "/data/database/SRR_collection/human/early_embyro"
-aligner <- "hisat2"
-SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
+# maindir <- "/data/database/SRR_collection/human/early_embyro"
+# aligner <- "hisat2"
+# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
 ################################
 
 
@@ -153,7 +153,7 @@ if (length(na.omit(sample_info[["BatchID"]])) == nrow(sample_info)) {
     scale_fill_manual(values = batch_color,name="Group")+
     theme_void()
   p <- p2 %>% insert_top(p1,height = 8)
-  plot_list[["Hierarchical_Clustering_colored_by_batch_tmp"]] <- p
+  plot_list[["newpage"]] <- ggplot()
   plot_list[["Hierarchical_Clustering_colored_by_batch"]] <- p
 }
 
