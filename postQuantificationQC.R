@@ -24,10 +24,10 @@ SampleInfoFile <- args[3]
 ################################
 
 ######### example 3 ############
-# setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
-# maindir <- "/data/database/SRR_collection/human/early_embyro"
-# aligner <- "hisat2"
-# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
+maindir <- "/data/database/SRR_collection/human/early_embyro"
+aligner <- "hisat2"
+SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
 ################################
 
 
@@ -153,6 +153,7 @@ if (length(na.omit(sample_info[["BatchID"]])) == nrow(sample_info)) {
     scale_fill_manual(values = batch_color,name="Group")+
     theme_void()
   p <- p2 %>% insert_top(p1,height = 8)
+  plot_list[["Hierarchical_Clustering_colored_by_batch_tmp"]] <- p
   plot_list[["Hierarchical_Clustering_colored_by_batch"]] <- p
 }
 
@@ -339,8 +340,6 @@ if(nrow(sample_info)<=30){
 }
 
 plot_list[["PCA"]] <- p
-# ggsave(p3,filename = "PCA_scatter.pdf",width = 5,height = 5)
-
 
 
 ##### PCA top features #####
@@ -372,7 +371,8 @@ ht_legend <- list(title=paste0("Z-score"),
 
 ht1<-Heatmap(mat_PC1, column_title="PC1 top features",
              col = colorRamp2(seq(-max(abs(mat_PC1)), max(abs(mat_PC1)), length = 100), color_palette),
-             show_row_names = ifelse(nrow(sample_info)>=30,FALSE,TRUE),
+             show_row_names = FALSE,
+             show_column_names = ifelse(nrow(sample_info)>=30,FALSE,TRUE),
              cluster_rows = F,
              column_title_gp = gpar(fontsize=10),
              column_names_gp = gpar(fontsize=8),
@@ -382,7 +382,8 @@ ht1<-Heatmap(mat_PC1, column_title="PC1 top features",
 
 ht2<-Heatmap(mat_PC2,column_title="PC2 top features",
              col = colorRamp2(seq(-max(abs(mat_PC2)), max(abs(mat_PC2)), length = 100), color_palette),
-             show_row_names = ifelse(nrow(sample_info)>=30,FALSE,TRUE),
+             show_row_names = FALSE,
+             show_column_names = ifelse(nrow(sample_info)>=30,FALSE,TRUE),
              cluster_rows = F,
              column_title_gp = gpar(fontsize=10),
              column_names_gp = gpar(fontsize=8),
@@ -395,8 +396,6 @@ grob <- grid.grabExpr(ComplexHeatmap::draw(ht1+ht2,heatmap_legend_side = "top"))
 p <- as_ggplot(grob)
 
 plot_list[["PCA_Heatmap"]] <- p
-
-# ggsave(p,filename = "PCA_Heatmap.pdf",width = max(ncol(quant_matrix_log2_scale)*0.3,3),height = 7)
 
 
 ##### enrichment analysis for important genes in PCA #####
