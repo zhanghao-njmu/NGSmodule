@@ -1,23 +1,23 @@
 #pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
 
-root_dir=/data/database/SRR_collection/human/early_embyro/rawdata/
-SRPfile=$(find $root_dir -maxdepth 1 -name "SRP*.tsv")
+rawdata_dir=/data/database/SRR_collection/human/germ_cell_specification/rawdata/
+SRPfile=$(find $rawdata_dir -maxdepth 1 -name "meta.csv")
+IFS=','
 
 for file in ${SRPfile[@]};
 do
-  srp=${file##*/}
-  srp=${srp%%.tsv}
-  srr_list=($(awk '{print $2}' $file))
-  
-  for srr in ${srr_list[@]}
+  while IFS=$IFS read line
   do
+    srp=$(awk -F "$IFS" '{print $1}' <<<"$line")
+    srr=$(awk -F "$IFS" '{print $2}' <<<"$line")
+    
     if [[ $srr != "run_accession" ]];then
       {
-      cd $root_dir
-      prefetch --output-directory ${srp} --max-size 10000000000000 {}
-      cd $root_dir/$srp/$srr
+      echo $srp $srr
+      prefetch --output-directory ${srp} --max-size 1000000000000 {}
+      cd $rawdata_dir/$srp/$srr
       rm -rf ./fasterq.tmp*
-      fasterq-dump -f --split-3 ${srr}.sra -e $threads -o $srr
+      fasterq-dump -f --split-3 ${srr}.sra -o $srr
       if [ -e ${srr} ]; then
         mv ${srr} ${srr}.fastq
       fi
@@ -31,11 +31,10 @@ do
       else
         echo "$srp/$srr  single-end"
       fi
-      }&
+      }
     fi
-  done
+  done < $file
 done
 
-wait
-
-echo "Done"
+wait 
+echo "done"
