@@ -31,7 +31,7 @@ do
       else
         echo "$srp/$srr  single-end"
       fi
-      }
+      }&
     fi
   done < $file
 done
