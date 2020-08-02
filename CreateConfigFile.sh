@@ -28,9 +28,9 @@ SampleSufixPattern="(_BKDL.*_\d\.fastq\.gz|_BKDL.*\.fastq\.gz)"    ## SE must en
 
 ############# preAlignmentQC Paramaters ###################################################################
 ### Fastp ###
-trim_front1=10                 ## trimming how many bases in front for read1.6-10 bp for RNAseq and WGBS.
+trim_front1=1                  ## trimming how many bases in front for read1. Suggest 1-4 bp for RNAseq and 10 bp for WGBS.
 trim_tail1=0                   ## trimming how many bases in tail for read1.
-trim_front2=10                 ## trimming how many bases in front for read2. Only valid when layout=PE.
+trim_front2=1                  ## trimming how many bases in front for read2. Suggest 1-4 bp for RNAseq and 10 bp for WGBS. Only valid when layout=PE.
 trim_tail2=0                   ## trimming how many bases in tail for read2.
 qualified_quality_phred=20     ## base quaility over this threshold value will be qualified.
 unqualified_percent_limit=50   ## how many percents of bases are allowed to be unqualified. Otherwise the reads will be dropped.
