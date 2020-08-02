@@ -47,8 +47,9 @@ do
   echo "+++++ $sample +++++"
   layout=${Layout_dict[$sample]}
 
-  if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]];then
+  if [[ "$SequenceType" == "rna" ]] && [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]]; then
     echo -e "The last log file exist: $dir/PreAlignmentQC/sortmerna/sortmerna.log. Sample: ${sample} skipped."
+    
   else
     if [[ $layout == "SE" ]]; then
       fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
