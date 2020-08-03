@@ -9,7 +9,6 @@
 CreateConfigFile()
 {
   shell_folder=$(dirname $(readlink -f "$0"))
-  source $1
   source $shell_folder/CreateConfigFile.sh
 }
 
