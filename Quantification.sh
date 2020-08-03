@@ -23,6 +23,11 @@ do
   fi
 done
 
+if [[ ! -f $gtf ]];then
+  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
 echo -e "########################## Quantification Parameters ###########################\n"
 echo -e "  featurecounts_threads: ${threads_featurecounts}\n  Strand_Specific: ${strandspecific} (0=unstranded,1=stranded,2=reversely stranded)\n"
 echo -e "  GTF_File: ${gtf}\n "

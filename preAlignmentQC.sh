@@ -28,6 +28,11 @@ if [[ ! -f $FastqScreen_config ]];then
   exit 1
 fi
 
+if [[ ! -f $gtf ]];then
+  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
 echo -e "########################### preAlignmentQC Parameters ##########################\n"
 echo -e "Fastp\n  trim_front1: ${trim_front1}\n  trim_tail1: ${trim_tail1}\n  trim_front2: ${trim_front2}\n  trim_tail2: ${trim_tail2}\n  qualified_quality_phred: ${qualified_quality_phred}\n  unqualified_percent_limit: ${unqualified_percent_limit}\n  read_cutting: ${read_cutting}\n  cut_window_size: ${cut_window_size}\n  cut_mean_quality: ${cut_mean_quality}\n  length_required: ${length_required}\n"
 echo -e "FastqScreen\n  FastqScreen_config: ${FastqScreen_config}\n"
@@ -41,21 +46,28 @@ for sample in ${arr[@]}
 do
   read -u1000
   {
-  dir=$work_dir/$sample
-	cd $dir
-  mkdir -p $dir/PreAlignmentQC
-  echo "+++++ $sample +++++"
-  Layout=${Layout_dict[$sample]}
+  dir=${work_dir}/${sample}
+	cd ${dir}
+  mkdir -p ${dir}/PreAlignmentQC
+  echo "+++++ ${sample} +++++"
+  Layout=${Layout_dict[${sample}]}
 
   if [[ "$SequenceType" == "rna" ]] && [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]]; then
     echo -e "The last log file exist: $dir/PreAlignmentQC/sortmerna/sortmerna.log. Sample: ${sample} skipped."
     
   else
     if [[ $Layout == "SE" ]]; then
-      fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
+
+      if [[ (( $(ls ${dir}/run*_${sample}.fq.gz|wc -l) == 1 )) ]];then
+        mv ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
+      else
+        cat ${dir}/run*_${sample}.fq.gz > ${dir}/${sample}.fq.gz
+      fi
+      fq1=${dir}/${sample}.fq.gz
+
       mkdir -p $dir/PreAlignmentQC/fastqc
       fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-      echo "+++++ $sample: FastQC done +++++"
+      echo "+++++ ${sample}: FastQC done +++++"
       
       mkdir -p $dir/PreAlignmentQC/fastp
       fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
@@ -67,14 +79,14 @@ do
             --out1 ${sample}.fq  \
             -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
             -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
-      echo "+++++ $sample: Fastp done +++++"
+      echo "+++++ ${sample}: Fastp done +++++"
 
       fq1=$dir/${sample}.fq
       
       mkdir -p $dir/PreAlignmentQC/fastq_screen
       fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-      echo "+++++ $sample: FastQ_Screen done +++++"
+      echo "+++++ ${sample}: FastQ_Screen done +++++"
       
       if [[ "$SequenceType" == "rna" ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -105,9 +117,17 @@ do
       fi
       
     elif [[ $Layout == "PE" ]]; then
-      fq1=$dir/$(ls |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
-      fq2=$dir/$(ls |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
-      
+
+      if [[ (( $(ls ${dir}/run*_${sample}_1.fq.gz|wc -l) == 1 )) ]];then
+        mv ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
+        mv ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
+      else
+        cat ${dir}/run*_${sample}_1.fq.gz > ${dir}/${sample}_1.fq.gz
+        cat ${dir}/run*_${sample}_2.fq.gz > ${dir}/${sample}_2.fq.gz
+      fi
+      fq1=${dir}/${sample}_1.fq.gz
+      fq2=${dir}/${sample}_2.fq.gz
+
       ##To verify that reads appear to be correctly paired 
       reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t >/dev/null 2>&1
       if [[ $? -ne 0 ]];then
@@ -123,7 +143,7 @@ do
       
       mkdir -p $dir/PreAlignmentQC/fastqc
       fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-      echo "+++++ $sample: FastQC done +++++"
+      echo "+++++ ${sample}: FastQC done +++++"
       
       mkdir -p $dir/PreAlignmentQC/fastp
       fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
@@ -135,7 +155,7 @@ do
             --out1 ${sample}_1_trim.fq --out2 ${sample}_2_trim.fq \
             -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
             -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
-      echo "+++++ $sample: Fastp done +++++"
+      echo "+++++ ${sample}: Fastp done +++++"
       
       fq1=$dir/${sample}_1_trim.fq
       fq2=$dir/${sample}_2_trim.fq
@@ -143,7 +163,7 @@ do
       mkdir -p $dir/PreAlignmentQC/fastq_screen
       fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
                     --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-      echo "+++++ $sample: FastQ_Screen done +++++"
+      echo "+++++ ${sample}: FastQ_Screen done +++++"
       
       if [[ "$SequenceType" == "rna" ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -165,7 +185,7 @@ do
           rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp 
           pigz -p $threads -f $fq1 $fq2 
           mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
-          echo "+++++ $sample: SortMeRNA done +++++"
+          echo "+++++ ${sample}: SortMeRNA done +++++"
         else
           echo "+++++ ERROR! ${sample}: SortMeRNA corrupted !!! +++++"
         fi

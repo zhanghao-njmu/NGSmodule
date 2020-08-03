@@ -78,27 +78,20 @@ if [[ -d $work_dir ]];then
   else
     threads_featurecounts=$threads
   fi
+
+  ###### fifo ######
+  tempfifo=$$.fifo
+  trap "exec 1000>&-;exec 1000<&-;exit 0" 2
+  mkfifo $tempfifo;exec 1000<>$tempfifo;rm -rf $tempfifo
+  for ((i=1; i<=$ntask_per_run; i++));do
+      echo >&1000
+  done
+
 else
   total_task="Waiting for the preparation of the workdir"
   ntask_per_run="Waiting for the preparation of the workdir"
   threads="1"
 fi
-
-if [[ ! -f $genome ]];then
-  echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
-  exit 1
-elif [[ ! -f $gtf ]];then
-  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
-  exit 1
-fi
-
-###### fifo ######
-tempfifo=$$.fifo
-trap "exec 1000>&-;exec 1000<&-;exit 0" 2
-mkfifo $tempfifo;exec 1000<>$tempfifo;rm -rf $tempfifo
-for ((i=1; i<=$ntask_per_run; i++));do
-    echo >&1000
-done
 
 ###### processbar <current> <total> ###### 
 processbar() {  

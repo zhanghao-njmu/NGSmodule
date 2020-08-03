@@ -14,6 +14,14 @@ sambamba --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the comman
 picard &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command picard.\n";exit 1; }
 bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User can install mosdepth by 'conda install -c bioconda bamutil'.\n";exit 1; }
 
+if [[ ! -f $genome ]];then
+  echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  exit 1
+elif [[ ! -f $gtf ]];then
+  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
 eval "index=\${${Aligner}_index}"
 echo -e "############################# Alignment Parameters #############################\n"
 echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n  iGenomes_Dir: ${iGenomes_Dir}\n  Species: ${Species}(${Species_arr[$Species]})\n  Database: ${Database}\n  Genome_build: ${Genome_build}\n  Genome_name: ${Genome_name}\n"
@@ -22,11 +30,6 @@ echo -e "#######################################################################
 
 echo -e "****************** Start Alignment ******************\n"
 SECONDS=0
-
-if [[ ! -d $work_dir ]];then
-  echo -e "Cannot find the workdir: ${work_dir}\n"
-  exit 1
-fi
 
 for sample in ${arr[@]};do
   read -u1000
