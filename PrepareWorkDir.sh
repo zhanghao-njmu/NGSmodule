@@ -60,6 +60,7 @@ for file in ${arr[@]};do
   if [[ -f ${work_dir}/$SampleID/${fq} ]];then
     num=$(ls ${work_dir}/$SampleID |wc -l)
     ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
+    echo "${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}"
   fi
 
 done
