@@ -57,10 +57,11 @@ for file in ${arr[@]};do
 
   echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
   mkdir -p ${work_dir}/${SampleID}
-  if [[ -f ${work_dir}/$SampleID/${fq} ]];then
-    num=$(ls ${work_dir}/$SampleID |wc -l)
+  if [[ ! -f ${work_dir}/$SampleID/${fq} ]];then
+    ln -s $file ${work_dir}/$SampleID/${fq}
+  else
+    num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} |wc -l)
     ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
-    echo "${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}"
   fi
 
 done
