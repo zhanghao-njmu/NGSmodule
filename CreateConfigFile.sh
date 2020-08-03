@@ -10,7 +10,7 @@ SequenceType="rna"                            ## rna,dna,BSdna
 total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
-SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleName under the work dir.
+SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the work dir.
 
 
 ############# Rscript path ################################################################################
@@ -18,19 +18,21 @@ Rscript="/usr/local/bin/Rscript"
 
 
 ############# PrepareWorkDir Paramaters ###################################################################
-### raw_file_name= SampleIdPattern  + SampleSufixPattern
-### Example: R19051060_BKDL190818861-1a_1.fq.gz and R19051060_BKDL190818861-1a_2.fq.gz
-### SampleIdPattern="R.*-1a"
-### SampleSufixPattern="_BKDL.*_\d\.fq\.gz"
-SampleIdPattern="R.*"                                              ## This argument must be same pattern with the SampleID column in the SampleInfoFile.
-SampleSufixPattern="(_BKDL.*_\d\.fastq\.gz|_BKDL.*\.fastq\.gz)"    ## SE must end with fq.gz or .fastq.gz. PE must end with _1.fastq.gz,_1.fq.gz,_R1.fastq.gz,_R1.fq.gz
+### raw_run_file_name= RunIdPattern  + SufixPattern
+### Example: Sample1: R19051060_1.fq.gz, R19051060_2.fq.gz; Sample2: R19051061.fq.gz
+### RunIdPattern=".*"
+### SE_SufixPattern="\.fastq\.gz"; R1_SufixPattern="_1\.fastq\.gz"; R2_SufixPattern="_2\.fastq\.gz"
+RunIdPattern=".*"                      ## This pattern must could be matched with the RunId of the SampleInfoFile after excluding Sufix.
+SE_SufixPattern="\.fastq\.gz"
+R1_SufixPattern="_1\.fastq\.gz"   
+R2_SufixPattern="_2\.fastq\.gz"
 
 
 ############# preAlignmentQC Paramaters ###################################################################
 ### Fastp ###
-trim_front1=1                  ## trimming how many bases in front for read1. Suggest 1-4 bp for RNAseq and 10 bp for WGBS.
+trim_front1=1                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
 trim_tail1=0                   ## trimming how many bases in tail for read1.
-trim_front2=1                  ## trimming how many bases in front for read2. Suggest 1-4 bp for RNAseq and 10 bp for WGBS. Only valid when layout=PE.
+trim_front2=1                  ## trimming how many bases in front for read2. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS. Only valid when Layout=PE.
 trim_tail2=0                   ## trimming how many bases in tail for read2.
 qualified_quality_phred=20     ## base quaility over this threshold value will be qualified.
 unqualified_percent_limit=50   ## how many percents of bases are allowed to be unqualified. Otherwise the reads will be dropped.

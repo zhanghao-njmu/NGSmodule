@@ -34,9 +34,9 @@ for sample in ${arr[@]};do
   dir=$work_dir/$sample
   mkdir -p $dir/$Aligner; cd $dir/$Aligner
   echo "+++++ Alignment: $sample +++++"
-  layout=${Layout_dict[$sample]}
+  Layout=${Layout_dict[$sample]}
   
-  if [[ $layout == "SE" ]]; then
+  if [[ $Layout == "SE" ]]; then
     fq1=$dir/${sample}_trim.fq.gz
     if [[ "$Aligner" = "bwa" ]];then
       bwa mem -t $threads -M $index ${fq1} | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
@@ -69,7 +69,7 @@ for sample in ${arr[@]};do
       for file in ./*_trim*; do mv $file ${file//_trim/};done
     fi
     
-  elif [[ $layout == "PE" ]]; then
+  elif [[ $Layout == "PE" ]]; then
     fq1=$dir/${sample}_1_trim.fq.gz
     fq2=$dir/${sample}_2_trim.fq.gz
     if [[ "$Aligner" == "bwa" ]];then

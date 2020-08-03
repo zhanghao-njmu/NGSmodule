@@ -8,45 +8,59 @@ if [[ -d $work_dir ]];then
   mkdir ${work_dir}
 fi
 
-arr=(` find $rawdata_dir -type f  | grep -P "${SampleIdPattern}${SampleSufixPattern}" `)
+arr=(` find $rawdata_dir -type f  | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})" `)
 if [[ ${#arr} == 0 ]];then
-  echo -e "Cannot find the rawdata.\nPlease check the SampleIdPattern and SampleSufixPattern in the ConfigFile!\n"
+  echo -e "Error! Cannot find the rawdata!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
+  exit 1
 fi
 
 for file in ${arr[@]};do
   file_sim=${file##*/}
-  SampleSufix=(`echo "${file_sim}" | grep -oP "$SampleSufixPattern"`)
-  sampleid=${file_sim%%$SampleSufix}
-
-  if [[ "${#Sample_dict[@]}" != 0 ]];then
-    samplename=${Sample_dict[$sampleid]}
-    layout=${Layout_dict[$samplename]}    
-    if [[ $samplename == "" ]];then
-      samplename=$sampleid
-      echo -e "Warning! Cannot find the SampleName for SampleID: $sampleid. Please check the SampleInfoFile."
-    fi
+  SE_Sufix=(`echo "${file_sim}" | grep -oP "$SE_SufixPattern"`)
+  R1_Sufix=(`echo "${file_sim}" | grep -oP "$R1_SufixPattern"`)
+  R2_Sufix=(`echo "${file_sim}" | grep -oP "$R2_SufixPattern"`)
+  
+  if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]];then
+    for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix;do
+      if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]];then
+        Sufix=$map_Sufix
+        RunId=${file_sim%%$map_Sufix}
+        SampleID=${Sample_dict[$RunId]}
+        Layout=${Layout_dict[$SampleID]}
+        if [[ $SampleID == "" ]];then
+          SampleID=$RunId
+          echo -e "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
+        fi
+        continue;
+      fi
+    done
   else
-    echo -e "Error! Cannot find the layout info. Please check the SampleInfoFile."
+    echo -e "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
     exit 1
   fi
   
-  fqU=$(echo "${file_sim}"  |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
-  fq1=$(echo "${file_sim}"  |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
-  fq2=$(echo "${file_sim}"  |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
-  
-  if [[ $fqU ]]  && [[ "${layout}" == "SE" ]];then
-    fq=${samplename}.fq.gz
-  elif [[ $fq1 ]] && [[ "${layout}" == "PE" ]];then
-    fq=${samplename}_1.fq.gz
-  elif [[ $fq2 ]] && [[ "${layout}" == "PE" ]];then
-    fq=${samplename}_2.fq.gz
-  else
-    echo -e "Error! Cannot get the layout information of the file: ${file_sim}"
+  if [[ $Sufix == $SE_Sufix ]];then
+    fq=run1_${SampleID}.fq.gz
+    fq_Layout="SE"
+  elif [[ $Sufix == $R1_Sufix ]];then
+    fq=run1_${SampleID}_1.fq.gz
+    fq_Layout="PE"
+  elif [[ $Sufix == $R2_Sufix ]];then
+    fq=run1_${SampleID}_2.fq.gz
+    fq_Layout="PE"
   fi
 
-  echo "File: ${file_sim}  SampleID: ${sampleid}  SampleName: ${samplename}"
-  mkdir -p ${work_dir}/${samplename}
-  ln -s $file ${work_dir}/$samplename/${fq}
+  if [[ $Layout != $fq_Layout ]];then
+    echo -e "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
+    exit 1
+  fi
+
+  echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
+  mkdir -p ${work_dir}/${SampleID}
+  if [[ -f ${work_dir}/$SampleID/${fq} ]];then
+    num=$(ls ${work_dir}/$SampleID |wc -l)
+    ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
+  fi
 
 done
 echo -e ""

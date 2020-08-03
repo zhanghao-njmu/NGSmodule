@@ -45,13 +45,13 @@ do
 	cd $dir
   mkdir -p $dir/PreAlignmentQC
   echo "+++++ $sample +++++"
-  layout=${Layout_dict[$sample]}
+  Layout=${Layout_dict[$sample]}
 
   if [[ "$SequenceType" == "rna" ]] && [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]]; then
     echo -e "The last log file exist: $dir/PreAlignmentQC/sortmerna/sortmerna.log. Sample: ${sample} skipped."
     
   else
-    if [[ $layout == "SE" ]]; then
+    if [[ $Layout == "SE" ]]; then
       fq1=$dir/$(ls |grep -P "(.fastq.gz)|(.fq.gz)" | grep -Pv "(_R\d.fastq.gz)|(_R\d.fq.gz)|(_trim.fq.gz)")
       mkdir -p $dir/PreAlignmentQC/fastqc
       fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
@@ -104,7 +104,7 @@ do
         pigz -p $threads -f $dir/${sample}_trim.fq
       fi
       
-    elif [[ $layout == "PE" ]]; then
+    elif [[ $Layout == "PE" ]]; then
       fq1=$dir/$(ls |grep -P "(_1.fastq.gz)|(_R1.fastq.gz)|(_1.fq.gz)|(_R1.fq.gz)" | grep -Pv "_trim.fq.gz")
       fq2=$dir/$(ls |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
       

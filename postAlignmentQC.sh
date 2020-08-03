@@ -37,7 +37,7 @@ for sample in ${arr[@]};do
   read -u1000
   {
   echo "+++++ $sample +++++"
-  layout=${Layout_dict[$sample]}
+  Layout=${Layout_dict[$sample]}
 
   dir=$work_dir/$sample
   if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
@@ -73,14 +73,14 @@ for sample in ${arr[@]};do
     mkdir -p $dir/$Aligner/postAlignmentQC/mosdepth; cd $dir/$Aligner/postAlignmentQC/mosdepth
     mosdepth -t $threads -n --fast-mode ${sample}.${Aligner} $bam &>mosdepth.log
     mkdir -p $dir/$Aligner/postAlignmentQC/dupRadar; cd $dir/$Aligner/postAlignmentQC/dupRadar
-    $Rscript $1 $bam $gtf $strandspecific $layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
+    $Rscript $1 $bam $gtf $strandspecific $Layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
   fi
   
 ##  mkdir -p $dir/$Aligner/Qualimap; cd $dir/$Aligner/Qualimap #### too slow!!!
 ##  unset DISPLAY
-##  if [[ $layout == "SE" && $SequenceType == "rna" ]];then
+##  if [[ $Layout == "SE" && $SequenceType == "rna" ]];then
 ##    qualimap rnaseq -bam $bam -gtf $gtf -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G  &
-##  elif [[ $layout == "PE" && $SequenceType == "rna" ]];then
+##  elif [[ $Layout == "PE" && $SequenceType == "rna" ]];then
 ##    qualimap rnaseq -bam $bam -gtf $gtf --paired -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G &
 ##  fi
 ##  wait

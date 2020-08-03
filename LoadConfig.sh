@@ -33,9 +33,9 @@ fi
 declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]];then
-  while IFS=',' read -r SampleID SampleName Group Layout Batch; do
-      Sample_dict[$SampleID]=$SampleName
-      Layout_dict[$SampleName]=$Layout
+  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+      Sample_dict[$RunID]=$SampleID
+      Layout_dict[$SampleID]=$Layout
   done < $SampleInfoFile
 else
   echo -e "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
