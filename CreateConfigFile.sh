@@ -2,6 +2,9 @@
 
 cat << EOF >$1
 #!/usr/bin/env bash
+############# Rscript path ################################################################################
+Rscript="/usr/local/bin/Rscript"
+
 
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"        ## Absolute path.
@@ -11,10 +14,6 @@ total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)               
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile=""                             ## Absolute path of a .csv file or leave with blank when there is no need to rename the sample.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the work dir.
-
-
-############# Rscript path ################################################################################
-Rscript="/usr/local/bin/Rscript"
 
 
 ############# PrepareWorkDir Paramaters ###################################################################
@@ -41,10 +40,8 @@ cut_window_size=4              ## the window size option shared by cut_front, cu
 cut_mean_quality=20            ## the mean quality requirement option shared by cut_front, cut_tail or cut_sliding. Range: 1~36.
 length_required=20             ## reads shorter than length_required will be discarded.
 
-
 ### FastqScreen ###
 FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
-
 
 ### SortmeRNA ###
 SortmeRNA_Dir="/data/database/SortmeRNA"       ## SortmeRNA_ref: the dir containing the reference sequence.
