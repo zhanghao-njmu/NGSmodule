@@ -109,8 +109,17 @@ do
       fq2=$dir/$(ls |grep -P "(_2.fastq.gz)|(_R2.fastq.gz)|(_2.fq.gz)|(_R2.fq.gz)" | grep -Pv "_trim.fq.gz")
       
       ##To verify that reads appear to be correctly paired 
-      reformat.sh in1=$fq1 in2=$fq2 vpair >/dev/null 2>&1 
-      [ $? -ne 0 ] && { echo -e "ERROR:$fq1 and $fq2 appear to have different numbers of reads!\n"; continue; }
+      reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t >/dev/null 2>&1
+      if [[ $? -ne 0 ]];then
+        echo -e "Warning: $fq1 and $fq2 pair-end check failed!\n"
+        if [[ $(zcat $fq1 |wc -l) == $(zcat $fq1 |wc -l) ]];then
+          echo -e "PASSED. $fq1 and $fq2 may only have non-paired read names.\n"
+          continue
+        else
+          echo -e "ERROR! $fq1 and $fq2 have different numbers of reads\n"
+          exit 1
+        fi
+      fi
       
       mkdir -p $dir/PreAlignmentQC/fastqc
       fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
@@ -158,7 +167,7 @@ do
           mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
           echo "+++++ $sample: SortMeRNA done +++++"
         else
-          echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
+          echo "+++++ ERROR! ${sample}: SortMeRNA corrupted !!! +++++"
         fi
       else
         pigz -p $threads -f $fq1 $fq2 
