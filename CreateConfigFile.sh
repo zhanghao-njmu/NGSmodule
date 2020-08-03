@@ -23,7 +23,7 @@ SampleGrepPattern=""                          ## Optional. Perl-compatible regex
 ### SE_SufixPattern="\.fastq\.gz"; R1_SufixPattern="_1\.fastq\.gz"; R2_SufixPattern="_2\.fastq\.gz"
 RunIdPattern=".*"                      ## This pattern must could be matched with the RunId of the SampleInfoFile after excluding Sufix.
 SE_SufixPattern="\.fastq\.gz"
-R1_SufixPattern="_1\.fastq\.gz"   
+R1_SufixPattern="_1\.fastq\.gz"
 R2_SufixPattern="_2\.fastq\.gz"
 
 
