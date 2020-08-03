@@ -49,7 +49,7 @@ FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_scree
 ### SortmeRNA ###
 SortmeRNA_Dir="/data/database/SortmeRNA"       ## SortmeRNA_ref: the dir containing the reference sequence.
 SortmeRNA_Type="rRNA"                          ## SortmeRNA_ref: rRNA,Mt_tRNA,Mt_rRNA
-SortmeRNA_Species="mouse"                      ## SortmeRNA_ref: human,mouse,machin,rhesus,fly
+SortmeRNA_Species="human"                      ## SortmeRNA_ref: human,mouse,machin,rhesus,fly
 SortmeRNA_DataVersion="EnsemblGenes98"         ## SortmeRNA_ref: version of sortmerna fetched sequence 
 
 SortmeRNA_ref_direct=""                        ## Optional. Directly specify the path of the SortmeRNA_ref sequence file. 
@@ -57,9 +57,9 @@ SortmeRNA_ref_direct=""                        ## Optional. Directly specify the
 
 ############# Alignment Paramaters ##########################################################################
 iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
-Species="mouse"                                ## human,mouse,machin,rhesus,fly
+Species="human"                                ## human,mouse,machin,rhesus,fly
 Database="Ensembl"                             ## Ensembl,NCBI,UCSC
-Genome_build="GRCm38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
+Genome_build="GRCh38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
 Genome_name="genome.fa"                        ## genome.fa,genome_main.fa
 Aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 
