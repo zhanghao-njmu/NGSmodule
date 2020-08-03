@@ -58,10 +58,12 @@ do
   else
     if [[ $Layout == "SE" ]]; then
 
-      if [[ (( $(ls ${dir}/run*_${sample}.fq.gz|wc -l) == 1 )) ]];then
-        mv ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
-      else
-        cat ${dir}/run*_${sample}.fq.gz > ${dir}/${sample}.fq.gz
+      if [[ ! -f ${dir}/${sample}.fq.gz ]];then
+        if [[ (( $(ls ${dir}/run*_${sample}.fq.gz|wc -l) == 1 )) ]];then
+          mv ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
+        else
+          cat ${dir}/run*_${sample}.fq.gz > ${dir}/${sample}.fq.gz
+        fi  
       fi
       fq1=${dir}/${sample}.fq.gz
 
@@ -118,12 +120,14 @@ do
       
     elif [[ $Layout == "PE" ]]; then
 
-      if [[ (( $(ls ${dir}/run*_${sample}_1.fq.gz|wc -l) == 1 )) ]];then
-        mv ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
-        mv ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
-      else
-        cat ${dir}/run*_${sample}_1.fq.gz > ${dir}/${sample}_1.fq.gz
-        cat ${dir}/run*_${sample}_2.fq.gz > ${dir}/${sample}_2.fq.gz
+      if [[ ! -f ${dir}/${sample}_1.fq.gz ]] && [[ ! -f ${dir}/${sample}_2.fq.gz ]];then
+        if [[ (( $(ls ${dir}/run*_${sample}_1.fq.gz|wc -l) == 1 )) ]];then
+          mv ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
+          mv ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
+        else
+          cat ${dir}/run*_${sample}_1.fq.gz > ${dir}/${sample}_1.fq.gz
+          cat ${dir}/run*_${sample}_2.fq.gz > ${dir}/${sample}_2.fq.gz
+        fi
       fi
       fq1=${dir}/${sample}_1.fq.gz
       fq2=${dir}/${sample}_2.fq.gz
