@@ -7,8 +7,8 @@ Rscript="/usr/local/bin/Rscript"
 
 
 ############# Global Paramaters ###########################################################################
-maindir="$(pwd)"        ## Absolute path.
-rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of dir containing the raw fastq.gz data.
+maindir="$(pwd)"        ## Absolute path of your project directory.
+rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw fastq.gz data.
 SequenceType="rna"                            ## rna,dna,BSdna
 total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
@@ -21,7 +21,7 @@ SampleGrepPattern=""                          ## Optional. Perl-compatible regex
 ### Example: Sample1: R19051060_1.fq.gz, R19051060_2.fq.gz; Sample2: R19051061.fq.gz
 ### RunIdPattern=".*"
 ### SE_SufixPattern="\.fastq\.gz"; R1_SufixPattern="_1\.fastq\.gz"; R2_SufixPattern="_2\.fastq\.gz"
-RunIdPattern=".*"                      ## This pattern must could be matched with the RunId of the SampleInfoFile after excluding Sufix.
+RunIdPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
 SE_SufixPattern="\.fastq\.gz"
 R1_SufixPattern="_1\.fastq\.gz"
 R2_SufixPattern="_2\.fastq\.gz"
