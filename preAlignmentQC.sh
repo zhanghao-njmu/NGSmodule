@@ -87,7 +87,7 @@ do
                   --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
     echo "+++++ ${sample}: FastQ_Screen done +++++"
     
-    if [[ "$SequenceType" == "rna" ]];then
+    if [[ $SequenceType == "rna" ]];then
       rm -rf $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
@@ -166,7 +166,7 @@ do
                   --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
     echo "+++++ ${sample}: FastQ_Screen done +++++"
     
-    if [[ "$SequenceType" == "rna" ]];then
+    if [[ $SequenceType == "rna" ]];then
       rm -rf $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
       mkdir -p $dir/PreAlignmentQC/sortmerna
