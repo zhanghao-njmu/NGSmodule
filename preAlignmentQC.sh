@@ -122,8 +122,8 @@ do
         mv ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
         mv ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
       else
-        cat ${dir}/run*_${sample}_1.fq.gz > ${dir}/${sample}_1.fq.gz
-        cat ${dir}/run*_${sample}_2.fq.gz > ${dir}/${sample}_2.fq.gz
+        ls ${dir}/run*_${sample}_1.fq.gz | sort | xargs cat > ${dir}/${sample}_1.fq.gz
+        ls ${dir}/run*_${sample}_2.fq.gz | sort | xargs cat > ${dir}/${sample}_2.fq.gz
       fi
     fi
     fq1=${dir}/${sample}_1.fq.gz
