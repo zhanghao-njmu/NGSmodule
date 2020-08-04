@@ -59,7 +59,7 @@ if [[ -d $work_dir ]];then
     echo "ERROR! ntask_per_run should be 'ALL' or an interger!"
     exit 1
   fi
-  threads=$((($total_threads+$ntask_per_run)/$ntask_per_run - 1 ))
+  threads=$((($total_threads+$ntask_per_run)/$ntask_per_run-1))
 
   if (( threads > 120 ));then
     threads=120
