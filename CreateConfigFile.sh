@@ -28,7 +28,7 @@ R2_SufixPattern="_2\.fastq\.gz"
 
 
 ############# preAlignmentQC Paramaters ###################################################################
-force_complete=FALSE            ## Whether to complete a preAlignmentQC workflow (TRUE) or skip some steps that completed (FALSE).
+force_complete=FALSE            ## Whether to run a complete preAlignmentQC workflow (TRUE) or skip some steps that completed (FALSE).
 
 ### Fastp ###
 trim_front1=1                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
