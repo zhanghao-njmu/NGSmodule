@@ -161,7 +161,7 @@ do
         if [[ $fq1_nlines == $fq2_nlines ]];then
           echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
         else
-          echo -e "ERROR! $fq1 and $fq2 have different numbers of reads.\n"
+          echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads.\n"
           continue
         fi
       fi
@@ -171,7 +171,7 @@ do
       if [[ $fq1_nlines == $fq2_nlines ]];then
         echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
       else
-        echo -e "ERROR! $fq1 and $fq2 have different numbers of reads.\n"
+        echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads.\n"
         continue
       fi
     fi
