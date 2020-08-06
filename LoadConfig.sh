@@ -10,7 +10,7 @@ fi
 declare -A Species_arr=( ["human"]="Homo_sapiens" ["mouse"]="Mus_musculus" ["machin"]="Macaca_fascicularis" ["rhesus"]="Macaca_mulatta" ["fly"]="Drosophila_melanogaster" )
 
 types=("rna" "dna" "BSdna")
-if [[ " ${types[@]} " != *" $SequenceType "* ]];then;
+if [[ " ${types[@]} " != *" $SequenceType "* ]];then
   echo -e "ERROR! SequenceType is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi

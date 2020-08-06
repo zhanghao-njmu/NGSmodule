@@ -20,7 +20,7 @@ v=$(sortmerna --version 2>/dev/null |grep -oP "(?<=SortMeRNA version ).*"|cut -d
 
 
 force_complete_option=("TRUE" "FALSE")
-if [[ " ${force_complete_option[@]} " != *" $force_complete "* ]];then;
+if [[ " ${force_complete_option[@]} " != *" $force_complete "* ]];then
   echo -e "ERROR! force_complete is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
