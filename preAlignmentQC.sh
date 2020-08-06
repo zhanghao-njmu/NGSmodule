@@ -165,7 +165,6 @@ do
           continue
         fi
       fi
-
     else
       if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
         continue
