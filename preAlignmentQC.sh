@@ -157,13 +157,20 @@ do
       reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t 2>$dir/reformat_vpair.log
       if [[ $? -ne 0 ]];then
         echo -e "Warning: $fq1 and $fq2 pair-end check failed!\n"
-        if [[ $(zcat $fq1 |wc -l) == $(zcat $fq1 |wc -l) ]];then
+        fq1_nlines=$(zcat $fq1 |wc -l)
+        fq2_nlines=$(zcat $fq2 |wc -l)
+        if [[ $fq1_nlines == $fq2_nlines ]];then
           echo -e "PASSED. $fq1 and $fq2 may have non-paired read names.\n"
-          continue
+          echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
         else
           echo -e "ERROR! $fq1 and $fq2 have different numbers of reads\n"
-          exit 1
+          continue
         fi
+      fi
+
+    else
+      if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
+        continue
       fi
     fi
 
