@@ -50,7 +50,7 @@ for sample in ${arr[@]};do
     bam=$dir/$Aligner/${sample}.${Aligner}.bam
   fi
   if [[ ! -f $bam ]];then
-    echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
+    echo -e "ERROR! Bam file:$bam do not exist. Please check the file.\n"
     exit 1
   fi
   
