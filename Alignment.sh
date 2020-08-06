@@ -14,6 +14,12 @@ sambamba --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the comman
 picard &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command picard.\n";exit 1; }
 bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User can install mosdepth by 'conda install -c bioconda bamutil'.\n";exit 1; }
 
+aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
+if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then;
+  echo -e "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
+  exit 1
+fi
+
 if [[ ! -f $genome ]];then
   echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
@@ -22,9 +28,8 @@ elif [[ ! -f $gtf ]];then
   exit 1
 fi
 
-eval "index=\${${Aligner}_index}"
 echo -e "############################# Alignment Parameters #############################\n"
-echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n  iGenomes_Dir: ${iGenomes_Dir}\n  Species: ${Species}(${Species_arr[$Species]})\n  Database: ${Database}\n  Genome_build: ${Genome_build}\n  Genome_name: ${Genome_name}\n"
+echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
 echo -e "  Genome_File: ${genome}\n  GTF_File: ${gtf}\n  Aligner_Index: ${index}\n"
 echo -e "################################################################################\n"
 

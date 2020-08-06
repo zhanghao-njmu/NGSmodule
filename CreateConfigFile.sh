@@ -57,8 +57,13 @@ iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
 Species="human"                                ## human,mouse,machin,rhesus,fly
 Database="Ensembl"                             ## Ensembl,NCBI,UCSC
 Genome_build="GRCh38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
-Genome_name="genome.fa"                        ## genome.fa,genome_main.fa
+Genome_name="genome.fa"                        ## genome.fa or genome_main.fa
 Aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
+##Aligner_parament=""                            ## (test) Will use the default parameters listed in the README.md if not spescified.  
+
+Genome_direct=""
+GTF_direct=""
+Index_direct=""
 
 
 ############# Quantification Paramaters ######################################################################

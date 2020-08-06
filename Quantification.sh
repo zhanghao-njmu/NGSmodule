@@ -66,7 +66,7 @@ if [[ "${species_arr[@]}" =~ "${Species}" ]]; then
   Species_anno=$Species
 else
   Species_anno=""
-  echo -e "No additional annotation for species: $Species in database: $Database\n"
+  echo -e "No additional annotation for species: $Species\n"
 fi
 
 $Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log 
