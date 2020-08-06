@@ -21,17 +21,18 @@ for file in ${arr[@]};do
   R2_Sufix=(`echo "${file_sim}" | grep -oP "$R2_SufixPattern"`)
   
   if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]];then
+    use_run="FALSE"
     for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix;do
       if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]];then
         Sufix=$map_Sufix
         RunId=${file_sim%%$map_Sufix}
-        SampleID=${Sample_dict[${file_sim%%$map_Sufix}]}
+        SampleID=${Sample_dict[$RunId]}
         Layout=${Layout_dict[$SampleID]}
         if [[ $SampleID == "" ]];then
           SampleID=$RunId
           echo -e "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
         fi
-        continue;
+        use_run="TRUE"
       fi
     done
   else
@@ -39,29 +40,35 @@ for file in ${arr[@]};do
     exit 1
   fi
   
-  if [[ $Sufix == $SE_Sufix ]];then
-    fq=run1_${SampleID}.fq.gz
-    fq_Layout="SE"
-  elif [[ $Sufix == $R1_Sufix ]];then
-    fq=run1_${SampleID}_1.fq.gz
-    fq_Layout="PE"
-  elif [[ $Sufix == $R2_Sufix ]];then
-    fq=run1_${SampleID}_2.fq.gz
-    fq_Layout="PE"
-  fi
-
-  if [[ $Layout != $fq_Layout ]];then
-    echo -e "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
-    exit 1
-  fi
-
-  echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
-  mkdir -p ${work_dir}/${SampleID}
-  if [[ ! -f ${work_dir}/$SampleID/${fq} ]];then
-    ln -s $file ${work_dir}/$SampleID/${fq}
+  if [[ $use_run == "FALSE" ]];then
+    continue
   else
-    num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} |wc -l)
-    ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
+
+    if [[ $Sufix == $SE_Sufix ]];then
+      fq=run1_${SampleID}.fq.gz
+      fq_Layout="SE"
+    elif [[ $Sufix == $R1_Sufix ]];then
+      fq=run1_${SampleID}_1.fq.gz
+      fq_Layout="PE"
+    elif [[ $Sufix == $R2_Sufix ]];then
+      fq=run1_${SampleID}_2.fq.gz
+      fq_Layout="PE"
+    fi
+
+    if [[ $Layout != $fq_Layout ]];then
+      echo -e "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
+      exit 1
+    fi
+
+    echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
+    mkdir -p ${work_dir}/${SampleID}
+    if [[ ! -f ${work_dir}/$SampleID/${fq} ]];then
+      ln -s $file ${work_dir}/$SampleID/${fq}
+    else
+      num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} |wc -l)
+      ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
+    fi
+
   fi
 
 done
