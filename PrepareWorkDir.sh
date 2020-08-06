@@ -25,7 +25,7 @@ for file in ${arr[@]};do
       if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]];then
         Sufix=$map_Sufix
         RunId=${file_sim%%$map_Sufix}
-        SampleID=${Sample_dict[$RunId]}
+        SampleID=${Sample_dict[${file_sim%%$map_Sufix}]}
         Layout=${Layout_dict[$SampleID]}
         if [[ $SampleID == "" ]];then
           SampleID=$RunId
