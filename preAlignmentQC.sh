@@ -166,7 +166,14 @@ do
         fi
       fi
     elif [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
-      continue
+      fq1_nlines=$(zcat $fq1 |wc -l)
+      fq2_nlines=$(zcat $fq2 |wc -l)
+      if [[ $fq1_nlines == $fq2_nlines ]];then
+        echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
+      else
+        echo -e "ERROR! $fq1 and $fq2 have different numbers of reads.\n"
+        continue
+      fi
     fi
 
     if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force_complete == "FALSE" ]];then
