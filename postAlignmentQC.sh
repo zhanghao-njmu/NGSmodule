@@ -17,6 +17,11 @@ for package in ${R_packages[@]};do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the R package $package.\n";exit 1; }
 done
 
+if [[ ! -f $gtf ]];then
+  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
 echo -e "########################## postAlignmentQC Parameters ##########################\n"
 echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
 echo -e "  GTF_File: ${gtf}\n "
@@ -30,7 +35,6 @@ genes_bed=${gtf%/*}/genes.bed
 if [[ ! -f $genes_bed ]];then
   gtfToGenePred $gtf tmp.genePhred && genePredToBed tmp.genePhred $genes_bed && rm tmp.genePhred
 fi
-
 
 for sample in ${arr[@]};do
   trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(bam_stat.py)|(infer_experiment.py)|(inner_distance.py)|(read_distribution.py)|(read_duplication.py)|(read_GC.py)|(geneBody_coverage.py)|(junction_annotation.py)|(junction_saturation.py)|(preseq)|(goleft)|(mosdepth)"| awk '"'"'{print $2}'"'"'`;kill $j;kill $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
