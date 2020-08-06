@@ -33,11 +33,22 @@ do
         
         if [ -e ${srr}_2.fastq.gz ] ;then 
           echo "$srp/$srr  pair-end"
-          reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t >/dev/null 2>&1 
-          [ $? -ne 0 ] && { echo -e "ERROR:${srr}_1.fastq.gz and ${srr}_2.fastq.gz have different numbers of reads or have non-paired read names!\n"; continue; } 
+          reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>reformat_vpair.log
+          
+          if [[ $? -ne 0 ]];then
+            fq1_nlines=$(zcat $fq1 |wc -l)
+            fq2_nlines=$(zcat $fq2 |wc -l)
+            if [[ $fq1_nlines == $fq2_nlines ]];then
+              echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>reformat_vpair.log
+            else
+              echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads.\n"
+            fi
+          fi
+          
         else
           echo "$srp/$srr  single-end"
         fi
+        
       fi
       
       }&
