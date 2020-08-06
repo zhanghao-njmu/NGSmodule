@@ -165,10 +165,8 @@ do
           continue
         fi
       fi
-    else
-      if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
-        continue
-      fi
+    elif [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
+      continue
     fi
 
     if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force_complete == "FALSE" ]];then
