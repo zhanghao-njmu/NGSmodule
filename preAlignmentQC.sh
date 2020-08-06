@@ -153,18 +153,20 @@ do
     fq2=${dir}/${sample}_2.fq.gz
 
     ##To verify that reads appear to be correctly paired 
-    reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t >/dev/null 2>&1
-    if [[ $? -ne 0 ]];then
-      echo -e "Warning: $fq1 and $fq2 pair-end check failed!\n"
-      if [[ $(zcat $fq1 |wc -l) == $(zcat $fq1 |wc -l) ]];then
-        echo -e "PASSED. $fq1 and $fq2 may have non-paired read names.\n"
-        continue
-      else
-        echo -e "ERROR! $fq1 and $fq2 have different numbers of reads\n"
-        exit 1
+    if [[ ! -f $dir/reformat_vpair.log ]];then
+      reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t 2>$dir/reformat_vpair.log
+      if [[ $? -ne 0 ]];then
+        echo -e "Warning: $fq1 and $fq2 pair-end check failed!\n"
+        if [[ $(zcat $fq1 |wc -l) == $(zcat $fq1 |wc -l) ]];then
+          echo -e "PASSED. $fq1 and $fq2 may have non-paired read names.\n"
+          continue
+        else
+          echo -e "ERROR! $fq1 and $fq2 have different numbers of reads\n"
+          exit 1
+        fi
       fi
     fi
-    
+
     if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force_complete == "FALSE" ]];then
       echo "+++++ ${sample}: FastQC skipped +++++"
     else
