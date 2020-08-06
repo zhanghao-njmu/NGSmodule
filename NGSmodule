@@ -164,14 +164,7 @@ while true;do
         echo -e "Please select a MODE option. Try '$0 --help' for more information.\n"
         exit 1
       elif [[ $1 == "CreateConfigFile" ]];then
-        if [[ $ConfigFile != "" ]];then
-          CreateConfigFile $ConfigFile
-        else
-          maindir=(`pwd`)
-          tmp=(`date +"%Y%m%d%H%M%S"`)
-          ConfigFile=temp_${tmp}.config
-          CreateConfigFile $ConfigFile
-        fi
+        CreateConfigFile $ConfigFile
         exit 0
       elif [[ $1 == "CreateSampleInfoFile" ]];then
         CreateSampleInfoFile

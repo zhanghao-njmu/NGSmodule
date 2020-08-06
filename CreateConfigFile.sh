@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-cat << EOF >$1
+if [[ $1 != "" ]];then
+    ConfigFile=$1
+    if [[ -f $ConfigFile ]];then
+        tmp=(`date +"%Y%m%d%H%M%S"`)
+        mv ${ConfigFile} bk_${tmp}_${ConfigFile}.config
+    fi
+else
+    tmp=(`date +"%Y%m%d%H%M%S"`)
+    ConfigFile=temp_${tmp}.config
+fi
+
+cat << EOF >$ConfigFile
 #!/usr/bin/env bash
 ############# Rscript path ################################################################################
 Rscript="/usr/local/bin/Rscript"
@@ -82,5 +93,5 @@ group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by co
 DGEs_multi_compare=1                               ## Whether to compare DGEs among different comparisons. 0(not to do),1(do).
 
 EOF
-echo -e "Task finished \nConfigFile: $1\n"
+echo -e "Task finished \nConfigFile: $ConfigFile\n"
 
