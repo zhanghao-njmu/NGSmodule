@@ -106,7 +106,7 @@ do
     if [[ $SequenceType == "rna" ]];then
 
       if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force_complete == "FALSE" ]];then
-        echo "+++++ ${sample}: FastQ_Screen skipped +++++"
+        echo "+++++ ${sample}: SortMeRNA skipped +++++"
       elif [[ -f $fq1 ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
         mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
@@ -206,7 +206,7 @@ do
     if [[ $SequenceType == "rna" ]];then
 
       if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force_complete == "FALSE" ]];then
-        echo "+++++ ${sample}: FastQ_Screen skipped +++++"
+        echo "+++++ ${sample}: SortMeRNA skipped +++++"
       elif [[ -f $fq1 ]] && [[ -f $fq2 ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
         mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
