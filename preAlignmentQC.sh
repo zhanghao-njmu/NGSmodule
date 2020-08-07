@@ -121,7 +121,7 @@ do
                   --other other \
                   -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
         
-        if [[ ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log ]];then
+        if [[ ! $(grep -i "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log) ]];then
           mv other.fq $dir/${sample}_trim.fq
           rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
           pigz -p $threads -f $dir/${sample}_trim.fq
@@ -234,7 +234,7 @@ do
                   --other other \
                   -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
 
-        if [[ ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log ]];then
+        if [[ ! $(grep -i "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log) ]];then
           reformat.sh in=other.fq out1=$fq1 out2=$fq2 overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
           rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp 
           pigz -p $threads -f $fq1 $fq2 
