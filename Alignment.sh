@@ -15,7 +15,7 @@ picard &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command picard.\
 bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User can install mosdepth by 'conda install -c bioconda bamutil'.\n";exit 1; }
 
 aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
-if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then;
+if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then
   echo -e "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
