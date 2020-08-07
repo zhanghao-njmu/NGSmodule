@@ -105,7 +105,7 @@ do
 
     if [[ $SequenceType == "rna" ]];then
 
-      if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force_complete == "FALSE" ]];then
+      if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f $dir/${sample}_trim.fq.gz ]] && [[ $force_complete == "FALSE" ]];then
         echo "+++++ ${sample}: SortMeRNA skipped +++++"
       elif [[ -f $fq1 ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -120,8 +120,8 @@ do
                   --aligned aligned \
                   --other other \
                   -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
-        size=$(du -sb other.fq | awk '{ print $1 }')
-        if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
+        
+        if [[ ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log ]];then
           mv other.fq $dir/${sample}_trim.fq
           rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
           pigz -p $threads -f $dir/${sample}_trim.fq
@@ -130,6 +130,9 @@ do
         else
           echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
         fi
+      elif [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f $dir/${sample}_trim.fq ]] && [[ $force_complete == "FALSE" ]];then
+        "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
+        pigz -p $threads -f $dir/${sample}_trim.fq
       else
         echo -e "Warnning! ${sample}: SortMeRNA not completed but skipped  +++++"
       fi
@@ -214,7 +217,7 @@ do
     
     if [[ $SequenceType == "rna" ]];then
 
-      if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force_complete == "FALSE" ]];then
+      if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1}.gz ]] && [[ $force_complete == "FALSE" ]];then
         echo "+++++ ${sample}: SortMeRNA skipped +++++"
       elif [[ -f $fq1 ]] && [[ -f $fq2 ]];then
         rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -230,8 +233,8 @@ do
                   --aligned aligned \
                   --other other \
                   -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log 
-        size=$(du -sb other.fq | awk '{ print $1 }')
-        if ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log && ((size>1000)) ;then
+
+        if [[ ! grep -i -q "error" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log ]];then
           reformat.sh in=other.fq out1=$fq1 out2=$fq2 overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
           rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp 
           pigz -p $threads -f $fq1 $fq2 
@@ -240,11 +243,14 @@ do
         else
           echo "+++++ ERROR! ${sample}: SortMeRNA corrupted !!! +++++"
         fi
+      elif [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1} ]] && [[ $force_complete == "FALSE" ]];then
+        "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
+        pigz -p $threads -f $fq1 $fq2 
       else
         echo -e "Warnning! ${sample}: SortMeRNA not completed but skipped  +++++"
       fi
     else
-      pigz -p $threads -f $fq1 $fq2 
+      pigz -p $threads -f $fq1 $fq2
     fi
 
   fi
