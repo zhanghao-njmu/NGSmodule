@@ -131,7 +131,7 @@ do
           echo "+++++ !!! ${sample}: SortMeRNA corrupted !!! +++++"
         fi
       elif [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f $dir/${sample}_trim.fq ]] && [[ $force_complete == "FALSE" ]];then
-        "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
+        echo "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
         pigz -p $threads -f $dir/${sample}_trim.fq
       else
         echo -e "Warnning! ${sample}: SortMeRNA not completed but skipped  +++++"
@@ -244,7 +244,7 @@ do
           echo "+++++ ERROR! ${sample}: SortMeRNA corrupted !!! +++++"
         fi
       elif [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1} ]] && [[ $force_complete == "FALSE" ]];then
-        "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
+        echo "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz  +++++"
         pigz -p $threads -f $fq1 $fq2 
       else
         echo -e "Warnning! ${sample}: SortMeRNA not completed but skipped  +++++"
