@@ -164,19 +164,26 @@ do
         if [[ $fq1_nlines == $fq2_nlines ]];then
           echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
         else
-          echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads.\n"
+          echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads."
+          echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
+          echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
           continue
         fi
       fi
-    elif [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
+    elif [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]] && [[ ! $(grep "ERROR! R1 and R2 for ${sample} have different numbers of reads." $dir/reformat_vpair.log) ]];then
       fq1_nlines=$(zcat $fq1 |wc -l)
       fq2_nlines=$(zcat $fq2 |wc -l)
       if [[ $fq1_nlines == $fq2_nlines ]];then
         echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$dir/reformat_vpair.log
       else
-        echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads.\n"
+        echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads."
+        echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
+        echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
         continue
       fi
+    elif [[ $(grep "ERROR! R1 and R2 for ${sample} have different numbers of reads." $dir/reformat_vpair.log) ]];then
+      echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads."
+      continue
     fi
 
     if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force_complete == "FALSE" ]];then
