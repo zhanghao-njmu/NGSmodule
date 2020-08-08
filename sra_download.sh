@@ -33,7 +33,7 @@ do
         fi
 
         #if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
-        if [[ -f $rawdata_dir/$srp/$srr/pigz.log ]];then
+        if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]];then
           ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
           echo -e "pigz finished">$rawdata_dir/$srp/$srr/pigz.log
         fi
