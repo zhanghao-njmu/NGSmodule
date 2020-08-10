@@ -252,7 +252,7 @@ do
         fi
       elif [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1} ]] && [[ $force_complete == "FALSE" ]];then
         echo "Warnning! ${sample}: SortMeRNA may completed but do not generate fq.gz. Start to run pigz.  +++++"
-        pigz -p $threads -f $fq1 $fq2 
+        pigz -p $threads -f $fq1 $fq2
       else
         echo -e "Warnning! ${sample}: SortMeRNA not completed but skipped  +++++"
       fi

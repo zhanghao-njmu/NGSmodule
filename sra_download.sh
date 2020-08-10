@@ -1,7 +1,7 @@
 #pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
 
-rawdata_dir=/data/database/SRR_collection/human/germ_cell_specification/rawdata/
-SRPfile=$(find $rawdata_dir -maxdepth 1 -name "meta2.csv")
+rawdata_dir="$(pwd)/rawdata/"
+SRPfile=$(find $rawdata_dir -maxdepth 1 -name "meta.csv")
 IFS=','
 threads=1
 ntask_per_run=300
@@ -92,10 +92,11 @@ do
       }&
     fi
 
-  echo >&1000
-  }&
+    echo >&1000
+    }&
 
   done < $file
+  wait
 
 done
 
