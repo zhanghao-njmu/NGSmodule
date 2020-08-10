@@ -4,11 +4,23 @@ rawdata_dir=/data/database/SRR_collection/human/germ_cell_specification/rawdata/
 SRPfile=$(find $rawdata_dir -maxdepth 1 -name "meta2.csv")
 IFS=','
 threads=1
+ntask_per_run=300
+
+
+###### fifo ######
+tempfifo=$$.fifo
+trap "exec 1000>&-;exec 1000<&-;exit 0" 2
+mkfifo $tempfifo;exec 1000<>$tempfifo;rm -rf $tempfifo
+for ((i=1; i<=$ntask_per_run; i++));do
+    echo >&1000
+done
 
 for file in ${SRPfile[@]};
 do
   while IFS=$IFS read line
   do
+    read -u1000
+    {
     srp=$(awk -F "$IFS" '{print $1}' <<<"$line")
     srr=$(awk -F "$IFS" '{print $2}' <<<"$line")
     
@@ -80,6 +92,10 @@ do
       }&
     fi
   done < $file
+
+  echo >&1000
+  }&
+
 done
 
 wait 
