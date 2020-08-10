@@ -30,6 +30,7 @@ do
       
       while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]
       do
+        echo "prefetch $srp/$srr"
         prefetch --output-directory ${srp} --max-size 1000000000000 $srr
       done
       
@@ -39,6 +40,7 @@ do
         
         if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]];then
           rm -rf ./fasterq.tmp*
+          echo "fasterq-dump $srp/$srr"
           fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump.log
           if [ -e ${srr} ]; then
             mv ${srr} ${srr}.fastq
@@ -46,12 +48,13 @@ do
         fi
 
         if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]];then
+          echo "pigz $srp/$srr"
           ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
           echo -e "pigz finished">$rawdata_dir/$srp/$srr/pigz.log
         fi
 
         if [ -e ${srr}_2.fastq.gz ] ;then 
-          echo "$srp/$srr  pair-end"
+          echo "$srp/$srr pair-end"
 
           if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]];then
             reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>$rawdata_dir/$srp/$srr/reformat_vpair.log
@@ -84,7 +87,7 @@ do
           fi
 
         else
-          echo "$srp/$srr  single-end"
+          echo "$srp/$srr single-end"
         fi
         
       fi
