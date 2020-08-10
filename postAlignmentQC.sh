@@ -71,7 +71,7 @@ for sample in ${arr[@]};do
     echo "+++++ Waiting for the background processes..........+++++"
   else
     mkdir -p $dir/$Aligner/postAlignmentQC/Preseq; cd $dir/$Aligner/postAlignmentQC/Preseq
-    preseq lc_extrap -B $bam -o ${sample}.${Aligner}.txt &>preseq_lc_extrap.log 
+    preseq lc_extrap -B $bam -o ${sample}.${Aligner}.txt &>preseq_lc_extrap.log
     mkdir -p $dir/$Aligner/postAlignmentQC/goleft; cd $dir/$Aligner/postAlignmentQC/goleft
     goleft indexcov --directory ./ $bam &>goleft_indexcov.log 
     mkdir -p $dir/$Aligner/postAlignmentQC/mosdepth; cd $dir/$Aligner/postAlignmentQC/mosdepth
