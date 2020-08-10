@@ -91,10 +91,11 @@ do
       
       }&
     fi
-  done < $file
 
   echo >&1000
   }&
+
+  done < $file
 
 done
 
