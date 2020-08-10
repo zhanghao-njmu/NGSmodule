@@ -62,9 +62,9 @@ for sample in ${arr[@]};do
   read_duplication.py -i $bam -o ${sample}.${Aligner} &>read_duplication.log 
   read_GC.py -i $bam -o ${sample}.${Aligner} &>read_GC.log 
   if [[ $SequenceType == "rna" ]];then
-    geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>geneBody_coverage.log  &
-    junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>${sample}.${Aligner}.log  &
-    junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>junction_saturation.log  &
+    geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>geneBody_coverage.log
+    junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>${sample}.${Aligner}.log  
+    junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>junction_saturation.log
   fi
   
   if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
