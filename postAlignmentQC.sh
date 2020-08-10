@@ -55,12 +55,12 @@ for sample in ${arr[@]};do
   fi
   
   mkdir -p $dir/$Aligner/postAlignmentQC/RSeQC; cd $dir/$Aligner/postAlignmentQC/RSeQC
-  bam_stat.py -i $bam >${sample}.${Aligner}.bam_stat.txt 2>bam_stat.log &
-  infer_experiment.py -r $genes_bed -i $bam >${sample}.${Aligner}.infer_experiment.txt 2>infer_experiment.log &
-  inner_distance.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>inner_distance.log  &
-  read_distribution.py -r $genes_bed -i $bam >${sample}.${Aligner}.read_distribution.txt 2>read_distribution.log &
-  read_duplication.py -i $bam -o ${sample}.${Aligner} &>read_duplication.log &
-  read_GC.py -i $bam -o ${sample}.${Aligner} &>read_GC.log &
+  bam_stat.py -i $bam >${sample}.${Aligner}.bam_stat.txt 2>bam_stat.log 
+  infer_experiment.py -r $genes_bed -i $bam >${sample}.${Aligner}.infer_experiment.txt 2>infer_experiment.log 
+  inner_distance.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>inner_distance.log  
+  read_distribution.py -r $genes_bed -i $bam >${sample}.${Aligner}.read_distribution.txt 2>read_distribution.log 
+  read_duplication.py -i $bam -o ${sample}.${Aligner} &>read_duplication.log 
+  read_GC.py -i $bam -o ${sample}.${Aligner} &>read_GC.log 
   if [[ $SequenceType == "rna" ]];then
     geneBody_coverage.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>geneBody_coverage.log  &
     junction_annotation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>${sample}.${Aligner}.log  &
