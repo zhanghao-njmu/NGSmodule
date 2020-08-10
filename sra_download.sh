@@ -35,8 +35,9 @@ do
       
       if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]];then
         
+        cd $rawdata_dir/$srp/$srr
+        
         if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]];then
-          cd $rawdata_dir/$srp/$srr
           rm -rf ./fasterq.tmp*
           fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump.log
           if [ -e ${srr} ]; then
@@ -44,7 +45,6 @@ do
           fi
         fi
 
-        #if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]];then
         if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]];then
           ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
           echo -e "pigz finished">$rawdata_dir/$srp/$srr/pigz.log
