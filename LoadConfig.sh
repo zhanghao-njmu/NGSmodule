@@ -132,6 +132,21 @@ processbar() {
 }  
 bar=0
 
+###### check_logfile <sample> <tool> <logfile> ###### 
+check_logfile() {  
+  local sample=$1
+  local tool=$2
+  local logfile=$3
+
+  if [[ $(grep -iP "(error)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]];then
+    echo -e "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps."
+    return 1
+  else
+    echo -e "+++++ ${sample}: ${tool} done +++++"
+    return 0
+  fi
+}  
+
 ################################################################################################################
 echo -e "########################### Global config patameters ###########################\n"
 echo -e "  SequenceType: $SequenceType\n  maindir: ${maindir}\n  rawdata_dir: ${rawdata_dir}\n  work_dir: ${work_dir}\n  SampleInfoFile: ${SampleInfoFile}\n  SampleGrepPattern: ${SampleGrepPattern}\n\n  Total_tasks: ${total_task}\n  nTask_per_run: ${ntask_per_run}\n  Total_threads: ${total_threads}\n  Threads_per_task: ${threads} (max=120)\n"

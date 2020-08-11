@@ -40,7 +40,7 @@ if (species!="") {
 }
 
 
-for (type in c("count","rpkm","fpkm","tpm")) {
+for (type in c("count","rpkm","fpkm","tpm","log2CPM")) {
   files<- list.files(work_dir,recursive = T,full.names = T) %>% grep(x = .,pattern = paste0("Quantification/.*",aligner,".",type,"$"),perl = T,value=T) %>%sort()
   if (length(files)!=0) {
     df<- lapply(1:length(files), function(x){

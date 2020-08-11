@@ -56,34 +56,21 @@ do
         if [ -e ${srr}_2.fastq.gz ] ;then 
           echo "$srp/$srr pair-end"
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]];then
+          if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]] || [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]];then
             reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>$rawdata_dir/$srp/$srr/reformat_vpair.log
-            if [[ $? -ne 0 ]];then
-              fq1_nlines=$(zcat ${srr}_1.fastq.gz |wc -l)
-              fq2_nlines=$(zcat ${srr}_2.fastq.gz |wc -l)
-              if [[ $fq1_nlines == $fq2_nlines ]];then
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-              else
-                echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads."
-                echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-                continue
-              fi
-            fi
-          elif [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]];then
+          fi
+
+          if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]];then
             fq1_nlines=$(zcat ${srr}_1.fastq.gz |wc -l)
             fq2_nlines=$(zcat ${srr}_2.fastq.gz |wc -l)
             if [[ $fq1_nlines == $fq2_nlines ]];then
-              echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
+              echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
             else
+              echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
               echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads."
               echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-              echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-              continue
+              break
             fi
-          elif [[ $(grep "ERROR! R1 and R2 for $srp/$srr have different numbers of reads." $rawdata_dir/$srp/$srr/reformat_vpair.log) ]];then
-            echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads."
-            continue  
           fi
 
         else
