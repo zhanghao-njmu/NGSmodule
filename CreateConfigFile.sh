@@ -42,9 +42,9 @@ R2_SufixPattern="_2\.fastq\.gz"
 force_complete=FALSE            ## Whether to run a complete preAlignmentQC workflow (TRUE) or skip some steps that completed (FALSE).
 
 ### Fastp ###
-trim_front1=1                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
+trim_front1=2                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
 trim_tail1=0                   ## trimming how many bases in tail for read1.
-trim_front2=1                  ## trimming how many bases in front for read2. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS. Only valid when Layout=PE.
+trim_front2=2                  ## trimming how many bases in front for read2. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS. Only valid when Layout=PE.
 trim_tail2=0                   ## trimming how many bases in tail for read2.
 qualified_quality_phred=20     ## base quaility over this threshold value will be qualified.
 unqualified_percent_limit=50   ## how many percents of bases are allowed to be unqualified. Otherwise the reads will be dropped.
