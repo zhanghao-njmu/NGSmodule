@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(bam_stat.py)|(infer_experiment.py)|(inner_distance.py)|(read_distribution.py)|(read_duplication.py)|(read_GC.py)|(geneBody_coverage.py)|(junction_annotation.py)|(junction_saturation.py)|(preseq)|(goleft)|(mosdepth)|(dupRadar)"| awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'j=`ps aux | grep -P "$work_dir" | awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 
 bam_stat.py &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the package RSeQC. User can install RSeQC by 'conda install -c bioconda rseqc'.\n";exit 1; }
