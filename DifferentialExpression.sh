@@ -6,7 +6,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 $Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 R_packages=("BiocParallel" "edgeR" "DESeq2" "stringr" "scales" "RColorBrewer" "ggpubr" "ggsci" "ggforce" "reshape2" "VennDiagram" "gridExtra" "gplots" "dplyr" "openxlsx" "ggalluvial" "ggfittext" "ComplexHeatmap" "circlize" "nord" "ggupset")
-for package in ${R_packages[@]};do
+for package in "${R_packages[@]}";do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the R package $package.\n";exit 1; }
 done
 

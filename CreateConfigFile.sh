@@ -11,7 +11,7 @@ else
     ConfigFile=temp_${tmp}.config
 fi
 
-cat << EOF >$ConfigFile
+cat <<- EOF >$ConfigFile
 #!/usr/bin/env bash
 ############# Rscript path ################################################################################
 Rscript="/usr/local/bin/Rscript"
@@ -93,5 +93,6 @@ group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by co
 DGEs_multi_compare=1                               ## Whether to compare DGEs among different comparisons. 0(not to do),1(do).
 
 EOF
+
 echo -e "Task finished \nConfigFile: $ConfigFile\n"
 

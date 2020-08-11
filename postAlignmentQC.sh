@@ -12,7 +12,7 @@ mosdepth &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the comma
 $Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("dupRadar" "parallel")
-for package in ${R_packages[@]};do
+for package in "${R_packages[@]}";do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the R package $package.\n";exit 1; }
 done
 
@@ -35,7 +35,7 @@ if [[ ! -f $genes_bed ]];then
   gtfToGenePred $gtf tmp.genePhred && genePredToBed tmp.genePhred $genes_bed && rm tmp.genePhred
 fi
 
-for sample in ${arr[@]};do
+for sample in "${arr[@]}";do
   read -u1000
   {
   echo "+++++ $sample +++++"

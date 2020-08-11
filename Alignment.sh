@@ -14,12 +14,12 @@ picard &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command picard.\
 bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User can install mosdepth by 'conda install -c bioconda bamutil'.\n";exit 1; }
 
 aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
-if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then
+if [[ " ${aligners[*]} " != *" $Aligner "* ]] ;then
   color_echo "red" "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
 
-if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" !~ bismark_* ]];then
+if [[ "$SequenceType" == "BSdna" ]] && [[ ! "$Aligner" =~ bismark_* ]];then
   color_echo "red" "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
   exit 1
 fi
@@ -45,7 +45,7 @@ echo -e "#######################################################################
 echo -e "****************** Start Alignment ******************\n"
 SECONDS=0
 
-for sample in ${arr[@]};do
+for sample in "${arr[@]}";do
   read -u1000
   {
   dir=$work_dir/$sample

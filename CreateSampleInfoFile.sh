@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 tmp=(`date +"%Y%m%d%H%M%S"`)
-cat << EOF >temp_${tmp}.Sample_info.csv
+cat <<- EOF >temp_${tmp}.Sample_info.csv
 RunID,SampleID,Group,Layout(PE/SE),BatchID,BatchInfo,Other
 R19051073,KO1,KO,PE,1,1st-experiment,none
 R19051074,KO1,KO,PE,1,1st-experiment,none
@@ -18,4 +18,5 @@ R19051084,WT3,WT,PE,2,2nd-experiment,none
 
 
 EOF
+
 echo -e "Task finished.\nSampleInfoFile: temp_${tmp}.Sample_info.csv\n"

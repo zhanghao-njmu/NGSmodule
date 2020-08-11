@@ -8,7 +8,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 $Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
-for package in ${R_packages[@]};
+for package in "${R_packages[@]}";
 do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null
   if [ $? -ne 0 ];then
@@ -35,7 +35,7 @@ echo -e "#######################################################################
 echo -e "****************** Start Quantification ******************\n"
 SECONDS=0
 
-for sample in ${arr[@]};do
+for sample in "${arr[@]}";do
   read -u1000
   {
   echo "+++++ $sample +++++"
@@ -61,7 +61,7 @@ mkdir -p $maindir/NGSmodule_analysis/Quantification
 cd $maindir/NGSmodule_analysis/Quantification
 
 species_arr=('human' 'mouse' 'rhesus' 'fly')
-if [[ "${species_arr[@]}" =~ "${Species}" ]]; then
+if [[ "${species_arr[*]}" =~ ${Species} ]]; then
   Species_anno=$Species
 else
   Species_anno=""

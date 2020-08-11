@@ -93,7 +93,7 @@ DifferentialExpression()
 
 help()
 {
-cat << EOF
+cat <<- EOF
   Desc: A flexible, modularization, automation, and pragmatic workflow to efficiently process the NGS data in batches.
   
   Author: ZhangHao
@@ -132,6 +132,7 @@ cat << EOF
     -v, --version             Show the version of NGSmodule.
 
 EOF
+
 }
 
 
