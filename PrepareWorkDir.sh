@@ -2,33 +2,33 @@
 
 echo -e "****************** Start PrepareWorkDir ******************\n"
 #######################################################################################
-if [[ -d $work_dir ]];then
-  tmp=(`date +"%Y%m%d%H%M%S"`)
+if [[ -d $work_dir ]]; then
+  tmp=($(date +"%Y%m%d%H%M%S"))
   mv ${work_dir} ${work_dir}/../bk_${tmp}_work
   mkdir ${work_dir}
 fi
 
-arr=(` find $rawdata_dir -type f  | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})" `)
-if [[ ${#arr} == 0 ]];then
+arr=($(find $rawdata_dir -type f | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})"))
+if [[ ${#arr} == 0 ]]; then
   color_echo "red" "Error! Cannot find the rawdata!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
   exit 1
 fi
 
-for file in ${arr[@]};do
+for file in "${arr[@]}"; do
   file_sim=${file##*/}
-  SE_Sufix=(`echo "${file_sim}" | grep -oP "$SE_SufixPattern"`)
-  R1_Sufix=(`echo "${file_sim}" | grep -oP "$R1_SufixPattern"`)
-  R2_Sufix=(`echo "${file_sim}" | grep -oP "$R2_SufixPattern"`)
-  
-  if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]];then
+  SE_Sufix=($(echo "${file_sim}" | grep -oP "$SE_SufixPattern"))
+  R1_Sufix=($(echo "${file_sim}" | grep -oP "$R1_SufixPattern"))
+  R2_Sufix=($(echo "${file_sim}" | grep -oP "$R2_SufixPattern"))
+
+  if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]]; then
     use_run="FALSE"
-    for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix;do
-      if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]];then
+    for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix; do
+      if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]]; then
         Sufix=$map_Sufix
         RunId=${file_sim%%$map_Sufix}
         SampleID=${Sample_dict[$RunId]}
         Layout=${Layout_dict[$SampleID]}
-        if [[ $SampleID == "" ]];then
+        if [[ $SampleID == "" ]]; then
           SampleID=$RunId
           color_echo "yellow" "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
         fi
@@ -39,34 +39,34 @@ for file in ${arr[@]};do
     color_echo "red" "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
     exit 1
   fi
-  
-  if [[ $use_run == "FALSE" ]];then
+
+  if [[ $use_run == "FALSE" ]]; then
     continue
   else
 
-    if [[ $Sufix == $SE_Sufix ]];then
+    if [[ $Sufix == $SE_Sufix ]]; then
       fq=run1_${SampleID}.fq.gz
       fq_Layout="SE"
-    elif [[ $Sufix == $R1_Sufix ]];then
+    elif [[ $Sufix == $R1_Sufix ]]; then
       fq=run1_${SampleID}_1.fq.gz
       fq_Layout="PE"
-    elif [[ $Sufix == $R2_Sufix ]];then
+    elif [[ $Sufix == $R2_Sufix ]]; then
       fq=run1_${SampleID}_2.fq.gz
       fq_Layout="PE"
     fi
 
-    if [[ $Layout != $fq_Layout ]];then
+    if [[ $Layout != $fq_Layout ]]; then
       color_echo "red" "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
       exit 1
     fi
 
     echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
     mkdir -p ${work_dir}/${SampleID}
-    if [[ ! -f ${work_dir}/$SampleID/${fq} ]];then
+    if [[ ! -f ${work_dir}/$SampleID/${fq} ]]; then
       ln -s $file ${work_dir}/$SampleID/${fq}
     else
-      num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} |wc -l)
-      ln -s $file ${work_dir}/$SampleID/run$(($num+1))_${fq##run1_}
+      num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} | wc -l)
+      ln -s $file ${work_dir}/$SampleID/run$(($num + 1))_${fq##run1_}
     fi
 
   fi
