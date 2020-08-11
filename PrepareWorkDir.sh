@@ -10,7 +10,7 @@ fi
 
 arr=(` find $rawdata_dir -type f  | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})" `)
 if [[ ${#arr} == 0 ]];then
-  echo -e "Error! Cannot find the rawdata!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
+  color_echo "red" "Error! Cannot find the rawdata!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
   exit 1
 fi
 
@@ -30,13 +30,13 @@ for file in ${arr[@]};do
         Layout=${Layout_dict[$SampleID]}
         if [[ $SampleID == "" ]];then
           SampleID=$RunId
-          echo -e "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
+          color_echo "yellow" "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
         fi
         use_run="TRUE"
       fi
     done
   else
-    echo -e "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
+    color_echo "red" "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
     exit 1
   fi
   
@@ -56,7 +56,7 @@ for file in ${arr[@]};do
     fi
 
     if [[ $Layout != $fq_Layout ]];then
-      echo -e "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
+      color_echo "red" "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
       exit 1
     fi
 

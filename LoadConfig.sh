@@ -1,17 +1,61 @@
 #!/usr/bin/env bash
 
+
+###### check_logfile <sample> <tool> <logfile> ###### 
+color_echo() {
+  local color=$1
+  local text=$2
+  if [[ $color == "red" ]];then
+    echo -e "\033[31m$text\033[0m"
+  elif [[ $color == "green" ]];then
+    echo -e "\033[32m$text\033[0m"
+  elif [[ $color == "yellow" ]];then
+    echo -e "\033[33m$text\033[0m"
+  elif [[ $color == "blue" ]];then
+    echo -e "\033[34m$text\033[0m"
+  fi
+}
+
+###### processbar <current> <total> ###### 
+processbar() {  
+  local current=$1; local total=$2;  
+  local maxlen=60; local barlen=50; local perclen=14;  
+  local format="%-${barlen}s%$((maxlen-barlen))s"  
+  local perc="[$current/$total]"  
+  local progress=$((current*barlen/total))  
+  local prog=$(for i in `seq 0 $progress`; do printf '='; done)  
+  printf "\r$format\n" $prog $perc  
+}  
+bar=0
+
+###### check_logfile <sample> <tool> <logfile> ###### 
+check_logfile() {  
+  local sample=$1
+  local tool=$2
+  local logfile=$3
+
+  if [[ $(grep -iP "(error)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]];then
+    color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps."
+    return 1
+  else
+    color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+    return 0
+  fi
+}  
+
+################################################################################################################
+
 work_dir=$maindir/NGSmodule_work/
 if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]];then
-  echo -e "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!"
+  color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!"
   exit 1
 fi
 
-################################################################################################################
 declare -A Species_arr=( ["human"]="Homo_sapiens" ["mouse"]="Mus_musculus" ["machin"]="Macaca_fascicularis" ["rhesus"]="Macaca_mulatta" ["fly"]="Drosophila_melanogaster" )
 
 types=("rna" "dna" "BSdna")
 if [[ " ${types[@]} " != *" $SequenceType "* ]];then
-  echo -e "ERROR! SequenceType is wrong.\nPlease check theParamaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! SequenceType is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
 
@@ -65,7 +109,7 @@ if [[ -f $SampleInfoFile ]];then
       Layout_dict[$SampleID]=$Layout
   done < $SampleInfoFile
 else
-  echo -e "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
+  color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
 fi
 
@@ -83,7 +127,7 @@ if [[ -d $work_dir ]];then
       ntask_per_run=$total_task
     fi
   else
-    echo "ERROR! ntask_per_run should be 'ALL' or an interger!"
+    color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!"
     exit 1
   fi
   threads=$((($total_threads+$ntask_per_run)/$ntask_per_run-1))
@@ -120,32 +164,7 @@ else
   threads="1"
 fi
 
-###### processbar <current> <total> ###### 
-processbar() {  
-  local current=$1; local total=$2;  
-  local maxlen=60; local barlen=50; local perclen=14;  
-  local format="%-${barlen}s%$((maxlen-barlen))s"  
-  local perc="[$current/$total]"  
-  local progress=$((current*barlen/total))  
-  local prog=$(for i in `seq 0 $progress`; do printf '='; done)  
-  printf "\r$format\n" $prog $perc  
-}  
-bar=0
 
-###### check_logfile <sample> <tool> <logfile> ###### 
-check_logfile() {  
-  local sample=$1
-  local tool=$2
-  local logfile=$3
-
-  if [[ $(grep -iP "(error)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]];then
-    echo -e "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps."
-    return 1
-  else
-    echo -e "+++++ ${sample}: ${tool} done +++++"
-    return 0
-  fi
-}  
 
 ################################################################################################################
 echo -e "########################### Global config patameters ###########################\n"

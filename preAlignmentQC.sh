@@ -9,29 +9,29 @@
 
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-fastqc --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastqc.\n";exit 1; }
-fastp --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastp.\n";exit 1; }
-fastq_screen --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastq_screen.\n";exit 1; }
-reformat.sh --version  &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command reformat.sh which is a tool in BBmap.\n";exit 1; }
-sortmerna --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command sortmerna.\n";exit 1; }
-pigz --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command pigz.\n";exit 1; }
+fastqc --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command fastqc.\n";exit 1; }
+fastp --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command fastp.\n";exit 1; }
+fastq_screen --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command fastq_screen.\n";exit 1; }
+reformat.sh --version  &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command reformat.sh which is a tool in BBmap.\n";exit 1; }
+sortmerna --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command sortmerna.\n";exit 1; }
+pigz --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command pigz.\n";exit 1; }
 v=$(sortmerna --version 2>/dev/null |grep -oP "(?<=SortMeRNA version ).*"|cut -d. -f1)
-(( v < 4 )) || [[ $v == "" ]] && { echo -e "sortmerna vertsion need to be updated to 4.x.x(https://github.com/biocore/sortmerna).\n";exit 1; }
+(( v < 4 )) || [[ $v == "" ]] && { color_echo "red" "sortmerna vertsion need to be updated to 4.x.x(https://github.com/biocore/sortmerna).\n";exit 1; }
 
 
 force_complete_option=("TRUE" "FALSE")
 if [[ " ${force_complete_option[@]} " != *" $force_complete "* ]];then
-  echo -e "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
 
 if [[ ! -f $SortmeRNA_ref ]];then
-  echo -e "ERROR! Cannot find the SortmeRNA_ref file: ${SortmeRNA_ref}"
+  color_echo "red" "ERROR! Cannot find the SortmeRNA_ref file: ${SortmeRNA_ref}"
   exit 1
 fi
 
 if [[ ! -f $FastqScreen_config ]];then
-  echo -e "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}"
+  color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}"
   exit 1
 fi
 
@@ -71,7 +71,7 @@ for sample in ${arr[@]};do
       fq1=${dir}/${sample}.fq.gz
 
       if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]];then
-        echo "+++++ ${sample}: FastQC skipped +++++"
+        color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
       else
         mkdir -p $dir/PreAlignmentQC/fastqc
         fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
@@ -80,7 +80,7 @@ for sample in ${arr[@]};do
       fi
 
       if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]];then
-        echo "+++++ ${sample}: Fastp skipped +++++"
+        color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
       else
         mkdir -p $dir/PreAlignmentQC/fastp
         fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
@@ -100,7 +100,7 @@ for sample in ${arr[@]};do
 
       if [[ -f $fq1 ]];then
         if [[ -f $dir/PreAlignmentQC/fastq_screen/fastq_screen.log ]] && [[ $(grep "Processing complete" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log) ]] && [[ $force == "FALSE" ]];then
-          echo "+++++ ${sample}: FastQ_Screen skipped +++++"
+          color_echo "yellow" "+++++ ${sample}: FastQ_Screen skipped +++++"
         else
           mkdir -p $dir/PreAlignmentQC/fastq_screen
           fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
@@ -111,7 +111,7 @@ for sample in ${arr[@]};do
 
         if [[ $SequenceType == "rna" ]];then
           if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f $dir/${sample}_trim.fq.gz ]] && [[ $force == "FALSE" ]];then
-            echo "+++++ ${sample}: SortMeRNA skipped +++++"
+            color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
           else
             rm -rf $dir/PreAlignmentQC/sortmerna_tmp
             mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
@@ -133,7 +133,7 @@ for sample in ${arr[@]};do
           fi
         else
           mv $fq1 $dir/${sample}_trim.fq
-          echo -e "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
+          color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
         fi
       fi
       
@@ -174,15 +174,15 @@ for sample in ${arr[@]};do
         if [[ $fq1_nlines == $fq2_nlines ]];then
           echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$dir/reformat_vpair.log
         else
+          color_echo "red" "ERROR! R1 and R2 for ${sample} have different numbers of reads."
           echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
-          echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads."
           echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
           break
         fi
       fi
 
       if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]];then
-        echo "+++++ ${sample}: FastQC skipped +++++"
+        color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
       else
         mkdir -p $dir/PreAlignmentQC/fastqc
         fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
@@ -191,7 +191,7 @@ for sample in ${arr[@]};do
       fi
 
       if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]];then
-        echo "+++++ ${sample}: Fastp skipped +++++"
+        color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
       else
         mkdir -p $dir/PreAlignmentQC/fastp
         fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
@@ -211,7 +211,7 @@ for sample in ${arr[@]};do
       fq2=$dir/${sample}_2.fq
       if [[ -f $fq1 ]] && [[ -f $fq2 ]];then
         if [[ -f $dir/PreAlignmentQC/fastq_screen/fastq_screen.log ]] && [[ $(grep "Processing complete" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log) ]] && [[ $force == "FALSE" ]];then
-          echo "+++++ ${sample}: FastQ_Screen skipped +++++"
+          color_echo "yellow" "+++++ ${sample}: FastQ_Screen skipped +++++"
         elif [[ -f $fq1 ]] && [[ -f $fq2 ]];then
           mkdir -p $dir/PreAlignmentQC/fastq_screen
           fastq_screen  --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
@@ -222,7 +222,7 @@ for sample in ${arr[@]};do
       
         if [[ $SequenceType == "rna" ]];then
           if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1}.gz ]] && [[ $force == "FALSE" ]];then
-            echo "+++++ ${sample}: SortMeRNA skipped +++++"
+            color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
           else
             rm -rf $dir/PreAlignmentQC/sortmerna_tmp
             mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
@@ -245,7 +245,7 @@ for sample in ${arr[@]};do
           fi
         fi
       else
-        echo -e "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
+        color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
       fi
 
       if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]];then
@@ -261,7 +261,7 @@ for sample in ${arr[@]};do
     fi
 
   done
-  echo -e "+++++ $sample: Complete pre-alignment QC. +++++"
+  color_echo "green" "+++++ $sample: Complete pre-alignment QC. +++++"
 
   echo >&1000
   }&

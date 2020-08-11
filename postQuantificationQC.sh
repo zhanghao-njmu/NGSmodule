@@ -4,10 +4,10 @@
 #######################################################################################
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-$Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
+$Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 R_packages=("limma" "edgeR" "data.table" "gplots" "stringr" "ComplexHeatmap" "ggsci" "ggpubr" "RColorBrewer" "circlize" "ggrepel" "GGally" "factoextra" "nord")
 for package in ${R_packages[@]};do
-  $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the R package $package.\n";exit 1; }
+  $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the R package $package.\n";exit 1; }
 done
 
 echo -e "######################## postQuantificationQC Parameters #######################\n"

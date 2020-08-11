@@ -4,20 +4,20 @@
 #######################################################################################
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-bam_stat.py &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the package RSeQC. User can install RSeQC by 'conda install -c bioconda rseqc'.\n";exit 1; }
-preseq &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the package preseq. User can install preseq by 'conda install -c bioconda preseq'.\n";exit 1; }
-goleft &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command goleft. User can install goleft by 'conda install -c bioconda goleft'.\n";exit 1; }
-mosdepth &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command mosdepth. User can install mosdepth by 'conda install -c bioconda mosdepth'.\n";exit 1; }
+bam_stat.py &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the package RSeQC. User can install RSeQC by 'conda install -c bioconda rseqc'.\n";exit 1; }
+preseq &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the package preseq. User can install preseq by 'conda install -c bioconda preseq'.\n";exit 1; }
+goleft &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command goleft. User can install goleft by 'conda install -c bioconda goleft'.\n";exit 1; }
+mosdepth &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command mosdepth. User can install mosdepth by 'conda install -c bioconda mosdepth'.\n";exit 1; }
 
-$Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
+$Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("dupRadar" "parallel")
 for package in ${R_packages[@]};do
-  $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the R package $package.\n";exit 1; }
+  $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the R package $package.\n";exit 1; }
 done
 
 if [[ ! -f $gtf ]];then
-  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the paramaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the paramaters in your ConfigFile.\n"
   exit 1
 fi
 
@@ -36,7 +36,6 @@ if [[ ! -f $genes_bed ]];then
 fi
 
 for sample in ${arr[@]};do
-  trap 'j=`ps aux | grep -P "$work_dir" |grep -P "(bam_stat.py)|(infer_experiment.py)|(inner_distance.py)|(read_distribution.py)|(read_duplication.py)|(read_GC.py)|(geneBody_coverage.py)|(junction_annotation.py)|(junction_saturation.py)|(preseq)|(goleft)|(mosdepth)"| awk '"'"'{print $2}'"'"'`;kill $j;kill $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
   read -u1000
   {
   echo "+++++ $sample +++++"
@@ -49,7 +48,7 @@ for sample in ${arr[@]};do
     bam=$dir/$Aligner/${sample}.${Aligner}.bam
   fi
   if [[ ! -f $bam ]];then
-    echo -e "ERROR! Bam file:$bam do not exist. Please check the file.\n"
+    color_echo "red" "ERROR! Bam file:$bam do not exist. Please check the file.\n"
     exit 1
   fi
   

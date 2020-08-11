@@ -15,25 +15,25 @@ bam &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bam. User c
 
 aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
 if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then
-  echo -e "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
 
 if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" !~ bismark_* ]];then
-  echo "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
+  color_echo "red" "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
   exit 1
 fi
 
 if [[ "$SequenceType" != "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
-  echo "ERROR! SequenceType must be BSdna for the Aligner '$Aligner'."
+  color_echo "red" "ERROR! SequenceType must be BSdna for the Aligner '$Aligner'."
   exit 1
 fi
 
 if [[ ! -f $genome ]];then
-  echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 elif [[ ! -f $gtf ]];then
-  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 fi
 

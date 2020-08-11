@@ -5,25 +5,25 @@
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 #featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
-$Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
+$Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
 for package in ${R_packages[@]};
 do
   $Rscript -e "installed.packages()" |awk '{print $1}' |grep $package &>/dev/null
   if [ $? -ne 0 ];then
-    echo -e "Cannot find the R package $package.\n"
+    color_echo "red" "Cannot find the R package $package.\n"
     if [[ $package == "refGenome" ]];then
-      echo -e "Please install it in the R environment using \"remotes::install_version('$package')\" "
+      color_echo "red" "Please install it in the R environment using \"remotes::install_version('$package')\" "
     else
-      echo -e "Please install it in the R environment using \"BiocManager::install('$package')\" "
+      color_echo "red" "Please install it in the R environment using \"BiocManager::install('$package')\" "
     fi
     exit 1
   fi
 done
 
 if [[ ! -f $gtf ]];then
-  echo -e "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 fi
 
