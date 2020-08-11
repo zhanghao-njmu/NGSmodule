@@ -21,7 +21,7 @@ else
   SortmeRNA_ref=$SortmeRNA_ref_direct
 fi
 
-if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
+if [[ "$SequenceType" == "BSdna" ]];then
   FastqScreen_mode="--bisulfite"
 else 
   FastqScreen_mode=""

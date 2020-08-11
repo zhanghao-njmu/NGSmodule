@@ -20,6 +20,16 @@ if [[ " ${aligners[@]} " != *" $Aligner "* ]] ;then
   exit 1
 fi
 
+if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" !~ bismark_* ]];then
+  echo "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
+  exit 1
+fi
+
+if [[ "$SequenceType" != "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]];then
+  echo "ERROR! SequenceType must be BSdna for the Aligner '$Aligner'."
+  exit 1
+fi
+
 if [[ ! -f $genome ]];then
   echo -e "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
@@ -89,7 +99,7 @@ for sample in ${arr[@]};do
     elif [[ "$Aligner" == "hisat2" ]];then
       hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
     elif [[ "$Aligner" == "tophat2" ]];then
-      tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2} 
+      tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
       mv accepted_hits.sam ${sample}.${Aligner}.bam
     elif [[ "$Aligner" == "star" ]];then
       STAR  --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} ${fq2} --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000 \
