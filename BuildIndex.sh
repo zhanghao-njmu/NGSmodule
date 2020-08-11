@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 ############# Paramaters #############################################################
 rootdir="/data/database/iGenomes/"
 threads=120
@@ -12,7 +13,7 @@ if (( threads > 120 ));then
 else
   threads=$threads
 fi
-for maindir in ${arr[@]};do
+for maindir in "${arr[@]}";do
 {
   maindir=${maindir%%WholeGenomeFasta}
   echo "maindir:$maindir"
@@ -108,7 +109,7 @@ for maindir in ${arr[@]};do
    gem-indexer --threads ${threads} -i ${genome_main} -o ${GemIndex}/genome_main
  fi
 
- for kmer in ${kmers[@]}; do
+ for kmer in "${kmers[@]}"; do
  
    echo "====== Make gem mappability file  ======"
    mkdir -p $GemIndex/Mappability/${kmer}mer
@@ -118,7 +119,7 @@ for maindir in ${arr[@]};do
    wigToBigWig genome_main.gem.wig genome_main.gem.sizes genome_main.gem.bigwig
   
    echo "====== Count GC and mappability within a silding window  ======"
-   for window in ${windows[@]}; do
+   for window in "${windows[@]}"; do
      mkdir -p $GemIndex/windows/$window
      cd $GemIndex/windows/$window
      gcCounter -w $window --forgiving $genome_main >genome_main.w$window.gc.wig
@@ -135,7 +136,7 @@ for maindir in ${arr[@]};do
  echo "====== Make GenmapIndex  ======"
  genmap index -F $genome_main -I $GenmapIndex
  
- for kmer in ${kmers[@]}; do
+ for kmer in "${kmers[@]}"; do
  
    echo "====== Make genmap mappability file  ======"
    mkdir -p $GenmapIndex/Mappability/${kmer}mer
@@ -144,7 +145,7 @@ for maindir in ${arr[@]};do
    wigToBigWig genome_main.genmap.wig genome_main.genmap.chrom.sizes genome_main.genmap.bigwig
    
    echo "====== Count GC and mappability within a silding window  ======"
-   for window in ${windows[@]}; do
+   for window in "${windows[@]}"; do
      mkdir -p $GenmapIndex/windows/$window
      cd $GenmapIndex/windows/$window
      gcCounter -w $window --forgiving $genome_main >genome_main.w$window.gc.wig
