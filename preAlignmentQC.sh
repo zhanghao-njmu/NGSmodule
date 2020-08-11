@@ -7,7 +7,7 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
-trap 'ps -ef | grep "$work_dir | wk '"'"'{print $2}'"'"'| xargs kill -9; echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
+trap 'ps -ef | grep "$work_dir" | awk '"'"'{print $2}'"'"'| xargs kill -9; echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
 
 
 fastqc --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command fastqc.\n";exit 1; }
