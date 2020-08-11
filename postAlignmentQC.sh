@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 bam_stat.py &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the package RSeQC. User can install RSeQC by 'conda install -c bioconda rseqc'.\n";exit 1; }
 preseq &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the package preseq. User can install preseq by 'conda install -c bioconda preseq'.\n";exit 1; }

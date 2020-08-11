@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 $Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }
 R_packages=("limma" "edgeR" "data.table" "gplots" "stringr" "ComplexHeatmap" "ggsci" "ggpubr" "RColorBrewer" "circlize" "ggrepel" "GGally" "factoextra" "nord")

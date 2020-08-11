@@ -7,7 +7,7 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 fastqc --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command fastqc.\n";exit 1; }
 fastp --version &>/dev/null;[ $? -ne 0 ] && { color_echo "red" "Cannot find the command fastp.\n";exit 1; }
@@ -20,7 +20,7 @@ v=$(sortmerna --version 2>/dev/null |grep -oP "(?<=SortMeRNA version ).*"|cut -d
 
 
 force_complete_option=("TRUE" "FALSE")
-if [[ " ${force_complete_option[@]} " != *" $force_complete "* ]];then
+if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]];then
   color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
@@ -44,12 +44,12 @@ echo -e "#######################################################################
 echo -e "****************** Start preAlignmentQC ******************\n"
 SECONDS=0
 
-for sample in ${arr[@]};do
+for sample in "${arr[@]}";do
   read -u1000
   {
   dir=${work_dir}/${sample}
 	cd ${dir}
-  mkdir -p ${dir}/PreAlignmentQC
+  mkdir -p ${dir}/PreAlignmentQ
   echo "+++++ ${sample} +++++"
   Layout=${Layout_dict[${sample}]}
   force=${force_complete}

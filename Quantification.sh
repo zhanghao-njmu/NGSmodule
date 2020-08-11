@@ -2,7 +2,7 @@
 
 
 #######################################################################################
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 #featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
 $Rscript &>/dev/null;[ $? -eq 127 ] && { color_echo "red" "Cannot find the command Rscript.\n";exit 1; }

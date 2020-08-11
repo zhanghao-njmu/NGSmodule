@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #######################################################################################
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 bwa &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bwa.\n";exit 1; }
 bowtie --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command bowtie.\n";exit 1; }
