@@ -2,8 +2,7 @@
 
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$work_dir" | awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
-
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 $Rscript &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command Rscript.\n";exit 1; }
 R_packages=("limma" "edgeR" "data.table" "gplots" "stringr" "ComplexHeatmap" "ggsci" "ggpubr" "RColorBrewer" "circlize" "ggrepel" "GGally" "factoextra" "nord")

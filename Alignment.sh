@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 #######################################################################################
-trap 'j=`ps aux | grep -P "$work_dir" | awk '"'"'{print $2}'"'"'`;kill -9 $j;kill -9 $(jobs -p);echo -e "\nKilling all background processes......\nExiting the script......\n";exit 1' SIGINT
-
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 bwa &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command bwa.\n";exit 1; }
 bowtie --version &>/dev/null;[ $? -ne 0 ] && { echo -e "Cannot find the command bowtie.\n";exit 1; }
