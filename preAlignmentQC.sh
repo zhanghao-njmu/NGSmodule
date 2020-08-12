@@ -102,7 +102,10 @@ for sample in "${arr[@]}"; do
           mkdir -p $dir/PreAlignmentQC/fastqc
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
           check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$TMPFILE
+            break
+          }
         fi
 
         if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
@@ -119,7 +122,10 @@ for sample in "${arr[@]}"; do
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
           check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$TMPFILE
+            break
+          }
         fi
 
         fq1=$dir/${sample}.fq
@@ -132,11 +138,14 @@ for sample in "${arr[@]}"; do
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+            [ $? -ne 0 ] && {
+              echo "Interrupted: $sample" >>$TMPFILE
+              break
+            }
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]]  && [[ $force == "FALSE" ]]; then
+            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
               color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
             else
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -152,7 +161,10 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+              [ $? -ne 0 ] && {
+                echo "Interrupted: $sample" >>$TMPFILE
+                break
+              }
               mv other.fq $dir/${sample}_trim.fq
               rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
               mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
@@ -203,7 +215,8 @@ for sample in "${arr[@]}"; do
             color_echo "red" "ERROR! R1 and R2 for ${sample} have different numbers of reads."
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
             echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
-            echo "Interrupted: $sample" >>$TMPFILE;break
+            echo "Interrupted: $sample" >>$TMPFILE
+            break
           fi
         fi
 
@@ -213,7 +226,10 @@ for sample in "${arr[@]}"; do
           mkdir -p $dir/PreAlignmentQC/fastqc
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
           check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$TMPFILE
+            break
+          }
         fi
 
         if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
@@ -230,7 +246,10 @@ for sample in "${arr[@]}"; do
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
           check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$TMPFILE
+            break
+          }
         fi
 
         fq1=$dir/${sample}_1.fq
@@ -243,7 +262,10 @@ for sample in "${arr[@]}"; do
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+            [ $? -ne 0 ] && {
+              echo "Interrupted: $sample" >>$TMPFILE
+              break
+            }
           fi
 
           if [[ $SequenceType == "rna" ]]; then
@@ -264,7 +286,10 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && { echo "Interrupted: $sample" >>$TMPFILE;break; }
+              [ $? -ne 0 ] && {
+                echo "Interrupted: $sample" >>$TMPFILE
+                break
+              }
               reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
               rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp
               mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
@@ -287,9 +312,9 @@ for sample in "${arr[@]}"; do
       fi
 
     done
-    
+
     echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "+++++ $sample: Processing complete +++++\n Completed:$(cat $TMPFILE | grep "Completed" |wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" |wc -l) | Total:$total_task "
+    color_echo "green" "+++++ $sample: Processing complete +++++\n ***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &
