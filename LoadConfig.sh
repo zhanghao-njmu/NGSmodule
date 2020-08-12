@@ -161,8 +161,8 @@ if [[ -d $work_dir ]]; then
   done
 
   ###### temp file ######
-  TMPFILE=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
-  trap 'rm -f $TMPFILE;exit 0' SIGINT SIGTERM EXIT
+  tmpfile=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
+  trap "rm -f $tmpfile;exit 0" SIGINT SIGTERM EXIT
 
 else
 

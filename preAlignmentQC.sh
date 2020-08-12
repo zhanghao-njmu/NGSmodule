@@ -103,7 +103,7 @@ for sample in "${arr[@]}"; do
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
           check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
           [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$TMPFILE
+            echo "Interrupted: $sample" >>$tmpfile
             break
           }
         fi
@@ -123,7 +123,7 @@ for sample in "${arr[@]}"; do
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
           check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
           [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$TMPFILE
+            echo "Interrupted: $sample" >>$tmpfile
             break
           }
         fi
@@ -139,7 +139,7 @@ for sample in "${arr[@]}"; do
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             [ $? -ne 0 ] && {
-              echo "Interrupted: $sample" >>$TMPFILE
+              echo "Interrupted: $sample" >>$tmpfile
               break
             }
           fi
@@ -162,7 +162,7 @@ for sample in "${arr[@]}"; do
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$TMPFILE
+                echo "Interrupted: $sample" >>$tmpfile
                 break
               }
               mv other.fq $dir/${sample}_trim.fq
@@ -215,7 +215,7 @@ for sample in "${arr[@]}"; do
             color_echo "red" "ERROR! R1 and R2 for ${sample} have different numbers of reads."
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
             echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
-            echo "Interrupted: $sample" >>$TMPFILE
+            echo "Interrupted: $sample" >>$tmpfile
             break
           fi
         fi
@@ -227,7 +227,7 @@ for sample in "${arr[@]}"; do
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
           check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
           [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$TMPFILE
+            echo "Interrupted: $sample" >>$tmpfile
             break
           }
         fi
@@ -247,7 +247,7 @@ for sample in "${arr[@]}"; do
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
           check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
           [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$TMPFILE
+            echo "Interrupted: $sample" >>$tmpfile
             break
           }
         fi
@@ -263,7 +263,7 @@ for sample in "${arr[@]}"; do
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
             [ $? -ne 0 ] && {
-              echo "Interrupted: $sample" >>$TMPFILE
+              echo "Interrupted: $sample" >>$tmpfile
               break
             }
           fi
@@ -287,7 +287,7 @@ for sample in "${arr[@]}"; do
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
               [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$TMPFILE
+                echo "Interrupted: $sample" >>$tmpfile
                 break
               }
               reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
@@ -315,8 +315,8 @@ for sample in "${arr[@]}"; do
 
     done
 
-    echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    echo "Completed: $sample" >>$tmpfile
+    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &

@@ -123,8 +123,8 @@ for sample in "${arr[@]}"; do
 
     wait
 
-    echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    echo "Completed: $sample" >>$tmpfile
+    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &

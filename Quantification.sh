@@ -52,8 +52,8 @@ for sample in "${arr[@]}"; do
     cd $dir/$Aligner/Quantification
     Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
 
-    echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    echo "Completed: $sample" >>$tmpfile
+    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &
