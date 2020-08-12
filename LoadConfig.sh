@@ -152,7 +152,7 @@ if [[ -d $work_dir ]]; then
 
   ###### fifo ######
   tempfifo=$$.fifo
-  trap "exec 1000>&-;exec 1000<&-;rm -f $tempfifo;exit 0" SIGINT SIGTERM EXIT
+  trap "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT
   mkfifo $tempfifo
   exec 1000<>$tempfifo
   rm -f $tempfifo
