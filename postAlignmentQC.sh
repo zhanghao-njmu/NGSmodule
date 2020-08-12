@@ -122,6 +122,10 @@ for sample in "${arr[@]}"; do
     ##  plotFingerprint -p $threads -b $bam --outRawCounts ${sample}.${Aligner}.FingerprintRawCounts.txt  --outQualityMetrics ${sample}.${Aligner}.FingerprintQualityMetrics.txt
 
     wait
+
+    echo "Completed: $sample" >>$TMPFILE
+    color_echo "green" "+++++ $sample: Processing complete [ Completed:$(cat $TMPFILE | grep "Completed" |wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" |wc -l) | Total:$total_task ]"
+
     echo >&1000
   } &
   ((bar++))

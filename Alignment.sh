@@ -218,6 +218,9 @@ for sample in "${arr[@]}"; do
 
     fi
 
+    echo "Completed: $sample" >>$TMPFILE
+    color_echo "green" "+++++ $sample: Processing complete [ Completed:$(cat $TMPFILE | grep "Completed" |wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" |wc -l) | Total:$total_task ]"
+
     echo >&1000
   } &
   ((bar++))

@@ -15,18 +15,19 @@ color_echo() {
   fi
 }
 
-###### processbar <current> <total> ######
+###### processbar <current> <total> <label> ######
 processbar() {
   local current=$1
   local total=$2
+  local label=$3
   local maxlen=60
   local barlen=50
   local perclen=14
-  local format="%-${barlen}s%$((maxlen - barlen))s"
+  local format="%-${barlen}s%$((maxlen - barlen))s %s"
   local perc="[$current/$total]"
   local progress=$((current * barlen / total))
   local prog=$(for i in $(seq 0 $progress); do printf '='; done)
-  printf "\r$format\n" $prog $perc
+  printf "\r$format\n" $prog $perc $label
 }
 bar=0
 
@@ -151,15 +152,20 @@ if [[ -d $work_dir ]]; then
 
   ###### fifo ######
   tempfifo=$$.fifo
-  trap "exec 1000>&-;exec 1000<&-;exit 0" 2
+  trap "exec 1000>&-;exec 1000<&-;rm -f $tempfifo;exit 0" 2
   mkfifo $tempfifo
   exec 1000<>$tempfifo
-  rm -rf $tempfifo
+  rm -f $tempfifo
   for ((i = 1; i <= $ntask_per_run; i++)); do
     echo >&1000
   done
 
+  ###### temp file ######
+  TMPFILE=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
+  trap 'rm -f $TMPFILE' EXIT
+
 else
+
   total_task="Waiting for the preparation of the workdir"
   ntask_per_run="Waiting for the preparation of the workdir"
   threads="1"
