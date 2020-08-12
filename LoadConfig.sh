@@ -152,7 +152,7 @@ if [[ -d $work_dir ]]; then
 
   ###### fifo ######
   tempfifo=$$.fifo
-  trap "exec 1000>&-;exec 1000<&-;rm -f $tempfifo;exit 0" 2
+  trap "exec 1000>&-;exec 1000<&-;rm -f $tempfifo;exit 0" SIGINT SIGTERM EXIT
   mkfifo $tempfifo
   exec 1000<>$tempfifo
   rm -f $tempfifo
@@ -162,7 +162,7 @@ if [[ -d $work_dir ]]; then
 
   ###### temp file ######
   TMPFILE=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
-  trap 'rm -f $TMPFILE' EXIT
+  trap 'rm -f $TMPFILE;exit 0' SIGINT SIGTERM EXIT
 
 else
 
