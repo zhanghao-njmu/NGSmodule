@@ -17,8 +17,7 @@ trap_add() {
             eval "extract_trap_cmd $(trap -p "${trap_add_name}")"
             # print the new trap command
             printf '%s\n' "${trap_add_cmd}"
-        )" "${trap_add_name}" \
-            || fatal "unable to add to trap ${trap_add_name}"
+        )" "${trap_add_name}" || fatal "unable to add to trap ${trap_add_name}"
     done
 }
 declare -f -t trap_add
