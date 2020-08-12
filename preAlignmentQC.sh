@@ -9,8 +9,6 @@
 
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
-echo "$(trap)"
-
 fastqc --version &>/dev/null
 [ $? -ne 0 ] && {
   color_echo "red" "Cannot find the command fastqc.\n"
