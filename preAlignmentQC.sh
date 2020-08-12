@@ -287,7 +287,7 @@ for sample in "${arr[@]}"; do
       fi
 
     done
-    color_echo "green" "+++++ $sample: Complete pre-alignment QC. +++++"
+    color_echo "green" "+++++ $sample: Complete pre-alignment QC +++++"
 
     echo >&1000
   } &
