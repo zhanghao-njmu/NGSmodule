@@ -24,7 +24,7 @@ mosdepth &>/dev/null
   exit 1
 }
 
-$Rscript &>/dev/null
+Rscript &>/dev/null
 [ $? -eq 127 ] && {
   color_echo "red" "Cannot find the command Rscript.\n"
   exit 1
@@ -32,7 +32,7 @@ $Rscript &>/dev/null
 
 R_packages=("dupRadar" "parallel")
 for package in "${R_packages[@]}"; do
-  $Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
+  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   [ $? -ne 0 ] && {
     color_echo "red" "Cannot find the R package $package.\n"
     exit 1
@@ -102,7 +102,7 @@ for sample in "${arr[@]}"; do
       mosdepth -t $threads -n --fast-mode ${sample}.${Aligner} $bam &>mosdepth.log
       mkdir -p $dir/$Aligner/postAlignmentQC/dupRadar
       cd $dir/$Aligner/postAlignmentQC/dupRadar
-      $Rscript $1 $bam $gtf $strandspecific $Layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
+      Rscript $1 $bam $gtf $strandspecific $Layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
     fi
 
     ##  mkdir -p $dir/$Aligner/Qualimap; cd $dir/$Aligner/Qualimap #### too slow!!!

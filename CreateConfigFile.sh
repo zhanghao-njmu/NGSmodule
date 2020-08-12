@@ -13,9 +13,6 @@ fi
 
 cat <<- EOF >$ConfigFile
 #!/usr/bin/env bash
-############# Rscript path ################################################################################
-Rscript="/usr/local/bin/Rscript"
-
 
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"        ## Absolute path of your project directory.

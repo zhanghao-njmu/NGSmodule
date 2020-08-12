@@ -4,7 +4,7 @@
 trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 #featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
-$Rscript &>/dev/null
+Rscript &>/dev/null
 [ $? -eq 127 ] && {
   color_echo "red" "Cannot find the command Rscript.\n"
   exit 1
@@ -12,7 +12,7 @@ $Rscript &>/dev/null
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
 for package in "${R_packages[@]}"; do
-  $Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
+  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   if [ $? -ne 0 ]; then
     color_echo "red" "Cannot find the R package $package.\n"
     if [[ $package == "refGenome" ]]; then
@@ -50,7 +50,7 @@ for sample in "${arr[@]}"; do
 
     mkdir -p $dir/$Aligner/Quantification
     cd $dir/$Aligner/Quantification
-    $Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
+    Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
 
     echo >&1000
   } &
@@ -71,7 +71,7 @@ else
   echo -e "No additional annotation for species: $Species\n"
 fi
 
-$Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log
+Rscript $2 $work_dir $gtf $Aligner $Species_anno $Database &>Annotation.R.log
 echo -e "Integrated quantification matrix: $maindir/NGSmodule_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
