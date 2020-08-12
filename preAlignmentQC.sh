@@ -271,7 +271,7 @@ for sample in "${arr[@]}"; do
             fi
           fi
         else
-          color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
+          color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped +++++"
         fi
 
         if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]]; then
@@ -289,7 +289,7 @@ for sample in "${arr[@]}"; do
     done
     
     echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "+++++ $sample: Processing complete [ Completed:$(cat $TMPFILE | grep "Completed" |wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" |wc -l) | Total:$total_task ]"
+    color_echo "green" "+++++ $sample: Processing complete +++++\n Completed:$(cat $TMPFILE | grep "Completed" |wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" |wc -l) | Total:$total_task "
 
     echo >&1000
   } &
