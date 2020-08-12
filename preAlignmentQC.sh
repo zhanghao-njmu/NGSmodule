@@ -87,7 +87,7 @@ for sample in "${arr[@]}"; do
 
         if [[ ! -f $dir/fq.log ]]; then
           if (($(ls ${dir}/run*_${sample}.fq.gz | wc -l) == 1)); then
-            mv ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
+            cp ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
             echo "Fastq files for ${sample} is ready." >$dir/fq.log
           else
             cat ${dir}/run*_${sample}.fq.gz >${dir}/${sample}.fq.gz
@@ -177,8 +177,8 @@ for sample in "${arr[@]}"; do
 
         if [[ ! -f $dir/fq.log ]]; then
           if (($(ls ${dir}/run*_${sample}_1.fq.gz | wc -l) == 1)); then
-            mv ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
-            mv ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
+            cp ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
+            cp ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
             echo "Fastq files for ${sample} is ready." >$dir/fq.log
           else
             ls ${dir}/run*_${sample}_1.fq.gz | sort | xargs cat >${dir}/${sample}_1.fq.gz
