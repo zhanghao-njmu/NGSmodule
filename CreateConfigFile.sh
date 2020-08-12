@@ -69,7 +69,7 @@ Database="Ensembl"                             ## Ensembl,NCBI,UCSC
 Genome_build="GRCh38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
 Genome_name="genome.fa"                        ## genome.fa or genome_main.fa
 Aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
-##Aligner_parament=""                            ## (test) Will use the default parameters listed in the README.md if not spescified.  
+##Aligner_parament=""                            ## (test) Specify custom parameters instead of NGSmodule default parameters.  
 
 Genome_direct=""
 GTF_direct=""
@@ -81,8 +81,8 @@ strandspecific=0                               ## 0(unstranded),1(stranded),2(re
 
 
 ############# DifferentialExpression Paramaters ##############################################################
-max_padj=0.05                                      ## Typically 0.05 or 0.01 or 0.001
-min_fc=2                                           ## Typically 2
+max_padj=0.05                                      ## e.g. 0.05 or 0.01 or 0.001
+min_fc=2                                           ## e.g. 2
 min_count=10                                       ## Minimum count required for at least n samples (n is the smallest group sample size).
 
 group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by comma(,). Different comparisons are seperated by semicolon(;). 
