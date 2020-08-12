@@ -302,8 +302,10 @@ for sample in "${arr[@]}"; do
         if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]]; then
           pigz -p $threads -f ${sample}_1_trim.fq ${sample}_2_trim.fq
           status="completed"
+          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         elif [[ -f ${sample}_1_trim.fq.gz ]] && [[ -f ${sample}_2_trim.fq.gz ]]; then
           status="completed"
+          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         else
           status="uncompleted"
           force="TRUE"
@@ -314,7 +316,7 @@ for sample in "${arr[@]}"; do
     done
 
     echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "+++++ $sample: Processing complete +++++\n ***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    color_echo "green" "***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &

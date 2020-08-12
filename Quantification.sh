@@ -53,7 +53,7 @@ for sample in "${arr[@]}"; do
     Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
 
     echo "Completed: $sample" >>$TMPFILE
-    color_echo "green" "+++++ $sample: Processing complete +++++\n ***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    color_echo "green" "***** Completed:$(cat $TMPFILE | grep "Completed" | wc -l) | Interrupted:$(cat $TMPFILE | grep "Interrupted" | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &
