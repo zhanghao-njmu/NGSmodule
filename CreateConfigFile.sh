@@ -12,8 +12,6 @@ else
 fi
 
 cat <<- EOF >$ConfigFile
-#!/usr/bin/env bash
-
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw fastq.gz data.
