@@ -136,7 +136,7 @@ for sample in "${arr[@]}"; do
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f $dir/${sample}_trim.fq.gz ]] && [[ $force == "FALSE" ]]; then
+            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]]  && [[ $force == "FALSE" ]]; then
               color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
             else
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -247,7 +247,7 @@ for sample in "${arr[@]}"; do
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ -f ${fq1}.gz ]] && [[ $force == "FALSE" ]]; then
+            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
               color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
             else
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
