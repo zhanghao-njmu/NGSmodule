@@ -61,7 +61,7 @@ check_logfile() {
   local tool=$2
   local logfile=$3
 
-  if [[ $(grep -iP "(error)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]]; then
+  if [[ $(grep -iP "(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]]; then
     color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps."
     return 1
   else
