@@ -190,8 +190,8 @@ if [[ -d $work_dir ]]; then
 
 else
 
-  total_task="Waiting for the preparation of the workdir"
-  ntask_per_run="Waiting for the preparation of the workdir"
+  total_task="Waiting for creating the workdir"
+  ntask_per_run="Waiting for creating the workdir"
   threads="1"
 fi
 
