@@ -34,6 +34,8 @@ color_echo() {
     echo -e "\033[33m$text\033[0m"
   elif [[ $color == "blue" ]]; then
     echo -e "\033[34m$text\033[0m"
+  elif [[ $color == "purple" ]]; then
+    echo -e "\033[35m$text\033[0m"
   fi
 }
 
