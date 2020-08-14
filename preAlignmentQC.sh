@@ -178,8 +178,10 @@ for sample in "${arr[@]}"; do
         if [[ -f $dir/${sample}_trim.fq ]]; then
           pigz -p $threads -f $dir/${sample}_trim.fq
           status="completed"
+          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         elif [[ -f $dir/${sample}_trim.fq.gz ]]; then
           status="completed"
+          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         else
           status="uncompleted"
           force="TRUE"
