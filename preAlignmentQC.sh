@@ -91,7 +91,7 @@ for sample in "${arr[@]}"; do
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
           else
             runs=$(ls ${dir}/run*_${sample}.fq.gz | sort)
-            echo ${runs[*]} |xargs cat >${dir}/${sample}.fq.gz
+            echo ${runs[*]} | xargs cat >${dir}/${sample}.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >$dir/fq.log
           fi
         fi
@@ -198,8 +198,8 @@ for sample in "${arr[@]}"; do
           else
             runs1=$(ls ${dir}/run*_${sample}_1.fq.gz | sort)
             runs2=$(ls ${dir}/run*_${sample}_2.fq.gz | sort)
-            echo ${runs1[*]} |xargs cat >${dir}/${sample}_1.fq.gz
-            echo ${runs2[*]} |xargs cat >${dir}/${sample}_2.fq.gz
+            echo ${runs1[*]} | xargs cat >${dir}/${sample}_1.fq.gz
+            echo ${runs2[*]} | xargs cat >${dir}/${sample}_2.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >$dir/fq.log
           fi
         fi
