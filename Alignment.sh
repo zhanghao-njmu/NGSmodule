@@ -93,16 +93,24 @@ for sample in "${arr[@]}"; do
     if [[ $Layout == "SE" ]]; then
       fq1=$dir/${sample}_trim.fq.gz
       if [[ "$Aligner" = "bwa" ]]; then
-        bwa mem -t $threads -M $index ${fq1} | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bwa mem -t $threads -M $index ${fq1} | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "bowtie" ]]; then
-        bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "bowtie2" ]]; then
-        bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "hisat2" ]]; then
-        hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "tophat2" ]]; then
         tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
-        mv accepted_hits.sam ${sample}.${Aligner}.bam
+        mv accepted_hits.bam ${sample}.${Aligner}.bam
       elif [[ "$Aligner" == "star" ]]; then
         STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} --genomeLoad LoadAndKeep --limitBAMsortRAM 10000000000 \
         --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD \
@@ -127,13 +135,21 @@ for sample in "${arr[@]}"; do
       fq1=$dir/${sample}_1_trim.fq.gz
       fq2=$dir/${sample}_2_trim.fq.gz
       if [[ "$Aligner" == "bwa" ]]; then
-        bwa mem -t $threads -M $index ${fq1} ${fq2} | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bwa mem -t $threads -M $index ${fq1} ${fq2} | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" = "bowtie" ]]; then
-        bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "bowtie2" ]]; then
-        bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "hisat2" ]]; then
-        hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | samtools view -@ $threads -Shb - | samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | \
+        samtools view -@ $threads -Shb - | \
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
       elif [[ "$Aligner" == "tophat2" ]]; then
         tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
         mv accepted_hits.sam ${sample}.${Aligner}.bam
