@@ -88,10 +88,11 @@ for sample in "${arr[@]}"; do
         if [[ ! -f $dir/fq.log ]]; then
           if (($(ls ${dir}/run*_${sample}.fq.gz | wc -l) == 1)); then
             cp -a ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
-            echo "Fastq files for ${sample} is ready." >$dir/fq.log
+            echo "Fastq files for ${sample} is ready.\n------ ${sample}.fq.gz ------\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
           else
-            cat ${dir}/run*_${sample}.fq.gz >${dir}/${sample}.fq.gz
-            echo "Fastq files for ${sample} is ready." >$dir/fq.log
+            runs=$(ls ${dir}/run*_${sample}.fq.gz | sort)
+            echo ${runs[*]} |xargs cat >${dir}/${sample}.fq.gz
+            echo "Fastq files for ${sample} is ready.\n------ ${sample}.fq.gz ------\n${runs[*]}" >$dir/fq.log
           fi
         fi
         fq1=${dir}/${sample}.fq.gz
@@ -193,11 +194,13 @@ for sample in "${arr[@]}"; do
           if (($(ls ${dir}/run*_${sample}_1.fq.gz | wc -l) == 1)); then
             cp -a ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
             cp -a ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
-            echo "Fastq files for ${sample} is ready." >$dir/fq.log
+            echo "Fastq files for ${sample} is ready.\n------ ${sample}_1.fq.gz ------\n${dir}/run1_${sample}_1.fq.gz\n------ ${sample}_2.fq.gz ------\n${dir}/run1_${sample}_2.fq.gz" >$dir/fq.log
           else
-            ls ${dir}/run*_${sample}_1.fq.gz | sort | xargs cat >${dir}/${sample}_1.fq.gz
-            ls ${dir}/run*_${sample}_2.fq.gz | sort | xargs cat >${dir}/${sample}_2.fq.gz
-            echo "Fastq files for ${sample} is ready." >$dir/fq.log
+            runs1=$(ls ${dir}/run*_${sample}_1.fq.gz | sort)
+            runs2=$(ls ${dir}/run*_${sample}_2.fq.gz | sort)
+            echo ${runs1[*]} |xargs cat >${dir}/${sample}_1.fq.gz
+            echo ${runs2[*]} |xargs cat >${dir}/${sample}_2.fq.gz
+            echo "Fastq files for ${sample} is ready.\n------ ${sample}_1.fq.gz ------\n${runs1[*]}\n------ ${sample}_2.fq.gz ------\n${runs2[*]}" >$dir/fq.log
           fi
         fi
         fq1=${dir}/${sample}_1.fq.gz
