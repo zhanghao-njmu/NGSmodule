@@ -148,7 +148,7 @@ EOF
 
 #################### Parsing the parameters ##################################################
 echo  ""
-getopt -T &>/dev/null;[ $? -ne 4 ] && { echo "not enhanced version\n";exit 1; }
+getopt -T &>/dev/null;[ $? -ne 4 ] && { echo "getopt is not enhanced version\n";exit 1; }
 
 parameters=`getopt --options c:hv --longoptions ConfigFile,help,version -n "$0" -- "$@"`
 [ $? -ne 0 ] && { echo -e "Try '$0 --help' for more information.\n"; exit 1; }
