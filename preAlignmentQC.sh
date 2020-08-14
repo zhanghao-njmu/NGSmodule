@@ -52,12 +52,12 @@ if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]]; then
 fi
 
 if [[ ! -f $SortmeRNA_ref ]]; then
-  color_echo "red" "ERROR! Cannot find the SortmeRNA_ref file: ${SortmeRNA_ref}"
+  color_echo "red" "ERROR! Cannot find the SortmeRNA_ref file: ${SortmeRNA_ref}\n"
   exit 1
 fi
 
 if [[ ! -f $FastqScreen_config ]]; then
-  color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}"
+  color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}\n"
   exit 1
 fi
 

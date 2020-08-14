@@ -62,7 +62,7 @@ check_logfile() {
   local logfile=$3
 
   if [[ $(grep -iP "(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]]; then
-    color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps."
+    color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps.\n"
     return 1
   else
     color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
@@ -74,7 +74,7 @@ check_logfile() {
 
 work_dir=$maindir/NGSmodule_work/
 if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
-  color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!"
+  color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!\n"
   exit 1
 fi
 
@@ -151,7 +151,7 @@ if [[ -d $work_dir ]]; then
       ntask_per_run=$total_task
     fi
   else
-    color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!"
+    color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
     exit 1
   fi
   threads=$((($total_threads + $ntask_per_run) / $ntask_per_run - 1))
