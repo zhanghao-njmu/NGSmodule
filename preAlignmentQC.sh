@@ -115,7 +115,7 @@ for sample in "${arr[@]}"; do
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
           $read_cutting --cut_window_size $cut_window_size --cut_mean_quality $cut_mean_quality \
-          --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
           --length_required $length_required \
           --in1 ${fq1} \
           --out1 ${sample}.fq \
@@ -239,7 +239,7 @@ for sample in "${arr[@]}"; do
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
           $read_cutting --cut_window_size $cut_window_size --cut_mean_quality $cut_mean_quality \
-          --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
           --length_required $length_required --detect_adapter_for_pe --correction \
           --in1 ${fq1} --in2 ${fq2} \
           --out1 ${sample}_1.fq --out2 ${sample}_2.fq \
