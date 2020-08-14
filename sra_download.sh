@@ -3,7 +3,7 @@
 #pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
 
 rawdata_dir="$(pwd)/rawdata/"
-SRPfile=$(find $rawdata_dir -maxdepth 1 -name "meta.csv")
+SRPfile="meta.csv"
 IFS=','
 threads=1
 ntask_per_run=300
@@ -18,6 +18,10 @@ for ((i = 1; i <= $ntask_per_run; i++)); do
   echo >&1000
 done
 
+if [[ ! -d $rawdata_dir ]];then
+  mkdir -p $rawdata_dir
+fi
+
 for file in "${SRPfile[@]}"; do
   while IFS=$IFS read line; do
 
@@ -28,6 +32,7 @@ for file in "${SRPfile[@]}"; do
 
       while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
         echo "prefetch $srp/$srr"
+        cd $rawdata_dir
         prefetch --output-directory ${srp} --max-size 1000000000000 $srr &
         sleep 60
       done
@@ -90,8 +95,6 @@ for file in "${SRPfile[@]}"; do
     fi
 
   done <$file
-  wait
-
 done
 
 wait
