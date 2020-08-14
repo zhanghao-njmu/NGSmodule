@@ -75,7 +75,7 @@ for sample in "${arr[@]}"; do
   {
     dir=${work_dir}/${sample}
     cd ${dir}
-    mkdir -p ${dir}/PreAlignmentQ
+    mkdir -p ${dir}/PreAlignmentQC
     echo "+++++ ${sample} +++++"
     Layout=${Layout_dict[${sample}]}
     force=${force_complete}
