@@ -7,7 +7,7 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
-trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 fastqc --version &>/dev/null
 [ $? -ne 0 ] && {
@@ -166,7 +166,7 @@ for sample in "${arr[@]}"; do
                 break
               }
               mv other.fq $dir/${sample}_trim.fq
-              rm -rf ${sample}.fq aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
+              rm -rf $fq1 aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
               mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
             fi
           else
@@ -291,7 +291,7 @@ for sample in "${arr[@]}"; do
                 break
               }
               reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
-              rm -rf ${sample}.fq aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp
+              rm -rf $fq1 $fq2 aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp
               mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
             fi
           fi
