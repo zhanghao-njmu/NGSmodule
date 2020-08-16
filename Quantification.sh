@@ -12,8 +12,7 @@ Rscript &>/dev/null
 
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
 for package in "${R_packages[@]}"; do
-  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
-  if [ $? -ne 0 ]; then
+  if ! Rscript -e "installed.packages()" | awk '{print $1}' | grep $package ; then
     color_echo "red" "Cannot find the R package $package.\n"
     if [[ $package == "refGenome" ]]; then
       color_echo "red" "Please install it in the R environment using \"remotes::install_version('$package')\" "
