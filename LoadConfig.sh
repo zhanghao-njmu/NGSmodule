@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+shopt -s expand_aliases
 
 ###### trap_add <command> <trap_name> ######
 ###### e.g. trap_add 'echo "in trap SIGINT"' SIGINT ######
