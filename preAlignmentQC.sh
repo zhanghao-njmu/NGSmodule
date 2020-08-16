@@ -98,6 +98,11 @@ for sample in "${arr[@]}"; do
         fq1=${dir}/${sample}.fq.gz
 
         if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]]; then
+          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$tmpfile
+            break
+          }
           color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
         else
           mkdir -p $dir/PreAlignmentQC/fastqc
@@ -110,6 +115,11 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
+          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$tmpfile
+            break
+          }
           color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
         else
           mkdir -p $dir/PreAlignmentQC/fastp
@@ -133,6 +143,11 @@ for sample in "${arr[@]}"; do
 
         if [[ -f $fq1 ]]; then
           if [[ -f $dir/PreAlignmentQC/fastq_screen/fastq_screen.log ]] && [[ $(grep "Processing complete" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log) ]] && [[ $force == "FALSE" ]]; then
+            check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
+            [ $? -ne 0 ] && {
+              echo "Interrupted: $sample" >>$tmpfile
+              break
+            }
             color_echo "yellow" "+++++ ${sample}: FastQ_Screen skipped +++++"
           else
             mkdir -p $dir/PreAlignmentQC/fastq_screen
@@ -147,6 +162,11 @@ for sample in "${arr[@]}"; do
 
           if [[ $SequenceType == "rna" ]]; then
             if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
+              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
+              [ $? -ne 0 ] && {
+                echo "Interrupted: $sample" >>$tmpfile
+                break
+              }
               color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
             else
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
@@ -226,6 +246,11 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]]; then
+          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$tmpfile
+            break
+          }
           color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
         else
           mkdir -p $dir/PreAlignmentQC/fastqc
@@ -238,6 +263,11 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
+          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
+          [ $? -ne 0 ] && {
+            echo "Interrupted: $sample" >>$tmpfile
+            break
+          }
           color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
         else
           mkdir -p $dir/PreAlignmentQC/fastp
@@ -275,6 +305,11 @@ for sample in "${arr[@]}"; do
 
           if [[ $SequenceType == "rna" ]]; then
             if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
+              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
+              [ $? -ne 0 ] && {
+                echo "Interrupted: $sample" >>$tmpfile
+                break
+              }
               color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
             else
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
