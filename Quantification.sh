@@ -10,8 +10,6 @@ Rscript &>/dev/null
   exit 1
 }
 
-echo "$(which Rscript)"
-
 R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
 for package in "${R_packages[@]}"; do
   Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
