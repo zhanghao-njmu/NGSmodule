@@ -90,8 +90,10 @@ for sample in "${arr[@]}"; do
             cp -a ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
           else
-            runs=$(ls ${dir}/run*_${sample}.fq.gz | sort)
-            echo ${runs[*]} | xargs cat >${dir}/${sample}.fq.gz
+            runs=$(ls -lL ${dir}/run*_${sample}.fq.gz)
+            while [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo ${runs[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}.fq.gz | awk '{print$5}') ]]
+              echo ${runs[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}.fq.gz
+            done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >$dir/fq.log
           fi
         fi
@@ -195,10 +197,14 @@ for sample in "${arr[@]}"; do
             cp -a ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >$dir/fq.log
           else
-            runs1=$(ls ${dir}/run*_${sample}_1.fq.gz | sort)
-            runs2=$(ls ${dir}/run*_${sample}_2.fq.gz | sort)
-            echo ${runs1[*]} | xargs cat >${dir}/${sample}_1.fq.gz
-            echo ${runs2[*]} | xargs cat >${dir}/${sample}_2.fq.gz
+            runs1=$(ls ${dir}/run*_${sample}_1.fq.gz)
+            runs2=$(ls ${dir}/run*_${sample}_2.fq.gz)
+            while [[ ! -f ${dir}/${sample}_1.fq.gz ]]  || [[ ! $(echo ${runs1[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_1.fq.gz | awk '{print$5}') ]]
+              echo ${runs1[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_1.fq.gz
+            done
+            while [[ ! -f ${dir}/${sample}_1.fq.gz ]]  || [[ ! $(echo ${runs2[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_2.fq.gz | awk '{print$5}') ]]
+              echo ${runs2[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_2.fq.gz
+            done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >$dir/fq.log
           fi
         fi
