@@ -85,9 +85,9 @@ for sample in "${arr[@]}"; do
 
       if [[ $Layout == "SE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]]; then
+        if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
           if (($(ls ${dir}/run*_${sample}.fq.gz | wc -l) == 1)); then
-            cp -a ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
+            cp -fa ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
           else
             runs=$(ls -lL ${dir}/run*_${sample}.fq.gz)
@@ -191,10 +191,10 @@ for sample in "${arr[@]}"; do
 
       elif [[ $Layout == "PE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]]; then
+        if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
           if (($(ls ${dir}/run*_${sample}_1.fq.gz | wc -l) == 1)); then
-            cp -a ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
-            cp -a ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
+            cp -fa ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
+            cp -fa ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >$dir/fq.log
           else
             runs1=$(ls ${dir}/run*_${sample}_1.fq.gz)
