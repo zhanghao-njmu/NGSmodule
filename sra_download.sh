@@ -3,7 +3,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 #pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
 
 rawdata_dir="$(pwd)/rawdata/"
-SRPfile="meta.tsv"
+SRPfile="SRPmeta.tsv"
 ifs='\t'
 threads=1
 ntask_per_run=300
