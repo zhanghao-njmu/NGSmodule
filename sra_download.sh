@@ -5,8 +5,8 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 rawdata_dir="$(pwd)/rawdata/"
 SRPfile="SRPmeta.tsv"
 ifs='\t'
-threads=1
-ntask_per_run=300
+threads=3
+ntask_per_run=120
 force_extract="TRUE"
 
 ###### fifo ######
