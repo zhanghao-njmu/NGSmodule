@@ -59,18 +59,27 @@ processbar() {
 }
 bar=0
 
-###### check_logfile <sample> <tool> <logfile> ######
+###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern>######
+error_pattern="(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)"
+complete_pattern="(Names appear to be correctly paired)|(Analysis complete)|(fastp.json)|(Processing complete)|(Processing complete)"
+
 check_logfile() {
   local sample=$1
   local tool=$2
   local logfile=$3
+  local error_pattern=$4
+  local complete_pattern=$5
 
-  if [[ $(grep -iP "(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)" ${logfile}) ]]; then
-    color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps.\n"
-    return 1
+  if [[ -f $3]]; then
+    if [[ $(grep -iP ${error_pattern} ${logfile}) ]]; then
+      color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps.\n"
+      return 1
+    elif [[ $(grep -iP ${complete_pattern} ${logfile}) ]]; then
+      color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+      return 0
+    fi
   else
-    color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
-    return 0
+    return 2
   fi
 }
 
