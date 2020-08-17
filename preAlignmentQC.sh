@@ -169,7 +169,7 @@ for sample in "${arr[@]}"; do
             mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
           else
             mv $fq1 $dir/${sample}_trim.fq
-            color_echo "yellow" "+++++ $sample: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "yellow" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
 
         fi
@@ -184,6 +184,7 @@ for sample in "${arr[@]}"; do
         else
           status="uncompleted"
           force="TRUE"
+          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Start to re-analysis. +++++"
         fi
 
       elif [[ $Layout == "PE" ]]; then
@@ -300,7 +301,7 @@ for sample in "${arr[@]}"; do
           else
             mv $fq1 $dir/${sample}_1_trim.fq
             mv $fq2 $dir/${sample}_2_trim.fq
-            color_echo "yellow" "+++++ $sample: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "yellow" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
 
         fi
@@ -315,6 +316,7 @@ for sample in "${arr[@]}"; do
         else
           status="uncompleted"
           force="TRUE"
+          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Start to re-analysis. +++++"
         fi
 
       fi
