@@ -60,7 +60,7 @@ processbar() {
 bar=0
 
 ###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern>######
-error_pattern="(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(no such file or directory)"
+error_pattern="(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
 complete_pattern="(Names appear to be correctly paired)|(Analysis complete)|(fastp.json)|(Processing complete)|(Done Reports generation)"
 
 check_logfile() {
