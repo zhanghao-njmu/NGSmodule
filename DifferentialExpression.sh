@@ -18,6 +18,7 @@ for package in "${R_packages[@]}"; do
 done
 
 echo -e "####################### DifferentialExpression Parameters ######################\n"
+echo -e "  Rscript path: $(which Rscript)"
 echo -e "  max_padj: $max_padj\n  min_fc: $min_fc\n  min_count:$min_count\n  group_compare:$group_compare\n  DGEs_multi_compare:$DGEs_multi_compare\n"
 echo -e "################################################################################\n"
 

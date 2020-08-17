@@ -45,6 +45,7 @@ if [[ ! -f $gtf ]]; then
 fi
 
 echo -e "########################## postAlignmentQC Parameters ##########################\n"
+echo -e "  Rscript path: $(which Rscript)"
 echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
 echo -e "  GTF_File: ${gtf}\n "
 echo -e "################################################################################\n"

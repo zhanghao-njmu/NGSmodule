@@ -18,6 +18,7 @@ for package in "${R_packages[@]}"; do
 done
 
 echo -e "######################## postQuantificationQC Parameters #######################\n"
+echo -e "  Rscript path: $(which Rscript)"
 echo -e "  Aligner: ${Aligner}\n"
 echo -e "  SampleInfoFile: ${SampleInfoFile}\n"
 echo -e "################################################################################\n"

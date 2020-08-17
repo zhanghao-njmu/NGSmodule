@@ -30,6 +30,7 @@ if [[ ! -f $gtf ]]; then
 fi
 
 echo -e "########################## Quantification Parameters ###########################\n"
+echo -e "  Rscript path: $(which Rscript)"
 echo -e "  featurecounts_threads: ${threads_featurecounts}\n  Strand_Specific: ${strandspecific} (0=unstranded,1=stranded,2=reversely stranded)\n"
 echo -e "  GTF_File: ${gtf}\n "
 echo -e "################################################################################\n"
