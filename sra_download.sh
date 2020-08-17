@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 #pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
 
 rawdata_dir="$(pwd)/rawdata/"
 SRPfile="meta.csv"
-IFS=','
+ifs=','
 threads=1
 ntask_per_run=300
+force_extract="TRUE"
 
 ###### fifo ######
 tempfifo=$$.fifo
@@ -22,10 +23,10 @@ if [[ ! -d $rawdata_dir ]]; then
   mkdir -p $rawdata_dir
 fi
 
-while IFS=$IFS read line; do
+while IFS=$ifs read line; do
 
-  srp=$(awk -F "$IFS" '{print $1}' <<<"$line")
-  srr=$(awk -F "$IFS" '{print $2}' <<<"$line")
+  srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
+  srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
 
   if [[ $srr != "run_accession" ]]; then
 
@@ -43,7 +44,7 @@ while IFS=$IFS read line; do
           echo $srp/$srr
           cd $rawdata_dir/$srp/$srr
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ ! $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]] || [[ $force_extract == "TRUE" ]]; then
             rm -rf ./fasterq.tmp*
             echo "fasterq-dump $srp/$srr"
             fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump.log
@@ -52,7 +53,7 @@ while IFS=$IFS read line; do
             fi
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] || [[ $force_extract == "TRUE" ]]; then
             echo "pigz $srp/$srr"
             ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
@@ -94,7 +95,7 @@ while IFS=$IFS read line; do
 
   fi
 
-done < "$SRPfile"
+done <"$SRPfile"
 
 wait
 echo "done"
