@@ -330,7 +330,7 @@ for sample in "${arr[@]}"; do
     done
 
     echo "Completed: $sample" >>$tmpfile
-    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | wc -l) | Total:$total_task *****"
+    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | uniq | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &
