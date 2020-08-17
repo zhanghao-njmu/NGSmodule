@@ -40,6 +40,7 @@ while IFS=$IFS read line; do
     {
       while :; do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
+          echo $srp/$srr
           cd $rawdata_dir/$srp/$srr
 
           if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]]; then
@@ -93,7 +94,7 @@ while IFS=$IFS read line; do
 
   fi
 
-done <$SRPfile
+done < "$SRPfile"
 
 wait
 echo "done"
