@@ -91,7 +91,7 @@ for sample in "${arr[@]}"; do
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
           else
             runs=$(ls -lL ${dir}/run*_${sample}.fq.gz)
-            while [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo ${runs[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}.fq.gz | awk '{print$5}') ]]
+            while [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo ${runs[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}.fq.gz | awk '{print$5}') ]]; do
               echo ${runs[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}.fq.gz
             done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >$dir/fq.log
@@ -199,10 +199,10 @@ for sample in "${arr[@]}"; do
           else
             runs1=$(ls -lL ${dir}/run*_${sample}_1.fq.gz)
             runs2=$(ls -lL ${dir}/run*_${sample}_2.fq.gz)
-            while [[ ! -f ${dir}/${sample}_1.fq.gz ]]  || [[ ! $(echo ${runs1[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_1.fq.gz | awk '{print$5}') ]]
+            while [[ ! -f ${dir}/${sample}_1.fq.gz ]] || [[ ! $(echo ${runs1[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_1.fq.gz | awk '{print$5}') ]]; do
               echo ${runs1[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_1.fq.gz
             done
-            while [[ ! -f ${dir}/${sample}_2.fq.gz ]]  || [[ ! $(echo ${runs2[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_2.fq.gz | awk '{print$5}') ]]
+            while [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo ${runs2[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_2.fq.gz | awk '{print$5}') ]]; do
               echo ${runs2[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_2.fq.gz
             done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >$dir/fq.log
