@@ -78,7 +78,7 @@ check_logfile() {
       color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
       return 0
     else
-      
+      color_echo "red" "grep -iP ${complete_pattern} ${logfile}"
       color_echo "red" "+++++ ${sample}: Unable to determine ${tool} status +++++"
       return 1
     fi
