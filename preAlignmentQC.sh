@@ -92,7 +92,7 @@ for sample in "${arr[@]}"; do
           else
             runs=$(ls -lL ${dir}/run*_${sample}.fq.gz)
             while [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo ${runs[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}.fq.gz | awk '{print$5}') ]]; do
-              echo ${runs[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}.fq.gz
+              echo "${runs[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}".fq.gz
             done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >$dir/fq.log
           fi
@@ -106,7 +106,7 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>$tmpfile
+          echo "Interrupted: $sample" >>"$tmpfile"
           break
         fi
 
@@ -125,7 +125,7 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>$tmpfile
+          echo "Interrupted: $sample" >>"$tmpfile"
           break
         fi
 
@@ -141,7 +141,7 @@ for sample in "${arr[@]}"; do
           fi
           check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
           if [[ $? == 1 ]]; then
-            echo "Interrupted: $sample" >>$tmpfile
+            echo "Interrupted: $sample" >>"$tmpfile"
             break
           fi
 
@@ -163,7 +163,7 @@ for sample in "${arr[@]}"; do
             fi
             check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
             if [[ $? == 1 ]]; then
-              echo "Interrupted: $sample" >>$tmpfile
+              echo "Interrupted: $sample" >>"$tmpfile"
               break
             fi
             mv other.fq $dir/${sample}_trim.fq
@@ -192,18 +192,18 @@ for sample in "${arr[@]}"; do
       elif [[ $Layout == "PE" ]]; then
 
         if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
-          if (($(ls ${dir}/run*_${sample}_1.fq.gz | wc -l) == 1)); then
-            cp -fa ${dir}/run1_${sample}_1.fq.gz ${dir}/${sample}_1.fq.gz
-            cp -fa ${dir}/run1_${sample}_2.fq.gz ${dir}/${sample}_2.fq.gz
+          if (($(ls ${dir}/run*_"${sample}"_1.fq.gz | wc -l) == 1)); then
+            cp -fa "${dir}"/run1_"${sample}"_1.fq.gz "${dir}"/"${sample}"_1.fq.gz
+            cp -fa "${dir}"/run1_"${sample}"_2.fq.gz "${dir}"/"${sample}"_2.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >$dir/fq.log
           else
-            runs1=$(ls -lL ${dir}/run*_${sample}_1.fq.gz)
-            runs2=$(ls -lL ${dir}/run*_${sample}_2.fq.gz)
+            runs1=$(ls -lL "${dir}"/run*_"${sample}"_1.fq.gz)
+            runs2=$(ls -lL "${dir}"/run*_"${sample}"_2.fq.gz)
             while [[ ! -f ${dir}/${sample}_1.fq.gz ]] || [[ ! $(echo ${runs1[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_1.fq.gz | awk '{print$5}') ]]; do
-              echo ${runs1[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_1.fq.gz
+              echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_1.fq.gz
             done
             while [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo ${runs2[*]} | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL ${dir}/${sample}_2.fq.gz | awk '{print$5}') ]]; do
-              echo ${runs2[*]} | awk '{print$9}' | xargs cat >${dir}/${sample}_2.fq.gz
+              echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_2.fq.gz
             done
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >$dir/fq.log
           fi
@@ -221,13 +221,13 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           fq1_nlines=$(zcat $fq1 | wc -l)
           fq2_nlines=$(zcat $fq2 | wc -l)
-          if [[ $fq1_nlines == $fq2_nlines ]]; then
+          if [[ $fq1_nlines == "$fq2_nlines" ]]; then
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$dir/reformat_vpair.log
           else
             color_echo "red" "ERROR! R1 and R2 for ${sample} have different numbers of reads."
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$dir/reformat_vpair.log
             echo -e "ERROR! R1 and R2 for ${sample} have different numbers of reads." >>$dir/reformat_vpair.log
-            echo "Interrupted: $sample" >>$tmpfile
+            echo "Interrupted: $sample" >>"$tmpfile"
             break
           fi
         fi
@@ -239,7 +239,7 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>$tmpfile
+          echo "Interrupted: $sample" >>"$tmpfile"
           break
         fi
 
@@ -258,7 +258,7 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>$tmpfile
+          echo "Interrupted: $sample" >>"$tmpfile"
           break
         fi
 
@@ -275,7 +275,7 @@ for sample in "${arr[@]}"; do
           fi
           check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
           if [[ $? == 1 ]]; then
-            echo "Interrupted: $sample" >>$tmpfile
+            echo "Interrupted: $sample" >>"$tmpfile"
             break
           fi
 
@@ -298,7 +298,7 @@ for sample in "${arr[@]}"; do
             fi
             check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
             if [[ $? == 1 ]]; then
-              echo "Interrupted: $sample" >>$tmpfile
+              echo "Interrupted: $sample" >>"$tmpfile"
               break
             fi
             reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
@@ -330,10 +330,10 @@ for sample in "${arr[@]}"; do
     done
     
     if [[ "$status" == "completed" ]];then
-      echo "Completed: $sample" >>$tmpfile
+      echo "Completed: $sample" >>"$tmpfile"
     fi
 
-    color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | uniq | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
+    color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
 
     echo >&1000
   } &
