@@ -97,31 +97,19 @@ for sample in "${arr[@]}"; do
         fi
         fq1=${dir}/${sample}.fq.gz
 
-        if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]]; then
-          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
-          color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
-        else
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
           mkdir -p $dir/PreAlignmentQC/fastqc
-          fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
+          fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} &>$dir/PreAlignmentQC/fastqc/fastqc.log
+        fi
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]];then
+          echo "Interrupted: $sample" >>$tmpfile
+          break
         fi
 
-        if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
-          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
-          color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
-        else
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
           mkdir -p $dir/PreAlignmentQC/fastp
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
@@ -132,43 +120,32 @@ for sample in "${arr[@]}"; do
           --out1 ${sample}.fq \
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
-          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
+        fi
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]];then
+          echo "Interrupted: $sample" >>$tmpfile
+          break
         fi
 
         fq1=$dir/${sample}.fq
 
         if [[ -f $fq1 ]]; then
-          if [[ -f $dir/PreAlignmentQC/fastq_screen/fastq_screen.log ]] && [[ $(grep "Processing complete" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log) ]] && [[ $force == "FALSE" ]]; then
-            check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            [ $? -ne 0 ] && {
-              echo "Interrupted: $sample" >>$tmpfile
-              break
-            }
-            color_echo "yellow" "+++++ ${sample}: FastQ_Screen skipped +++++"
-          else
+        
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log $error_pattern $complete_pattern
+          if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
             mkdir -p $dir/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            [ $? -ne 0 ] && {
-              echo "Interrupted: $sample" >>$tmpfile
-              break
-            }
+          fi
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log $error_pattern $complete_pattern
+          if [[ $? == 1 ]];then
+            echo "Interrupted: $sample" >>$tmpfile
+            break
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
-              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$tmpfile
-                break
-              }
-              color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
-            else
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log $error_pattern $complete_pattern
+            if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna
@@ -181,19 +158,20 @@ for sample in "${arr[@]}"; do
               --aligned aligned \
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$tmpfile
-                break
-              }
-              mv other.fq $dir/${sample}_trim.fq
-              rm -rf $fq1 aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
-              mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
             fi
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log $error_pattern $complete_pattern
+            if [[ $? == 1 ]];then
+              echo "Interrupted: $sample" >>$tmpfile
+              break
+            fi
+            mv other.fq $dir/${sample}_trim.fq
+            rm -rf $fq1 aligned.fq $dir/PreAlignmentQC/sortmerna_tmp
+            mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
           else
             mv $fq1 $dir/${sample}_trim.fq
-            color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped. +++++"
+            color_echo "yellow" "+++++ $sample: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
+
         fi
 
         if [[ -f $dir/${sample}_trim.fq ]]; then
@@ -227,11 +205,13 @@ for sample in "${arr[@]}"; do
         fq2=${dir}/${sample}_2.fq.gz
 
         ##To verify that reads appear to be correctly paired
-        if [[ ! -f $dir/reformat_vpair.log ]] || [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]]; then
+        check_logfile $sample "reformat" $dir/reformat_vpair.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
           reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t 2>$dir/reformat_vpair.log
         fi
-
-        if [[ ! $(grep "Names appear to be correctly paired" $dir/reformat_vpair.log) ]]; then
+        
+        check_logfile $sample "reformat" $dir/reformat_vpair.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]];then
           fq1_nlines=$(zcat $fq1 | wc -l)
           fq2_nlines=$(zcat $fq2 | wc -l)
           if [[ $fq1_nlines == $fq2_nlines ]]; then
@@ -245,31 +225,19 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
-        if [[ -f $dir/PreAlignmentQC/fastqc/fastqc.log ]] && [[ $(grep "Analysis complete" $dir/PreAlignmentQC/fastqc/fastqc.log) ]] && [[ $force == "FALSE" ]]; then
-          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
-          color_echo "yellow" "+++++ ${sample}: FastQC skipped +++++"
-        else
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
           mkdir -p $dir/PreAlignmentQC/fastqc
-          fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} >$dir/PreAlignmentQC/fastqc/fastqc.log 2>&1
-          check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
+          fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} &>$dir/PreAlignmentQC/fastqc/fastqc.log
+        fi
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]];then
+          echo "Interrupted: $sample" >>$tmpfile
+          break
         fi
 
-        if [[ -f $dir/PreAlignmentQC/fastp/fastp.log ]] && [[ $(grep "fastp.json" $dir/PreAlignmentQC/fastp/fastp.log) ]] && [[ $force == "FALSE" ]]; then
-          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
-          color_echo "yellow" "+++++ ${sample}: Fastp skipped +++++"
-        else
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
           mkdir -p $dir/PreAlignmentQC/fastp
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
@@ -280,38 +248,33 @@ for sample in "${arr[@]}"; do
           --out1 ${sample}_1.fq --out2 ${sample}_2.fq \
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
-          check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log
-          [ $? -ne 0 ] && {
-            echo "Interrupted: $sample" >>$tmpfile
-            break
-          }
+        fi
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log $error_pattern $complete_pattern
+        if [[ $? == 1 ]];then
+          echo "Interrupted: $sample" >>$tmpfile
+          break
         fi
 
         fq1=$dir/${sample}_1.fq
         fq2=$dir/${sample}_2.fq
+
         if [[ -f $fq1 ]] && [[ -f $fq2 ]]; then
-          if [[ -f $dir/PreAlignmentQC/fastq_screen/fastq_screen.log ]] && [[ $(grep "Processing complete" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log) ]] && [[ $force == "FALSE" ]]; then
-            color_echo "yellow" "+++++ ${sample}: FastQ_Screen skipped +++++"
-          elif [[ -f $fq1 ]] && [[ -f $fq2 ]]; then
+
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log $error_pattern $complete_pattern
+          if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
             mkdir -p $dir/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log
-            [ $? -ne 0 ] && {
-              echo "Interrupted: $sample" >>$tmpfile
-              break
-            }
+          fi
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log $error_pattern $complete_pattern
+          if [[ $? == 1 ]];then
+            echo "Interrupted: $sample" >>$tmpfile
+            break
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            if [[ -f $dir/PreAlignmentQC/sortmerna/sortmerna.log ]] && [[ $(grep "Coverage by database" $dir/PreAlignmentQC/sortmerna/sortmerna.log) ]] && [[ $force == "FALSE" ]]; then
-              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$tmpfile
-                break
-              }
-              color_echo "yellow" "+++++ ${sample}: SortMeRNA skipped +++++"
-            else
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log $error_pattern $complete_pattern
+            if [[ $? == 1 ]] || [[ $force == "TRUE" ]];then
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna
@@ -325,20 +288,23 @@ for sample in "${arr[@]}"; do
               --aligned aligned \
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log
-              [ $? -ne 0 ] && {
-                echo "Interrupted: $sample" >>$tmpfile
-                break
-              }
-              reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
-              rm -rf $fq1 $fq2 aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp
-              mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
             fi
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log $error_pattern $complete_pattern
+            if [[ $? == 1 ]];then
+              echo "Interrupted: $sample" >>$tmpfile
+              break
+            fi
+            reformat.sh in=other.fq out1=$dir/${sample}_1_trim.fq out2=$dir/${sample}_2_trim.fq overwrite=true 2>$dir/PreAlignmentQC/sortmerna/reformat_split.log
+            rm -rf $fq1 $fq2 aligned.fq other.fq $dir/PreAlignmentQC/sortmerna_tmp
+            mv aligned.log $dir/PreAlignmentQC/sortmerna/sortmerna.log
+          else
+            mv $fq1 $dir/${sample}_1_trim.fq
+            mv $fq2 $dir/${sample}_2_trim.fq
+            color_echo "yellow" "+++++ $sample: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
-        else
-          color_echo "yellow" "+++++ $sample: FastQ_Screen and SortMeRNA skipped +++++"
-        fi
 
+        fi
+      
         if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]]; then
           pigz -p $threads -f ${sample}_1_trim.fq ${sample}_2_trim.fq
           status="completed"
