@@ -328,8 +328,11 @@ for sample in "${arr[@]}"; do
       fi
 
     done
+    
+    if [[ "$status" == "completed" ]];then
+      echo "Completed: $sample" >>$tmpfile
+    fi
 
-    echo "Completed: $sample" >>$tmpfile
     color_echo "green" "***** Completed:$(cat $tmpfile | grep "Completed" | uniq | wc -l) | Interrupted:$(cat $tmpfile | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
 
     echo >&1000
