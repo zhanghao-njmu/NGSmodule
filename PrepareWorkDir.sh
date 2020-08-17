@@ -4,8 +4,8 @@ echo -e "****************** Start PrepareWorkDir ******************\n"
 #######################################################################################
 if [[ -d $work_dir ]]; then
   tmp=($(date +"%Y%m%d%H%M%S"))
-  mv ${work_dir} ${work_dir}/../bk_${tmp}_work
-  mkdir ${work_dir}
+  mv "${work_dir}" "${work_dir}"/../bk_"${tmp}"_work
+  mkdir "${work_dir}"
 fi
 
 arr=($(find $rawdata_dir -type f | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})"))
