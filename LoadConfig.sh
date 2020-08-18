@@ -80,7 +80,7 @@ check_logfile() {
       color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
       return 0
     else
-      color_echo "red" "+++++ ${sample}: Unable to determine ${tool} status +++++"
+      color_echo "yellow" "+++++ ${sample}: Unable to determine ${tool} status. Restart the ${tool} progress. +++++"
       return 1
     fi
   else

@@ -83,6 +83,14 @@ for sample in "${arr[@]}"; do
     status="uncompleted"
     while [[ $status == "uncompleted" ]]; do
 
+      ### clear existed logs
+      existlogs=$(find ${dir} -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
+      for existlog in "${existlogs[@]}"; do
+        if [[ $(grep -iP "${error_pattern}" "${existlog}") ]]; then
+          rm -f ${existlog}
+        fi
+      done
+
       if [[ $Layout == "SE" ]]; then
 
         if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
