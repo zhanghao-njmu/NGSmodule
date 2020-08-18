@@ -11,7 +11,7 @@ fatal() {
 
 trap_add() {
   trap_add_cmd=$1
-  shift || fatal "${FUNCNAME} usage error"
+  shift || fatal "trap_add usage error"
   for trap_add_name in "$@"; do
     trap -- "$(
       # helper fn to get existing trap command from output
@@ -50,12 +50,11 @@ processbar() {
   local label=$3
   local maxlen=60
   local barlen=50
-  local perclen=14
   local format="%-${barlen}s%$((maxlen - barlen))s %s"
   local perc="[$current/$total]"
   local progress=$((current * barlen / total))
   local prog=$(for i in $(seq 0 $progress); do printf '='; done)
-  printf "\r$format\n" $prog $perc $label
+  printf "\r$format\n" "$prog" "$perc" "$label"
 }
 bar=0
 
@@ -75,33 +74,33 @@ check_logfile() {
     error=$(grep -iP "${error_pattern}" "${logfile}")
     complete=$(grep -iP "${complete_pattern}" "${logfile}")
     if [[ $error ]]; then
-      if [[ $mode == "precheck" ]];then
+      if [[ $mode == "precheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart the ${tool}."
-      elif [[ $mode == "postcheck" ]];then
+      elif [[ $mode == "postcheck" ]]; then
         color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Interrupt the remaining steps."
       fi
       return 1
     elif [[ $complete ]]; then
-      if [[ $mode == "precheck" ]];then
+      if [[ $mode == "precheck" ]]; then
         color_echo "blue" "+++++ ${sample}: ${tool} skipped +++++"
-      elif [[ $mode == "postcheck" ]];then
+      elif [[ $mode == "postcheck" ]]; then
         color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
       fi
       return 0
     else
-      if [[ $mode == "precheck" ]];then
+      if [[ $mode == "precheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart the ${tool}."
-      elif [[ $mode == "postcheck" ]];then
+      elif [[ $mode == "postcheck" ]]; then
         color_echo "red" "ERROR! ${sample}: Unable to determine ${tool} status. Interrupt the remaining steps."
       fi
       return 1
     fi
   else
-      if [[ $mode == "precheck" ]];then
-        color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
-      elif [[ $mode == "postcheck" ]];then
-        color_echo "red" "ERROR! ${sample}: Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
-      fi
+    if [[ $mode == "precheck" ]]; then
+      color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
+    elif [[ $mode == "postcheck" ]]; then
+      color_echo "red" "ERROR! ${sample}: Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
+    fi
     return 1
   fi
 }
@@ -168,7 +167,7 @@ if [[ -f $SampleInfoFile ]]; then
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     Sample_dict[$RunID]=$SampleID
     Layout_dict[$SampleID]=$Layout
-  done <$SampleInfoFile
+  done <"$SampleInfoFile"
 else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
@@ -176,7 +175,12 @@ fi
 
 ###### START ######
 if [[ -d $work_dir ]]; then
-  arr=($(find $work_dir -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern"))
+
+  arr=()
+  while IFS='' read -r line; do
+    arr+=("$line")
+  done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern")
+
   total_task=${#arr[@]}
   if [[ "$ntask_per_run" =~ ^[0-9]+$ ]]; then
     ntask_per_run=$ntask_per_run
@@ -190,7 +194,7 @@ if [[ -d $work_dir ]]; then
     color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
     exit 1
   fi
-  threads=$((($total_threads + $ntask_per_run) / $ntask_per_run - 1))
+  threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
 
   if ((threads > 120)); then
     threads=120
@@ -216,7 +220,7 @@ if [[ -d $work_dir ]]; then
   mkfifo $tempfifo
   exec 1000<>$tempfifo
   rm -f $tempfifo
-  for ((i = 1; i <= $ntask_per_run; i++)); do
+  for ((i = 1; i <= ntask_per_run; i++)); do
     echo >&1000
   done
 
@@ -225,7 +229,6 @@ if [[ -d $work_dir ]]; then
   trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT
 
 else
-
   total_task="Waiting for creating the workdir"
   ntask_per_run="Waiting for creating the workdir"
   threads="1"
