@@ -80,9 +80,15 @@ while IFS=$ifs read line; do
 
       force=${force_process}
       status="uncompleted"
+      attempt=0
 
-      while [[ $status == "uncompleted" ]]; do
+      while [[ $status == "uncompleted" ]] && (( "$attempt" <= 3 )) ; do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
+          ((attempt++))
+          if [[ $attempt != 1 ]];then
+            echo -e "+++++ $srp/$srr: Number of attempts: $attempt +++++"
+          fi
+          
           echo -e "+++++ $srp/$srr: Processing sra file +++++"
           cd $rawdata_dir/$srp/$srr
 
@@ -162,6 +168,11 @@ while IFS=$ifs read line; do
           sleep 60
         fi
       done
+
+      if [[ $status == "uncompleted" ]] && (( "$attempt" > 3 )) ;then
+        text="ERROR! $srp/$srr interrupted. Please check the processing log or re-download the SRA file."
+        echo -e "\033[31m$text\033[0m"
+      fi
 
       echo >&1000
     } &
