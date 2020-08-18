@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
+trap 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
 
 #### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### Requirement:
