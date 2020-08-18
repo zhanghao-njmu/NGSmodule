@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
+trap "exit" INT TERM
+trap "kill 0" EXIT
 #### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### Requirement:
 #### sra-tools (https://github.com/ncbi/sra-tools)
