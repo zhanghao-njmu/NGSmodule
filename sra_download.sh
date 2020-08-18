@@ -109,7 +109,7 @@ while IFS=$ifs read line; do
 
             if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
-              if [[ $fq1_nlines == $(($nreads * 4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
+              if [[ $fq1_nlines == $((nreads * 4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
                 echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
@@ -121,7 +121,7 @@ while IFS=$ifs read line; do
                 echo -e "ERROR! $srp/$srr has to restart the processing."
               fi
             else
-              if [[ $fq1_nlines == $(($nreads * 4)) ]]; then
+              if [[ $fq1_nlines == $((nreads * 4)) ]]; then
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
               else
@@ -133,7 +133,7 @@ while IFS=$ifs read line; do
 
           elif [[ -f ${srr}.fastq.gz ]]; then
             fq1_nlines=$(zcat ${srr}.fastq.gz | wc -l)
-            if [[ $fq1_nlines == $(($nreads * 4)) ]]; then
+            if [[ $fq1_nlines == $((nreads * 4)) ]]; then
               status="completed"
               echo -e "+++++ $srp/$srr: Processing completed +++++"
             else
