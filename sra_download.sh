@@ -64,15 +64,15 @@ line_count=1
 total_count=$(cat "$SRPfile" | wc -l)
 
 while IFS=$ifs read line; do
-
-  echo -e "########### $line_count/$total_count ###########"
-  ((line_count++))
-
   srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
   srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
   srx=$(awk -F "$ifs" '{print $3}' <<<"$line")
   srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
   nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
+
+  echo -e "########### $line_count/$total_count ###########"
+  ((line_count++))
+  echo $srp/$srr
 
   if [[ "$srr" =~ SRR* ]]; then
     read -u1000
