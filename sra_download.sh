@@ -12,7 +12,7 @@ SRPfile="SRP_meta_file.tsv"
 ifs='\t'
 threads=3
 ntask_per_run=120
-force_extract="TRUE"
+force_extract="FALSE"
 
 ###### fifo ######
 tempfifo=$$.fifo
