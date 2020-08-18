@@ -84,8 +84,11 @@ for sample in "${arr[@]}"; do
     while [[ $status == "uncompleted" ]]; do
 
       ### clear existed logs
-      existlogs=`find ${dir} -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log"`
-      if [[ $existlogs ]];then
+      existlogs=()
+      while IFS='' read -r line; do 
+        existlogs+=("$line"); 
+      done < <(find ${dir} -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
+      if [[ $existlogs ]]; then
         for existlog in "${existlogs[@]}"; do
           if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
             rm -f ${existlog}
@@ -338,8 +341,8 @@ for sample in "${arr[@]}"; do
       fi
 
     done
-    
-    if [[ "$status" == "completed" ]];then
+
+    if [[ "$status" == "completed" ]]; then
       echo "Completed: $sample" >>"$tmpfile"
     fi
 
