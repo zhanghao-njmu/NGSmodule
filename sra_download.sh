@@ -44,6 +44,10 @@ while IFS=$ifs read line; do
           echo $srp/$srr
           cd $rawdata_dir/$srp/$srr
 
+          if [[ $force_extract == "TRUE" ]];then 
+            rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
+          fi
+          
           if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ ! $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]] || [[ $force_extract == "TRUE" ]]; then
             rm -rf ./fasterq.tmp*
             echo "fasterq-dump $srp/$srr"
