@@ -48,14 +48,16 @@ var_extract=$(awk -F $ifs '
 while IFS=$ifs read line; do
   srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
   srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
-  {
-    while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
-      echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
-      cd $rawdata_dir
-      prefetch --output-directory ${srp} --max-size 1000000000000 ${srr}
-      sleep 60
-    done
-  } &
+  if [[ "$srr" =~ SRR* ]]; then
+    {
+      while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
+        echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
+        cd $rawdata_dir
+        prefetch --output-directory ${srp} --max-size 1000000000000 ${srr}
+        sleep 60
+      done
+    } &
+  fi
 done <<<"$var_extract"
 
 line_count=1
