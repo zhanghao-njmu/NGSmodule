@@ -91,7 +91,7 @@ while IFS=$ifs read line; do
             echo -e "+++++ $srp/$srr: fasterq-dump skipped +++++"
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] && [[ $(ls ./ | grep -E "(*.fastq$)|(*.fq$)") ]]; then
             ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
             echo -e "+++++ $srp/$srr: pigz done +++++"
