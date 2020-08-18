@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
-#pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}
+#### User can prepare the srp meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
+#### Requirement:
+#### sra-tools (https://github.com/ncbi/sra-tools)
+#### pigz (https://zlib.net/pigz)
+#### reformat (https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/reformat-guide)
 
+#############################  Paramaters #############################
 rawdata_dir="$(pwd)/rawdata/"
 SRPfile="SRPmeta.tsv"
 ifs='\t'
@@ -21,6 +26,11 @@ done
 
 if [[ ! -d $rawdata_dir ]]; then
   mkdir -p $rawdata_dir
+fi
+
+if [[ ! -f $SRPfile ]]; then
+  echo "ERROR! No such file:$SRPfile"
+  exit 1
 fi
 
 var_extract=$(awk -F $ifs '
@@ -56,11 +66,11 @@ while IFS=$ifs read line; do
 
     read -u1000
     {
-      
+
       force=${force_extract}
       status="uncompleted"
-      
-      while [[ $status == "uncompleted" ]] ; do
+
+      while [[ $status == "uncompleted" ]]; do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
           echo -e "+++++ $srp/$srr: Processing sra file +++++"
           cd $rawdata_dir/$srp/$srr
@@ -77,7 +87,7 @@ while IFS=$ifs read line; do
             fi
             echo -e "fasterq-dump finished" >$rawdata_dir/$srp/$srr/fasterq_dump.log
             echo -e "+++++ $srp/$srr: fasterq-dump done +++++"
-          else 
+          else
             echo -e "+++++ $srp/$srr: fasterq-dump skipped +++++"
           fi
 
@@ -99,7 +109,7 @@ while IFS=$ifs read line; do
 
             if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
-              if [[ $fq1_nlines == $(($nreads*4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
+              if [[ $fq1_nlines == $(($nreads * 4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
                 echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
@@ -111,7 +121,7 @@ while IFS=$ifs read line; do
                 echo -e "ERROR! $srp/$srr has to restart the processing."
               fi
             else
-              if [[ $fq1_nlines == $(($nreads*4)) ]]; then
+              if [[ $fq1_nlines == $(($nreads * 4)) ]]; then
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
               else
@@ -121,16 +131,16 @@ while IFS=$ifs read line; do
               fi
             fi
 
-          elif [[ -f ${srr}.fastq.gz ]] ;then
+          elif [[ -f ${srr}.fastq.gz ]]; then
             fq1_nlines=$(zcat ${srr}.fastq.gz | wc -l)
-              if [[ $fq1_nlines == $(($nreads*4)) ]]; then
-                status="completed"
-                echo -e "+++++ $srp/$srr: Processing completed +++++"
-              else
-                force="TRUE"
-                status="uncompleted"
-                echo -e "ERROR! $srp/$srr has to restart the processing."
-              fi
+            if [[ $fq1_nlines == $(($nreads * 4)) ]]; then
+              status="completed"
+              echo -e "+++++ $srp/$srr: Processing completed +++++"
+            else
+              force="TRUE"
+              status="uncompleted"
+              echo -e "ERROR! $srp/$srr has to restart the processing."
+            fi
           else
             force="TRUE"
             status="uncompleted"
@@ -147,7 +157,7 @@ while IFS=$ifs read line; do
 
   fi
 
-done <<< "$var_extract"
+done <<<"$var_extract"
 
 wait
 echo "done"
