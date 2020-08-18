@@ -82,7 +82,7 @@ while IFS=$ifs read line; do
       status="uncompleted"
       attempt=0
 
-      while [[ $status == "uncompleted" ]] && (("$attempt" <= 2)); do
+      while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
           ((attempt++))
           if [[ $attempt != 1 ]]; then
