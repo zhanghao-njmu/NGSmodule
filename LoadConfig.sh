@@ -74,7 +74,7 @@ check_logfile() {
     error=$(grep -iP "${error_pattern}" "${logfile}")
     complete=$(grep -iP "${complete_pattern}" "${logfile}")
     if [[ $error ]]; then
-      color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} ; Skipped the remaining steps.\n"
+      color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} \n"
       return 1
     elif [[ $complete ]]; then
       color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
