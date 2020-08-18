@@ -131,11 +131,10 @@ while IFS=$ifs read line; do
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
               else
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-                echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
+                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log 
                 force="TRUE"
                 status="uncompleted"
-                echo -e "ERROR! $srp/$srr has to restart the processing."
+                echo -e "ERROR! $srp/$srr has different numbers of lines between paired files: fq1=$fq1_nlines/ fq2=$fq2_nlines or with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
               fi
             else
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
@@ -144,7 +143,7 @@ while IFS=$ifs read line; do
               else
                 force="TRUE"
                 status="uncompleted"
-                echo -e "ERROR! $srp/$srr has to restart the processing."
+                echo -e "ERROR! $srp/$srr has different numbers of lines with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
               fi
             fi
 
@@ -156,12 +155,12 @@ while IFS=$ifs read line; do
             else
               force="TRUE"
               status="uncompleted"
-              echo -e "ERROR! $srp/$srr has to restart the processing."
+              echo -e "ERROR! $srp/$srr has different numbers of lines with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
             fi
           else
             force="TRUE"
             status="uncompleted"
-            echo -e "ERROR! $srp/$srr has to restart the processing."
+            echo -e "ERROR! Can not find fastq.gz file! $srp/$srr has to restart the processing."
           fi
 
         else
