@@ -23,15 +23,32 @@ if [[ ! -d $rawdata_dir ]]; then
   mkdir -p $rawdata_dir
 fi
 
+var_extract=$(awk -F $ifs '
+  NR==1 {
+      for (i=1; i<=NF; i++) {
+          f[$i] = i
+      }
+  }
+  { print $(f["study_accession"]) "\t" $(f["run_accession"]) "\t" $(f["experiment_accession"]) "\t" $(f["sample_accession"]) "\t" $(f["run_total_spots"]) "\t"  }
+  ' "$SRPfile")
+
+line_count=1
+total_count=$(cat "$SRPfile" | wc -l)
 while IFS=$ifs read line; do
+
+  echo -e "########### $line_count/$total_count ###########"
+  ((line_count++))
 
   srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
   srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
+  srx=$(awk -F "$ifs" '{print $3}' <<<"$line")
+  srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
+  nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
 
-  if [[ $srr != "run_accession" ]]; then
+  if [[ "$srr" =~ SRR* ]]; then
 
     while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
-      echo "prefetch $srp/$srr"
+      echo "+++++ $srp/$srr: Prefetching SRR +++++"
       cd $rawdata_dir
       prefetch --output-directory ${srp} --max-size 1000000000000 $srr &
       sleep 60
@@ -44,7 +61,7 @@ while IFS=$ifs read line; do
           echo $srp/$srr
           cd $rawdata_dir/$srp/$srr
 
-          if [[ $force_extract == "TRUE" ]];then 
+          if [[ $force_extract == "TRUE" ]]; then
             rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
           fi
 
@@ -99,7 +116,7 @@ while IFS=$ifs read line; do
 
   fi
 
-done <"$SRPfile"
+done <<< "$var_extract"
 
 wait
 echo "done"
