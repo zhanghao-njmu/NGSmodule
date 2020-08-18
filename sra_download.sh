@@ -42,8 +42,22 @@ var_extract=$(awk -F $ifs '
   { print $(f["study_accession"]) "\t" $(f["run_accession"]) "\t" $(f["experiment_accession"]) "\t" $(f["sample_accession"]) "\t" $(f["run_total_spots"]) "\t"  }
   ' "$SRPfile")
 
+while IFS=$ifs read line; do
+  srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
+  srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
+  {
+    while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
+      echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
+      cd $rawdata_dir
+      prefetch --output-directory ${srp} --max-size 1000000000000 $srr 
+      sleep 60
+    done
+  }&
+done <<< "$var_extract"
+
 line_count=1
 total_count=$(cat "$SRPfile" | wc -l)
+
 while IFS=$ifs read line; do
 
   echo -e "########### $line_count/$total_count ###########"
@@ -56,14 +70,6 @@ while IFS=$ifs read line; do
   nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
 
   if [[ "$srr" =~ SRR* ]]; then
-
-    while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
-      echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
-      cd $rawdata_dir
-      prefetch --output-directory ${srp} --max-size 1000000000000 $srr &
-      sleep 60
-    done
-
     read -u1000
     {
 
@@ -150,14 +156,14 @@ while IFS=$ifs read line; do
         else
           sleep 60
         fi
-
       done
+
       echo >&1000
     } &
 
   fi
 
-done <<<"$var_extract"
+done <<< "$var_extract"
 
 wait
 echo "done"
