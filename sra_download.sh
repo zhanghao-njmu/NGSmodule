@@ -12,7 +12,7 @@ SRPfile="SRP_meta_file.tsv"
 ifs='\t'
 threads=4
 ntask_per_run=90
-force_extract="FALSE"
+force_process="FALSE"
 
 ###### fifo ######
 tempfifo=$$.fifo
@@ -29,7 +29,7 @@ if [[ ! -d $rawdata_dir ]]; then
 fi
 
 if [[ ! -f $SRPfile ]]; then
-  echo "ERROR! No such file:$SRPfile"
+  echo "ERROR! No such file: $SRPfile"
   exit 1
 fi
 
@@ -67,7 +67,7 @@ while IFS=$ifs read line; do
     read -u1000
     {
 
-      force=${force_extract}
+      force=${force_process}
       status="uncompleted"
 
       while [[ $status == "uncompleted" ]]; do
