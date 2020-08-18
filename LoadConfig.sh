@@ -98,9 +98,9 @@ check_logfile() {
     fi
   else
       if [[ $mode == "precheck" ]];then
-        color_echo "blue" "No ${tool} logfile existed. Start the ${tool}."
+        color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
       elif [[ $mode == "postcheck" ]];then
-        color_echo "red" "ERROR! Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
+        color_echo "red" "ERROR! ${sample}: Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
       fi
     return 1
   fi
