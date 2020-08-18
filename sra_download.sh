@@ -47,8 +47,8 @@ while IFS=$ifs read line; do
           if [[ $force_extract == "TRUE" ]];then 
             rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
           fi
-          
-          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ ! $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]] || [[ $force_extract == "TRUE" ]]; then
+
+          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ ! $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]]; then
             rm -rf ./fasterq.tmp*
             echo "fasterq-dump $srp/$srr"
             fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump.log
@@ -57,7 +57,7 @@ while IFS=$ifs read line; do
             fi
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] || [[ $force_extract == "TRUE" ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]]; then
             echo "pigz $srp/$srr"
             ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
