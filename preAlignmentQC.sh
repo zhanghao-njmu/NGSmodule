@@ -85,10 +85,10 @@ for sample in "${arr[@]}"; do
 
       ### clear existed logs
       existlogs=()
-      while IFS='' read -r line; do 
-        existlogs+=("$line"); 
+      while IFS='' read -r line; do
+        existlogs+=("$line")
       done < <(find ${dir} -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
-      if (( ${#existlogs} >= 1 )); then
+      if ((${#existlogs} >= 1)); then
         for existlog in "${existlogs[@]}"; do
           if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
             rm -f ${existlog}
