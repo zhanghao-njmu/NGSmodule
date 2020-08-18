@@ -76,12 +76,18 @@ for sample in "${arr[@]}"; do
     dir=${work_dir}/${sample}
     cd "${dir}"
     mkdir -p "${dir}"/PreAlignmentQC
+
     echo "+++++ ${sample} +++++"
     Layout=${Layout_dict[${sample}]}
     force=${force_complete}
-
     status="uncompleted"
-    while [[ $status == "uncompleted" ]]; do
+    attempt=0
+
+    while [[ $status == "uncompleted" ]] && (("$attempt" <= 2)); do
+      ((attempt++))
+      if [[ $attempt != 1 ]]; then
+        echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
+      fi
 
       ### clear existed logs
       existlogs=()
@@ -119,8 +125,8 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>"$tmpfile"
-          break
+          force="TRUE"
+          continue
         fi
 
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
@@ -138,8 +144,8 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>"$tmpfile"
-          break
+          force="TRUE"
+          continue
         fi
 
         fq1=$dir/${sample}.fq
@@ -154,8 +160,8 @@ for sample in "${arr[@]}"; do
           fi
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
-            echo "Interrupted: $sample" >>"$tmpfile"
-            break
+            force="TRUE"
+            continue
           fi
 
           if [[ $SequenceType == "rna" ]]; then
@@ -176,8 +182,8 @@ for sample in "${arr[@]}"; do
             fi
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
-              echo "Interrupted: $sample" >>"$tmpfile"
-              break
+              force="TRUE"
+              continue
             fi
             mv other.fq "$dir"/"${sample}"_trim.fq
             rm -rf "$fq1" aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -197,9 +203,8 @@ for sample in "${arr[@]}"; do
           status="completed"
           color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         else
-          status="uncompleted"
           force="TRUE"
-          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Start to re-analysis. +++++"
+          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
         fi
 
       elif [[ $Layout == "PE" ]]; then
@@ -237,11 +242,11 @@ for sample in "${arr[@]}"; do
           if [[ $fq1_nlines == "$fq2_nlines" ]]; then
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>"$dir"/reformat_vpair.log
           else
-            color_echo "red" "ERROR! ${sample}: R1 and R2 have different numbers of reads."
+            color_echo "yellow" "ERROR! ${sample}: R1 and R2 have different numbers of reads."
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>"$dir"/reformat_vpair.log
             echo -e "ERROR! ${sample}: R1 and R2 have different numbers of reads." >>"$dir"/reformat_vpair.log
-            echo "Interrupted: $sample" >>"$tmpfile"
-            break
+            force="TRUE"
+            continue
           fi
         fi
 
@@ -252,8 +257,8 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>"$tmpfile"
-          break
+          force="TRUE"
+          continue
         fi
 
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
@@ -271,8 +276,8 @@ for sample in "${arr[@]}"; do
         fi
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          echo "Interrupted: $sample" >>"$tmpfile"
-          break
+          force="TRUE"
+          continue
         fi
 
         fq1=$dir/${sample}_1.fq
@@ -288,8 +293,8 @@ for sample in "${arr[@]}"; do
           fi
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
-            echo "Interrupted: $sample" >>"$tmpfile"
-            break
+            force="TRUE"
+            continue
           fi
 
           if [[ $SequenceType == "rna" ]]; then
@@ -311,8 +316,8 @@ for sample in "${arr[@]}"; do
             fi
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
-              echo "Interrupted: $sample" >>"$tmpfile"
-              break
+              force="TRUE"
+              continue
             fi
             reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
             rm -rf "$fq1" "$fq2" aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -333,9 +338,9 @@ for sample in "${arr[@]}"; do
           status="completed"
           color_echo "blue" "+++++ ${sample}: Processing complete +++++"
         else
-          status="uncompleted"
           force="TRUE"
-          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Start to re-analysis. +++++"
+          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
+          continue
         fi
 
       fi
@@ -344,6 +349,9 @@ for sample in "${arr[@]}"; do
 
     if [[ "$status" == "completed" ]]; then
       echo "Completed: $sample" >>"$tmpfile"
+    else
+      echo "Interrupted: $sample" >>"$tmpfile" 
+      color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq file."
     fi
 
     color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"

@@ -75,9 +75,9 @@ check_logfile() {
     complete=$(grep -iP "${complete_pattern}" "${logfile}")
     if [[ $error ]]; then
       if [[ $mode == "precheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart the ${tool}."
+        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart ${tool}."
       elif [[ $mode == "postcheck" ]]; then
-        color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Interrupt the remaining steps."
+        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}."
       fi
       return 1
     elif [[ $complete ]]; then
@@ -89,9 +89,9 @@ check_logfile() {
       return 0
     else
       if [[ $mode == "precheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart the ${tool}."
+        color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart ${tool}."
       elif [[ $mode == "postcheck" ]]; then
-        color_echo "red" "ERROR! ${sample}: Unable to determine ${tool} status. Interrupt the remaining steps."
+        color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status."
       fi
       return 1
     fi
@@ -99,7 +99,7 @@ check_logfile() {
     if [[ $mode == "precheck" ]]; then
       color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
     elif [[ $mode == "postcheck" ]]; then
-      color_echo "red" "ERROR! ${sample}: Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
+      color_echo "yellow" "Warning! ${sample}: Cannot find the log file for the tool ${tool}."
     fi
     return 1
   fi
