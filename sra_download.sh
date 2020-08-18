@@ -9,7 +9,7 @@ trap "kill 0" EXIT
 
 #############################  Paramaters #############################
 rawdata_dir="$(pwd)/rawdata/"
-SRPfile="SRP_meta_file.tsv"
+SRPfile="$(pwd)/SRP_meta_file.tsv"
 ifs='\t'
 threads=4
 ntask_per_run=90
@@ -97,7 +97,7 @@ while IFS=$ifs read line; do
             rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/fasterq_dump_process.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump_process.log) ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]]; then
             rm -rf ./fasterq.tmp*
             fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump_process.log
             if [ -e ${srr} ]; then
