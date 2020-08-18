@@ -14,6 +14,9 @@ threads=4
 ntask_per_run=90
 force_process="FALSE"
 
+########################################################################
+
+
 ###### fifo ######
 tempfifo=$$.fifo
 trap "exec 1000>&-;exec 1000<&-;exit 0" 2
