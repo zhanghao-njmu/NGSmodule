@@ -62,11 +62,11 @@ while IFS=$ifs read line; do
           if [ -e ${srr}_2.fastq.gz ]; then
             echo "$srp/$srr pair-end"
 
-            if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]] || ! grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log; then
+            if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]] || [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>$rawdata_dir/$srp/$srr/reformat_vpair.log
             fi
 
-            if ! grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log; then
+            if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               fq1_nlines=$(zcat ${srr}_1.fastq.gz | wc -l)
               fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
               if [[ $fq1_nlines == $fq2_nlines ]]; then
