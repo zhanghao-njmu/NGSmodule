@@ -49,11 +49,11 @@ while IFS=$ifs read line; do
     while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
       echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
       cd $rawdata_dir
-      prefetch --output-directory ${srp} --max-size 1000000000000 $srr 
+      prefetch --output-directory ${srp} --max-size 1000000000000 ${srr}
       sleep 60
     done
-  }&
-done <<< "$var_extract"
+  } &
+done <<<"$var_extract"
 
 line_count=1
 total_count=$(cat "$SRPfile" | wc -l)
@@ -163,7 +163,7 @@ while IFS=$ifs read line; do
 
   fi
 
-done <<< "$var_extract"
+done <<<"$var_extract"
 
 wait
 echo "done"
