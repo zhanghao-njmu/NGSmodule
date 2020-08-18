@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
-#### User can prepare the srp meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
+#### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### Requirement:
 #### sra-tools (https://github.com/ncbi/sra-tools)
 #### pigz (https://zlib.net/pigz)
