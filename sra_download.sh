@@ -48,7 +48,7 @@ while IFS=$ifs read line; do
   if [[ "$srr" =~ SRR* ]]; then
 
     while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
-      echo "+++++ $srp/$srr: Prefetching SRR +++++"
+      echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
       cd $rawdata_dir
       prefetch --output-directory ${srp} --max-size 1000000000000 $srr &
       sleep 60
@@ -56,55 +56,86 @@ while IFS=$ifs read line; do
 
     read -u1000
     {
-      while :; do
+      
+      force=${force_extract}
+      status="uncompleted"
+      
+      while [[ $status == "uncompleted" ]] ; do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
-          echo $srp/$srr
+          echo -e "+++++ $srp/$srr: Processing sra file +++++"
           cd $rawdata_dir/$srp/$srr
 
-          if [[ $force_extract == "TRUE" ]]; then
-            rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
+          if [[ $force == "TRUE" ]]; then
+            rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/fasterq_dump_process.log $rawdata_dir/$srp/$srr/pigz.log $rawdata_dir/$srp/$srr/reformat_vpair.log
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ ! $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump.log) ]]; then
+          if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]] || [[ $(grep -i "error" $rawdata_dir/$srp/$srr/fasterq_dump_process.log) ]]; then
             rm -rf ./fasterq.tmp*
-            echo "fasterq-dump $srp/$srr"
-            fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump.log
+            fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump_process.log
             if [ -e ${srr} ]; then
               mv ${srr} ${srr}.fastq
             fi
+            echo -e "fasterq-dump finished" >$rawdata_dir/$srp/$srr/fasterq_dump.log
+            echo -e "+++++ $srp/$srr: fasterq-dump done +++++"
+          else 
+            echo -e "+++++ $srp/$srr: fasterq-dump skipped +++++"
           fi
 
           if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]]; then
-            echo "pigz $srp/$srr"
             ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
+            echo -e "+++++ $srp/$srr: pigz done +++++"
+          else
+            echo -e "+++++ $srp/$srr: pigz skipped +++++"
           fi
 
-          if [ -e ${srr}_2.fastq.gz ]; then
-            echo "$srp/$srr pair-end"
+          if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]]; then
 
             if [[ ! -f $rawdata_dir/$srp/$srr/reformat_vpair.log ]] || [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>$rawdata_dir/$srp/$srr/reformat_vpair.log
             fi
 
+            fq1_nlines=$(zcat ${srr}_1.fastq.gz | wc -l)
+
             if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
-              fq1_nlines=$(zcat ${srr}_1.fastq.gz | wc -l)
               fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
-              if [[ $fq1_nlines == $fq2_nlines ]]; then
+              if [[ $fq1_nlines == $(($nreads*4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
                 echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
+                status="completed"
+                echo -e "+++++ $srp/$srr: Processing completed +++++"
               else
                 echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-                echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads."
                 echo -e "ERROR! R1 and R2 for $srp/$srr have different numbers of reads." >>$rawdata_dir/$srp/$srr/reformat_vpair.log
-                break
+                force="TRUE"
+                status="uncompleted"
+                echo -e "ERROR! $srp/$srr has to restart the processing."
+              fi
+            else
+              if [[ $fq1_nlines == $(($nreads*4)) ]]; then
+                status="completed"
+                echo -e "+++++ $srp/$srr: Processing completed +++++"
+              else
+                force="TRUE"
+                status="uncompleted"
+                echo -e "ERROR! $srp/$srr has to restart the processing."
               fi
             fi
 
+          elif [[ -f ${srr}.fastq.gz ]] ;then
+            fq1_nlines=$(zcat ${srr}.fastq.gz | wc -l)
+              if [[ $fq1_nlines == $(($nreads*4)) ]]; then
+                status="completed"
+                echo -e "+++++ $srp/$srr: Processing completed +++++"
+              else
+                force="TRUE"
+                status="uncompleted"
+                echo -e "ERROR! $srp/$srr has to restart the processing."
+              fi
           else
-            echo "$srp/$srr single-end"
+            force="TRUE"
+            status="uncompleted"
+            echo -e "ERROR! $srp/$srr has to restart the processing."
           fi
-
-          break
 
         else
           sleep 60
