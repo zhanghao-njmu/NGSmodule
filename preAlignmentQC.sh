@@ -112,7 +112,7 @@ for sample in "${arr[@]}"; do
           mkdir -p $dir/PreAlignmentQC/fastqc
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} &>$dir/PreAlignmentQC/fastqc/fastqc.log
         fi
-        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           echo "Interrupted: $sample" >>"$tmpfile"
           break
@@ -131,7 +131,7 @@ for sample in "${arr[@]}"; do
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
         fi
-        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           echo "Interrupted: $sample" >>"$tmpfile"
           break
@@ -147,7 +147,7 @@ for sample in "${arr[@]}"; do
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
           fi
-          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             echo "Interrupted: $sample" >>"$tmpfile"
             break
@@ -169,7 +169,7 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
             fi
-            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
               echo "Interrupted: $sample" >>"$tmpfile"
               break
