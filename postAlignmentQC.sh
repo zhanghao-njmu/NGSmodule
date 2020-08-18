@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #######################################################################################
-trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM 
+trap_add 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
 
 bam_stat.py &>/dev/null
 [ $? -eq 127 ] && {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #######################################################################################
-trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM 
+trap_add 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
 
 #featureCounts &>/dev/null;[ $? -eq 127 ] && { echo -e "Cannot find the command featureCounts.\n";exit 1; }
 Rscript &>/dev/null
