@@ -17,7 +17,6 @@ force_process="FALSE"
 
 ########################################################################
 
-
 ###### fifo ######
 tempfifo=$$.fifo
 trap "exec 1000>&-;exec 1000<&-;exit 0" 2
@@ -83,13 +82,13 @@ while IFS=$ifs read line; do
       status="uncompleted"
       attempt=0
 
-      while [[ $status == "uncompleted" ]] && (( "$attempt" <= 2 )) ; do
+      while [[ $status == "uncompleted" ]] && (("$attempt" <= 2)); do
         if [[ -e $rawdata_dir/$srp/$srr/$srr.sra ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] && [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; then
           ((attempt++))
-          if [[ $attempt != 1 ]];then
+          if [[ $attempt != 1 ]]; then
             echo -e "+++++ $srp/$srr: Number of attempts: $attempt +++++"
           fi
-          
+
           echo -e "+++++ $srp/$srr: Processing sra file +++++"
           cd $rawdata_dir/$srp/$srr
 
@@ -132,7 +131,7 @@ while IFS=$ifs read line; do
                 status="completed"
                 echo -e "+++++ $srp/$srr: Processing completed +++++"
               else
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log 
+                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 force="TRUE"
                 status="uncompleted"
                 echo -e "ERROR! $srp/$srr has different numbers of lines between paired files: fq1=$fq1_nlines/ fq2=$fq2_nlines or with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
@@ -169,7 +168,7 @@ while IFS=$ifs read line; do
         fi
       done
 
-      if [[ $status == "uncompleted" ]] && (( "$attempt" > 2 )) ;then
+      if [[ $status == "uncompleted" ]]; then
         text="ERROR! $srp/$srr interrupted. Please check the processing log or re-download the SRA file."
         echo -e "\033[31m$text\033[0m"
       fi

@@ -350,7 +350,7 @@ for sample in "${arr[@]}"; do
     if [[ "$status" == "completed" ]]; then
       echo "Completed: $sample" >>"$tmpfile"
     else
-      echo "Interrupted: $sample" >>"$tmpfile" 
+      echo "Interrupted: $sample" >>"$tmpfile"
       color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq file."
     fi
 
