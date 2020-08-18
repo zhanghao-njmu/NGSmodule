@@ -59,7 +59,7 @@ processbar() {
 }
 bar=0
 
-###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern>######
+###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern> <mode>######
 error_pattern="(error)|(fatal)|(terrible)|(corrupted)|(unexpected)|(denied)|(refused)|(unrecognized)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
 complete_pattern="(Names appear to be correctly paired)|(Analysis complete)|(fastp.json)|(Processing complete)|(Done Reports generation)"
 
@@ -69,21 +69,39 @@ check_logfile() {
   local logfile=$3
   local error_pattern=$4
   local complete_pattern=$5
+  local mode=$6
 
   if [[ -f $logfile ]]; then
     error=$(grep -iP "${error_pattern}" "${logfile}")
     complete=$(grep -iP "${complete_pattern}" "${logfile}")
     if [[ $error ]]; then
-      color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile} \n"
+      if [[ $mode == "precheck" ]];then
+        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart the ${tool}."
+      elif [[ $mode == "postcheck" ]];then
+        color_echo "red" "ERROR! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Interrupt the remaining steps."
+      fi
       return 1
     elif [[ $complete ]]; then
-      color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+      if [[ $mode == "precheck" ]];then
+        color_echo "blue" "+++++ ${sample}: ${tool} skipped +++++"
+      elif [[ $mode == "postcheck" ]];then
+        color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+      fi
       return 0
     else
-      color_echo "yellow" "+++++ ${sample}: Unable to determine ${tool} status. Restart the ${tool} progress. +++++"
+      if [[ $mode == "precheck" ]];then
+        color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart the ${tool}."
+      elif [[ $mode == "postcheck" ]];then
+        color_echo "red" "ERROR! ${sample}: Unable to determine ${tool} status. Interrupt the remaining steps."
+      fi
       return 1
     fi
   else
+      if [[ $mode == "precheck" ]];then
+        color_echo "yellow" "No log file existed. Start the ${tool}."
+      elif [[ $mode == "postcheck" ]];then
+        color_echo "red" "ERROR! Cannot find the log file for the tool ${tool}. Interrupt the remaining steps."
+      fi
     return 1
   fi
 }

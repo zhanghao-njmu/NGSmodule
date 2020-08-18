@@ -86,14 +86,14 @@ for sample in "${arr[@]}"; do
       ### clear existed logs
       existlogs=$(find ${dir} -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
       for existlog in "${existlogs[@]}"; do
-        if [[ $(grep -iP "${error_pattern}" "${existlog}") ]]; then
+        if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
           rm -f ${existlog}
         fi
       done
 
       if [[ $Layout == "SE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
+        if [[ ! -f $dir/fq.log ]]; then
           if (($(ls ${dir}/run*_${sample}.fq.gz | wc -l) == 1)); then
             cp -fa ${dir}/run1_${sample}.fq.gz ${dir}/${sample}.fq.gz
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >$dir/fq.log
@@ -107,8 +107,8 @@ for sample in "${arr[@]}"; do
         fi
         fq1=${dir}/${sample}.fq.gz
 
-        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
-        if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
+        if [[ $? == 1 ]]; then
           mkdir -p $dir/PreAlignmentQC/fastqc
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} &>$dir/PreAlignmentQC/fastqc/fastqc.log
         fi
@@ -118,8 +118,8 @@ for sample in "${arr[@]}"; do
           break
         fi
 
-        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
-        if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
+        if [[ $? == 1 ]]; then
           mkdir -p $dir/PreAlignmentQC/fastp
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
@@ -141,8 +141,8 @@ for sample in "${arr[@]}"; do
 
         if [[ -f $fq1 ]]; then
 
-          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
-          if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
+          if [[ $? == 1 ]]; then
             mkdir -p $dir/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
@@ -154,8 +154,8 @@ for sample in "${arr[@]}"; do
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
-            if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna
@@ -199,7 +199,7 @@ for sample in "${arr[@]}"; do
 
       elif [[ $Layout == "PE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]] || [[ $force == "TRUE" ]]; then
+        if [[ ! -f $dir/fq.log ]]; then
           if (($(ls ${dir}/run*_"${sample}"_1.fq.gz | wc -l) == 1)); then
             cp -fa "${dir}"/run1_"${sample}"_1.fq.gz "${dir}"/"${sample}"_1.fq.gz
             cp -fa "${dir}"/run1_"${sample}"_2.fq.gz "${dir}"/"${sample}"_2.fq.gz
@@ -220,12 +220,12 @@ for sample in "${arr[@]}"; do
         fq2=${dir}/${sample}_2.fq.gz
 
         ##To verify that reads appear to be correctly paired
-        check_logfile $sample "reformat" $dir/reformat_vpair.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "reformat" $dir/reformat_vpair.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
           reformat.sh in1=$fq1 in2=$fq2 vpair allowidenticalnames=t 2>$dir/reformat_vpair.log
         fi
 
-        check_logfile $sample "reformat" $dir/reformat_vpair.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "reformat" $dir/reformat_vpair.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           fq1_nlines=$(zcat $fq1 | wc -l)
           fq2_nlines=$(zcat $fq2 | wc -l)
@@ -240,19 +240,19 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
-        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
-        if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
+        if [[ $? == 1 ]]; then
           mkdir -p $dir/PreAlignmentQC/fastqc
           fastqc -o $dir/PreAlignmentQC/fastqc -t $threads ${fq1} ${fq2} &>$dir/PreAlignmentQC/fastqc/fastqc.log
         fi
-        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           echo "Interrupted: $sample" >>"$tmpfile"
           break
         fi
 
-        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
-        if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
+        if [[ $? == 1 ]]; then
           mkdir -p $dir/PreAlignmentQC/fastp
           fastp --thread $threads_fastp --trim_front1 $trim_front1 --trim_tail1 $trim_tail1 --trim_front2 $trim_front2 --trim_tail2 $trim_tail2 \
           --qualified_quality_phred $qualified_quality_phred --unqualified_percent_limit $unqualified_percent_limit \
@@ -264,7 +264,7 @@ for sample in "${arr[@]}"; do
           -j $dir/PreAlignmentQC/fastp/${sample}.fastp.json \
           -h $dir/PreAlignmentQC/fastp/${sample}.fastp.html 2>$dir/PreAlignmentQC/fastp/fastp.log
         fi
-        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern"
+        check_logfile $sample "Fastp" $dir/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           echo "Interrupted: $sample" >>"$tmpfile"
           break
@@ -275,21 +275,21 @@ for sample in "${arr[@]}"; do
 
         if [[ -f $fq1 ]] && [[ -f $fq2 ]]; then
 
-          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
-          if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
+          if [[ $? == 1 ]]; then
             mkdir -p $dir/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 $FastqScreen_mode --conf $FastqScreen_config --threads $threads $fq1 $fq2 \
             --outdir $dir/PreAlignmentQC/fastq_screen 2>$dir/PreAlignmentQC/fastq_screen/fastq_screen.log
           fi
-          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern"
+          check_logfile $sample "FastQ_Screen" $dir/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             echo "Interrupted: $sample" >>"$tmpfile"
             break
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
-            if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
               rm -rf $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna_tmp
               mkdir -p $dir/PreAlignmentQC/sortmerna
@@ -304,7 +304,7 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>$dir/PreAlignmentQC/sortmerna/sortmerna.process.log
             fi
-            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern"
+            check_logfile $sample "SortMeRNA" $dir/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
               echo "Interrupted: $sample" >>"$tmpfile"
               break
