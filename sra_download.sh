@@ -8,7 +8,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 #############################  Paramaters #############################
 rawdata_dir="$(pwd)/rawdata/"
-SRPfile="SRPmeta.tsv"
+SRPfile="SRP_meta_file.tsv"
 ifs='\t'
 threads=3
 ntask_per_run=120
