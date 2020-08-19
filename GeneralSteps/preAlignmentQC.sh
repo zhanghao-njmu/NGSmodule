@@ -26,7 +26,7 @@ fastq_screen --version &>/dev/null
 }
 reformat.sh --version &>/dev/null
 [ $? -ne 0 ] && {
-  color_echo "red" "Cannot find the command reformat.sh which is a tool in BBmap.\n"
+  color_echo "red" "Cannot find the command reformat.sh.\n"
   exit 1
 }
 sortmerna --version &>/dev/null
