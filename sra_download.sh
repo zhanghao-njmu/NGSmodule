@@ -73,7 +73,7 @@ while IFS=$ifs read line; do
 
   echo -e "########### $line_count/$total_count ###########"
   ((line_count++))
-  echo $srp/$srr/$srx/$srs/$nreads
+  echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
 
   if [[ "$srr" =~ SRR* ]]; then
     read -u1000
