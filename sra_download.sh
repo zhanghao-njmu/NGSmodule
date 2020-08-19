@@ -124,10 +124,10 @@ while IFS=$ifs read line; do
               reformat.sh in1=${srr}_1.fastq.gz in2=${srr}_2.fastq.gz vpair allowidenticalnames=t 2>$rawdata_dir/$srp/$srr/reformat_vpair.log
             fi
 
-            fq1_nlines=$(zcat ${srr}_1.fastq.gz | wc -l)
+            fq1_nlines=$(unpigz -c ${srr}_1.fastq.gz | wc -l)
 
             if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
-              fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
+              fq2_nlines=$(unpigz -c ${srr}_2.fastq.gz | wc -l)
               if [[ $fq1_nlines == $((nreads * 4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
                 echo -e "fq1_nlines:$fq1_nlines fq1_nreads:$((fq1_nlines/4))\nfq2_nlines:$fq2_nlines fq2_nreads:$((fq2_nlines/4))\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 status="completed"
@@ -148,7 +148,7 @@ while IFS=$ifs read line; do
             fi
 
           elif [[ -f ${srr}.fastq.gz ]]; then
-            fq1_nlines=$(zcat ${srr}.fastq.gz | wc -l)
+            fq1_nlines=$(unpigz -c ${srr}.fastq.gz | wc -l)
             if [[ $fq1_nlines == $((nreads * 4)) ]]; then
               status="completed"
               echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"

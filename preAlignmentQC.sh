@@ -237,8 +237,8 @@ for sample in "${arr[@]}"; do
 
         check_logfile "$sample" "reformat" "$dir"/reformat_vpair.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          fq1_nlines=$(zcat "$fq1" | wc -l)
-          fq2_nlines=$(zcat "$fq2" | wc -l)
+          fq1_nlines=$(unpigz -c "$fq1" | wc -l)
+          fq2_nlines=$(unpigz -c "$fq2" | wc -l)
           if [[ $fq1_nlines == "$fq2_nlines" ]]; then
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>"$dir"/reformat_vpair.log
           else
