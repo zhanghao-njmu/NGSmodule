@@ -5,13 +5,12 @@
 
 
 #################### Functions ##################################################
+shell_folder=$(dirname $(readlink -f "$0"))
 
 CreateConfigFile()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
-  source $shell_folder/CreateConfigFile.sh
+  source $shell_folder/PreparationSteps/CreateConfigFile.sh
 }
-
 
 CheckConfigFile()
 {
@@ -23,72 +22,58 @@ CheckConfigFile()
   fi
 }
 
-
 CreateSampleInfoFile()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
-  source $shell_folder/CreateSampleInfoFile.sh
+  source $shell_folder/PreparationSteps/CreateSampleInfoFile.sh
 }
 
-
-PrepareWorkDir()
+CreateWorkDir()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh prepare
-  source $shell_folder/PrepareWorkDir.sh
+  source $shell_folder/PreparationSteps/CreateWorkDir.sh
 }
-
 
 preAlignmentQC()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/preAlignmentQC.sh
+  source $shell_folder/GeneralSteps/preAlignmentQC.sh
 }
-
 
 Alignment()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/Alignment.sh
+  source $shell_folder/GeneralSteps/Alignment.sh
 }
-
 
 postAlignmentQC()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/postAlignmentQC.sh $shell_folder/dupRadar.R
+  source $shell_folder/GeneralSteps/postAlignmentQC.sh $shell_folder/GeneralSteps/dupRadar.R
 }
-
 
 Quantification()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/Quantification.sh $shell_folder/Quantification_featurecounts.R $shell_folder/Quantification_annotation.R
+  source $shell_folder/ExpressionAnalysis/Quantification.sh $shell_folder/ExpressionAnalysis/Quantification_featurecounts.R $shell_folder/ExpressionAnalysis/Quantification_annotation.R
 }
 
 postQuantificationQC()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/postQuantificationQC.sh $shell_folder/postQuantificationQC.R
+  source $shell_folder/ExpressionAnalysis/postQuantificationQC.sh $shell_folder/ExpressionAnalysis/postQuantificationQC.R
 }
 
 DifferentialExpression()
 {
-  shell_folder=$(dirname $(readlink -f "$0"))
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/DifferentialExpression.sh $shell_folder/DifferentialExpression.R
+  source $shell_folder/ExpressionAnalysis/DifferentialExpression.sh $shell_folder/ExpressionAnalysis/DifferentialExpression.R
 }
 
 help()
@@ -108,7 +93,7 @@ cat <<- EOF
     
     CreateSampleInfoFile     
     
-    PrepareWorkDir           
+    CreateWorkDir           
     
     preAlignmentQC           
     
@@ -170,11 +155,11 @@ while true;do
       elif [[ $1 == "CreateSampleInfoFile" ]];then
         CreateSampleInfoFile
         exit 0
-      elif [[ $1 == "PrepareWorkDir" ]];then
+      elif [[ $1 == "CreateWorkDir" ]];then
         { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in PrepareWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
-        PrepareWorkDir $ConfigFile
+        CreateWorkDir $ConfigFile
         exit 0      
       elif [[ $1 == "preAlignmentQC" ]];then
         { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
