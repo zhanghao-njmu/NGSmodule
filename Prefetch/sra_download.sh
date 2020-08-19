@@ -189,7 +189,6 @@ while IFS=$ifs read line; do
     echo >&1000
   } &
 done <<<"$var_extract"
-
 wait
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
