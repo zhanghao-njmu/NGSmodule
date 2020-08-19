@@ -242,9 +242,9 @@ for sample in "${arr[@]}"; do
           if [[ $fq1_nlines == "$fq2_nlines" ]]; then
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>"$dir"/reformat_vpair.log
           else
-            color_echo "yellow" "ERROR! ${sample}: R1 and R2 have different numbers of reads."
+            color_echo "yellow" "Warning! ${sample}: R1 and R2 have different numbers of reads."
             echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>"$dir"/reformat_vpair.log
-            echo -e "ERROR! ${sample}: R1 and R2 have different numbers of reads." >>"$dir"/reformat_vpair.log
+            echo -e "Warning! ${sample}: R1 and R2 have different numbers of reads." >>"$dir"/reformat_vpair.log
             force="TRUE"
             continue
           fi
