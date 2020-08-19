@@ -2,7 +2,8 @@
 trap 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
 
 #### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
-#### Requirement:
+#### SRP meta file must include the fields "study_accession" "run_accession" "experiment_accession" "sample_accession" "run_total_spots"
+#### Dependencies:
 #### sra-tools (https://github.com/ncbi/sra-tools)
 #### pigz (https://zlib.net/pigz)
 #### reformat (https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/reformat-guide)
@@ -36,14 +37,14 @@ if [[ ! -f $SRPfile ]]; then
   exit 1
 fi
 
-var_extract=$(awk '
-  BEGIN {FS = "$ifs";OFS = "$ifs" ;}
+var_extract=$(awk -F "$ifs" '
+  BEGIN {OFS=FS}
   NR==1 {
       for (i=1; i<=NF; i++) {
           f[$i] = i
       }
   }
-  { print $(f["study_accession"]) $(f["run_accession"]) $(f["experiment_accession"]) $(f["sample_accession"]) $(f["run_total_spots"]) }
+  { print $(f["study_accession"]), $(f["run_accession"]), $(f["experiment_accession"]), $(f["sample_accession"]), $(f["run_total_spots"]) }
   ' "$SRPfile")
 
 while IFS=$ifs read line; do
@@ -61,7 +62,7 @@ while IFS=$ifs read line; do
   fi
 done <<<"$var_extract"
 
-line_count=1
+line_count=0
 total_count=$(cat "$SRPfile" | wc -l)
 
 while IFS=$ifs read line; do
@@ -71,8 +72,8 @@ while IFS=$ifs read line; do
   srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
   nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
 
-  echo -e "########### $line_count/$total_count ###########"
   ((line_count++))
+  echo -e "########### $line_count/$total_count ###########"
   echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
 
   if [[ "$srr" =~ SRR* ]]; then
