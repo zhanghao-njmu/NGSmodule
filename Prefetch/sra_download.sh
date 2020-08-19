@@ -100,7 +100,7 @@ while IFS=$ifs read line; do
           fi
 
           if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]]; then
-            rm -rf ./fasterq.tmp*
+            rm -rf $rawdata_dir/$srp/$srr/fasterq.tmp*
             fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump_process.log
             if [ -e ${srr} ]; then
               mv ${srr} ${srr}.fastq
@@ -111,12 +111,37 @@ while IFS=$ifs read line; do
             echo -e "+++++ $srp/$srr: fasterq-dump skipped +++++"
           fi
 
-          if [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] && [[ $(ls ./ | grep -E "(*.fastq$)|(*.fq$)") ]]; then
-            ls ./ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
+          
+          if ( [[ ! $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq.gz$)") ]] || [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] ) && [[ $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)") ]]; then
+            ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
             echo -e "+++++ $srp/$srr: pigz done +++++"
-          else
+          elif [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]];then
+            pigz -t ${srr}_1.fastq.gz
+            if [[ $? != 0 ]]; then
+              echo -e "Warning! $srp/$srr: ${srr}_1.fastq.gz is not completed."
+              force="TRUE"
+              continue
+            fi
+            pigz -t ${srr}_2.fastq.gz
+            if [[ $? != 0 ]]; then
+              echo -e "Warning! $srp/$srr: ${srr}_2.fastq.gz is not completed."
+              force="TRUE"
+              continue
+            fi
             echo -e "+++++ $srp/$srr: pigz skipped +++++"
+          elif [[ -f ${srr}.fastq.gz ]]; then
+            pigz -t ${srr}.fastq.gz
+            if [[ $? != 0 ]]; then
+              echo -e "Warning! $srp/$srr: ${srr}.fastq.gz is not completed."
+              force="TRUE"
+              continue
+            fi
+            echo -e "+++++ $srp/$srr: pigz skipped +++++"
+          else
+            echo -e "Warning! $srp/$srr: Cannot find the correct fastq.gz file name."
+            force="TRUE"
+            continue
           fi
 
           if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]]; then
@@ -155,7 +180,7 @@ while IFS=$ifs read line; do
             if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
               if [[ $((fq1_nlines % 4)) == 0 ]]; then
                 status="completed"
-                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+                echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
               else
                 force="TRUE"
                 echo -e "Warning! $srp/$srr: Line count is not divisible by 4."
@@ -163,7 +188,7 @@ while IFS=$ifs read line; do
             else
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
                 status="completed"
-                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+                echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
               else
                 force="TRUE"
                 echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n         fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
