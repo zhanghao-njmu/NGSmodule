@@ -129,14 +129,13 @@ while IFS=$ifs read line; do
             if [[ ! $(grep "Names appear to be correctly paired" $rawdata_dir/$srp/$srr/reformat_vpair.log) ]]; then
               fq2_nlines=$(zcat ${srr}_2.fastq.gz | wc -l)
               if [[ $fq1_nlines == $((nreads * 4)) ]] && [[ $fq1_nlines == $fq2_nlines ]]; then
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
+                echo -e "fq1_nlines:$fq1_nlines fq1_nreads:$((fq1_nlines/4))\nfq2_nlines:$fq2_nlines fq2_nreads:$((fq2_nlines/4))\nNames appear to be correctly paired(custom)" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 status="completed"
-                echo -e "+++++ $srp/$srr: Processing completed +++++"
+                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
-                echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
+                echo -e "fq1_nlines:$fq1_nlines fq1_nreads:$((fq1_nlines/4))\nfq2_nlines:$fq2_nlines fq2_nreads:$((fq2_nlines/4))\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 force="TRUE"
-                status="uncompleted"
-                echo -e "Warning! $srp/$srr has different numbers of lines between paired files: fq1=$fq1_nlines/ fq2=$fq2_nlines or with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
+                echo -e "Warning! $srp/$srr may have different numbers of reads between paired files:\n   fq1=$((fq1_nlines/4))/ fq2=$((fq2_nlines/4))\n Or different with that SRP meta file recorded:\n   fq1=$((fq1_nlines/4)) / recorded=$nreads"
               fi
             else
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
@@ -144,8 +143,7 @@ while IFS=$ifs read line; do
                 echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
                 force="TRUE"
-                status="uncompleted"
-                echo -e "Warning! $srp/$srr has different numbers of lines with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
+                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n    fq1=$((fq1_nlines/4)) / recorded=$nreads"
               fi
             fi
 
@@ -156,13 +154,11 @@ while IFS=$ifs read line; do
               echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
             else
               force="TRUE"
-              status="uncompleted"
-              echo -e "Warning! $srp/$srr has different numbers of lines with that SRA meta file recorded: fq1=$fq1_nlines / recorded=$((nreads * 4))"
+              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n    fq1=$((fq1_nlines/4)) / recorded=$nreads"
             fi
           else
             force="TRUE"
-            status="uncompleted"
-            echo -e "Warning! Can not find fastq.gz file! $srp/$srr has to restart the processing."
+            echo -e "Warning! Can not find any fastq.gz file! $srp/$srr has to restart the processing."
           fi
 
         else
@@ -171,7 +167,7 @@ while IFS=$ifs read line; do
       done
 
       if [[ $status == "uncompleted" ]]; then
-        text="ERROR! $srp/$srr interrupted. Please check the processing log or re-download the SRA file."
+        text="ERROR! $srp/$srr interrupted. Please check the number of reads or re-download the SRA file."
         echo -e "\033[31m$text\033[0m"
       fi
 
