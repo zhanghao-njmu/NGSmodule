@@ -71,6 +71,7 @@ while IFS=$ifs read line; do
   srx=$(awk -F "$ifs" '{print $3}' <<<"$line")
   srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
   nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
+  nreads=$(echo "$nreads" | xargs)
 
   ((line_count++))
   echo -e "########### $line_count/$total_count ###########"
@@ -124,13 +125,24 @@ while IFS=$ifs read line; do
             fq2_nlines=$(unpigz -c "${srr}"_2.fastq.gz | wc -l)
             echo -e "fq1_nlines:$fq1_nlines     fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines    fq2_nreads:$((fq2_nlines / 4))\n" >$rawdata_dir/$srp/$srr/fqcheck.log
             if [[ $fq1_nlines == "$fq2_nlines" ]]; then
-              if [[ $fq1_nlines == $((nreads * 4)) ]]; then
-                status="completed"
-                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+              if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
+                if [[ $((fq1_nlines % 4)) == 0 ]]; then
+                  status="completed"
+                  echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+                else
+                  force="TRUE"
+                  echo -e "Warning! $srp/$srr: Line count is not divisible by 4."
+                fi
               else
-                force="TRUE"
-                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+                if [[ $fq1_nlines == $((nreads * 4)) ]]; then
+                  status="completed"
+                  echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+                else
+                  force="TRUE"
+                  echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+                fi
               fi
+
             else
               force="TRUE"
               echo -e "Warning! $srp/$srr has different numbers of reads between paired files:\n        fq1=$((fq1_nlines / 4))/ fq2=$((fq2_nlines / 4))"
@@ -139,13 +151,25 @@ while IFS=$ifs read line; do
           elif [[ -f ${srr}.fastq.gz ]]; then
             fq1_nlines=$(unpigz -c "${srr}".fastq.gz | wc -l)
             echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >$rawdata_dir/$srp/$srr/fqcheck.log
-            if [[ $fq1_nlines == $((nreads * 4)) ]]; then
-              status="completed"
-              echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+
+            if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
+              if [[ $((fq1_nlines % 4)) == 0 ]]; then
+                status="completed"
+                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+              else
+                force="TRUE"
+                echo -e "Warning! $srp/$srr: Line count is not divisible by 4."
+              fi
             else
-              force="TRUE"
-              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+              if [[ $fq1_nlines == $((nreads * 4)) ]]; then
+                status="completed"
+                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
+              else
+                force="TRUE"
+                echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+              fi
             fi
+
           else
             force="TRUE"
             echo -e "Warning! Can not find any fastq.gz file! $srp/$srr has to restart the processing."

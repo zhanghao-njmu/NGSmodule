@@ -122,12 +122,12 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           fq1_nlines=$(unpigz -c "$fq1" | wc -l)
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >"$dir"/fqcheck.log
-          if [[ $((fq1_nlines%4)) != 0 ]];then
+          if [[ $((fq1_nlines % 4)) != 0 ]]; then
             echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
           else
             echo -e "File check passed." >>"$dir"/fqcheck.log
           fi
-        
+
           check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -139,7 +139,7 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
-        
+
           check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -151,15 +151,15 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" \
-            --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
-            "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
-            --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
-            --length_required "$length_required" \
-            --in1 "${fq1}" \
-            --out1 "${sample}".fq \
-            -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
-            -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
-        
+          --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
+          "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
+          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+          --length_required "$length_required" \
+          --in1 "${fq1}" \
+          --out1 "${sample}".fq \
+          -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
+          -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
+
           check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -175,8 +175,8 @@ for sample in "${arr[@]}"; do
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" \
-              --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
-          
+            --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
+
             check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
               force="TRUE"
@@ -191,14 +191,14 @@ for sample in "${arr[@]}"; do
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               sortmerna --ref "${SortmeRNA_ref}" \
-                --reads "${sample}".fq \
-                --threads "$threads" \
-                --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
-                --fastx \
-                --num_alignments 1 \
-                --aligned aligned \
-                --other other \
-                -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+              --reads "${sample}".fq \
+              --threads "$threads" \
+              --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
+              --fastx \
+              --num_alignments 1 \
+              --aligned aligned \
+              --other other \
+              -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               mv other.fq "$dir"/"${sample}"_trim.fq
               rm -rf "$fq1" aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
               mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
@@ -249,7 +249,7 @@ for sample in "${arr[@]}"; do
         fi
         fq1=${dir}/${sample}_1.fq.gz
         fq2=${dir}/${sample}_2.fq.gz
-        
+
         ##To verify that reads appear to be correctly paired
         check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
@@ -257,13 +257,13 @@ for sample in "${arr[@]}"; do
           fq2_nlines=$(unpigz -c "$fq2" | wc -l)
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqcheck.log
           if [[ $fq1_nlines != "$fq2_nlines" ]]; then
-            echo -e "ERROR! $srp/$srr has different numbers of reads between paired files">>"$dir"/fqcheck.log
-          elif [[ $((fq1_nlines%4)) != 0 ]] || [[ $((fq2_nlines%4)) != 0 ]];then
+            echo -e "ERROR! $srp/$srr has different numbers of reads between paired files" >>"$dir"/fqcheck.log
+          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
             echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
           else
             echo -e "File check passed." >>"$dir"/fqcheck.log
           fi
-        
+
           check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -275,7 +275,7 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
-        
+
           check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -287,15 +287,15 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" --trim_front2 "$trim_front2" --trim_tail2 "$trim_tail2" \
-            --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
-            "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
-            --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
-            --length_required "$length_required" --detect_adapter_for_pe --correction \
-            --in1 "${fq1}" --in2 "${fq2}" \
-            --out1 "${sample}"_1.fq --out2 "${sample}"_2.fq \
-            -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
-            -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
-        
+          --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
+          "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
+          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+          --length_required "$length_required" --detect_adapter_for_pe --correction \
+          --in1 "${fq1}" --in2 "${fq2}" \
+          --out1 "${sample}"_1.fq --out2 "${sample}"_2.fq \
+          -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
+          -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
+
           check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
@@ -312,8 +312,8 @@ for sample in "${arr[@]}"; do
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" "$fq2" \
-              --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
-          
+            --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
+
             check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
               force="TRUE"
@@ -329,14 +329,14 @@ for sample in "${arr[@]}"; do
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               reformat.sh in1="$fq1" in2="$fq2" out="$dir"/"${sample}".fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_merge.log
               sortmerna --ref "${SortmeRNA_ref}" \
-                --reads "${sample}".fq --paired_in \
-                --threads "$threads" \
-                --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
-                --fastx \
-                --num_alignments 1 \
-                --aligned aligned \
-                --other other \
-                -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+              --reads "${sample}".fq --paired_in \
+              --threads "$threads" \
+              --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
+              --fastx \
+              --num_alignments 1 \
+              --aligned aligned \
+              --other other \
+              -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
               rm -rf "$fq1" "$fq2" aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
               mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
