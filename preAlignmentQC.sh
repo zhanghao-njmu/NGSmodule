@@ -93,7 +93,7 @@ for sample in "${arr[@]}"; do
       existlogs=()
       while IFS='' read -r line; do
         existlogs+=("$line")
-      done < <(find "${dir}" -name "fq.log" -o -name "reformat_vpair.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
+      done < <(find "${dir}" -name "fq_prepare.log" -o -name "fqcheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
       if ((${#existlogs} >= 1)); then
         for existlog in "${existlogs[@]}"; do
           if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
@@ -104,29 +104,47 @@ for sample in "${arr[@]}"; do
 
       if [[ $Layout == "SE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]]; then
+        if [[ ! -f $dir/fq_prepare.log ]]; then
           if (($(ls "${dir}"/run*_"${sample}".fq.gz | wc -l) == 1)); then
             cp -fa "${dir}"/run1_"${sample}".fq.gz "${dir}"/"${sample}".fq.gz
-            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >"$dir"/fq.log
+            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >"$dir"/fq_prepare.log
           else
             runs=$(ls -lL "${dir}"/run*_"${sample}".fq.gz)
             while [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo "${runs[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}".fq.gz | awk '{print$5}') ]]; do
               echo "${runs[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}".fq.gz
             done
-            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fq.log
+            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fq_prepare.log
           fi
         fi
         fq1=${dir}/${sample}.fq.gz
+
+        check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
+        if [[ $? == 1 ]]; then
+          fq1_nlines=$(unpigz -c "$fq1" | wc -l)
+          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >"$dir"/fqcheck.log
+          if [[ $((fq1_nlines%4)) != 0 ]];then
+            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
+          else
+            echo -e "File check passed." >>"$dir"/fqcheck.log
+          fi
+        
+          check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            force="TRUE"
+            continue
+          fi
+        fi
 
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
-        fi
-        check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
-        if [[ $? == 1 ]]; then
-          force="TRUE"
-          continue
+        
+          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            force="TRUE"
+            continue
+          fi
         fi
 
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
@@ -141,11 +159,12 @@ for sample in "${arr[@]}"; do
             --out1 "${sample}".fq \
             -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
             -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
-        fi
-        check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
-        if [[ $? == 1 ]]; then
-          force="TRUE"
-          continue
+        
+          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            force="TRUE"
+            continue
+          fi
         fi
 
         fq1=$dir/${sample}.fq
@@ -157,15 +176,16 @@ for sample in "${arr[@]}"; do
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" \
               --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
-          fi
-          check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
-          if [[ $? == 1 ]]; then
-            force="TRUE"
-            continue
+          
+            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
+            if [[ $? == 1 ]]; then
+              force="TRUE"
+              continue
+            fi
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -179,15 +199,16 @@ for sample in "${arr[@]}"; do
                 --aligned aligned \
                 --other other \
                 -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+              mv other.fq "$dir"/"${sample}"_trim.fq
+              rm -rf "$fq1" aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
+              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
+              if [[ $? == 1 ]]; then
+                force="TRUE"
+                continue
+              fi
             fi
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
-            if [[ $? == 1 ]]; then
-              force="TRUE"
-              continue
-            fi
-            mv other.fq "$dir"/"${sample}"_trim.fq
-            rm -rf "$fq1" aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
-            mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
+
           else
             mv "$fq1" "$dir"/"${sample}"_trim.fq
             color_echo "yellow" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
@@ -209,11 +230,11 @@ for sample in "${arr[@]}"; do
 
       elif [[ $Layout == "PE" ]]; then
 
-        if [[ ! -f $dir/fq.log ]]; then
+        if [[ ! -f $dir/fq_prepare.log ]]; then
           if (($(ls "${dir}"/run*_"${sample}"_1.fq.gz | wc -l) == 1)); then
             cp -fa "${dir}"/run1_"${sample}"_1.fq.gz "${dir}"/"${sample}"_1.fq.gz
             cp -fa "${dir}"/run1_"${sample}"_2.fq.gz "${dir}"/"${sample}"_2.fq.gz
-            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >"$dir"/fq.log
+            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >"$dir"/fq_prepare.log
           else
             runs1=$(ls -lL "${dir}"/run*_"${sample}"_1.fq.gz)
             runs2=$(ls -lL "${dir}"/run*_"${sample}"_2.fq.gz)
@@ -223,28 +244,28 @@ for sample in "${arr[@]}"; do
             while [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_2.fq.gz | awk '{print$5}') ]]; do
               echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_2.fq.gz
             done
-            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >"$dir"/fq.log
+            echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >"$dir"/fq_prepare.log
           fi
         fi
         fq1=${dir}/${sample}_1.fq.gz
         fq2=${dir}/${sample}_2.fq.gz
-
+        
         ##To verify that reads appear to be correctly paired
-        check_logfile "$sample" "reformat" "$dir"/reformat_vpair.log "$error_pattern" "$complete_pattern" "precheck"
-        if [[ $? == 1 ]] || [[ $force == "TRUE" ]]; then
-          reformat.sh in1="$fq1" in2="$fq2" vpair allowidenticalnames=t 2>"$dir"/reformat_vpair.log
-        fi
-
-        check_logfile "$sample" "reformat" "$dir"/reformat_vpair.log "$error_pattern" "$complete_pattern" "precheck"
+        check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           fq1_nlines=$(unpigz -c "$fq1" | wc -l)
           fq2_nlines=$(unpigz -c "$fq2" | wc -l)
-          if [[ $fq1_nlines == "$fq2_nlines" ]]; then
-            echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\nNames appear to be correctly paired(custom)" >>"$dir"/reformat_vpair.log
+          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqcheck.log
+          if [[ $fq1_nlines != "$fq2_nlines" ]]; then
+            echo -e "ERROR! $srp/$srr has different numbers of reads between paired files">>"$dir"/fqcheck.log
+          elif [[ $((fq1_nlines%4)) != 0 ]] || [[ $((fq2_nlines%4)) != 0 ]];then
+            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
           else
-            color_echo "yellow" "Warning! ${sample}: R1 and R2 have different numbers of reads."
-            echo -e "fq1_nlines:$fq1_nlines\nfq2_nlines:$fq2_nlines\n" >>"$dir"/reformat_vpair.log
-            echo -e "Warning! ${sample}: R1 and R2 have different numbers of reads." >>"$dir"/reformat_vpair.log
+            echo -e "File check passed." >>"$dir"/fqcheck.log
+          fi
+        
+          check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
             force="TRUE"
             continue
           fi
@@ -254,11 +275,12 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
-        fi
-        check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
-        if [[ $? == 1 ]]; then
-          force="TRUE"
-          continue
+        
+          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            force="TRUE"
+            continue
+          fi
         fi
 
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
@@ -273,11 +295,12 @@ for sample in "${arr[@]}"; do
             --out1 "${sample}"_1.fq --out2 "${sample}"_2.fq \
             -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
             -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
-        fi
-        check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
-        if [[ $? == 1 ]]; then
-          force="TRUE"
-          continue
+        
+          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            force="TRUE"
+            continue
+          fi
         fi
 
         fq1=$dir/${sample}_1.fq
@@ -290,15 +313,16 @@ for sample in "${arr[@]}"; do
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" "$fq2" \
               --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
-          fi
-          check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
-          if [[ $? == 1 ]]; then
-            force="TRUE"
-            continue
+          
+            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
+            if [[ $? == 1 ]]; then
+              force="TRUE"
+              continue
+            fi
           fi
 
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -313,15 +337,16 @@ for sample in "${arr[@]}"; do
                 --aligned aligned \
                 --other other \
                 -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+              reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
+              rm -rf "$fq1" "$fq2" aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
+              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
+              if [[ $? == 1 ]]; then
+                force="TRUE"
+                continue
+              fi
             fi
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck"
-            if [[ $? == 1 ]]; then
-              force="TRUE"
-              continue
-            fi
-            reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
-            rm -rf "$fq1" "$fq2" aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
-            mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
+
           else
             mv "$fq1" "$dir"/"${sample}"_1_trim.fq
             mv "$fq2" "$dir"/"${sample}"_2_trim.fq
