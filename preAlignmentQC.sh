@@ -198,10 +198,10 @@ for sample in "${arr[@]}"; do
         if [[ -f $dir/${sample}_trim.fq ]]; then
           pigz -p "$threads" -f "$dir"/"${sample}"_trim.fq
           status="completed"
-          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         elif [[ -f $dir/${sample}_trim.fq.gz ]]; then
           status="completed"
-          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         else
           force="TRUE"
           color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
@@ -333,10 +333,10 @@ for sample in "${arr[@]}"; do
         if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]]; then
           pigz -p "$threads" -f "${sample}"_1_trim.fq "${sample}"_2_trim.fq
           status="completed"
-          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         elif [[ -f ${sample}_1_trim.fq.gz ]] && [[ -f ${sample}_2_trim.fq.gz ]]; then
           status="completed"
-          color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         else
           force="TRUE"
           color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"

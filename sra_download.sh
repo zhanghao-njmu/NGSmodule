@@ -141,7 +141,7 @@ while IFS=$ifs read line; do
             else
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
                 status="completed"
-                echo -e "+++++ $srp/$srr: Processing completed +++++"
+                echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
                 force="TRUE"
                 status="uncompleted"
@@ -153,7 +153,7 @@ while IFS=$ifs read line; do
             fq1_nlines=$(zcat ${srr}.fastq.gz | wc -l)
             if [[ $fq1_nlines == $((nreads * 4)) ]]; then
               status="completed"
-              echo -e "+++++ $srp/$srr: Processing completed +++++"
+              echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
             else
               force="TRUE"
               status="uncompleted"
