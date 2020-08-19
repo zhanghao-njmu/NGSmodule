@@ -36,13 +36,13 @@ if [[ ! -f $SRPfile ]]; then
   exit 1
 fi
 
-var_extract=$(awk -F $ifs '
+var_extract=$(awk BEGIN {FS = "$ifs";OFS = "$ifs" ;} '
   NR==1 {
       for (i=1; i<=NF; i++) {
           f[$i] = i
       }
   }
-  { print $(f["study_accession"]) "$ifs" $(f["run_accession"]) "$ifs" $(f["experiment_accession"]) "$ifs" $(f["sample_accession"]) "$ifs" $(f["run_total_spots"]) }
+  { print $(f["study_accession"]) $(f["run_accession"]) $(f["experiment_accession"]) $(f["sample_accession"]) $(f["run_total_spots"]) }
   ' "$SRPfile")
 
 while IFS=$ifs read line; do
