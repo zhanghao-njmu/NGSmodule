@@ -185,10 +185,8 @@ while IFS=$ifs read line; do
         echo -e "\033[31m$text\033[0m"
       fi
 
-      echo >&1000
-
     fi
-
+    echo >&1000
   } &
 done <<<"$var_extract"
 
