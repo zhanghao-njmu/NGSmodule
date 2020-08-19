@@ -111,14 +111,13 @@ while IFS=$ifs read line; do
             echo -e "+++++ $srp/$srr: fasterq-dump skipped +++++"
           fi
 
-          
-          if ( [[ ! $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq.gz$)") ]] || [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]] ) && [[ $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)") ]]; then
+          if ([[ ! $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq.gz$)") ]] || [[ ! -f $rawdata_dir/$srp/$srr/pigz.log ]]) && [[ $(ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)") ]]; then
             ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
             echo -e "+++++ $srp/$srr: pigz done +++++"
           fi
 
-          if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]];then
+          if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]]; then
             pigz -t ${srr}_1.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
               echo -e "Warning! $srp/$srr: ${srr}_1.fastq.gz is not completed."
