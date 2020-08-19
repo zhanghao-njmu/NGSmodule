@@ -128,7 +128,7 @@ while IFS=$ifs read line; do
                 echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
                 force="TRUE"
-                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / recorded=$nreads"
+                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
               fi
             else
               force="TRUE"
@@ -143,7 +143,7 @@ while IFS=$ifs read line; do
               echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
             else
               force="TRUE"
-              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / recorded=$nreads"
+              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
             fi
           else
             force="TRUE"
