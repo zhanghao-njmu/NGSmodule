@@ -125,13 +125,13 @@ while IFS=$ifs read line; do
           if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]]; then
             pigz -t ${srr}_1.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
-              echo -e "Warning! $srp/$srr: ${srr}_1.fastq.gz is not completed."
+              echo -e "Warning! $srp/$srr: ${srr}_1.fastq.gz is not a completed .gz file."
               force="TRUE"
               continue
             fi
             pigz -t ${srr}_2.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
-              echo -e "Warning! $srp/$srr: ${srr}_2.fastq.gz is not completed."
+              echo -e "Warning! $srp/$srr: ${srr}_2.fastq.gz is not a completed .gz file."
               force="TRUE"
               continue
             fi
@@ -139,7 +139,7 @@ while IFS=$ifs read line; do
           elif [[ -f ${srr}.fastq.gz ]]; then
             pigz -t ${srr}.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
-              echo -e "Warning! $srp/$srr: ${srr}.fastq.gz is not completed."
+              echo -e "Warning! $srp/$srr: ${srr}.fastq.gz is not a completed .gz file."
               force="TRUE"
               continue
             fi

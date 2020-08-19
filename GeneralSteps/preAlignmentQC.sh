@@ -116,7 +116,15 @@ for sample in "${arr[@]}"; do
             echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fq_prepare.log
           fi
         fi
+
         fq1=${dir}/${sample}.fq.gz
+
+        pigz -t ${fq1} 2>/dev/null
+        if [[ $? != 0 ]]; then
+          echo -e "Warning! ${fq1} is not a completed .gz file."
+          force="TRUE"
+          continue
+        fi
 
         check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
@@ -217,10 +225,16 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_trim.fq ]]; then
-          pigz -p "$threads" -f "$dir"/"${sample}"_trim.fq
-          status="completed"
-          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
-        elif [[ -f $dir/${sample}_trim.fq.gz ]]; then
+          pigz -p $threads -f $dir/${sample}_trim.fq.gz
+        fi
+
+        if [[ -f $dir/${sample}_trim.fq.gz ]]; then
+          pigz -t $dir/${sample}_trim.fq.gz 2>/dev/null
+          if [[ $? != 0 ]]; then
+            echo -e "Warning! ${sample}_trim.fq.gz is not a completed .gz file."
+            force="TRUE"
+            continue
+          fi
           status="completed"
           color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         else
@@ -249,6 +263,19 @@ for sample in "${arr[@]}"; do
         fi
         fq1=${dir}/${sample}_1.fq.gz
         fq2=${dir}/${sample}_2.fq.gz
+
+        pigz -t ${fq1} 2>/dev/null
+        if [[ $? != 0 ]]; then
+          echo -e "Warning! ${fq1} is not a completed .gz file."
+          force="TRUE"
+          continue
+        fi
+        pigz -t ${fq2} 2>/dev/null
+        if [[ $? != 0 ]]; then
+          echo -e "Warning! ${fq2} is not a completed .gz file."
+          force="TRUE"
+          continue
+        fi
 
         ##To verify that reads appear to be correctly paired
         check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
@@ -355,11 +382,23 @@ for sample in "${arr[@]}"; do
 
         fi
 
-        if [[ -f ${sample}_1_trim.fq ]] && [[ -f ${sample}_2_trim.fq ]]; then
-          pigz -p "$threads" -f "${sample}"_1_trim.fq "${sample}"_2_trim.fq
-          status="completed"
-          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
-        elif [[ -f ${sample}_1_trim.fq.gz ]] && [[ -f ${sample}_2_trim.fq.gz ]]; then
+        if [[ -f $dir/${sample}_1_trim.fq ]] && [[ -f $dir/${sample}_2_trim.fq ]]; then
+          pigz -p $threads -f $dir/${sample}_1_trim.fq $dir/${sample}_2_trim.fq
+        fi
+          
+        if [[ -f $dir/${sample}_1_trim.fq.gz ]] && [[ -f $dir/${sample}_2_trim.fq.gz ]]; then
+          pigz -t $dir/${sample}_1_trim.fq.gz 2>/dev/null
+          if [[ $? != 0 ]]; then
+            echo -e "Warning! ${sample}_1_trim.fq.gz is not a completed .gz file."
+            force="TRUE"
+            continue
+          fi
+          pigz -t $dir/${sample}_2_trim.fq.gz 2>/dev/null
+          if [[ $? != 0 ]]; then
+            echo -e "Warning! ${sample}_2_trim.fq.gz is not a completed .gz file."
+            force="TRUE"
+            continue
+          fi
           status="completed"
           color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         else
