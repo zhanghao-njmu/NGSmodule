@@ -36,7 +36,8 @@ if [[ ! -f $SRPfile ]]; then
   exit 1
 fi
 
-var_extract=$(awk BEGIN {FS = "$ifs";OFS = "$ifs" ;} '
+var_extract=$(awk '
+  BEGIN {FS = "$ifs";OFS = "$ifs" ;}
   NR==1 {
       for (i=1; i<=NF; i++) {
           f[$i] = i
