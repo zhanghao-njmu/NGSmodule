@@ -72,5 +72,5 @@ for file in "${arr[@]}"; do
   fi
 
 done
-echo -e ""
-echo -e "\n****************** PrepareWorkDir Done ******************\n"
+
+echo -e "\n****************** CreateWorkDir Finished ******************\n"

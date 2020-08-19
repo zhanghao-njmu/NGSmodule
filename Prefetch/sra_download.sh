@@ -193,4 +193,7 @@ while IFS=$ifs read line; do
 done <<<"$var_extract"
 
 wait
-echo "done"
+
+ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
+echo -e "\n$ELAPSED"
+echo -e "****************** SRA Prefetching Finished  ******************\n"

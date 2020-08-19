@@ -89,5 +89,5 @@ DGEs_multi_compare=1                               ## Whether to compare DGEs am
 
 EOF
 
-echo -e "Task finished \nConfigFile: $ConfigFile\n"
-
+echo -e "ConfigFile: $ConfigFile\n"
+echo -e "\n****************** CreateConfigFile Finished ******************\n"

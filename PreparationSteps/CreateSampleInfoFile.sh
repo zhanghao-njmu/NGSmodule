@@ -19,4 +19,5 @@ R19051084,WT3,WT,PE,2,2nd-experiment,none
 
 EOF
 
-echo -e "Task finished.\nSampleInfoFile: temp_${tmp}.Sample_info.csv\n"
+echo -e "SampleInfoFile: temp_${tmp}.Sample_info.csv\n"
+echo -e "\n****************** CreateSampleInfoFile Finished ******************\n"
