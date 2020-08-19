@@ -135,7 +135,7 @@ while IFS=$ifs read line; do
               else
                 echo -e "fq1_nlines:$fq1_nlines fq1_nreads:$((fq1_nlines/4))\nfq2_nlines:$fq2_nlines fq2_nreads:$((fq2_nlines/4))\n" >>$rawdata_dir/$srp/$srr/reformat_vpair.log
                 force="TRUE"
-                echo -e "Warning! $srp/$srr may have different numbers of reads between paired files:\n   fq1=$((fq1_nlines/4))/ fq2=$((fq2_nlines/4))\n Or different with that SRP meta file recorded:\n   fq1=$((fq1_nlines/4)) / recorded=$nreads"
+                echo -e "Warning! $srp/$srr may have different numbers of reads between paired files:\n        fq1=$((fq1_nlines/4))/ fq2=$((fq2_nlines/4))\n Or different with that SRP meta file recorded:\n        fq1=$((fq1_nlines/4)) / recorded=$nreads"
               fi
             else
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
@@ -143,7 +143,7 @@ while IFS=$ifs read line; do
                 echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
                 force="TRUE"
-                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n    fq1=$((fq1_nlines/4)) / recorded=$nreads"
+                echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines/4)) / recorded=$nreads"
               fi
             fi
 
@@ -154,7 +154,7 @@ while IFS=$ifs read line; do
               echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
             else
               force="TRUE"
-              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n    fq1=$((fq1_nlines/4)) / recorded=$nreads"
+              echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines/4)) / recorded=$nreads"
             fi
           else
             force="TRUE"
