@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-trap "exit" INT TERM ERR
+trap "exit" SIGINT SIGTERM
 trap "kill 0" EXIT
 
 #### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
