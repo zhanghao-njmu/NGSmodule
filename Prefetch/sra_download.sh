@@ -139,13 +139,13 @@ while IFS=$ifs read line; do
                   echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
                 else
                   force="TRUE"
-                  echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+                  echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n         fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
                 fi
               fi
 
             else
               force="TRUE"
-              echo -e "Warning! $srp/$srr has different numbers of reads between paired files:\n        fq1=$((fq1_nlines / 4))/ fq2=$((fq2_nlines / 4))"
+              echo -e "Warning! $srp/$srr has different numbers of reads between paired files:\n         fq1=$((fq1_nlines / 4))/ fq2=$((fq2_nlines / 4))"
             fi
 
           elif [[ -f ${srr}.fastq.gz ]]; then
@@ -166,7 +166,7 @@ while IFS=$ifs read line; do
                 echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
               else
                 force="TRUE"
-                echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n        fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
+                echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n         fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
               fi
             fi
 
