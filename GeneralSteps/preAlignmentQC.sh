@@ -385,7 +385,7 @@ for sample in "${arr[@]}"; do
         if [[ -f $dir/${sample}_1_trim.fq ]] && [[ -f $dir/${sample}_2_trim.fq ]]; then
           pigz -p $threads -f $dir/${sample}_1_trim.fq $dir/${sample}_2_trim.fq
         fi
-          
+
         if [[ -f $dir/${sample}_1_trim.fq.gz ]] && [[ -f $dir/${sample}_2_trim.fq.gz ]]; then
           pigz -t $dir/${sample}_1_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
