@@ -116,28 +116,30 @@ while IFS=$ifs read line; do
             ls $rawdata_dir/$srp/$srr/ | grep -E "(*.fastq$)|(*.fq$)" | xargs -i pigz -f --processes $threads {}
             echo -e "pigz finished" >$rawdata_dir/$srp/$srr/pigz.log
             echo -e "+++++ $srp/$srr: pigz done +++++"
-          elif [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]];then
-            pigz -t ${srr}_1.fastq.gz
+          fi
+
+          if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]];then
+            pigz -t ${srr}_1.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
               echo -e "Warning! $srp/$srr: ${srr}_1.fastq.gz is not completed."
               force="TRUE"
               continue
             fi
-            pigz -t ${srr}_2.fastq.gz
+            pigz -t ${srr}_2.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
               echo -e "Warning! $srp/$srr: ${srr}_2.fastq.gz is not completed."
               force="TRUE"
               continue
             fi
-            echo -e "+++++ $srp/$srr: pigz skipped +++++"
+            echo -e "+++++ $srp/$srr: Integrity check passed +++++"
           elif [[ -f ${srr}.fastq.gz ]]; then
-            pigz -t ${srr}.fastq.gz
+            pigz -t ${srr}.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
               echo -e "Warning! $srp/$srr: ${srr}.fastq.gz is not completed."
               force="TRUE"
               continue
             fi
-            echo -e "+++++ $srp/$srr: pigz skipped +++++"
+            echo -e "+++++ $srp/$srr: Integrity check passed +++++"
           else
             echo -e "Warning! $srp/$srr: Cannot find the correct fastq.gz file name."
             force="TRUE"
