@@ -42,7 +42,7 @@ var_extract=$(awk -F $ifs '
           f[$i] = i
       }
   }
-  { print $(f["study_accession"]) "\t" $(f["run_accession"]) "\t" $(f["experiment_accession"]) "\t" $(f["sample_accession"]) "\t" $(f["run_total_spots"]) }
+  { print $(f["study_accession"]) "$ifs" $(f["run_accession"]) "$ifs" $(f["experiment_accession"]) "$ifs" $(f["sample_accession"]) "$ifs" $(f["run_total_spots"]) }
   ' "$SRPfile")
 
 while IFS=$ifs read line; do
