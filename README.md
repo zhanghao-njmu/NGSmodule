@@ -1,3 +1,4 @@
 # NGSmodule
 
-A flexible, modularization, automation, and pragmatic workflow to efficiently process the NGS data in batches.
+A flexible, modularization, and pragmatic workflow to process the NGS data in batches.
+
