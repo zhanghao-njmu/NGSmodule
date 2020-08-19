@@ -122,7 +122,7 @@ while IFS=$ifs read line; do
 
             fq1_nlines=$(unpigz -c "${srr}"_1.fastq.gz | wc -l)
             fq2_nlines=$(unpigz -c "${srr}"_2.fastq.gz | wc -l)
-            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines    fq2_nreads:$((fq2_nlines / 4))\n" >>$rawdata_dir/$srp/$srr/nreads.log
+            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines    fq2_nreads:$((fq2_nlines / 4))\n" >$rawdata_dir/$srp/$srr/nreads.log
             if [[ $fq1_nlines == "$fq2_nlines" ]]; then
               if [[ $fq1_nlines == $((nreads * 4)) ]]; then
                 status="completed"
@@ -138,7 +138,7 @@ while IFS=$ifs read line; do
 
           elif [[ -f ${srr}.fastq.gz ]]; then
             fq1_nlines=$(unpigz -c "${srr}".fastq.gz | wc -l)
-            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >>$rawdata_dir/$srp/$srr/nreads.log
+            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >$rawdata_dir/$srp/$srr/nreads.log
             if [[ $fq1_nlines == $((nreads * 4)) ]]; then
               status="completed"
               echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
