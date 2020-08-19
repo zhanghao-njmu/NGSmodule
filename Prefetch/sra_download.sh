@@ -66,20 +66,20 @@ line_count=0
 total_count=$(cat "$SRPfile" | wc -l)
 
 while IFS=$ifs read line; do
-  srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
-  srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
-  srx=$(awk -F "$ifs" '{print $3}' <<<"$line")
-  srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
-  nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
-  nreads=$(echo "$nreads" | xargs)
-
   ((line_count++))
-  echo -e "########### $line_count/$total_count ###########"
-  echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
+  read -u1000
+  {
+    srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
+    srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
+    srx=$(awk -F "$ifs" '{print $3}' <<<"$line")
+    srs=$(awk -F "$ifs" '{print $4}' <<<"$line")
+    nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
+    nreads=$(echo "$nreads" | xargs)
 
-  if [[ "$srr" =~ SRR* ]]; then
-    read -u1000
-    {
+    echo -e "########### $line_count/$total_count ###########"
+    echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
+
+    if [[ "$srr" =~ SRR* ]]; then
 
       force=${force_process}
       status="uncompleted"
@@ -186,10 +186,10 @@ while IFS=$ifs read line; do
       fi
 
       echo >&1000
-    } &
 
-  fi
+    fi
 
+  } &
 done <<<"$var_extract"
 
 wait
