@@ -6,7 +6,6 @@ trap 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
 #### Dependencies:
 #### sra-tools (https://github.com/ncbi/sra-tools)
 #### pigz (https://zlib.net/pigz)
-#### reformat (https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/reformat-guide)
 
 #############################  Paramaters #############################
 rawdata_dir="$(pwd)/rawdata/"
