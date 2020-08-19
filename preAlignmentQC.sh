@@ -7,7 +7,7 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
-trap_add 'trap - SIGTERM && kill -- -$$;kill $(jobs -pr);kill 0' SIGINT SIGTERM
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 fastqc --version &>/dev/null
 [ $? -ne 0 ] && {
