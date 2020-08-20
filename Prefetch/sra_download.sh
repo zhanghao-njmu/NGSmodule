@@ -213,15 +213,15 @@ while IFS=$ifs read line; do
       done
 
       if [[ $status == "completed" ]]; then
-        echo "Completed: $srp/$srr" >>"$logfile"
+        echo -e "Completed: $srp/$srr" >>"$logfile"
       else
-        echo "Interrupted: $srp/$srr" >>"$logfile"
+        echo -e "Interrupted: $srp/$srr" >>"$logfile"
         echo -e "\033[31mERROR! $srp/$srr interrupted. Please check the number of reads or re-download the SRA file.\033[0m"
       fi
 
     fi
 
-    echo "\033[32m***** Completed:$(cat "$logfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$logfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_count *****\033[0m"
+    echo -e "\033[32m***** Completed:$(cat "$logfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$logfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_count *****\033[0m"
 
     echo >&1000
   } &
