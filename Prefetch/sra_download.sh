@@ -234,7 +234,8 @@ if [[ ${#interrupt} == 0 ]];then
   echo -e "\033[32mAll data were prefetched and processed successfully! \033[0m"
 else
   echo -e "\033[31mThe following data were interrupted: \033[0m"
-  echo -e "\033[31m${interrupt}\033[0m"
+  echo -e "\033[31m${interrupt}\n\033[0m"
+  echo -e  "You may manually check these data. "
 fi
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
