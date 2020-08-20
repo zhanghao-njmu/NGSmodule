@@ -64,8 +64,8 @@ while IFS=$ifs read line; do
 done <<<"$var_extract"
 
 logfile="$rawdata_dir/process.log"
-if [[ ! -f $logfile ]];then
-  touch $logfile
+if [[ ! -f $logfile ]]; then
+  echo >$logfile
 fi
 
 line_count=0
@@ -215,7 +215,7 @@ while IFS=$ifs read line; do
       if [[ $status == "completed" ]]; then
         echo "Completed: $srp/$srr" >>"$logfile"
       else
-        echo "Interrupted: $srp/$srr" >>"$logfile"  
+        echo "Interrupted: $srp/$srr" >>"$logfile"
         echo -e "\033[31mERROR! $srp/$srr interrupted. Please check the number of reads or re-download the SRA file.\033[0m"
       fi
 
