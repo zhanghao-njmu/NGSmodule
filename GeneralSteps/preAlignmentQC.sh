@@ -77,12 +77,13 @@ for sample in "${arr[@]}"; do
     cd "${dir}"
     mkdir -p "${dir}"/PreAlignmentQC
 
-    echo "+++++ ${sample} +++++"
+    
     Layout=${Layout_dict[${sample}]}
     force=${force_complete}
     status="uncompleted"
     attempt=0
 
+    echo "+++++ ${sample} Layout:${Layout} +++++"
     while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
       ((attempt++))
       if [[ $attempt != 1 ]]; then
