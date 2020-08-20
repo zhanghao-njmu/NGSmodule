@@ -401,10 +401,13 @@ for sample in "${arr[@]}"; do
           color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
         else
           force="TRUE"
-          color_echo "yellow" "+++++ ${sample}: cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
+          color_echo "yellow" "+++++ ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
           continue
         fi
 
+      else
+        color_echo "yellow" "+++++ ${sample}: Cannot determine the layout of sequencing data! +++++"
+        attempt=2
       fi
 
     done
