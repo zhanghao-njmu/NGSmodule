@@ -117,7 +117,7 @@ for sample in "${arr[@]}"; do
 
         fq1=${dir}/${sample}.fq.gz
 
-        pigz -t ${fq1} 2>/dev/null
+        pigz -t $(realpath ${fq1}) 2>/dev/null
         if [[ $? != 0 ]]; then
           echo -e "Warning! ${fq1} is not a completed .gz file."
           force="TRUE"
@@ -261,13 +261,13 @@ for sample in "${arr[@]}"; do
         fq1=${dir}/${sample}_1.fq.gz
         fq2=${dir}/${sample}_2.fq.gz
 
-        pigz -t ${fq1} 2>/dev/null
+        pigz -t $(realpath ${fq1}) 2>/dev/null
         if [[ $? != 0 ]]; then
           echo -e "Warning! ${fq1} is not a completed .gz file."
           force="TRUE"
           continue
         fi
-        pigz -t ${fq2} 2>/dev/null
+        pigz -t $(realpath ${fq2}) 2>/dev/null
         if [[ $? != 0 ]]; then
           echo -e "Warning! ${fq2} is not a completed .gz file."
           force="TRUE"
