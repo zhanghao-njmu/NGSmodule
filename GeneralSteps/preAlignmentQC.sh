@@ -286,7 +286,7 @@ for sample in "${arr[@]}"; do
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
             echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
           else
-            echo -e "File check passed." >>"$dir"/fqcheck.log
+            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
           fi
 
           check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
