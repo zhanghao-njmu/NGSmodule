@@ -3,7 +3,8 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 #trap "exit" SIGINT SIGTERM
 #trap "kill 0" EXIT
 
-#### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
+#### User can prepare the meta file using pysradb (https://github.com/saketkc/pysradb), which is a python package and can be installed using the command "conda install pysradb".
+#### e.g. If one wants to download a meta file for a SRP study accession, he can use the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### SRP meta file must include the fields "study_accession" "run_accession" "experiment_accession" "sample_accession" "run_total_spots"
 #### Dependencies:
 #### sra-tools (https://github.com/ncbi/sra-tools)
