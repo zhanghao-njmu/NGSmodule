@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-trap "exit" SIGINT SIGTERM
-trap "kill 0" EXIT
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+#trap "exit" SIGINT SIGTERM
+#trap "kill 0" EXIT
 
 #### User can prepare the SRP meta file using the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### SRP meta file must include the fields "study_accession" "run_accession" "experiment_accession" "sample_accession" "run_total_spots"
