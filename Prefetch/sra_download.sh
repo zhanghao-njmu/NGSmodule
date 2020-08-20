@@ -105,8 +105,8 @@ while IFS=$ifs read line; do
             rm -f $rawdata_dir/$srp/$srr/fasterq_dump.log $rawdata_dir/$srp/$srr/fasterq_dump_process.log $rawdata_dir/$srp/$srr/pigz.log
           fi
 
+          rm -rf $rawdata_dir/$srp/$srr/fasterq.tmp*
           if [[ ! -f $rawdata_dir/$srp/$srr/fasterq_dump.log ]]; then
-            rm -rf $rawdata_dir/$srp/$srr/fasterq.tmp*
             fasterq-dump -f --threads $threads --split-3 ${srr}.sra -o $srr 2>$rawdata_dir/$srp/$srr/fasterq_dump_process.log
             if [ -e ${srr} ]; then
               mv ${srr} ${srr}.fastq
