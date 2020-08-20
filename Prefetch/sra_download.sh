@@ -65,9 +65,8 @@ while IFS=$ifs read line; do
 done <<<"$var_extract"
 
 logfile="$rawdata_dir/process.log"
-if [[ ! -f $logfile ]]; then
-  echo >$logfile
-fi
+echo >$logfile
+
 
 line_count=0
 total_count=$(cat "$SRPfile" | wc -l)
