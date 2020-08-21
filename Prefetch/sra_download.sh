@@ -221,7 +221,7 @@ while IFS=$ifs read line; do
 
     fi
 
-    echo -e "\033[32m***** Completed:$(cat "$logfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$logfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_count *****\033[0m"
+    echo -e "\033[32m***** Completed:$(cat "$logfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$logfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_count *****\n\033[0m"
 
     echo >&1000
   } &
@@ -234,7 +234,7 @@ if [[ ${#interrupt} == 0 ]];then
 else
   echo -e "\033[31mThe following data were interrupted: \033[0m"
   echo -e "\033[31m${interrupt}\n\033[0m"
-  echo -e  "You may manually check these data. "
+  echo -e  "You may manually check these data."
 fi
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
