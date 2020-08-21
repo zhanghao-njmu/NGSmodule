@@ -111,6 +111,7 @@ for sample in "${arr[@]}"; do
         else
           runs=$(ls -lL "${dir}"/run*_"${sample}".fq.gz)
           if [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo "${runs[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}".fq.gz | awk '{print$5}') ]]; then
+            rm -f "$dir"/fq_prepare.log
             echo "${runs[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}".fq.gz
           fi
           echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fq_prepare.log
@@ -251,8 +252,11 @@ for sample in "${arr[@]}"; do
           runs1=$(ls -lL "${dir}"/run*_"${sample}"_1.fq.gz)
           runs2=$(ls -lL "${dir}"/run*_"${sample}"_2.fq.gz)
           if [[ ! -f ${dir}/${sample}_1.fq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_1.fq.gz | awk '{print$5}') ]]; then
+            rm -f "$dir"/fq_prepare.log
             echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_1.fq.gz
-          elif [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_2.fq.gz | awk '{print$5}') ]]; then
+          fi
+          if [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_2.fq.gz | awk '{print$5}') ]]; then
+            rm -f "$dir"/fq_prepare.log
             echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_2.fq.gz
           fi
           echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >"$dir"/fq_prepare.log
