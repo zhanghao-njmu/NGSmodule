@@ -208,7 +208,7 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               mv other.fq "$dir"/"${sample}"_trim.fq
-              rm -rf "$fq1" aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              rm -rf "${sample}".fq aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
               mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
               check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
               if [[ $? == 1 ]]; then
@@ -366,7 +366,7 @@ for sample in "${arr[@]}"; do
               --other other \
               -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
-              rm -rf "$fq1" "$fq2" aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              rm -rf "$fq1" "$fq2" "${sample}".fq "${sample}".fq.gz aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
               mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
               check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
               if [[ $? == 1 ]]; then
