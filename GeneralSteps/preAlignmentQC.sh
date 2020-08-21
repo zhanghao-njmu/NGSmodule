@@ -224,7 +224,7 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_trim.fq ]]; then
-          pigz -p $threads -f $dir/${sample}_trim.fq.gz
+          pigz -p $threads -f $dir/${sample}_trim.fq
         fi
 
         if [[ -f $dir/${sample}_trim.fq.gz ]]; then
