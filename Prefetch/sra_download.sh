@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 #trap "exit" SIGINT SIGTERM
 #trap "kill 0" EXIT
 
