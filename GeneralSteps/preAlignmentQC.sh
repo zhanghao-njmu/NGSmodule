@@ -219,9 +219,15 @@ for sample in "${arr[@]}"; do
 
           else
             mv "$fq1" "$dir"/"${sample}"_trim.fq
-            color_echo "yellow" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
 
+        elif [[ -f "${sample}"_trim.fq ]]; then
+          color_echo "blue" "+++++ ${sample}: ${sample}_trim.fq exist. Start to compress it. +++++"
+        else
+          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}.fq or ${sample}_trim.fq . Start a complete preAlignmentQC.+++++"
+          force="TRUE"
+          continue
         fi
 
         if [[ -f $dir/${sample}_trim.fq ]]; then
@@ -378,9 +384,14 @@ for sample in "${arr[@]}"; do
           else
             mv "$fq1" "$dir"/"${sample}"_1_trim.fq
             mv "$fq2" "$dir"/"${sample}"_2_trim.fq
-            color_echo "yellow" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
-
+        elif [[ -f "${sample}"_1_trim.fq ]] && [[ -f "${sample}"_2_trim.fq ]]; then
+          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq exist. Start to compress them. +++++"
+        else
+          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}_1(2).fq or ${sample}_1(2)_trim.fq . Start a complete preAlignmentQC.+++++"
+          force="TRUE"
+          continue
         fi
 
         if [[ -f $dir/${sample}_1_trim.fq ]] && [[ -f $dir/${sample}_2_trim.fq ]]; then
