@@ -94,7 +94,7 @@ for sample in "${arr[@]}"; do
       existlogs=()
       while IFS='' read -r line; do
         existlogs+=("$line")
-      done < <(find "${dir}" -name "fq_prepare.log" -o -name "fqcheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
+      done < <(find "${dir}" -name "fqcheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
       if ((${#existlogs} >= 1)); then
         for existlog in "${existlogs[@]}"; do
           if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
