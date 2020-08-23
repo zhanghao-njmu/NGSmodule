@@ -182,6 +182,11 @@ if [[ -d $work_dir ]]; then
   done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern")
 
   total_task=${#arr[@]}
+  if [[ "$total_task" == 0 ]]; then
+    color_echo "red" "ERROR! No sample sub-directory found in the work_dir:$work_dir\n"
+    exit 1
+  fi
+
   if [[ "$ntask_per_run" =~ ^[0-9]+$ ]]; then
     ntask_per_run=$ntask_per_run
   elif [[ "$ntask_per_run" = "ALL" ]]; then
@@ -194,6 +199,7 @@ if [[ -d $work_dir ]]; then
     color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
     exit 1
   fi
+
   threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
 
   if ((threads > 120)); then
