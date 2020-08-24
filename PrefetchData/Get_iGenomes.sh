@@ -3,6 +3,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 
 ############# Paramaters #############################################################
 rootdir="/data/database/iGenomes/"
+Species=("Homo_sapiens" "Mus_musculus")
 threads=120
 kmers=(150 140 100 90 50 40)
 windows=(2000000 1000000 500000 100000)

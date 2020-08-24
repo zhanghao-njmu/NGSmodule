@@ -1,54 +1,8 @@
 #!/usr/bin/bash
-maindir=($(pwd))
-data_dir=$maindir/rawdata/
-SampleGrepPattern=""
-total_threads=380
-ntask_per_run="ALL"
-
-Aligner="bwa"
-#gsnap_index="/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/gmap/genome_rmchrM.fa"
-#gem_index="/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome_rmchrM.fa.gem"
-#baseqCNV_config="/home/reprod/bin/singlecellseqcnv-code/baseqCNV/baseqCNV.ini"
-#FREEC_config="/home/reprod/bin/FREEC/config_FREEC.hg19.ini"
-
 #######################################################################################
-arr=($(find $data_dir -mindepth 1 -maxdepth 1 \( -type l -o -type d \) -printf '%P\n' | grep -P "$SampleGrepPattern"))
-total_task=${#arr[@]}
-if [[ "$ntask_per_run" =~ ^[0-9]+$ ]]; then
-  ntask_per_run=$ntask_per_run
-elif [[ "$ntask_per_run" = "ALL" ]]; then
-  ntask_per_run=$total_task
-else
-  echo "ntask_per_run should be 'ALL' or an interger "
-  exit 1
-fi
-threads=$((($total_threads + $ntask_per_run - 1) / $ntask_per_run))
-echo "threads=$threads"
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
-###### fifo ######
-tempfifo=$$.fifo
-trap "exec 1000>&-;exec 1000<&-;exit 0" 2
-mkfifo $tempfifo
-exec 1000<>$tempfifo
-rm -rf $tempfifo
-for ((i = 1; i <= $ntask_per_run; i++)); do
-  echo >&1000
-done
 
-###### processbar <current> <total> ######
-processbar() {
-  local current=$1
-  local total=$2
-  local maxlen=80
-  local barlen=66
-  local perclen=14
-  local format="%-${barlen}s%$((maxlen - barlen))s"
-  local perc="[$current/$total]"
-  local progress=$((current * barlen / total))
-  local prog=$(for i in $(seq 0 $progress); do printf '#'; done)
-  printf "\r$format\n" $prog $perc
-}
-bar=0
 
 #######################################################################################
 for sample in "${arr[@]}"; do
