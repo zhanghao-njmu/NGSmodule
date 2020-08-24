@@ -10,7 +10,7 @@ fi
 
 arr=($(find $rawdata_dir -type f | grep -P "(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})"))
 if [[ ${#arr} == 0 ]]; then
-  color_echo "red" "Error! Cannot find the rawdata!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
+  color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
   exit 1
 fi
 
