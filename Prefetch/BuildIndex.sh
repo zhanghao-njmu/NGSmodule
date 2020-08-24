@@ -4,8 +4,36 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 ############# Paramaters #############################################################
 rootdir="/data/database/iGenomes/"
 threads=120
-kmers=(150 100 50)
-windows=(2000000 1000000 500000)
+kmers=(150 140 100 90 50 40)
+windows=(2000000 1000000 500000 100000)
+
+######## check command available ##########
+faidx --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the tool pyfaidx. User can install it with the command 'conda install -c bioconda pyfaidx'.\n"
+  exit 1
+}
+gem-mappability --help &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command gem-mappability. User can install it from 'https://sourceforge.net/projects/gemlibrary'.\n"
+  exit 1
+}
+genmap --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command genmap. User can install it with the command 'conda install -c bioconda genmap'.\n"
+  exit 1
+}
+wigToBigWig --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command wigToBigWig. User can install it with the command 'conda install -c bioconda ucsc-wigtobigwig'.\n"
+  exit 1
+}
+mapCounter --help &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command mapCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
+  exit 1
+}
+
 
 ######## Start buiding #########
 arr=($(find $rootdir -name "WholeGenomeFasta"))
