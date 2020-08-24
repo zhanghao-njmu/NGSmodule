@@ -79,7 +79,7 @@ DifferentialExpression()
 help()
 {
 cat <<- EOF
-  Desc: A flexible, modularization, automation, and pragmatic workflow to efficiently process the NGS data in batches.
+  Desc: A flexible, modularization, and pragmatic workflow to process the NGS data in batches.
   
   Author: ZhangHao
 
@@ -89,31 +89,25 @@ cat <<- EOF
   
   MODE options:
     
-    CreateConfigFile     
+    # PreparationSteps
+    CreateConfigFile         Create a configuration template file for NGSmodule.
+    CreateSampleInfoFile     Create a sample information template file for NGSmodule.
+    CreateWorkDir            Create a working directory according to the configuration file and sample information file.
     
-    CreateSampleInfoFile     
-    
-    CreateWorkDir           
-    
+    # GeneralSteps
     preAlignmentQC           
-    
     Alignment                
-    
     postAlignmentQC          
     
+    # Analysis
     Quantification
-    
     postQuantificationQC   
-    
     DifferentialExpression   
     
   Other options:
-  
     -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
                               will be created with <CreateConfigFile> MODE.
-
     -h, --help                Show this message.
-    
     -v, --version             Show the version of NGSmodule.
 
 EOF
@@ -125,7 +119,7 @@ version_info()
 {
 cat <<- EOF
 ################################
-    NGSmodule vsersion: 0.0.1   
+    NGSmodule vsersion: 0.1.0   
 ################################
 EOF
 }

@@ -134,24 +134,24 @@ else
 fi
 
 if [[ $Genome_direct == "" ]]; then
-  genome="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/WholeGenomeFasta/$Genome_name"
+  genome="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
 else
   genome=$Genome_direct
 fi
 
 if [[ $GTF_direct == "" ]]; then
-  gtf="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Annotation/Genes/genes.gtf"
+  gtf="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Annotation/Genes/genes.gtf"
 else
   gtf=$GTF_direct
 fi
 
-bwa_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BWAIndex/$Genome_name"
-bowtie_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BowtieIndex/${Genome_name%%.fa}"
-bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Bowtie2Index/${Genome_name%%.fa}"
-hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/Hisat2Index/${Genome_name%%.fa}"
-star_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/STARIndex/${Genome_name%%.fa}"
-bismark_bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/bowtie2"
-bismark_hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Database/$Genome_build/Sequence/BismarkIndex/${Genome_name%%.fa}/hisat2"
+bwa_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BWAIndex/genome.fa"
+bowtie_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BowtieIndex/genome"
+bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/Bowtie2Index/genome"
+hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/Hisat2Index/genome"
+star_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/STARIndex/genome"
+bismark_bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BismarkIndex/genome/bowtie2"
+bismark_hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BismarkIndex/genome/hisat2"
 tophat2_index=$bowtie2_index
 
 if [[ $Index_direct == "" ]]; then
