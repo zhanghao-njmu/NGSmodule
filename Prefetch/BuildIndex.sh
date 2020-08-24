@@ -146,6 +146,7 @@ for maindir in "${arr[@]}"; do
       gem-mappability -T ${threads} -I ${GemIndex}/genome_main.gem -l ${kmer} -o genome_main.gem
       gem-2-wig -I ${GemIndex}/genome_main.gem -i genome_main.gem.mappability -o genome_main.gem
       wigToBigWig genome_main.gem.wig genome_main.gem.sizes genome_main.gem.bigwig
+      rm -f genome_main.gem.mappability
 
       echo "====== Count GC and mappability within a silding window  ======"
       for window in "${windows[@]}"; do
