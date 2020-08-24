@@ -389,11 +389,11 @@ for sample in "${arr[@]}"; do
             color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
         elif [[ -f "${sample}"_1_trim.fq ]] && [[ -f "${sample}"_2_trim.fq ]]; then
-          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq existed. +++++"
+          color_echo "blue" "+++++ ${sample}: ${sample}_[1,2]_trim.fq existed. +++++"
         elif [[ -f "${sample}"_1_trim.fq.gz ]] && [[ -f "${sample}"_2_trim.fq.gz ]]; then
-          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq.gz existed. +++++"
+          color_echo "blue" "+++++ ${sample}: ${sample}_[1,2]_trim.fq.gz existed. +++++"
         else
-          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}_1(2).fq or ${sample}_1(2)_trim.fq or ${sample}_1(2)_trim.fq.gz . Start a complete preAlignmentQC.+++++"
+          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}_[1,2].fq or ${sample}_[1,2]_trim.fq or ${sample}_[1,2]_trim.fq.gz . Start a complete preAlignmentQC.+++++"
           force="TRUE"
           continue
         fi
