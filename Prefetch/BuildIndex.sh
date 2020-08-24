@@ -2,16 +2,16 @@
 ############# Paramaters #############################################################
 rootdir="/data/database/iGenomes/"
 threads=120
-kmers=(130 90 40)
+kmers=(150 100 50)
 windows=(2000000 1000000 500000)
 
 ######## Start buiding #########
 arr=($(find $rootdir -name "WholeGenomeFasta"))
-if ((threads > 120)); then
-  threads=120
-else
-  threads=$threads
-fi
+# if ((threads > 120)); then
+#   threads=120
+# else
+#   threads=$threads
+# fi
 for maindir in "${arr[@]}"; do
   {
     maindir=${maindir%%WholeGenomeFasta}
@@ -39,67 +39,67 @@ for maindir in "${arr[@]}"; do
     echo "====== Fetch main chromosome sequence into genome_main.fa ======"
     faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$genome_main
 
-    ###### BWA index #####
-    mkdir -p $BWAIndex
-    ln -fs $genome $BWAIndex/genome.fa
-    ln -fs $genome_main $BWAIndex/genome_main.fa
-    cd $BWAIndex
-    bwa index $BWAIndex/genome.fa &
-    bwa index $BWAIndex/genome_main.fa &
+    # ###### BWA index #####
+    # mkdir -p $BWAIndex
+    # ln -fs $genome $BWAIndex/genome.fa
+    # ln -fs $genome_main $BWAIndex/genome_main.fa
+    # cd $BWAIndex
+    # bwa index $BWAIndex/genome.fa &
+    # bwa index $BWAIndex/genome_main.fa &
 
-    ###### Bowtie index #####
-    mkdir -p $BowtieIndex
-    ln -fs $genome $BowtieIndex/genome.fa
-    ln -fs $genome_main $BowtieIndex/genome_main.fa
-    eval "$(conda shell.bash hook)"
-    conda activate py2
-    bowtie-build --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
-    bowtie-build --threads $threads $BowtieIndex/genome_main.fa $BowtieIndex/genome_main
-    conda deactivate
+    # ###### Bowtie index #####
+    # mkdir -p $BowtieIndex
+    # ln -fs $genome $BowtieIndex/genome.fa
+    # ln -fs $genome_main $BowtieIndex/genome_main.fa
+    # eval "$(conda shell.bash hook)"
+    # conda activate py2
+    # bowtie-build --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
+    # bowtie-build --threads $threads $BowtieIndex/genome_main.fa $BowtieIndex/genome_main
+    # conda deactivate
 
-    ###### Bowtie2 index #####
-    mkdir -p $Bowtie2Index
-    ln -fs $genome $Bowtie2Index/genome.fa
-    ln -fs $genome_main $Bowtie2Index/genome_main.fa
-    bowtie2-build --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
-    bowtie2-build --threads $threads $Bowtie2Index/genome_main.fa $Bowtie2Index/genome_main
+    # ###### Bowtie2 index #####
+    # mkdir -p $Bowtie2Index
+    # ln -fs $genome $Bowtie2Index/genome.fa
+    # ln -fs $genome_main $Bowtie2Index/genome_main.fa
+    # bowtie2-build --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
+    # bowtie2-build --threads $threads $Bowtie2Index/genome_main.fa $Bowtie2Index/genome_main
 
-    ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
-    mkdir -p $Hisat2Index
-    ln -fs $genome $Hisat2Index/genome.fa
-    ln -fs $genome_main $Hisat2Index/genome_main.fa
-    hisat2-build -p $threads $Hisat2Index/genome.fa $Hisat2Index/genome
-    hisat2-build -p $threads $Hisat2Index/genome_main.fa $Hisat2Index/genome_main
-    wait
+    # ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
+    # mkdir -p $Hisat2Index
+    # ln -fs $genome $Hisat2Index/genome.fa
+    # ln -fs $genome_main $Hisat2Index/genome_main.fa
+    # hisat2-build -p $threads $Hisat2Index/genome.fa $Hisat2Index/genome
+    # hisat2-build -p $threads $Hisat2Index/genome_main.fa $Hisat2Index/genome_main
+    # wait
 
-    ###### STAR index #####
-    mkdir -p $STARIndex/genome
-    mkdir -p $STARIndex/genome_main
-    ln -fs $genome $STARIndex/genome/genome.fa
-    ln -fs $genome $STARIndex/genome_main/genome_main.fa
+    # ###### STAR index #####
+    # mkdir -p $STARIndex/genome
+    # mkdir -p $STARIndex/genome_main
+    # ln -fs $genome $STARIndex/genome/genome.fa
+    # ln -fs $genome $STARIndex/genome_main/genome_main.fa
 
-    STAR --runMode genomeGenerate --runThreadN $threads \
-    --genomeDir $STARIndex/genome \
-    --genomeFastaFiles $STARIndex/genome/genome.fa \
-    --sjdbGTFfile $gtf
-    STAR --runMode genomeGenerate --runThreadN $threads \
-    --genomeDir $STARIndex/genome_main \
-    --genomeFastaFiles $STARIndex/genome_main/genome_main.fa \
-    --sjdbGTFfile $gtf
+    # STAR --runMode genomeGenerate --runThreadN $threads \
+    # --genomeDir $STARIndex/genome \
+    # --genomeFastaFiles $STARIndex/genome/genome.fa \
+    # --sjdbGTFfile $gtf
+    # STAR --runMode genomeGenerate --runThreadN $threads \
+    # --genomeDir $STARIndex/genome_main \
+    # --genomeFastaFiles $STARIndex/genome_main/genome_main.fa \
+    # --sjdbGTFfile $gtf
 
-    ###### bismark index #####
-    mkdir -p $BismarkIndex/genome/bowtie2
-    mkdir -p $BismarkIndex/genome/hisat2
-    mkdir -p $BismarkIndex/genome_main/bowtie2
-    mkdir -p $BismarkIndex/genome_main/hisat2
-    ln -fs $genome $BismarkIndex/genome/bowtie2/genome.fa
-    ln -fs $genome $BismarkIndex/genome/hisat2/genome.fa
-    ln -fs $genome_main $BismarkIndex/genome_main/bowtie2/genome_main.fa
-    ln -fs $genome_main $BismarkIndex/genome_main/hisat2/genome_main.fa
-    bismark_genome_preparation --genomic_composition --bowtie2 --parallel $((($threads) / 2)) $BismarkIndex/genome/bowtie2
-    bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/genome/hisat2
-    bismark_genome_preparation --genomic_composition --bowtie2 --parallel $((($threads) / 2)) $BismarkIndex/genome_main/bowtie2
-    bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/genome_main/hisat2
+    # ###### bismark index #####
+    # mkdir -p $BismarkIndex/genome/bowtie2
+    # mkdir -p $BismarkIndex/genome/hisat2
+    # mkdir -p $BismarkIndex/genome_main/bowtie2
+    # mkdir -p $BismarkIndex/genome_main/hisat2
+    # ln -fs $genome $BismarkIndex/genome/bowtie2/genome.fa
+    # ln -fs $genome $BismarkIndex/genome/hisat2/genome.fa
+    # ln -fs $genome_main $BismarkIndex/genome_main/bowtie2/genome_main.fa
+    # ln -fs $genome_main $BismarkIndex/genome_main/hisat2/genome_main.fa
+    # bismark_genome_preparation --genomic_composition --bowtie2 --parallel $((($threads) / 2)) $BismarkIndex/genome/bowtie2
+    # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/genome/hisat2
+    # bismark_genome_preparation --genomic_composition --bowtie2 --parallel $((($threads) / 2)) $BismarkIndex/genome_main/bowtie2
+    # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/genome_main/hisat2
 
     ##### Gem #####
     if [[ ! -d $GemIndex ]]; then
