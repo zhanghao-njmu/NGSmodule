@@ -95,19 +95,19 @@ for sample in "${arr[@]}"; do
       if [[ "$Aligner" = "bwa" ]]; then
         bwa mem -t $threads -M $index ${fq1} | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "bowtie" ]]; then
         bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "bowtie2" ]]; then
         bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "hisat2" ]]; then
         hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "tophat2" ]]; then
         tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
         mv accepted_hits.bam ${sample}.${Aligner}.bam
@@ -117,7 +117,7 @@ for sample in "${arr[@]}"; do
         --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
         --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
         --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-        --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
+        --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM 
         mv Aligned.sortedByCoord.out.bam ${sample}.${Aligner}.bam
       elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
         bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index ${fq1} --quiet \
@@ -137,19 +137,19 @@ for sample in "${arr[@]}"; do
       if [[ "$Aligner" == "bwa" ]]; then
         bwa mem -t $threads -M $index ${fq1} ${fq2} | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" = "bowtie" ]]; then
         bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "bowtie2" ]]; then
         bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "hisat2" ]]; then
         hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | \
         samtools view -@ $threads -Shb - | \
-        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>/dev/null
+        samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
       elif [[ "$Aligner" == "tophat2" ]]; then
         tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
         mv accepted_hits.sam ${sample}.${Aligner}.bam
@@ -159,7 +159,7 @@ for sample in "${arr[@]}"; do
         --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
         --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
         --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-        --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
+        --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM 
         mv Aligned.sortedByCoord.out.bam ${sample}.${Aligner}.bam
       elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
         bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
