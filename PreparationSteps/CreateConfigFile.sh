@@ -20,6 +20,7 @@ total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)               
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile=""                             ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
+force_complete="FALSE"                        ## Whether to run a complete workflow (TRUE) or skip some steps that completed (FALSE).
 
 
 ############# PrepareWorkDir Paramaters ###################################################################
@@ -34,8 +35,6 @@ R2_SufixPattern="_2\.fastq\.gz"
 
 
 ############# preAlignmentQC Paramaters ###################################################################
-force_complete=FALSE            ## Whether to run a complete preAlignmentQC workflow (TRUE) or skip some steps that completed (FALSE).
-
 ### Fastp ###
 trim_front1=2                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
 trim_tail1=0                   ## trimming how many bases in tail for read1.
