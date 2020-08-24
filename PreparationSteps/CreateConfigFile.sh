@@ -82,8 +82,14 @@ min_fc=2                                           ## e.g. 2
 min_count=10                                       ## Minimum count required for at least n samples (n is the smallest group sample size).
 
 group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by comma(,). Different comparisons are seperated by semicolon(;). 
-
 DGEs_multi_compare=1                               ## Whether to compare DGEs among different comparisons. 0(not to do),1(do).
+
+
+############# CNVanalysis Paramaters ##############################################################
+Window=1000000
+Kmer=130
+HypotheticalPloidy=2
+
 
 EOF
 

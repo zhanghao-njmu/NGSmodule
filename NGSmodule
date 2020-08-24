@@ -76,6 +76,13 @@ DifferentialExpression()
   source $shell_folder/ExpressionAnalysis/DifferentialExpression.sh $shell_folder/ExpressionAnalysis/DifferentialExpression.R
 }
 
+CNVanalysis()
+{
+  source $1
+  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/OtherAnalysis/CNV/CNVanalysis.sh $shell_folder/OtherAnalysis/CNV/hmmcopy.R $shell_folder/OtherAnalysis/CNV/SNP2ploidy.R
+}
+
 help()
 {
 cat <<- EOF
@@ -89,20 +96,24 @@ cat <<- EOF
   
   MODE options:
     
-    # PreparationSteps
-    CreateConfigFile         Create a configuration template file for NGSmodule.
-    CreateSampleInfoFile     Create a sample information template file for NGSmodule.
-    CreateWorkDir            Create a working directory according to the configuration file and sample information file.
+    // PreparationSteps
+        CreateConfigFile         Create a configuration template file for NGSmodule.
+        CreateSampleInfoFile     Create a sample information template file for NGSmodule.
+        CreateWorkDir            Create a working directory according to the configuration file and sample information file.
     
-    # GeneralSteps
-    preAlignmentQC           
-    Alignment                
-    postAlignmentQC          
+    // GeneralSteps
+        preAlignmentQC           
+        Alignment                
+        postAlignmentQC          
     
-    # Analysis
-    Quantification
-    postQuantificationQC   
-    DifferentialExpression   
+    // Analysis
+        # Expression
+        Quantification
+        postQuantificationQC   
+        DifferentialExpression   
+
+        # CNV
+        CNVanalysis
     
   Other options:
     -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
@@ -190,6 +201,12 @@ while true;do
         [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in DifferentialExpression MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
         DifferentialExpression $ConfigFile
+        exit 0   
+      elif [[ $1 == "CNVanalysis" ]];then
+        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CNVanalysis MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        CheckConfigFile $ConfigFile
+        CNVanalysis $ConfigFile
         exit 0   
       else
         echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"

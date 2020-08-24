@@ -1,28 +1,33 @@
 #!/usr/bin/bash
-#######################################################################################
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
+#######################################################################################
 
+readCounter --help &>/dev/null
+[ $? -ne 0 ] && {
+  echo -e "Cannot find the command readCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
+  exit 1
+}
 
 #######################################################################################
 for sample in "${arr[@]}"; do
   read -u1000
   {
     dir=$data_dir/$sample
-    mkdir -p $dir/$Aligner
-    cd $dir/$Aligner
+    mkdir -p $dir/$Aligner/CNV
+    cd $dir/$Aligner/CNV
     echo "===== $sample ====="
 
     #####
     ##### HMMcopy #####
-    mkdir -p HMMcopy
-    cd HMMcopy
+    mkdir -p $dir/$Aligner/CNV/HMMcopy
+    cd $dir/$Aligner/CNV/HMMcopy
     ####Use readCounter in HMMcopy to generate a wiggle file for each BAM file.
-    #readCounter -w 1000000 ../${sample}.${Aligner}.rmdup.bam >${sample}.${Aligner}.1M_input.wig
-    eval "$(conda shell.bash hook)"
-    conda activate HmmCopy
-    run_hmmcopy.r 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_1M.gc.wig" "/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_40mer_1M.map.wig" 1 ${sample}.${Aligner}.HMMcopy
-    conda deactivate
+    readCounter -w 1000000 ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.1M_input.wig
+    # eval "$(conda shell.bash hook)"
+    # conda activate HmmCopy
+    $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig" $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
+    # conda deactivate
 
     #####
     ##### BaseqCNV #####
@@ -63,7 +68,7 @@ for sample in "${arr[@]}"; do
     #bcftools mpileup --threads $threads -d 500 -Ou -f $genome ${sample}.bowtie2.hg19.filter.rmdup.bam | bcftools call --threads $threads -mv -Oz | bcftools view -i '%QUAL>=20' -Oz -o ${sample}.calls.vcf
 
     ### GATK3 #####
-    rm -rf $dir/GATK3
+    #rm -rf $dir/GATK3
     #mkdir -p GATK3
     ##picard CreateSequenceDictionary R=$genome
     ##gatk ValidateSamFile -M SUMMARY -I ${sample}.bowtie2.hg19.rmdup.bam
@@ -101,15 +106,3 @@ wait
 
 echo "===== All tasks finished ====="
 
-#### Preparation ####
-
-###Use gcCounter in HMMcopy to generate a GC percentage reference file for the genome. Use option "-w 500000" to specify window size
-#gcCounter -w 1000000 $genome >/data/database/iGenomes/human/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/1M_CNV/hg19_1M.gc.wig
-#gcCounter -w 500000 $genome >/data/database/iGenomes/human/Homo_sapiens/UCSC/hg38/Sequence/WholeGenomeFasta/0.5M_CNV/mm10_0.5M.gc.wig
-###Use generateMap.pl in HMMcopy to generate a wiggle file for mappability. Use option "-w 40" to specify read length.
-#generateMap.pl -b $genome
-##generateMap.pl -w 10 -i $genome $genome -o /data/database/iGenomes/human/Homo_sapiens/UCSC/hg38/Sequence/WholeGenomeFasta/2M_CNV/hg38_130mer.bigwig
-##generateMap.pl -w 40 -i $genome $genome -o /data/database/iGenomes/mouse/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/0.5M_CNV/mm10_40mer.bigwig
-####Use mapCounter in HMMcopy to generate a mappability reference file for the genome. Use option "-w 500000" to specify window size
-#mapCounter -w 1000000 /data/database/iGenomes/human/Homo_sapiens/UCSC/hg38/Sequence/WholeGenomeFasta/1M_CNV/hg38_150mer.bigwig >$cnvdir/hg38_150mer_1M.map.wig
-#mapCounter -w 2000000 /data/database/iGenomes/human/Homo_sapiens/UCSC/hg38/Sequence/WholeGenomeFasta/2M_CNV/hg38_150mer.bigwig >$cnvdir/hg38_150mer_2M.map.wig
