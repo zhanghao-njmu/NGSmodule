@@ -13,7 +13,7 @@ readCounter --help &>/dev/null
 for sample in "${arr[@]}"; do
   read -u1000
   {
-    dir=$data_dir/$sample
+    dir=${work_dir}/${sample}
     mkdir -p $dir/$Aligner/CNV
     cd $dir/$Aligner/CNV
     echo "===== $sample ====="
@@ -26,7 +26,7 @@ for sample in "${arr[@]}"; do
     readCounter -w 1000000 ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.1M_input.wig
     # eval "$(conda shell.bash hook)"
     # conda activate HmmCopy
-    $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig" $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
+    Rscript $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig" $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
     # conda deactivate
 
     #####
