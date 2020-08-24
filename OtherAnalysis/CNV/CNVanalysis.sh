@@ -26,7 +26,7 @@ for sample in "${arr[@]}"; do
     readCounter -w 1000000 ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.1M_input.wig
     # eval "$(conda shell.bash hook)"
     # conda activate HmmCopy
-    Rscript $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig" $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
+    Rscript $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig" 2 ${sample}.${Aligner}.HMMcopy
     # conda deactivate
 
     #####
