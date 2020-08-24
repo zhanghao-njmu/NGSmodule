@@ -23,8 +23,8 @@ genmap --version &>/dev/null
   echo -e "Cannot find the command genmap. User can install it with the command 'conda install -c bioconda genmap'.\n"
   exit 1
 }
-wigToBigWig --version &>/dev/null
-[ $? -ne 0 ] && {
+wigToBigWig &>/dev/null
+[ $? -ne 255 ] && {
   echo -e "Cannot find the command wigToBigWig. User can install it with the command 'conda install -c bioconda ucsc-wigtobigwig'.\n"
   exit 1
 }
