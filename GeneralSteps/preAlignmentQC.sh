@@ -223,9 +223,11 @@ for sample in "${arr[@]}"; do
           fi
 
         elif [[ -f "${sample}"_trim.fq ]]; then
-          color_echo "blue" "+++++ ${sample}: ${sample}_trim.fq exist. Start to compress it. +++++"
+          color_echo "blue" "+++++ ${sample}: ${sample}_trim.fq existed. +++++"
+        elif [[ -f "${sample}"_trim.fq.gz ]]; then
+          color_echo "blue" "+++++ ${sample}: ${sample}_trim.fq.gz existed. +++++"
         else
-          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}.fq or ${sample}_trim.fq . Start a complete preAlignmentQC.+++++"
+          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}.fq or ${sample}_trim.fq or ${sample}_trim.fq.gz . Start a complete preAlignmentQC.+++++"
           force="TRUE"
           continue
         fi
@@ -387,9 +389,11 @@ for sample in "${arr[@]}"; do
             color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
           fi
         elif [[ -f "${sample}"_1_trim.fq ]] && [[ -f "${sample}"_2_trim.fq ]]; then
-          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq exist. Start to compress them. +++++"
+          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq existed. +++++"
+        elif [[ -f "${sample}"_1_trim.fq.gz ]] && [[ -f "${sample}"_2_trim.fq.gz ]]; then
+          color_echo "blue" "+++++ ${sample}: ${sample}_1(2)_trim.fq.gz existed. +++++"
         else
-          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}_1(2).fq or ${sample}_1(2)_trim.fq . Start a complete preAlignmentQC.+++++"
+          color_echo "yellow" "+++++ ${sample}: Cannot find ${sample}_1(2).fq or ${sample}_1(2)_trim.fq or ${sample}_1(2)_trim.fq.gz . Start a complete preAlignmentQC.+++++"
           force="TRUE"
           continue
         fi
