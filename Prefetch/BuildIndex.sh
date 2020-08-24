@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
+
 ############# Paramaters #############################################################
 rootdir="/data/database/iGenomes/"
 threads=120
