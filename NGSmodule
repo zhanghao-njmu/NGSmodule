@@ -86,9 +86,14 @@ CNVanalysis()
 help()
 {
 cat <<- EOF
-  Desc: A flexible, modularization, and pragmatic workflow to process the NGS data in batches.
-  
+#########################################################################################
+
+  Description: A flexible, modularization, and pragmatic workflow to process the NGS data 
+               in batches.
   Author: ZhangHao
+  NGSmodule vsersion: 0.1.0 
+
+#########################################################################################
 
   Usage: 
   
@@ -121,6 +126,8 @@ cat <<- EOF
                               file will be created with <CreateConfigFile> MODE.
     -h, --help                Show this message.
     -v, --version             Show the version of NGSmodule.
+
+#########################################################################################
 
 EOF
 
