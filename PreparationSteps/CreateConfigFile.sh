@@ -20,7 +20,7 @@ total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)               
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile="$(ls $(pwd)/temp_*Sample_info.csv)" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
-force_complete="FALSE"                        ## A global option to determine whether to do a complete process for the MODE .
+force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE .
 
 
 ############# PrepareWorkDir Paramaters ###################################################################
