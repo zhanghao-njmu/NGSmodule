@@ -99,7 +99,8 @@ cat <<- EOF
     > PreparationSteps:
         CreateConfigFile         Create a configuration template file for NGSmodule.
         CreateSampleInfoFile     Create a sample information template file for NGSmodule.
-        CreateWorkDir            Create a working directory according to the configuration file and sample information file.
+        CreateWorkDir            Create a working directory according to the configuration
+                                 file and sample information file.
     
     > GeneralSteps:
         preAlignmentQC           
@@ -116,8 +117,8 @@ cat <<- EOF
           CNVanalysis
     
   Other options:
-    -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
-                              will be created with <CreateConfigFile> MODE.
+    -c, --ConfigFile          Specify the path of ConfigFile. A template configuration 
+                              file will be created with <CreateConfigFile> MODE.
     -h, --help                Show this message.
     -v, --version             Show the version of NGSmodule.
 
