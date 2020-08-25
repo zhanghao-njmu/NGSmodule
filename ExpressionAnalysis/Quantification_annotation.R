@@ -25,7 +25,7 @@ genetable = getGeneTable(gtf)
 genetable <- cbind(">>Annotation.gtf",genetable)
 colnames(genetable)[1] <- ">>Annotation.gtf"
 
-if (species!="") {
+if (species%in%c("Homo_sapiens","Mus_musculus","Macaca_mulatta","Drosophila_melanogaster")) {
   library(AnnotationDbi)
   org <- switch(species,"Homo_sapiens"="org.Hs.eg.db","Mus_musculus"="org.Mm.eg.db","Macaca_mulatta"="org.Mmu.eg.db","Drosophila_melanogaster"="org.Dm.eg.db")
   library(org,character.only = T)
