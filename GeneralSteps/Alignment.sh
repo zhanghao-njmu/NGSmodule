@@ -91,6 +91,7 @@ for sample in "${arr[@]}"; do
     Layout=${Layout_dict[$sample]}
 
     echo "+++++ Alignment: $sample +++++"
+    status="uncompleted"
 
     if [[ $Layout == "SE" ]]; then
       fq1=$dir/${sample}_trim.fq.gz
