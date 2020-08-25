@@ -97,32 +97,31 @@ cat <<- EOF
 
   Usage: 
   
-    NGSmodule <MODE> [-c <Config_file>]
+    NGSmodule [MODE options] [ -c <Configuration file> ]
   
   MODE options:
     
     # PreparationSteps:
-        <CreateConfigFile>         Create a configuration template file for NGSmodule.
-        <CreateSampleInfoFile>     Create a sample information template file for NGSmodule.
-        <CreateWorkDir>            Create a working directory according to the configuration
-                                   file and the sample information file.
+       CreateConfigFile         Create a configuration template file for NGSmodule.
+       CreateSampleInfoFile     Create a sample information template file for NGSmodule.
+       CreateWorkDir            Create a working directory. The configuration file and
+                                the sample information file must be provided together.
     
     # GeneralSteps:
-        <preAlignmentQC>           
-        <Alignment>                
-        <postAlignmentQC>          
+       preAlignmentQC           
+       Alignment                
+       postAlignmentQC          
 
     # ExpressionAnalysis:
-        <Quantification>
-        <postQuantificationQC>   
-        <DifferentialExpression>   
+       Quantification
+       postQuantificationQC   
+       DifferentialExpression   
 
     # CNVAnalysis:
-        <CNVanalysis>
+       CNVanalysis
     
   Other options:
-    -c, --ConfigFile          Specify the path of ConfigFile. A template configuration 
-                              file will be created with <CreateConfigFile> MODE.
+    -c, --ConfigFile          Specify the path of configuration file.
     -h, --help                Show this message.
     -v, --version             Show the version of NGSmodule.
 
