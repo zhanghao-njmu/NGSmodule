@@ -9,7 +9,6 @@ vcfFile=as.character(args[1]);
 mySample=as.character(args[2]);
 
 library(vcfR)
-library(pinfsc50)
 library(stringr)
 library(dplyr)
 library(ggpubr)
