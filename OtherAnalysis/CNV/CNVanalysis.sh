@@ -9,6 +9,12 @@ readCounter --help &>/dev/null
   exit 1
 }
 
+freec --help &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the tool Control-FREEC. User can install it with the command 'conda install -c bioconda control-freec'.\n"
+  exit 1
+}
+
 GC_bin="/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.gc.wig"
 if [[ ! -f $GC_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing GC content per bin: ${GC_bin}\n"
@@ -98,9 +104,8 @@ for sample in "${arr[@]}"; do
     #bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
     #SNP2ploidy.R results/variants/filter.variants.vcf ${sample}
 
-    ### Mutect2 ####
 
-    
+
     echo >&1000
   } &
   ((bar++))
