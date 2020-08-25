@@ -113,8 +113,6 @@ if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
   exit 1
 fi
 
-declare -A Species_arr=(["human"]="Homo_sapiens" ["mouse"]="Mus_musculus" ["machin"]="Macaca_fascicularis" ["rhesus"]="Macaca_mulatta" ["fly"]="Drosophila_melanogaster")
-
 types=("rna" "dna" "BSdna")
 if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
   color_echo "red" "ERROR! SequenceType is wrong.\nPlease check theParamaters in your ConfigFile.\n"
@@ -122,7 +120,7 @@ if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
 fi
 
 if [[ $SortmeRNA_ref_direct == "" ]]; then
-  SortmeRNA_ref="$SortmeRNA_Dir/$SortmeRNA_Type.${Species_arr[$Species]}.${SortmeRNA_DataVersion}.fa"
+  SortmeRNA_ref="${SortmeRNA_Dir}/${SortmeRNA_Type}.${Species}.${SortmeRNA_DataVersion}.fa"
 else
   SortmeRNA_ref=$SortmeRNA_ref_direct
 fi
@@ -134,24 +132,24 @@ else
 fi
 
 if [[ $Genome_direct == "" ]]; then
-  genome="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
+  genome="$iGenomes_Dir/$Species/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
 else
   genome=$Genome_direct
 fi
 
 if [[ $GTF_direct == "" ]]; then
-  gtf="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Annotation/Genes/genes.gtf"
+  gtf="$iGenomes_Dir/$Species/$Source/$Build/Annotation/Genes/genes.gtf"
 else
   gtf=$GTF_direct
 fi
 
-bwa_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BWAIndex/genome.fa"
-bowtie_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BowtieIndex/genome"
-bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/Bowtie2Index/genome"
-hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/Hisat2Index/genome"
-star_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/STARIndex/genome"
-bismark_bowtie2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BismarkIndex/genome/bowtie2"
-bismark_hisat2_index="$iGenomes_Dir/${Species_arr[$Species]}/$Source/$Build/Sequence/BismarkIndex/genome/hisat2"
+bwa_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BWAIndex/genome.fa"
+bowtie_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BowtieIndex/genome"
+bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Bowtie2Index/genome"
+hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Hisat2Index/genome"
+star_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/STARIndex/genome"
+bismark_bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/genome/bowtie2"
+bismark_hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/genome/hisat2"
 tophat2_index=$bowtie2_index
 
 if [[ $Index_direct == "" ]]; then

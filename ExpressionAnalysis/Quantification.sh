@@ -67,15 +67,15 @@ echo -e "\nIntegrating and annotating the matrix....\n"
 mkdir -p $maindir/NGSmodule_analysis/Quantification
 cd $maindir/NGSmodule_analysis/Quantification
 
-species_arr=('human' 'mouse' 'rhesus' 'fly')
-if [[ "${species_arr[*]}" =~ ${Species} ]]; then
-  Species_anno=$Species
-else
-  Species_anno=""
-  echo -e "No additional annotation for species: $Species\n"
-fi
+# species_arr=('human' 'mouse' 'rhesus' 'fly')
+# if [[ "${species_arr[*]}" =~ ${Species} ]]; then
+#   Species_anno=$Species
+# else
+#   Species_anno=""
+#   echo -e "No additional annotation for species: $Species\n"
+# fi
 
-Rscript $2 $work_dir $gtf $Aligner $Species_anno $Source &>Annotation.R.log
+Rscript $2 $work_dir $gtf $Aligner $Species $Source &>Annotation.R.log
 echo -e "Integrated quantification matrix: $maindir/NGSmodule_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"

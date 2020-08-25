@@ -15,7 +15,7 @@ database <- args[5]
 # work_dir <- "/data/lab/HeXi/Rpl39l/RNC-seq/NGSmodule_work/"
 # gtfFile <- "/data/database/iGenomes/mouse/Mus_musculus/Ensembl/GRCm38/Annotation/Genes/genes.gtf"
 # aligner <- "hisat2"
-# species <- "mouse"
+# species <- "Homo_sapiens"
 # database <- "Ensembl"
 ##############################
 
@@ -27,7 +27,7 @@ colnames(genetable)[1] <- ">>Annotation.gtf"
 
 if (species!="") {
   library(AnnotationDbi)
-  org <- switch(species,"human"="org.Hs.eg.db","mouse"="org.Mm.eg.db","rhesus"="org.Mmu.eg.db","fly"="org.Dm.eg.db")
+  org <- switch(species,"Homo_sapiens"="org.Hs.eg.db","Mus_musculus"="org.Mm.eg.db","Macaca_mulatta"="org.Mmu.eg.db","Drosophila_melanogaster"="org.Dm.eg.db")
   library(org,character.only = T)
   idtype <- switch(database,"Ensembl"="ENSEMBL","NCBI"="ENTREZID","UCSC"="SYMBOL")
   keys <- keys(get(org),keytype = idtype)

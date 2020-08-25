@@ -60,11 +60,11 @@ SortmeRNA_ref_direct=""                        ## Optional. Directly specify the
 
 
 ############# Alignment Paramaters ##########################################################################
-iGenomes_Dir="/data/database/iGenomes"         ## The iGenomes dir
-Species="human"                                ## human,mouse,machin,rhesus,fly
-Source="Ensembl"                             ## Ensembl,NCBI,UCSC
-Build="GRCh38"                          ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
-Aligner="hisat2"                               ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
+iGenomes_Dir="/data/database/iGenomes"           ## The iGenomes dir
+Species="human"                                  ## human,mouse,machin,rhesus,fly
+Source="Ensembl"                                 ## Ensembl,NCBI,UCSC
+Build="GRCh38"                                   ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
+Aligner="hisat2"                                 ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 ##Aligner_parament=""                            ## (test) Specify custom parameters instead of NGSmodule default parameters.  
 
 Genome_direct=""
@@ -73,7 +73,7 @@ Index_direct=""
 
 
 ############# Quantification Paramaters ######################################################################
-strandspecific=0                               ## 0(unstranded),1(stranded),2(reversely stranded)
+strandspecific=0                                   ## 0(unstranded),1(stranded),2(reversely stranded)
 
 
 ############# DifferentialExpression Paramaters ##############################################################
