@@ -96,24 +96,24 @@ cat <<- EOF
   
   MODE options:
     
-    // PreparationSteps
+    # PreparationSteps:
         CreateConfigFile         Create a configuration template file for NGSmodule.
         CreateSampleInfoFile     Create a sample information template file for NGSmodule.
         CreateWorkDir            Create a working directory according to the configuration file and sample information file.
     
-    // GeneralSteps
+    # GeneralSteps:
         preAlignmentQC           
         Alignment                
         postAlignmentQC          
     
-    // Analysis
-        # Expression
-        Quantification
-        postQuantificationQC   
-        DifferentialExpression   
+    # Analysis:
+      # Expression:
+          Quantification
+          postQuantificationQC   
+          DifferentialExpression   
 
-        # CNV
-        CNVanalysis
+      # CNV:
+          CNVanalysis
     
   Other options:
     -c, --ConfigFile          Specify the path of ConfigFile. A templet config file 
