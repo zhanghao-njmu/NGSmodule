@@ -4,7 +4,7 @@ if [[ $1 != "" ]];then
     ConfigFile=$1
     if [[ -f $ConfigFile ]];then
         tmp=(`date +"%Y%m%d%H%M%S"`)
-        mv ${ConfigFile} bk_${tmp}_${ConfigFile}.config
+        mv ${ConfigFile} bk_${tmp}_${ConfigFile}
     fi
 else
     tmp=(`date +"%Y%m%d%H%M%S"`)
