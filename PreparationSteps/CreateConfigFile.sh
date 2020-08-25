@@ -18,7 +18,7 @@ rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw
 SequenceType="rna"                            ## rna,dna,BSdna
 total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
-SampleInfoFile=""                             ## Absolute path of a .csv SampleInfoFile.
+SampleInfoFile="$(ls $(pwd)/temp_*Sample_info.csv)" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
 force_complete="FALSE"                        ## Whether to run a complete workflow (TRUE) or skip some steps that completed (FALSE).
 
@@ -51,11 +51,11 @@ length_required=20             ## reads shorter than length_required will be dis
 FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### SortmeRNA ###
-SortmeRNA_Dir="/data/database/SortmeRNA"       ## SortmeRNA_ref: the dir containing the reference sequence.
-SortmeRNA_Type="rRNA"                          ## SortmeRNA_ref: rRNA,Mt_tRNA,Mt_rRNA
-SortmeRNA_Species="human"                      ## SortmeRNA_ref: human,mouse,machin,rhesus,fly
-SortmeRNA_DataVersion="EnsemblGenes98"         ## SortmeRNA_ref: version of sortmerna fetched sequence 
-SortmeRNA_ref_direct=""                        ## Optional. Directly specify the path of the SortmeRNA_ref sequence file. 
+SortmeRNA_Dir="/data/database/SortmeRNA"       ## the path of the dir containing the reference sequence.
+SortmeRNA_Type="rRNA"                          ## rRNA,Mt_tRNA,Mt_rRNA
+SortmeRNA_Species="Homo_sapiens"               ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
+SortmeRNA_DataVersion="EnsemblGenes98"         ## the version of the sequence 
+SortmeRNA_ref_direct=""                        ## Optional. Specify the path of the reference sequence file for SortmeRNA. 
 
 
 ############# Alignment Paramaters ##########################################################################
@@ -64,10 +64,10 @@ Species="Homo_sapiens"                           ## Homo_sapiens,Mus_musculus,Ma
 Source="Ensembl"                                 ## Ensembl,NCBI,UCSC
 Build="GRCh38"                                   ## The genome build version.
 Aligner="hisat2"                                 ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark
-##Aligner_parament=""                            ## (test) Specify custom parameters instead of NGSmodule default parameters.  
-Genome_direct=""
-GTF_direct=""
-Index_direct=""
+Aligner_parament=""                              ## Optional. Specify custom parameters and overwrite the default patameters excluding the index path and threads number.  
+Genome_direct=""                                 ## Optional. Specify a genome file path used for the alignment.  
+GTF_direct=""                                    ## Optional. Specify a gtf file path used for the alignment.  
+Index_direct=""                                  ## Optional. Specify the index path used for the alignment.  
 
 
 ############# Quantification Paramaters ######################################################################
