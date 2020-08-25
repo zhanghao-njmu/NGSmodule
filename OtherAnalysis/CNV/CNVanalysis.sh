@@ -107,14 +107,14 @@ for sample in "${arr[@]}"; do
     #Rscript $2 ${sample}.${version}.bwamem.filter.rmchrY.vcf ${sample}.${version}
 
     ### Strelka2 #####
-    #mkdir -p $dir/$Aligner/Variant/Strelka2
-    #cd $dir/$Aligner/Variant/Strelka2
+    #mkdir -p $dir/$Aligner/SNV/Strelka2
+    #cd $dir/$Aligner/SNV/Strelka2
     #rm -rf $dir/$Aligner/Variant/Strelka2/*
     #configureStrelkaGermlineWorkflow.py \
     #        --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
     #        --referenceFasta $genome \
-    #        --runDir $dir/$Aligner/Variant/Strelka2
-    #$dir/$Aligner/Variant/Strelka2/runWorkflow.py -m local -j $thread
+    #        --runDir $dir/$Aligner/SNV/Strelka2
+    #$dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $thread
     #bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
     #Rscript $2 results/variants/filter.variants.vcf ${sample}
 
