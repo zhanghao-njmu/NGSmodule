@@ -5,9 +5,21 @@ trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 readCounter --help &>/dev/null
 [ $? -ne 0 ] && {
-  echo -e "Cannot find the command readCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
+  color_echo "red" "Cannot find the command readCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
   exit 1
 }
+
+GC_bin="/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.gc.wig"
+if [[ ! -f $GC_bin ]]; then
+  color_echo "red" "ERROR! Cannot find the wig file containing GC content per bin: ${GC_bin}\n"
+  exit 1
+fi
+
+Map_bin="/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.130mer.gem.wig"
+if [[ ! -f $Map_bin ]]; then
+  color_echo "red" "ERROR! Cannot find the wig file containing average mappability per bin: ${Map_bin}\n"
+  exit 1
+fi
 
 #######################################################################################
 for sample in "${arr[@]}"; do
@@ -16,18 +28,15 @@ for sample in "${arr[@]}"; do
     dir=${work_dir}/${sample}
     mkdir -p $dir/$Aligner/CNV
     cd $dir/$Aligner/CNV
+
     echo "===== $sample ====="
 
     #####
     ##### HMMcopy #####
     mkdir -p $dir/$Aligner/CNV/HMMcopy
     cd $dir/$Aligner/CNV/HMMcopy
-    ####Use readCounter in HMMcopy to generate a wiggle file for each BAM file.
-    readCounter -w 1000000 ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.1M_input.wig
-    # eval "$(conda shell.bash hook)"
-    # conda activate HmmCopy
-    Rscript $1 0.995 ${sample}.${Aligner}.1M_input.wig "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.gc.wig" "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.130mer.gem.wig" 2 ${sample}.${Aligner}.HMMcopy
-    # conda deactivate
+    readCounter -w $Window ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig
+    Rscript $1 0.995 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
 
     #####
     ##### BaseqCNV #####
@@ -41,8 +50,8 @@ for sample in "${arr[@]}"; do
 
     #####
     ##### Control-FREEC #####
-    #mkdir -p $dir/FREEC
-    #cd $dir/FREEC
+    #mkdir -p $dir/Control_FREEC
+    #cd $dir/Control_FREEC
     #sed "s#PE_sample.bam#$dir/${sample}.hg19.bowtie2.rmdup.bam#" $FREEC_config >FREEC_config.ini
     #sed -i "s#thread#$thread#" $FREEC_config
     #freec -conf FREEC_config.ini
@@ -88,14 +97,6 @@ for sample in "${arr[@]}"; do
     #./runWorkflow.py -m local -j $thread
     #bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
     #determining_ploidy.R results/variants/filter.variants.vcf ${sample}
-
-    #Identify CNVs
-    #1. Exclude cells for which the VS calculated in 4.4.6 exceeds 0.26.
-    #2. Filter the segments called by HMMcopy in 4.4.6 to include only those for which the median log2 ratio is greater than 0.4 (putative gain)
-    #or less than -0.35 (putative loss).
-    #3. Filter the segments called by DNAcopy in 4.5.5 to include only those for which the segment mean is greater than 1.32 or less than 0.6.
-    #4. Overlap the segments from 4.6.2 and 4.6.3, calling CNVs only in regions where both HMMcopy and DNAcopy identify a putative gain
-    #or putative loss.
 
     echo >&1000
   } &
