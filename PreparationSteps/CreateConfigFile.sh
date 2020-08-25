@@ -55,18 +55,16 @@ SortmeRNA_Dir="/data/database/SortmeRNA"       ## SortmeRNA_ref: the dir contain
 SortmeRNA_Type="rRNA"                          ## SortmeRNA_ref: rRNA,Mt_tRNA,Mt_rRNA
 SortmeRNA_Species="human"                      ## SortmeRNA_ref: human,mouse,machin,rhesus,fly
 SortmeRNA_DataVersion="EnsemblGenes98"         ## SortmeRNA_ref: version of sortmerna fetched sequence 
-
 SortmeRNA_ref_direct=""                        ## Optional. Directly specify the path of the SortmeRNA_ref sequence file. 
 
 
 ############# Alignment Paramaters ##########################################################################
-iGenomes_Dir="/data/database/iGenomes"           ## The iGenomes dir
-Species="human"                                  ## human,mouse,machin,rhesus,fly
+iGenomes_Dir="/data/database/iGenomes"           ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
+Species="Homo_sapiens"                           ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 Source="Ensembl"                                 ## Ensembl,NCBI,UCSC
-Build="GRCh38"                                   ## The genome version under the dir GenomeDir/Species_arr[Species]/Database.
+Build="GRCh38"                                   ## The genome build version.
 Aligner="hisat2"                                 ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 ##Aligner_parament=""                            ## (test) Specify custom parameters instead of NGSmodule default parameters.  
-
 Genome_direct=""
 GTF_direct=""
 Index_direct=""
@@ -80,7 +78,6 @@ strandspecific=0                                   ## 0(unstranded),1(stranded),
 max_padj=0.05                                      ## e.g. 0.05 or 0.01 or 0.001
 min_fc=2                                           ## e.g. 2
 min_count=10                                       ## Minimum count required for at least n samples (n is the smallest group sample size).
-
 group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by comma(,). Different comparisons are seperated by semicolon(;). 
 DGEs_multi_compare=1                               ## Whether to compare DGEs among different comparisons. 0(not to do),1(do).
 
