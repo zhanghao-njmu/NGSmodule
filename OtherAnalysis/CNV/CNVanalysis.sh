@@ -84,9 +84,9 @@ for sample in "${arr[@]}"; do
     #gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I $dir/${sample}.${version}.bwamem.rmdup.bam -o ${sample}.${version}.bwamem.vcf
     #bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o ${sample}.${version}.bwamem.filter.vcf ${sample}.${version}.bwamem.vcf
     #grep -Ev '^(chrY)' ${sample}.${version}.bwamem.filter.vcf > ${sample}.${version}.bwamem.filter.rmchrY.vcf
-    #determining_ploidy.R ${sample}.${version}.bwamem.filter.rmchrY.vcf ${sample}.${version}
+    #SNP2ploidy.R ${sample}.${version}.bwamem.filter.rmchrY.vcf ${sample}.${version}
 
-    ### Strelka #####
+    ### Strelka2 #####
     #mkdir -p $dir/Strelka
     #cd $dir/Strelka
     #rm -rf ./*
@@ -96,8 +96,11 @@ for sample in "${arr[@]}"; do
     #        --runDir ./
     #./runWorkflow.py -m local -j $thread
     #bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
-    #determining_ploidy.R results/variants/filter.variants.vcf ${sample}
+    #SNP2ploidy.R results/variants/filter.variants.vcf ${sample}
 
+    ### Mutect2 ####
+
+    
     echo >&1000
   } &
   ((bar++))

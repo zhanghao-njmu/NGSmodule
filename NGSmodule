@@ -90,8 +90,8 @@ cat <<- EOF
 
   Description: A flexible, modularization, and pragmatic workflow to process the NGS data 
                in batches.
+
   Author: ZhangHao
-  NGSmodule vsersion: 0.1.0 
 
 #########################################################################################
 
