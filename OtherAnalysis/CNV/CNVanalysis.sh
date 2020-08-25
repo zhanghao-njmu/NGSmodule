@@ -29,13 +29,13 @@ freec --help &>/dev/null
   exit 1
 }
 
-GC_bin="/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.gc.wig"
+GC_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/windows/$Window/genome_main.w$Window.gc.wig"
 if [[ ! -f $GC_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing GC content per bin: ${GC_bin}\n"
   exit 1
 fi
 
-Map_bin="/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0/Sequence-Plus_rhesus_chY/GemIndex/windows/1000000/genome_main.w1000000.130mer.gem.wig"
+Map_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/windows/$Window/genome_main.w$Window.$Kmer.gem.wig"
 if [[ ! -f $Map_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing average mappability per bin: ${Map_bin}\n"
   exit 1
@@ -55,7 +55,7 @@ for sample in "${arr[@]}"; do
     ##### HMMcopy #####
     mkdir -p $dir/$Aligner/CNV/HMMcopy
     cd $dir/$Aligner/CNV/HMMcopy
-    readCounter -w $Window ${dir}/$Aligner/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig
+    readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig
     Rscript $1 0.995 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
 
     #####
@@ -104,19 +104,19 @@ for sample in "${arr[@]}"; do
     #gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I $dir/${sample}.${version}.bwamem.rmdup.bam -o ${sample}.${version}.bwamem.vcf
     #bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o ${sample}.${version}.bwamem.filter.vcf ${sample}.${version}.bwamem.vcf
     #grep -Ev '^(chrY)' ${sample}.${version}.bwamem.filter.vcf > ${sample}.${version}.bwamem.filter.rmchrY.vcf
-    #SNP2ploidy.R ${sample}.${version}.bwamem.filter.rmchrY.vcf ${sample}.${version}
+    #Rscript $2 ${sample}.${version}.bwamem.filter.rmchrY.vcf ${sample}.${version}
 
     ### Strelka2 #####
-    #mkdir -p $dir/Strelka
-    #cd $dir/Strelka
-    #rm -rf ./*
-    #/home/reprod/bin/pyenv/versions/anaconda2-5.1.0/bin/configureStrelkaGermlineWorkflow.py \
-    #        --bam $dir/${sample}.hg19.bwamem.rmdup.bam \
+    #mkdir -p $dir/$Aligner/Variant/Strelka2
+    #cd $dir/$Aligner/Variant/Strelka2
+    #rm -rf $dir/$Aligner/Variant/Strelka2/*
+    #configureStrelkaGermlineWorkflow.py \
+    #        --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
     #        --referenceFasta $genome \
-    #        --runDir ./
-    #./runWorkflow.py -m local -j $thread
+    #        --runDir $dir/$Aligner/Variant/Strelka2
+    #$dir/$Aligner/Variant/Strelka2/runWorkflow.py -m local -j $thread
     #bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
-    #SNP2ploidy.R results/variants/filter.variants.vcf ${sample}
+    #Rscript $2 results/variants/filter.variants.vcf ${sample}
 
 
 
