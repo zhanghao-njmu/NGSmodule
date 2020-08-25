@@ -59,28 +59,28 @@ Quantification()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/ExpressionAnalysis/Quantification.sh $shell_folder/ExpressionAnalysis/Quantification_featurecounts.R $shell_folder/ExpressionAnalysis/Quantification_annotation.R
+  source $shell_folder/Analysis/Quantification/Quantification.sh $shell_folder/Analysis/Quantification/Quantification_featurecounts.R $shell_folder/Analysis/Quantification/Quantification_annotation.R
 }
 
 postQuantificationQC()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/ExpressionAnalysis/postQuantificationQC.sh $shell_folder/ExpressionAnalysis/postQuantificationQC.R
+  source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
 DifferentialExpression()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/ExpressionAnalysis/DifferentialExpression.sh $shell_folder/ExpressionAnalysis/DifferentialExpression.R
+  source $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.sh $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.R
 }
 
 CNVanalysis()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/OtherAnalysis/CNV/CNVanalysis.sh $shell_folder/OtherAnalysis/CNV/hmmcopy.R $shell_folder/OtherAnalysis/CNV/SNP2ploidy.R
+  source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/hmmcopy.R $shell_folder/Analysis/CNV/SNP2ploidy.R
 }
 
 help()
