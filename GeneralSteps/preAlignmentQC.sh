@@ -121,7 +121,7 @@ for sample in "${arr[@]}"; do
 
         pigz -t $(realpath ${fq1}) 2>/dev/null
         if [[ $? != 0 ]]; then
-          echo -e "Warning! ${fq1} is not a completed .gz file."
+          color_echo "yellow" "Warning! ${fq1} is not a completed .gz file."
           force="TRUE"
           continue
         fi
@@ -239,7 +239,7 @@ for sample in "${arr[@]}"; do
         if [[ -f $dir/${sample}_trim.fq.gz ]]; then
           pigz -t $dir/${sample}_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
-            echo -e "Warning! ${sample}_trim.fq.gz is not a completed .gz file."
+            color_echo "yellow" "Warning! ${sample}_trim.fq.gz is not a completed .gz file."
             force="TRUE"
             continue
           fi
@@ -275,13 +275,13 @@ for sample in "${arr[@]}"; do
 
         pigz -t $(realpath ${fq1}) 2>/dev/null
         if [[ $? != 0 ]]; then
-          echo -e "Warning! ${fq1} is not a completed .gz file."
+          color_echo "yellow" "Warning! ${fq1} is not a completed .gz file."
           force="TRUE"
           continue
         fi
         pigz -t $(realpath ${fq2}) 2>/dev/null
         if [[ $? != 0 ]]; then
-          echo -e "Warning! ${fq2} is not a completed .gz file."
+          color_echo "yellow" "Warning! ${fq2} is not a completed .gz file."
           force="TRUE"
           continue
         fi
@@ -405,13 +405,13 @@ for sample in "${arr[@]}"; do
         if [[ -f $dir/${sample}_1_trim.fq.gz ]] && [[ -f $dir/${sample}_2_trim.fq.gz ]]; then
           pigz -t $dir/${sample}_1_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
-            echo -e "Warning! ${sample}_1_trim.fq.gz is not a completed .gz file."
+            color_echo "yellow" "Warning! ${sample}_1_trim.fq.gz is not a completed .gz file."
             force="TRUE"
             continue
           fi
           pigz -t $dir/${sample}_2_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
-            echo -e "Warning! ${sample}_2_trim.fq.gz is not a completed .gz file."
+            color_echo "yellow" "Warning! ${sample}_2_trim.fq.gz is not a completed .gz file."
             force="TRUE"
             continue
           fi
