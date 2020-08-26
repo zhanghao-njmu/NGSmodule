@@ -37,7 +37,7 @@ mapCounter --help &>/dev/null
 
 
 ######## Start buiding #########
-arr=($(find $rootdir -name "WholeGenomeFasta"))
+arr=($(find $rootdir -name "WholeGenomeFasta" -type d))
 # if ((threads > 120)); then
 #   threads=120
 # else
