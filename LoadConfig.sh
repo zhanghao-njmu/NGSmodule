@@ -148,7 +148,8 @@ bowtie_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BowtieIndex/genome"
 bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Bowtie2Index/genome"
 hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Hisat2Index/genome"
 star_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/STARIndex/genome"
-bismark_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex"
+bismark_bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/bowtie2"
+bismark_hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/hisat2"
 tophat2_index=$bowtie2_index
 
 if [[ $Index_direct == "" ]]; then

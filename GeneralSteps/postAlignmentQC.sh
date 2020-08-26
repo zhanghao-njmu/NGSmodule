@@ -65,7 +65,7 @@ for sample in "${arr[@]}"; do
     Layout=${Layout_dict[$sample]}
 
     dir=$work_dir/$sample
-    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" == "bismark" ]]; then
+    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       bam=$(ls $dir/$Aligner/*.bam)
     else
       bam=$dir/$Aligner/${sample}.${Aligner}.bam
@@ -89,7 +89,7 @@ for sample in "${arr[@]}"; do
       junction_saturation.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>junction_saturation.log
     fi
 
-    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" == "bismark" ]]; then
+    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       echo "+++++ Waiting for the background processes..........+++++"
     else
       mkdir -p $dir/$Aligner/postAlignmentQC/Preseq

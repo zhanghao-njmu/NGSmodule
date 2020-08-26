@@ -49,18 +49,18 @@ bam &>/dev/null
   exit 1
 }
 
-aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark")
+aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
 if [[ " ${aligners[*]} " != *" $Aligner "* ]]; then
   color_echo "red" "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
   exit 1
 fi
 
-if [[ "$SequenceType" == "BSdna" ]] && [[ ! "$Aligner" == "bismark" ]]; then
+if [[ "$SequenceType" == "BSdna" ]] && [[ ! "$Aligner" =~ bismark_* ]]; then
   color_echo "red" "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
   exit 1
 fi
 
-if [[ "$SequenceType" != "BSdna" ]] && [[ "$Aligner" == "bismark" ]]; then
+if [[ ! "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
   color_echo "red" "ERROR! SequenceType must be BSdna for the Aligner '$Aligner'."
   exit 1
 fi
@@ -126,12 +126,17 @@ for sample in "${arr[@]}"; do
         samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
         samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
         rm -f Aligned.sortedByCoord.out.bam
-      elif [[ "$Aligner" == "bismark" ]]; then
+      elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
+        bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index ${fq1} --quiet \
+        --non_directional --nucleotide_coverage \
+        --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+        for file in ./*_trim*; do mv $file ${file//_trim/}; done
+      elif [[ "$Aligner" == "bismark_hisat2" ]]; then
         bismark --hisat2 --multicore $((($threads) / 8)) -p 3 --genome $index ${fq1} --quiet \
         --non_directional --nucleotide_coverage \
         --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
         for file in ./*_trim*; do mv $file ${file//_trim/}; done
-      else 
+      else
         color_echo "red" "ERROR! Aligner:$Aligner is wrong!"
       fi
 
@@ -169,8 +174,13 @@ for sample in "${arr[@]}"; do
         samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
         samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
         rm -f Aligned.sortedByCoord.out.bam
-      elif [[ "$Aligner" == "bismark" ]]; then
+      elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
         bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+        --non_directional --nucleotide_coverage \
+        --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+        for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
+      elif [[ "$Aligner" == "bismark_hisat2" ]]; then
+        bismark --hisat2 --multicore $((($threads) / 8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
         --non_directional --nucleotide_coverage \
         --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
         for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
@@ -183,7 +193,7 @@ for sample in "${arr[@]}"; do
     echo "+++++ $sample: $Aligner done +++++"
 
     echo "+++++ Bam processing: $sample +++++"
-    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" == "bismark" ]]; then
+    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       bam=$(ls ./*.bam)
       samtools stats -@ $threads $bam >${bam}.stats
       samtools flagstat -@ $threads $bam >${bam}.flagstat
@@ -210,7 +220,7 @@ for sample in "${arr[@]}"; do
       samtools index -@ $threads ${sample}.${Aligner}.bam
     fi
 
-    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" == "bismark" ]]; then
+    if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       echo "+++++ BS-seq deduplication: $sample +++++"
       mkdir -p $dir/$Aligner/deduplicate_bismark
       bam=$(ls $dir/$Aligner/*.bam)
