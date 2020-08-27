@@ -132,11 +132,10 @@ for genome in "${arr[@]}"; do
   # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
   # echo -e "\033[32mComplete bismark index building.\033[0m"
 
-
   ###### rebuild bismark_hisat2 index ######
   echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
   mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
-  if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]];then
+  if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
     mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
     mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
   fi
@@ -169,7 +168,6 @@ for genome in "${arr[@]}"; do
       mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
     done
   done
-  
 
   ##### Genmap #####
   echo -e "\033[35mStart to build Genmap index...\033[0m"
@@ -181,7 +179,7 @@ for genome in "${arr[@]}"; do
     echo "====== Make Genmap mappability file  ======"
     mkdir -p $GenmapIndex/Mappability/${kmer}mer
     cd $GenmapIndex/Mappability/${kmer}mer
-    genmap map --index $GenmapIndex --errors 2 --length $kmer --threads $threads --wig --output genome.${kmer}mer.genmap
+    genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
     wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
 
     echo "====== Count GC and mappability within a silding window  ======"
@@ -192,7 +190,7 @@ for genome in "${arr[@]}"; do
       mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
     done
   done
-  
+
 done
 
 echo "Done"
