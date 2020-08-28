@@ -253,7 +253,7 @@ for sample in "${arr[@]}"; do
           else
             echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
             status="completed"
-            color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+            color_echo "blue" "+++++ ${sample}: Processing complete +++++"
           fi
         else
           force="TRUE"
@@ -441,7 +441,7 @@ for sample in "${arr[@]}"; do
           else
             echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
             status="completed"
-            color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+            color_echo "blue" "+++++ ${sample}: Processing complete +++++"
           fi
         else
           force="TRUE"
