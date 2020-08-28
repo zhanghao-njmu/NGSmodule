@@ -243,11 +243,21 @@ for sample in "${arr[@]}"; do
             force="TRUE"
             continue
           fi
-          status="completed"
-          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+          fq1_nlines=$(unpigz -c "$dir/${sample}_trim.fq.gz" | wc -l)
+          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\n" >>"$dir"/fqcheck.log
+          if [[ $((fq1_nlines % 4)) != 0 ]]; then
+            echo -e "ERROR! trim_fq1_nlines is not divisible by 4." >>"$dir"/fqcheck.log
+            color_echo "yellow" "Warning! $sample: trim_fq1_nlines is not divisible by 4."
+            force="TRUE"
+            continue
+          else
+            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            status="completed"
+            color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+          fi
         else
           force="TRUE"
-          color_echo "yellow" "+++++ ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
+          color_echo "yellow" "Warning! ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
         fi
 
       elif [[ $Layout == "PE" ]]; then
@@ -293,7 +303,7 @@ for sample in "${arr[@]}"; do
           fq2_nlines=$(unpigz -c "$fq2" | wc -l)
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqcheck.log
           if [[ $fq1_nlines != "$fq2_nlines" ]]; then
-            echo -e "ERROR! $srp/$srr has different numbers of reads between paired files" >>"$dir"/fqcheck.log
+            echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqcheck.log
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
             echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
           else
@@ -415,8 +425,24 @@ for sample in "${arr[@]}"; do
             force="TRUE"
             continue
           fi
-          status="completed"
-          color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+          fq1_nlines=$(unpigz -c "$dir/${sample}_1_trim.fq.gz" | wc -l)
+          fq2_nlines=$(unpigz -c "$dir/${sample}_2_trim.fq.gz" | wc -l)
+          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\ntrim_fq2_nlines:$fq2_nlines   trim_fq2_nreads:$((fq2_nlines / 4))\n" >>"$dir"/fqcheck.log
+          if [[ $fq1_nlines != "$fq2_nlines" ]]; then
+            echo -e "ERROR! $sample has different numbers of reads between paired files" >>"$dir"/fqcheck.log
+            color_echo "yellow" "Warning! $sample: has different numbers of reads between trimmed paired fastq."
+            force="TRUE"
+            continue
+          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
+            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is not divisible by 4." >>"$dir"/fqcheck.log
+            color_echo "yellow" "Warning! $sample: trimmed nlines is not divisible by 4."
+            force="TRUE"
+            continue
+          else
+            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            status="completed"
+            color_echo "blue" "+++++ ${sample}: Success! Processing complete +++++"
+          fi
         else
           force="TRUE"
           color_echo "yellow" "+++++ ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
