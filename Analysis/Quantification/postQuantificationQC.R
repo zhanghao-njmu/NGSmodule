@@ -129,10 +129,7 @@ if (group_num <= 5) {
 if (group_num > 5 & group_num <= 8) {
   col_color <- pal_nejm("default")(group_num)
 }
-if (group_num > 8 & group_num <= 16) {
-  col_color <- pal_simpsons("springfield")(group_num)
-}
-if (group_num > 16 & group_num <= 20) {
+if (group_num > 8 & group_num <= 20) {
   col_color <- pal_d3("category20")(group_num)
 }
 if (group_num > 20 & group_num <= 51) {
