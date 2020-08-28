@@ -169,27 +169,27 @@ for genome in "${arr[@]}"; do
     done
   done
 
-  ##### Genmap #####
-  echo -e "\033[35mStart to build Genmap index...\033[0m"
-  rm -rf $GenmapIndex
-  genmap index -F $genome -I $GenmapIndex
-  echo -e "\033[32mComplete Genmap index building.\033[0m"
+  # ##### Genmap #####
+  # echo -e "\033[35mStart to build Genmap index...\033[0m"
+  # rm -rf $GenmapIndex
+  # genmap index -F $genome -I $GenmapIndex
+  # echo -e "\033[32mComplete Genmap index building.\033[0m"
 
-  for kmer in "${kmers[@]}"; do
-    echo "====== Make Genmap mappability file  ======"
-    mkdir -p $GenmapIndex/Mappability/${kmer}mer
-    cd $GenmapIndex/Mappability/${kmer}mer
-    genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
-    wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
+  # for kmer in "${kmers[@]}"; do
+  #   echo "====== Make Genmap mappability file  ======"
+  #   mkdir -p $GenmapIndex/Mappability/${kmer}mer
+  #   cd $GenmapIndex/Mappability/${kmer}mer
+  #   genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
+  #   wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
 
-    echo "====== Count GC and mappability within a silding window  ======"
-    for window in "${windows[@]}"; do
-      mkdir -p $GenmapIndex/windows/$window
-      cd $GenmapIndex/windows/$window
-      gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
-      mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
-    done
-  done
+  #   echo "====== Count GC and mappability within a silding window  ======"
+  #   for window in "${windows[@]}"; do
+  #     mkdir -p $GenmapIndex/windows/$window
+  #     cd $GenmapIndex/windows/$window
+  #     gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
+  #     mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
+  #   done
+  # done
 
 done
 
