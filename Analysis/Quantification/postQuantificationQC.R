@@ -59,17 +59,7 @@ colnames(count_matrix) <- gsub(x = colnames(count_matrix), pattern = paste0(".",
 count_matrix <- count_matrix[, sample_info[["SampleID"]]]
 count_matrix <- count_matrix[rowSums(count_matrix) > 0, ]
 
-logcpm_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".log2CPM.tab")
-if (!file.exists(logcpm_file)) {
-  cat(paste0("Can not find logcpm_file: ", logcpm_file, "\nWill do transformation on the count_matrix into log2CPM!\n"))
-  logcpm <- cpm(count_matrix, log = TRUE, prior.count = 2)
-} else {
-  logcpm <- read.table(file = logcpm_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
-  logcpm <- logcpm[, which(str_detect(colnames(logcpm), pattern = paste0(".", aligner, ".log2CPM"))), drop = FALSE]
-  colnames(logcpm) <- gsub(x = colnames(logcpm), pattern = paste0(".", aligner, ".log2CPM"), replacement = "")
-  logcpm <- logcpm[, sample_info[["SampleID"]]]
-  logcpm <- logcpm[rownames(count_matrix), ]
-}
+logcpm <- cpm(count_matrix, log = TRUE, prior.count = 2)
 logcpm_scale <- t(scale(t(logcpm)))
 
 anno_start <- which(str_detect(colnames(count_matrix_raw), ">>"))[1]
