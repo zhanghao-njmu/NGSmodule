@@ -349,14 +349,19 @@ if (nrow(sample_info) <= 6) {
 
 ##### PCA #####
 cat(">>> Principal Components Analysis\n")
-df_pca <- prcomp(t(logcpm_scale), center = F, scale. = F)
+df_pca <- prcomp(t(logcpm_adj_scale), center = F, scale. = F)
 df_pca <- summary(df_pca)
 PoV <- round(df_pca$importance[2, ] * 100, 2)
 x <- df_pca$x[, "PC1"]
 y <- df_pca$x[, "PC2"]
 m <- max(c(abs(x), abs(y)))
 
-df <- data.frame(x = x, y = y, sample = names(x), Group = sample_info[names(x), "Group"], stringsAsFactors = FALSE)
+df <- data.frame(
+  x = x, y = y, sample = names(x),
+  Group = sample_info[names(x), "Group"],
+  Batch = sample_info[names(x), "BatchID"],
+  stringsAsFactors = FALSE
+)
 
 p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sample)) +
   geom_point(shape = 21, alpha = 0.8) +
@@ -378,8 +383,30 @@ if (nrow(sample_info) <= 30) {
     min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
   )
 }
+plot_list[["PCA_colored_by_group"]] <- p
 
-plot_list[["PCA"]] <- p
+p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sample)) +
+  geom_point(shape = 21, alpha = 0.8) +
+  geom_rug(aes(color = Batch), show.legend = FALSE) +
+  labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
+  scale_fill_manual(values = col_color) +
+  scale_color_manual(values = col_color) +
+  guides(colour = guide_legend(override.aes = list(size = 5))) +
+  xlim(-m, m) +
+  ylim(-m, m) +
+  theme_pubr(border = T, legend = "right") +
+  theme(
+    aspect.ratio = 1,
+    panel.grid.major = element_line()
+  )
+if (nrow(sample_info) <= 30) {
+  p <- p + geom_label_repel(
+    size = 2.5, color = "white",
+    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
+  )
+}
+plot_list[["PCA_colored_by_batch"]] <- p
+
 
 
 ##### PCA top features #####
