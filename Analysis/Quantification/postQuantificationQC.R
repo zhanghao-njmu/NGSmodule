@@ -3,7 +3,7 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "limma", "edgeR", "data.table", "gplots", "stringr", "ComplexHeatmap",
     "ggsci", "ggpubr", "RColorBrewer", "circlize", "ggrepel", "GGally",
-    "factoextra", "nord", "aplot", "ggtree"
+    "factoextra", "nord", "aplot", "ggtree","sva"
   ),
   require,
   character.only = TRUE
