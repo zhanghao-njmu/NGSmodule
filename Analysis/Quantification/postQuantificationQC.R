@@ -34,6 +34,9 @@ SampleInfoFile <- args[3]
 # SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
 ################################
 
+##### source the function #####
+script_dir <- gsub(x = script_path,pattern = "postQuantificationQC.R",replacement = "")
+source(paste0(script_dir,"/postQuantificationQC_function.R"))
 
 count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
 
@@ -74,52 +77,6 @@ anno_matrix <- count_matrix_raw[, anno_start:ncol(count_matrix_raw)]
 
 QCpath <- getwd()
 
-##### limma and edgeR: MDS plot and heatmap #####
-wd_path <- paste0(QCpath, "/Other")
-dir.create(path = wd_path, showWarnings = FALSE)
-setwd(wd_path)
-
-df <- DGEList(counts = count_matrix)
-df <- calcNormFactors(df)
-if (ncol(df) >= 3) {
-  pdf("edgeR_MDS_plot.pdf")
-  MDSdata <- plotMDS(df)
-  invisible(dev.off())
-  write.table(MDSdata$distance.matrix, "edgeR_MDS_distance_matrix.txt", quote = FALSE, append = FALSE)
-  MDSxy <- MDSdata$cmdscale.out
-  colnames(MDSxy) <- c(paste(MDSdata$axislabel, "1"), paste(MDSdata$axislabel, "2"))
-  line <- "#plot_type: 'scatter'"
-  write(line, "edgeR_MDS_Aplot_coordinates_mqc.csv", append = FALSE)
-  suppressWarnings(write.table(MDSxy, "edgeR_MDS_Aplot_coordinates_mqc.csv",
-    sep = ",",
-    quote = FALSE, row.names = T, col.names = NA, append = TRUE
-  ))
-}
-
-# Calculate the Pearsons correlation between samples
-# Plot a heatmap of correlations
-pdf("edgeR_log2CPM_sample_correlation_heatmap.pdf")
-hmap <- heatmap.2(as.matrix(cor(logcpm, method = "pearson")),
-  key.title = "Pearson's Correlation", trace = "none",
-  dendrogram = "row", margin = c(9, 9)
-)
-invisible(dev.off())
-
-# Write correlation values to file
-line <- "#plot_type: 'heatmap'"
-write(line, "edgeR_log2CPM_sample_correlation_mqc.csv", append = FALSE)
-suppressWarnings(write.table(hmap$carpet, "edgeR_log2CPM_sample_correlation_mqc.csv",
-  sep = ",",
-  quote = FALSE, row.names = T, col.names = NA, append = TRUE
-))
-
-# Plot the heatmap dendrogram
-pdf("edgeR_log2CPM_sample_distances_dendrogram.pdf")
-hmap <- heatmap.2(as.matrix(dist(t(logcpm))))
-plot(hmap$rowDendrogram, main = "Sample Pearson's Correlation Clustering")
-invisible(dev.off())
-
-
 ##### main NGSmodule QC #####
 setwd(QCpath)
 group_num <- length(unique(sample_info[, "Group"]))
@@ -140,9 +97,11 @@ batch_color <- colorRampPalette(brewer.pal(n = 11, name = "Spectral")[1:11])(len
 names(batch_color) <- unique(sample_info[["BatchID"]])
 
 plot_list <- list()
+
 ##### Dendrogram #####
+hc <- hclust(dist(t(logcpm_scale), method = "euclidean"))
+
 cat(">>> Hierarchical Clustering (colored by Groups)\n")
-hc <- hclust(dist(t(logcpm_scale), method = "euclidean")) ## sqrt(sum((x_i - y_i)^2)). Large expressed genes -large vars.
 p1 <- ggtree(tr = hc) + layout_dendrogram()
 p2 <- ggplot(sample_info) +
   geom_tile(aes(x = SampleID, y = 1, fill = Group), color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
@@ -151,20 +110,19 @@ p2 <- ggplot(sample_info) +
 p <- p2 %>% insert_top(p1, height = 8)
 plot_list[["Hierarchical_Clustering_colored_by_group"]] <- p
 
-if (length(na.omit(sample_info[["BatchID"]])) == nrow(sample_info)) {
-  cat(">>> Hierarchical Clustering (colored by BatchID)\n")
-  p2 <- ggplot(sample_info) +
-    geom_tile(aes(x = SampleID, y = 1, fill = BatchID), color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
-    scale_fill_manual(values = batch_color, name = "Group") +
-    theme_void()
-  p <- p2 %>% insert_top(p1, height = 8)
-  plot_list[["newpage"]] <- ggplot()
-  plot_list[["Hierarchical_Clustering_colored_by_batch"]] <- p
-}
+
+cat(">>> Hierarchical Clustering (colored by BatchID)\n")
+p2 <- ggplot(sample_info) +
+  geom_tile(aes(x = SampleID, y = 1, fill = BatchID), color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
+  scale_fill_manual(values = batch_color, name = "Group") +
+  theme_void()
+p <- p2 %>% insert_top(p1, height = 8)
+plot_list[["newpage"]] <- ggplot()
+plot_list[["Hierarchical_Clustering_colored_by_batch"]] <- p
 
 ##### correlation heatmap #####
 cat(">>> Correlation Heatmap\n")
-logcpm_cor <- round(cor(logcpm, method = "spearman"), 2) ### cannot use a row-global scale for paired correlation
+logcpm_cor <- round(cor(logcpm, method = "spearman"), 2)
 q1 <- quantile(logcpm_cor, 0.99)
 q2 <- quantile(logcpm_cor, 0.01)
 color_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
@@ -173,6 +131,11 @@ df_bottom_annotation <- HeatmapAnnotation(
   "Groups" = anno_simple(
     x = sample_info[colnames(logcpm), "Group"],
     col = col_color[sample_info[colnames(logcpm), "Group"]],
+    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+  ),
+  "Batches" = anno_simple(
+    x = sample_info[colnames(logcpm), "BatchID"],
+    col = batch_color,
     gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
   ),
   border = TRUE,
@@ -186,40 +149,17 @@ df_right_annotation <- HeatmapAnnotation(
     col = col_color[sample_info[colnames(logcpm), "Group"]],
     gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
   ),
+  "Batches" = anno_simple(
+    x = sample_info[colnames(logcpm), "BatchID"],
+    col = batch_color,
+    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+  ),
   border = TRUE,
   show_legend = FALSE,
   show_annotation_name = TRUE,
   annotation_name_side = "top",
   which = "row"
 )
-if (length(na.omit(sample_info[["BatchID"]])) == nrow(sample_info)) {
-  right_batch_annotation <- HeatmapAnnotation(
-    "Batches" = anno_simple(
-      x = sample_info[colnames(logcpm), "BatchID"],
-      col = batch_color,
-      gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
-    ),
-    border = TRUE,
-    show_legend = FALSE,
-    show_annotation_name = TRUE,
-    annotation_name_side = "top",
-    which = "row"
-  )
-  bottom_batch_annotation <- HeatmapAnnotation(
-    "Batches" = anno_simple(
-      x = sample_info[colnames(logcpm), "BatchID"],
-      col = batch_color,
-      gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
-    ),
-    border = TRUE,
-    show_legend = FALSE,
-    show_annotation_name = TRUE,
-    annotation_name_side = "left"
-  )
-  df_bottom_annotation <- c(df_bottom_annotation, bottom_batch_annotation)
-  df_right_annotation <- c(df_right_annotation, right_batch_annotation)
-}
-
 
 r_max <- 0.408 / ncol(logcpm_cor)
 if (nrow(sample_info) <= 30) {
@@ -290,46 +230,6 @@ if (nrow(sample_info) <= 6) {
   cor_uniq <- sort(unique(c(round(cor(logcpm, method = "spearman"), 2))))
   color_cor <- colorRampPalette(brewer.pal(n = 9, name = "YlOrBr")[2:9])(length(cor_uniq))
   names(color_cor) <- cor_uniq
-
-  custom_point <- function(data, mapping, ...) {
-    ggplot(data = data, mapping = mapping) +
-      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = 1), contour = FALSE, show.legend = F) +
-      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = ifelse(..density..^0.25 < 0.4, 0, 1)), contour = FALSE, show.legend = F) +
-      geom_point(shape = 16, color = "#E18727FF", size = 1, alpha = 0.4) +
-      geom_rug(alpha = 0.4) +
-      geom_smooth(method = "lm", formula = "y ~ x", color = "red", alpha = 0.5) +
-      geom_abline(intercept = 0, slope = 1, size = 1, alpha = 0.5, color = "black", linetype = 2) +
-      scale_fill_gradientn(colours = colorRampPalette(c("white", "#BC3C29FF"))(256)) +
-      # scale_x_continuous(trans = "log10", labels = trans_format("log10", math_format(10^.x)))+
-      # scale_y_continuous(trans = "log10", labels = trans_format("log10", math_format(10^.x)))+
-      theme_pubr(border = T) +
-      theme(axis.text = element_text(size = 10))
-  }
-
-  custom_density <- function(data, mapping, ...) {
-    ggplot(data = data, mapping = mapping) +
-      geom_histogram(color = "black", fill = "#E18727FF", bins = 30) +
-      # scale_x_continuous(trans = "log10", labels = trans_format("log10", math_format(10^.x)))+
-      theme_pubr(border = T) +
-      theme(axis.text = element_text(size = 10))
-  }
-
-  custom_cor <- function(data, mapping, ...) {
-    x <- eval_data_col(data, mapping$x)
-    y <- eval_data_col(data, mapping$y)
-    cor <- round(cor(x = x, y = y, method = "pearson"), 2)
-    color <- color_cor[as.character(cor)]
-    ggplot() +
-      labs(x = NULL, y = NULL) +
-      geom_text(aes(
-        x = 0.5, y = 0.5,
-        label = paste0("Corr:\n", cor)
-      ),
-      size = 5, fontface = 2, color = "white"
-      ) +
-      theme_pubr(border = T) +
-      theme(panel.background = element_rect(fill = color))
-  }
 
   p <- ggpairs(as.data.frame(logcpm),
     title = "Multivariate correlation analysis",
