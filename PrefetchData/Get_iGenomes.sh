@@ -4,7 +4,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 ############# Paramaters #############################################################
 iGenomes_dir="/data/database/iGenomes/"
 Species=""
-kmers=(150 140 100 90 50 40)
+kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
 threads=100
 
