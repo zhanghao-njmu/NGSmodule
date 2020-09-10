@@ -528,7 +528,7 @@ if (length(comparison_list)>=2 & DGEs_multi_compare==1) {
                      combmatrix.label.extra_spacing=6)
   
   compare_plot[[paste0("Compare_edgeR@upset1")]] <- p1
-  compare_plot[[paste0("Compare_edgeR@upset1")]] <- p2
+  compare_plot[[paste0("Compare_edgeR@upset2")]] <- p2
   
    ## DESeq2
   if (sum(str_detect(string = names(res_list),"DESeq2"))>0) {
@@ -576,7 +576,7 @@ if (length(comparison_list)>=2 & DGEs_multi_compare==1) {
                        combmatrix.label.extra_spacing=6)
     
     compare_plot[[paste0("Compare_DESeq2@upset1")]] <- p1
-    compare_plot[[paste0("Compare_DESeq2@upset1")]] <- p2
+    compare_plot[[paste0("Compare_DESeq2@upset2")]] <- p2
     
     }
   
