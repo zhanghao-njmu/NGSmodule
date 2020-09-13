@@ -177,7 +177,7 @@ else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
 fi
-echo "Sample_dict:${Sample_dict[@]}"
+echo "Sample_dict:${Sample_dict["SCG_9"]}"
 echo "Layout_dict:${Layout_dict[@]}"
 
 ###### START ######
