@@ -46,15 +46,15 @@ for file in "${arr[@]}"; do
     continue
   else
 
-    if [[ $Sufix == $SE_Sufix ]]; then
-      fq=run1_${SampleID}.fq.gz
-      fq_Layout="SE"
-    elif [[ $Sufix == $R1_Sufix ]]; then
+    if [[ $Sufix == $R1_Sufix ]]; then
       fq=run1_${SampleID}_1.fq.gz
       fq_Layout="PE"
     elif [[ $Sufix == $R2_Sufix ]]; then
       fq=run1_${SampleID}_2.fq.gz
-      fq_Layout="PE"
+      fq_Layout="PE" 
+    elif [[ $Sufix == $SE_Sufix ]]; then
+      fq=run1_${SampleID}.fq.gz
+      fq_Layout="SE"
     fi
 
     if [[ $Layout != $fq_Layout ]]; then
