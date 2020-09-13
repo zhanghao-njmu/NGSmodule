@@ -161,17 +161,11 @@ fi
 ############# Load SampleInfoFile ###################################################################
 declare -A Sample_dict
 declare -A Layout_dict
-Layout_arr=("SE" "PE")
 if [[ -f $SampleInfoFile ]]; then
-  sed 1d $SampleInfoFile | while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     Sample_dict[$RunID]=$SampleID
-    if [[ " ${Layout_arr[*]} " != *" $Layout "* ]]; then
-      color_echo "red" "ERROR! Layout must be one of SE and PE. Please check your SampleInfoFile!\n"
-      exit 1
-    else
-      Layout_dict[$SampleID]=$Layout
-    fi
-  done
+    Layout_dict[$SampleID]=$Layout
+  done <$SampleInfoFile
 else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
