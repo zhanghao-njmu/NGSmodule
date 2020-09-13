@@ -8,7 +8,7 @@ Rscript &>/dev/null
   color_echo "red" "Cannot find the command Rscript.\n"
   exit 1
 }
-R_packages=("HMMcopy" "scales" "vcfR" "stringr" "dplyr" "ggpubr")
+R_packages=("HMMcopy" "DNAcopy" "scales" "vcfR" "stringr" "dplyr" "ggpubr")
 for package in "${R_packages[@]}"; do
   Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   [ $? -ne 0 ] && {
