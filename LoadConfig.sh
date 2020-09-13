@@ -164,6 +164,7 @@ declare -A Layout_dict
 Layout_arr=("SE" "PE")
 if [[ -f $SampleInfoFile ]]; then
   sed 1d $SampleInfoFile | while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+    echo "$RunID $SampleID $Layout"
     Sample_dict[$RunID]=$SampleID
     if [[ " ${Layout_arr[*]} " != *" $Layout "* ]]; then
       color_echo "red" "ERROR! Layout must be one of SE and PE. Please check your SampleInfoFile!\n"
