@@ -25,9 +25,9 @@ force_complete="FALSE"                        ## A global option to determine wh
 
 ############# PrepareWorkDir Paramaters ###################################################################
 ### raw_run_file_name= RunIdPattern  + SufixPattern
-### Example: Sample1: R19051060_1.fq.gz, R19051060_2.fq.gz; Sample2: R19051061.fq.gz
+### Example: Sample1: R19051060_2020_L001_1.fq.gz, R19051060_2020_L001_2.fq.gz; Sample2: R19051061_2020_L002.fq.gz
 ### RunIdPattern=".*"
-### SE_SufixPattern="\.fastq\.gz"; R1_SufixPattern="_1\.fastq\.gz"; R2_SufixPattern="_2\.fastq\.gz"
+### SE_SufixPattern="_2020.*\.fastq\.gz"; R1_SufixPattern="_2020.*_1\.fastq\.gz"; R2_SufixPattern="_2020.*_2\.fastq\.gz"
 RunIdPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
 SE_SufixPattern="\.((fastq)|(fq))\.gz"
 R1_SufixPattern="_1\.((fastq)|(fq))\.gz"
