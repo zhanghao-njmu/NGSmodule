@@ -39,8 +39,6 @@ for file in "${arr[@]}"; do
     done
   else
     color_echo "red" "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
-    echo ${Sample_dict[@]}
-    echo ${Layout_dict[@]}
     exit 1
   fi
 
