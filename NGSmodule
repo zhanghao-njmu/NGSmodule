@@ -80,7 +80,7 @@ CNVanalysis()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/SNP2ploidy.R
+  source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
 help()
