@@ -88,7 +88,7 @@ Kmer=130
 HypotheticalPloidy=2
 
 ############# SNV Paramaters ##############################################################
-GATK3="java -jar /path/to/GenomeAnalysisTK.jar"
+GATK3="java -jar -Xmx32g /path/to/GenomeAnalysisTK.jar"
 
 EOF
 
