@@ -29,6 +29,12 @@ freec --help &>/dev/null
   exit 1
 }
 
+$GATK3 --help &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the tool GATK3.\n"
+  exit 1
+}
+
 GC_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/windows/$Window/genome.w$Window.gc.wig"
 if [[ ! -f $GC_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing GC content per bin: ${GC_bin}\n"
