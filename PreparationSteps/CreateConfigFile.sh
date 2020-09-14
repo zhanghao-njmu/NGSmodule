@@ -87,6 +87,8 @@ Window=1000000
 Kmer=130
 HypotheticalPloidy=2
 
+############# SNV Paramaters ##############################################################
+GATK3="java -jar /path/to/GenomeAnalysisTK.jar"
 
 EOF
 
