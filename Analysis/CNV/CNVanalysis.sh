@@ -99,27 +99,24 @@ for sample in "${arr[@]}"; do
     ## GATK3 #####
     mkdir -p $dir/$Aligner/SNV/GATK3
     cd $dir/$Aligner/SNV/GATK3
-    # #picard CreateSequenceDictionary R=$genome
-    if [[ ! -f ${sample}.${version}.bwamem.filter.vcf.gz ]];then
-      gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -o ${sample}.${Aligner}.vcf
-      bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o ${sample}.${version}.bwamem.filter.vcf.gz ${sample}.${Aligner}.vcf
+    if [[ ! -f $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz ]]; then
+      gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -O $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz
+      bcftools view $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz
     fi
-    Rscript $2 ${sample}.${version}.bwamem.vcf.gz ${sample}.${Aligner}.GATK3
+    Rscript $2 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz ${sample}.${Aligner}.GATK3
 
     ### Strelka2 #####
     mkdir -p $dir/$Aligner/SNV/Strelka2
     cd $dir/$Aligner/SNV/Strelka2
-    if [[ ! -f $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz ]];then
+    if [[ ! -f $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz ]]; then
       configureStrelkaGermlineWorkflow.py \
-            --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
-            --referenceFasta $genome \
-            --runDir $dir/$Aligner/SNV/Strelka2
+      --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
+      --referenceFasta $genome \
+      --runDir $dir/$Aligner/SNV/Strelka2
       $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads
-      bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz
+      bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz
     fi
-    Rscript $2 $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz ${sample}.${Aligner}.Strelka2
-
-
+    Rscript $2 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz ${sample}.${Aligner}.Strelka2
 
     echo >&1000
   } &
@@ -129,4 +126,3 @@ done
 wait
 
 echo "===== All tasks finished ====="
-
