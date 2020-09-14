@@ -109,7 +109,6 @@ for sample in "${arr[@]}"; do
     ### Strelka2 #####
     mkdir -p $dir/$Aligner/SNV/Strelka2
     cd $dir/$Aligner/SNV/Strelka2
-    rm -rf $dir/$Aligner/Variant/Strelka2/*
     configureStrelkaGermlineWorkflow.py \
            --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
            --referenceFasta $genome \
