@@ -84,7 +84,7 @@ for genome in "${arr[@]}"; do
   GemIndex="$SequenceDir/GemIndex/"
   GenmapIndex="$SequenceDir/GenmapIndex/"
 
-  if [[ ! -f $genome.dict]];then
+  if [[ ! -f ${genome%%.fa}.dict ]];then
     picard CreateSequenceDictionary R=$genome
   fi
 
