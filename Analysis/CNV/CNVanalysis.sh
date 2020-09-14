@@ -114,7 +114,7 @@ for sample in "${arr[@]}"; do
            --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
            --referenceFasta $genome \
            --runDir $dir/$Aligner/SNV/Strelka2
-    $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $thread
+    $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads
     bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Ov -o results/variants/filter.variants.vcf
     Rscript $2 results/variants/filter.variants.vcf ${sample}
 
