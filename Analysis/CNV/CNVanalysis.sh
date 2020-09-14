@@ -97,24 +97,27 @@ for sample in "${arr[@]}"; do
     #bcftools mpileup --threads $threads -d 500 -Ou -f $genome ${sample}.bowtie2.hg19.filter.rmdup.bam | bcftools call --threads $threads -mv -Oz | bcftools view -i '%QUAL>=20' -Oz -o ${sample}.calls.vcf
 
     ## GATK3 #####
-    # rm -rf $dir/GATK3
-    # mkdir -p GATK3
+    mkdir -p $dir/$Aligner/SNV/GATK3
+    cd $dir/$Aligner/SNV/GATK3
     # #picard CreateSequenceDictionary R=$genome
-    # #gatk ValidateSamFile -M SUMMARY -I ${sample}.bowtie2.hg19.rmdup.bam
-    # gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I $dir/${sample}.${version}.bwamem.rmdup.bam -o ${sample}.${version}.bwamem.vcf
-    # bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o ${sample}.${version}.bwamem.filter.vcf ${sample}.${version}.bwamem.vcf.gz
-    # Rscript $2 ${sample}.${version}.bwamem.vcf.gz ${sample}.${version}
+    if [[ ! -f ${sample}.${version}.bwamem.filter.vcf.gz ]];then
+      gatk3 -T HaplotypeCaller -Xmx30000m -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -o ${sample}.${Aligner}.vcf
+      bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o ${sample}.${version}.bwamem.filter.vcf.gz ${sample}.${Aligner}.vcf
+    fi
+    Rscript $2 ${sample}.${version}.bwamem.vcf.gz ${sample}.${Aligner}.GATK3
 
     ### Strelka2 #####
     mkdir -p $dir/$Aligner/SNV/Strelka2
     cd $dir/$Aligner/SNV/Strelka2
-    configureStrelkaGermlineWorkflow.py \
-           --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
-           --referenceFasta $genome \
-           --runDir $dir/$Aligner/SNV/Strelka2
-    $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads
-    bcftools view results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o results/variants/filter.variants.vcf.gz
-    Rscript $2 results/variants/filter.variants.vcf.gz ${sample}
+    if [[ ! -f $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz ]];then
+      configureStrelkaGermlineWorkflow.py \
+            --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
+            --referenceFasta $genome \
+            --runDir $dir/$Aligner/SNV/Strelka2
+      $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads
+      bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=4 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz
+    fi
+    Rscript $2 $dir/$Aligner/SNV/Strelka2/results/variants/variants.filter.vcf.gz ${sample}.${Aligner}.Strelka2
 
 
 

@@ -34,6 +34,11 @@ mapCounter --help &>/dev/null
   echo -e "Cannot find the command mapCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
   exit 1
 }
+picard &>/dev/null
+[ $? -eq 127 ] && {
+  echo -e "Cannot find the command picard.\n"
+  exit 1
+}
 
 ######## Download the iGenomes #####
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
@@ -79,9 +84,13 @@ for genome in "${arr[@]}"; do
   GemIndex="$SequenceDir/GemIndex/"
   GenmapIndex="$SequenceDir/GenmapIndex/"
 
+  if [[ ! -f $genome.dict]];then
+    picard CreateSequenceDictionary R=$genome
+  fi
+
   ####### Extract main genome fasta #####
-  # echo "====== Fetch main chromosome sequence into genome.fa ======"
-  # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome.fa
+  # echo "====== Fetch main chromosome sequence into genome_main.fa ======"
+  # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
   # ###### BWA index #####
   # echo -e "\033[35mStart to build BWA index...\033[0m"
