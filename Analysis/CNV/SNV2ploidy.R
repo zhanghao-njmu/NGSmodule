@@ -91,7 +91,7 @@ genetype_summary <- function(GeneType_table) {
     ratio <- "-Inf"
   }
   if (is.null(ratio)) {
-    ratio <- as.character(round(sum(x[het]) / sum(x[!het]), digits = 4))
+    ratio <- as.character(round(sum(x[het]) / sum(x[!het]), digits = 3))
   }
   x <- sort(x, decreasing = T)[1:min(4, length(x))]
   n <- names(x)
@@ -254,6 +254,8 @@ gt_label_chr <- gt_label_chr %>% mutate(fill = case_when(
   chr %in% c("Y") ~ "forestgreen",
   TRUE ~ "#90A4ADFF"
 ))
+gt_label_chr <- gt_label_chr %>%
+  mutate(ratio_adj = ifelse(ratio > 1, 1, ratio))
 
 p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   geom_text(
@@ -264,24 +266,24 @@ p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   labs(title = paste("All alleles:", sample))
 plotlist[["All_alleles_frequency_bychr"]] <- p
 
-p_ratio1 <- ggplot(gt_label_chr, aes(x = ratio, color = color)) +
+p_ratio1 <- ggplot(gt_label_chr, aes(x = ratio_adj, color = color)) +
   geom_density(fill = color[4]) +
   geom_rug() +
   geom_point(aes(y = 0), position = position_jitter(seed = 11, height = 0.5)) +
   scale_color_identity() +
-  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1.1)) +
   labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
   theme_classic() +
   theme(
     aspect.ratio = 1,
     panel.grid.major = element_line(colour = "grey80")
   )
-p_ratio2 <- ggplot(gt_label_chr, aes(x = ratio, y = reorder(chr, desc(chr)), fill = fill)) +
+p_ratio2 <- ggplot(gt_label_chr, aes(x = ratio_adj, y = reorder(chr, desc(chr)), fill = fill)) +
   geom_col(color = "black") +
   geom_text(aes(label = ratio, color = color), hjust = -0.1) +
   scale_fill_identity() +
   scale_color_identity() +
-  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1.1)) +
   labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
   theme_classic() +
   theme(
