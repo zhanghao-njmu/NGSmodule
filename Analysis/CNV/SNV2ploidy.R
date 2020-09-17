@@ -3,8 +3,7 @@
 args <- commandArgs(TRUE)
 vcfFile <- as.character(args[1])
 CNV_prefix <- as.character(args[2])
-windows <- as.character(args[3])
-sample <- as.character(args[4])
+sample <- as.character(args[3])
 
 library(vcfR)
 library(dplyr)
