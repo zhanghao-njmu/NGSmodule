@@ -96,8 +96,9 @@ genetype_summary <- function(GeneType_table) {
   x <- sort(x, decreasing = T)[1:min(4, length(x))]
   n <- names(x)
   x <- x[!is.na(x)]
-  res <- paste0(paste0("Het/Hom=", ratio, "\n"), paste0(" ", n, ": ", x, collapse = "\n"))
-  return(res)
+  label <- paste0(paste0("Het/Hom=", ratio, "\n"), paste0(" ", n, ": ", x, collapse = "\n"))
+
+  return(setNames(c(as.numeric(ratio), label), c("ratio", "label")))
 }
 
 # Allele Depth distribution -----------------------------------------------
@@ -221,7 +222,7 @@ p0 <- ggplot(data = alleles_melt) +
   )
 
 p_all <- p0 + annotate("text",
-  label = genetype_summary(table(alleles[, "GeneType"])),
+  label = genetype_summary(table(alleles[, "GeneType"]))["label"],
   x = 0.1, y = Inf,
   hjust = 0, vjust = 1.1
 ) +
@@ -236,14 +237,23 @@ gt_chr <- alleles %>%
 gt_label_chr <- lapply(1:nrow(gt_chr), function(i) {
   genetype_summary(gt_chr[i, ])
 }) %>%
-  unlist() %>%
-  as.data.frame()
-colnames(gt_label_chr) <- "label"
+  bind_rows()
+gt_label_chr[, "ratio"] <- as.numeric(pull(gt_label_chr, "ratio"))
 gt_label_chr[, "chr"] <- rownames(gt_chr)
 gt_label_chr[, "chr"] <- factor(
-  x = gt_label_chr[, "chr"],
+  x = pull(gt_label_chr, "chr"),
   levels = chr_levels
 )
+gt_label_chr <- gt_label_chr %>% mutate(color = case_when(
+  chr %in% c("X") ~ "red3",
+  chr %in% c("Y") ~ "forestgreen",
+  TRUE ~ "black"
+))
+gt_label_chr <- gt_label_chr %>% mutate(fill = case_when(
+  chr %in% c("X") ~ "red3",
+  chr %in% c("Y") ~ "forestgreen",
+  TRUE ~ "#90A4ADFF"
+))
 
 p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   geom_text(
@@ -253,6 +263,32 @@ p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   ) +
   labs(title = paste("All alleles:", sample))
 plotlist[["All_alleles_frequency_bychr"]] <- p
+
+p_ratio1 <- ggplot(gt_label_chr, aes(x = ratio, color = color)) +
+  geom_density(fill = color[4]) +
+  geom_rug() +
+  geom_point(aes(y = 0), position = position_jitter(seed = 11, height = 0.5)) +
+  scale_color_identity() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1)) +
+  labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 1,
+    panel.grid.major = element_line(colour = "grey80")
+  )
+p_ratio2 <- ggplot(gt_label_chr, aes(x = ratio, y = reorder(chr, desc(chr)), fill = fill)) +
+  geom_col(color = "black") +
+  geom_text(aes(label = ratio, color = color), hjust = -0.1) +
+  scale_fill_identity() +
+  scale_color_identity() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1)) +
+  labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 1,
+    panel.grid.major = element_line(colour = "grey80")
+  )
+plotlist[["HetHom_ratio"]] <- plot_grid(p_ratio1, p_ratio2, nrow = 1)
 
 # het alleles -------------------------------------------------------------
 het_alleles <- subset(alleles, Allele1 > AD_q15 & Allele2 > AD_q15 & is_het == TRUE)
@@ -292,7 +328,7 @@ p0 <- ggplot(data = het_alleles_melt) +
   )
 
 p_het <- p0 + annotate("text",
-  label = genetype_summary(table(het_alleles[, "GeneType"])),
+  label = genetype_summary(table(het_alleles[, "GeneType"]))["label"],
   x = 0.1, y = Inf,
   hjust = 0, vjust = 1.1
 ) +
@@ -307,12 +343,10 @@ gt_chr <- het_alleles %>%
 gt_label_chr <- lapply(1:nrow(gt_chr), function(i) {
   genetype_summary(gt_chr[i, ])
 }) %>%
-  unlist() %>%
-  as.data.frame()
-colnames(gt_label_chr) <- "label"
+  bind_rows()
 gt_label_chr[, "chr"] <- rownames(gt_chr)
 gt_label_chr[, "chr"] <- factor(
-  x = gt_label_chr[, "chr"],
+  x = pull(gt_label_chr, "chr"),
   levels = chr_levels
 )
 
@@ -448,7 +482,8 @@ ggsave(plot, filename = paste0(sample, ".plot.png"), width = nrow(chr_info) / 2,
 pdf(paste0(sample, ".SNV2ploidy.pdf"), width = 11, height = 8)
 invisible(lapply(plotlist, print))
 thePlot <- rasterGrob(readPNG(paste0(sample, ".plot.png"), native = FALSE),
-           interpolate = FALSE)
+  interpolate = FALSE
+)
 grid.arrange(thePlot)
 invisible(dev.off())
 
