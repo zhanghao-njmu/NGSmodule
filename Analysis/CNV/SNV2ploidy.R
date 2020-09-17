@@ -449,7 +449,7 @@ plot <- aplot::plot_list(list(p1, p2, p3, p4, p5, p6),
   nrow = 3, ncol = 2,
   widths = rep(c(0.9, 0.1), 3)
 )
-ggsave(plot, filename = paste0(sample, "plot.png"), width = nrow(chr_info) / 2, height = 2 * 3)
+ggsave(plot, filename = paste0(sample, ".plot.png"), width = nrow(chr_info) / 2, height = 2 * 3)
 
 
 
