@@ -337,6 +337,7 @@ if (file.exists("Rplots.pdf")) {
 chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
 p1 <- readRDS(file = paste0(CNV_prefix, ".p1.rds"))
 p2 <- readRDS(file = paste0(CNV_prefix, ".p2.rds"))
+color <- pal_material("blue-grey")(10)[c(3,9,1,4)]
 
 all_df <- merge(x = alleles, y = chr_info, by = "chr", all.x = T)
 all_df[, "cum_pos"] <- all_df[, "Position"] + all_df[, "offset"]
