@@ -1,97 +1,140 @@
 #!/usr/bin/env Rscript
 
-# evalue <- 0.995
-# rfile <- "/ssd/llh_haploid/NGSmodule_work/m-1_FDSW202470982-1r/bwa/CNV/HMMcopy/m-1_FDSW202470982-1r.bwa.1M_input.wig"
-# gfile <- "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.gc.wig"
-# mfile <- "/data/database/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/GenmapIndex/windows/1000000/genome_main.w1000000.130mer.genmap.wig"
-# ploid <- 2
-# samp <- "test"
 
-library(HMMcopy)
-library(scales)
+# rfile <- "/data/lab/LiLaiHua/10-examples/NGSmodule_work/SCG_C1/bwa/CNV/HMMcopy/SCG_C1.bwa.w1000000.wig"
+# gfile <- "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0_Add_rhesus_chY/Sequence/GemIndex/windows/1000000/genome.w1000000.gc.wig"
+# mfile <- "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0_Add_rhesus_chY/Sequence/GemIndex/windows/1000000/genome.w1000000.150mer.gem.wig"
+# ploid <- 2
+# sample <- "test"
 
 args <- commandArgs(TRUE)
-evalue <- as.numeric(args[1])
-rfile <- as.character(args[2])
-gfile <- as.character(args[3])
-mfile <- as.character(args[4])
-ploid <- as.numeric(args[5])
-samp <- as.character(args[6])
+rfile <- as.character(args[1])
+gfile <- as.character(args[2])
+mfile <- as.character(args[3])
+ploid <- as.numeric(args[4])
+sample <- as.character(args[5])
+
+library(HMMcopy)
+library(dplyr)
+library(scales)
+library(ggplot2)
+library(ggsci)
+library(aplot)
+
+uncorrected <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
+corrected <- correctReadcount(uncorrected)
+corrected[, "chr"] <- gsub(x = corrected[, chr], pattern = "chr", replacement = "", perl = T)
+chr_order <- c(1:30, "X", "Y", "MT")
+chr_uniq <- unique(corrected[, chr])
+chr_levels <- c(
+  chr_order[chr_order %in% chr_uniq],
+  chr_uniq[!chr_uniq %in% chr_order]
+)
+corrected[, "chr"] <- factor(
+  x = corrected[, chr],
+  levels = chr_levels
+)
+
+segments <- HMMsegment(corrected, maxiter = 1e4)
+corrected <- as.data.frame(corrected)
+corrected[, "sample"] <- sample
+corrected[, "CN_predict"] <- 2^corrected[, "copy"] * ploid
+corrected[, "state"] <- segments$state
+
+color <- pal_material("blue-grey")(10)[c(3,9,1,4)]
+chr_info <- corrected %>%
+  group_by(chr) %>%
+  dplyr::summarise(chr = unique(chr), length = max(end))
+chr_info[, "offset"] <- c(0, cumsum(as.numeric(chr_info$length))[-nrow(chr_info)])
+chr_info[, "chr_cum_median"] <- chr_info[, "offset"] + chr_info[, "length"] / 2
+chr_info[,"chr_cum_end"] <- chr_info[, "offset"] + chr_info[, "length"]
+chr_info[,"chr_color"] <- rep(c(color[1], color[2]), times = ceiling(nrow(chr_info) / 2))[1:nrow(chr_info)]
+
+corrected <- merge(corrected, chr_info, by.x = "chr", by.y = "chr")
+corrected[, "cum_pos"] <- corrected[, "start"] + corrected[, "offset"]
+corrected <- arrange(corrected, cum_pos)
+
+segs <- merge(segments[["segs"]], chr_info, all.x = TRUE, by = "chr")
+segs[, "cum_start"] <- segs[, "start"] + segs[, "offset"]
+segs[, "cum_end"] <- segs[, "end"] + segs[, "offset"]
+segs[, "CN_predict"] <- 2^segs[, "median"] * ploid # 2 ^ segs[,"median"] * 2 assumed to be diploid
+segs <- arrange(segs, cum_start)
+segs[, "previous_CN_predict"] <- lag(segs[, "CN_predict"], default = segs[, "CN_predict"][1])
 
 
-x1_untrimmed_reads <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
-corrected <- correctReadcount(x1_untrimmed_reads)
-param <- HMMsegment(corrected, getparam = TRUE)
-param$e <- evalue
+# plot the cnv -----------------------------------------------------------
+p1 <- ggplot() +
+  # geom_rect(
+  #   data = chr_info,
+  #   aes(
+  #     xmin = offset, xmax = chr_cum_end,
+  #     ymin = 0, ymax = 8, fill = chr_color
+  #   ),
+  #   color = NA, alpha = 0.5
+  # ) +
+  geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
+  geom_point(
+    data = subset(corrected, CN_predict < 8),
+    aes(x = cum_pos, y = CN_predict, color = chr_color),
+    shape = 20, alpha = 1
+  ) +
+  geom_segment(
+    data = segs,
+    aes(x = cum_start, y = CN_predict, xend = cum_end, yend = CN_predict), size = 1
+  ) +
+  geom_segment(
+    data = segs,
+    aes(x = cum_start, y = previous_CN_predict, xend = cum_start, yend = CN_predict), size = 1
+  ) +
+  scale_color_identity() +
+  scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
+  scale_y_continuous(breaks = seq(0, 8, 1)) +
+  scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
+  labs(title = sample, y = "Copy Number\n(assumed to be diploid)") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
+    panel.border = element_rect(fill = "transparent", color = "black", size = 1),
+    axis.title.x = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank()
+  )
 
-segments <- HMMsegment(corrected, param = param)
+p2 <- ggplot() +
+  geom_histogram(
+    data = subset(corrected, CN_predict < 8),
+    aes(x = ..density..,y = CN_predict),
+    bins = 50, color = "black", fill = color[4]
+  ) +
+  scale_y_continuous(breaks = seq(0, 8, 1)) +
+  theme_classic() +
+  theme(
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    axis.line.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
+    panel.grid.minor.y = element_line(colour = "grey80", linetype = 2)
+  )
 
+plot <- aplot::plot_list(gglist = list(p1,p2),nrow = 1,widths = c(0.9,0.1))
 
-lengths <- aggregate(corrected$end, by = list(chr = corrected$chr), max)
-chr_order <- c(paste0("chr", 1:25), "chrX", "chrY")
-lengths <- lengths[order(match(as.character(lengths$chr), chr_order)), ]
-lengths$offset <- c(0, cumsum(as.numeric(lengths$x))[-nrow(lengths)])
-corrected$state <- segments$state
-corrected$sample <- samp
-write.csv(x = corrected, file = "HMMcopy.corrected.csv", row.names = F)
+##### output report #####
+pdf(paste0(sample, ".HMMcopy.pdf"), width = nrow(chr_info)/2, height = 3)
+invisible(print(plot))
+invisible(dev.off())
 
-pdf(paste(samp, ".pdf", sep = ""), height = 3.2, width = 12)
-data <- merge(corrected, lengths[, c(1, 3)], by.x = "chr", by.y = "chr") 
-dat2 <- data.frame(x_position = data$start + data$offset, y_position = data$copy)
-dat2 <- dat2[with(dat2, order(x_position)), ]
-x_position <- dat2$x_position
-y_position <- dat2$y_position
-a <- data.frame()
-n <- 0
-chr <- 1
-for (i in 1:length(x_position)) {
-  if (chr <= 20) {
-    if (lengths$offset[chr] <= x_position[i] & x_position[i] <= lengths$offset[chr + 1]) {
-      a[i, c("x_position")] <- x_position[i]
-      a[i, c("chr")] <- chr
-    } else {
-      chr <- chr + 1
-      a[i, c("x_position")] <- x_position[i]
-      a[i, c("chr")] <- chr
-    }
-  } else {
-    a[i, c("x_position")] <- x_position[i]
-    a[i, c("chr")] <- chr
-  }
-  if (chr %% 2 == 0) {
-    a[i, c("color")] <- "#4494C1"
-  } else {
-    a[i, c("color")] <- "#E15F47"
-  }
+saveRDS(corrected,file = paste0(sample,".corrected.rds"))
+saveRDS(segs,file = paste0(sample,".segs.rds"))
+saveRDS(chr_info,file = paste0(sample,".chr_info.rds"))
+saveRDS(p1,file = paste0(sample,".p1.rds"))
+saveRDS(p2,file = paste0(sample,".p2.rds"))
+
+##### check whether the unwanted file exists and remove it #####
+if (file.exists("Rplots.pdf")) {
+  invisible(file.remove("Rplots.pdf"))
 }
-range <- quantile(data$copy, na.rm = TRUE, prob = c(0.01, 0.99)) # Optional range, tweak this as desired
 
 
-segs <- merge(segments$segs, lengths[, c(1, 3)], all.x = TRUE)
-segs$x_start <- segs$start + segs$offset
-segs$x_end <- segs$end + segs$offset
-segs$y_median <- 2^segs$median * ploid # 2^segs$median*2 assumed to be diploid
-segs <- segs[with(segs, order(x_start)), ]
-segs$pre_median <- c(segs$y_median[1], segs$y_median[1:(length(segs$y_median) - 1)])
 
-# 2^y_position*2 assumed to be diploid
-plot(x = x_position, y = 2^y_position * ploid, xaxt = "n", yaxt = "n", xlab = "", ylab = "", col = alpha(a$color, 0.7), pch = 20, ylim = c(0, 8), cex = 0.4)
-title(main = samp)
-title(xlab = list("Chromosome"), ylab = list("CopyNumber"), mgp = c(2, 1, 1))
-axis(2, at = 1:8, las = 2)
-abline(v = lengths$offset, lty = 6, col = "#8F8F8F", lwd = 1.2) # Separate chromosomes
-abline(h = c(0:8), lty = 3, col = "#BABABA")
-
-lengths$median_offset <- lengths$offset + (lengths$x / 2)
-text(lengths$median_offset, -1, labels = gsub("chr", "", lengths$chr), xpd = NA) # Label chromosomes
-
-# Inserting the segmentation lines if desired...
-segments(x0 = segs$x_start, y0 = segs$y_median, x1 = segs$x_end, col = "#363636", lwd = 1.5) # Note, segments is a function... not the output, unfortunately naming...
-segments(x0 = segs$x_start, y0 = segs$pre_median, y1 = segs$y_median, col = "#363636", lwd = 1.5) # Note, segments is a function... not the output, unfortunately naming...
-
-dev.off()
-
-write.table(segments$segs, file = "segments.txt", sep = "\t")
-
-# n=matrix(c(as.character(corrected$space),corrected$copy),ncol=2)
-# write.table(n, file="data.txt", sep="\t",row.names=FALSE, col.names=FALSE)

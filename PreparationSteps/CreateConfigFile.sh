@@ -85,7 +85,7 @@ DGEs_multi_compare=1                               ## Whether to compare DGEs am
 ############# CNVanalysis Paramaters ##############################################################
 Window=1000000
 Kmer=130
-HypotheticalPloidy=2
+PloidyAssumed=2
 
 ############# SNV Paramaters ##############################################################
 GATK3="java -jar -Xmx32g /path/to/GenomeAnalysisTK.jar"

@@ -62,7 +62,7 @@ for sample in "${arr[@]}"; do
     mkdir -p $dir/$Aligner/CNV/HMMcopy
     cd $dir/$Aligner/CNV/HMMcopy
     readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig
-    Rscript $1 0.995 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $HypotheticalPloidy ${sample}.${Aligner}.HMMcopy
+    Rscript $1 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.HMMcopy
 
     #####
     ##### BaseqCNV #####
