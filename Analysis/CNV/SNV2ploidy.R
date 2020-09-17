@@ -13,6 +13,9 @@ library(ggplot2)
 library(ggsci)
 library(ggforce)
 library(cowplot)
+library(png)
+library(grid)
+library(gridExtra)
 
 # vcfFile <- system.file("extdata", "pinf_sc50.vcf.gz",
 #                         package = "pinfsc50")
@@ -322,17 +325,6 @@ p <- p0 + facet_wrap(. ~ chr, nrow = 4) +
   labs(title = paste("AD(q15)-filtered heterozygous:", sample), subtitle = paste("Allele1 >", AD_q15, "&", "Allele2 >", AD_q15))
 plotlist[["Het_alleles_frequency_bychr"]] <- p
 
-##### output report #####
-pdf(paste0(sample, ".SNV2ploidy.pdf"), width = 11, height = 8)
-invisible(lapply(plotlist, print))
-invisible(dev.off())
-
-##### check whether the unwanted file exists and remove it #####
-if (file.exists("Rplots.pdf")) {
-  invisible(file.remove("Rplots.pdf"))
-}
-
-
 
 # Intergrated analysis ----------------------------------------------------
 chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
@@ -354,11 +346,11 @@ p3 <- ggplot(all_df) +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
     aes(x = cum_pos, y = Minor_allele, color = chr_color),
-    shape = 20, alpha = 1, size = 0.5
+    shape = 20, alpha = 1, size = 0.1
   ) +
   geom_point(
     aes(x = cum_pos, y = Major_allele, color = chr_color),
-    shape = 20, alpha = 1, size = 0.5
+    shape = 20, alpha = 1, size = 0.1
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
@@ -402,11 +394,11 @@ p5 <- ggplot(het_df) +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
     aes(x = cum_pos, y = Minor_allele, color = chr_color),
-    shape = 20, alpha = 1, size = 0.5
+    shape = 20, alpha = 1, size = 0.1
   ) +
   geom_point(
     aes(x = cum_pos, y = Major_allele, color = chr_color),
-    shape = 20, alpha = 1, size = 0.5
+    shape = 20, alpha = 1, size = 0.1
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
@@ -452,7 +444,18 @@ plot <- aplot::plot_list(list(p1, p2, p3, p4, p5, p6),
 ggsave(plot, filename = paste0(sample, ".plot.png"), width = nrow(chr_info) / 2, height = 2 * 3)
 
 
+##### output report #####
+pdf(paste0(sample, ".SNV2ploidy.pdf"), width = 11, height = 8)
+invisible(lapply(plotlist, print))
+thePlot <- rasterGrob(readPNG(paste0(sample, ".plot.png"), native = FALSE),
+           interpolate = FALSE)
+grid.arrange(thePlot)
+invisible(dev.off())
 
+##### check whether the unwanted file exists and remove it #####
+if (file.exists("Rplots.pdf")) {
+  invisible(file.remove("Rplots.pdf"))
+}
 
 
 
