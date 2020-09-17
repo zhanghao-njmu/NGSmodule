@@ -2,7 +2,7 @@
 
 args <- commandArgs(TRUE)
 vcfFile <- as.character(args[1])
-CNV_dir <- as.character(args[2])
+CNV_prefix <- as.character(args[2])
 sample <- as.character(args[3])
 
 library(vcfR)
@@ -89,7 +89,7 @@ genetype_summary <- function(GeneType_table) {
   if (is.null(ratio)) {
     ratio <- as.character(round(sum(x[het]) / sum(x[!het]), digits = 4))
   }
-  x <- sort(x, decreasing = T)[1:min(4,length(x))]
+  x <- sort(x, decreasing = T)[1:min(4, length(x))]
   n <- names(x)
   x <- x[!is.na(x)]
   res <- paste0(paste0("Het/Hom=", ratio, "\n"), paste0(" ", n, ": ", x, collapse = "\n"))
@@ -334,9 +334,9 @@ if (file.exists("Rplots.pdf")) {
 
 
 # Intergrated analysis ----------------------------------------------------
-chr_info <- readRDS(file = paste0(CNV_dir,"/",sample, ".chr_info.rds"))
-p1 <- readRDS(file = paste0(CNV_dir,"/",sample, ".p1.rds"))
-p2 <- readRDS(file = paste0(CNV_dir,"/",sample, ".p2.rds"))
+chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
+p1 <- readRDS(file = paste0(CNV_prefix, ".p1.rds"))
+p2 <- readRDS(file = paste0(CNV_prefix, ".p2.rds"))
 
 all_df <- merge(x = alleles, y = chr_info, by = "chr", all.x = T)
 all_df[, "cum_pos"] <- all_df[, "Position"] + all_df[, "offset"]
