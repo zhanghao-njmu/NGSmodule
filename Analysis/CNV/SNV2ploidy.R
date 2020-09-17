@@ -3,7 +3,8 @@
 args <- commandArgs(TRUE)
 vcfFile <- as.character(args[1])
 CNV_prefix <- as.character(args[2])
-sample <- as.character(args[3])
+windows <- as.character(args[3])
+sample <- as.character(args[4])
 
 library(vcfR)
 library(dplyr)
@@ -349,15 +350,16 @@ het_df[, "cum_pos"] <- het_df[, "Position"] + het_df[, "offset"]
 het_df <- subset(het_df, cum_pos < max(chr_info[, "chr_cum_end"]))
 het_df <- arrange(het_df, cum_pos)
 
+
 p3 <- ggplot(all_df) +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
     aes(x = cum_pos, y = Minor_allele, color = chr_color),
-    shape = 20, alpha = 1
+    shape = 20, alpha = 1, size = 0.5
   ) +
   geom_point(
     aes(x = cum_pos, y = Major_allele, color = chr_color),
-    shape = 20, alpha = 1
+    shape = 20, alpha = 1, size = 0.5
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
@@ -394,19 +396,18 @@ p4 <- ggplot(melt(all_df, measure.vars = c("Major_allele", "Minor_allele"), vari
     axis.text.y = element_blank(),
     axis.line.y = element_blank(),
     axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
-    panel.grid.minor.y = element_line(colour = "grey80", linetype = 2)
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
   )
 
 p5 <- ggplot(het_df) +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
     aes(x = cum_pos, y = Minor_allele, color = chr_color),
-    shape = 20, alpha = 1
+    shape = 20, alpha = 1, size = 0.5
   ) +
   geom_point(
     aes(x = cum_pos, y = Major_allele, color = chr_color),
-    shape = 20, alpha = 1
+    shape = 20, alpha = 1, size = 0.5
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
@@ -442,8 +443,7 @@ p6 <- ggplot(melt(het_df, measure.vars = c("Major_allele", "Minor_allele"), vari
     axis.text.y = element_blank(),
     axis.line.y = element_blank(),
     axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
-    panel.grid.minor.y = element_line(colour = "grey80", linetype = 2)
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
   )
 
 plot <- aplot::plot_list(list(p1, p2, p3, p4, p5, p6),
@@ -461,15 +461,15 @@ ggsave(plot, filename = paste0(sample, ".plot.png"), width = nrow(chr_info) / 2,
 
 
 
-# winsize <- 1e7
-# bin_width <- 0.02
-# chr1_het_alleles <- subset(het_alleles, Chromosome == 1)
-#
-# myPeaks1 <- freq_peak(as.matrix(chr1_het_alleles[, "Major_allele"]), chr1_het_alleles$Position, winsize = winsize, bin_width = bin_width)
-# myPeaks2 <- freq_peak(as.matrix(chr1_het_alleles[, "Minor_allele"]), chr1_het_alleles$Position, winsize = winsize, bin_width = bin_width)
+
 #
 # i <- 2
+# winsize <- windows*10
+# bin_width <- 0.02
 #
+# Peaks1 <- freq_peak(myMat = as.matrix(het_df[, "Major_allele"]),pos = het_df[,"cum_pos"], winsize = 1e6, bin_width = bin_width)
+# Peaks2 <- freq_peak(myMat = as.matrix(all_df[, "Minor_allele"]),pos = all_df[,"cum_pos"], winsize = 1e6, bin_width = bin_width)
+
 # layout(matrix(1:2, nrow = 1), widths = c(4, 1))
 # par(mar = c(5, 4, 4, 0))
 #

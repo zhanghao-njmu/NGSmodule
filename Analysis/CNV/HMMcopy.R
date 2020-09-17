@@ -114,8 +114,7 @@ p2 <- ggplot() +
     axis.text.y = element_blank(),
     axis.line.y = element_blank(),
     axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
-    panel.grid.minor.y = element_line(colour = "grey80", linetype = 2)
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
   )
 
 plot <- aplot::plot_list(gglist = list(p1,p2),nrow = 1,widths = c(0.9,0.1))
