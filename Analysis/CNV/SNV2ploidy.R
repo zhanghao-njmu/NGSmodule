@@ -23,6 +23,7 @@ library(cowplot)
 vcf <- read.vcfR(vcfFile, verbose = F)
 sample_index <- 1
 plotlist <- list()
+color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
 
 ##### Allele balance #####
 chrom <- vcf@fix[, "CHROM"]
@@ -113,7 +114,7 @@ p_AD <- ggplot() +
   ) +
   geom_vline(xintercept = AD_q15, color = "red3", linetype = 2, size = 1) +
   annotate("text", x = AD_q15, y = Inf, vjust = 1, hjust = 0, label = paste("q15:", AD_q15), color = "red3") +
-  scale_fill_manual(name = "Allele", values = pal_material("blue-grey")(10)[c(3, 9)]) +
+  scale_fill_manual(name = "Allele", values = color[c(1, 2)]) +
   labs(title = paste("Allele depth(AD):", sample), x = "", y = "Count") +
   theme_classic() +
   theme(
@@ -131,7 +132,7 @@ p_DP <- ggplot() +
   ) +
   geom_vline(xintercept = DP_q15, color = "red3", linetype = 2, size = 1) +
   annotate("text", x = DP_q15, y = Inf, vjust = 1, hjust = 0, label = paste("q15:", DP_q15), color = "red3") +
-  scale_fill_manual(name = "Heterozygous", values = pal_material("blue-grey")(10)[c(3, 9)]) +
+  scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)]) +
   labs(title = paste("Depth(DP):", sample), x = "", y = "Count") +
   theme_classic() +
   theme(
@@ -149,7 +150,7 @@ p_QUAL <- ggplot() +
   ) +
   geom_vline(xintercept = QUAL_q15, color = "red3", linetype = 2, size = 1) +
   annotate("text", x = QUAL_q15, y = Inf, vjust = 1, hjust = 0, label = paste("q15:", QUAL_q15), color = "red3") +
-  scale_fill_manual(name = "Heterozygous", values = pal_material("blue-grey")(10)[c(3, 9)]) +
+  scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)]) +
   labs(title = paste("Quality(QUAL):", sample), x = "", y = "Count") +
   theme_classic() +
   theme(
@@ -169,7 +170,7 @@ p_MQ <- ggplot() +
     x = MQ_q15, y = Inf, vjust = 1, hjust = 1,
     label = paste("q15:", MQ_q15), color = "red3"
   ) +
-  scale_fill_manual(name = "Heterozygous", values = pal_material("blue-grey")(10)[c(3, 9)]) +
+  scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)]) +
   labs(title = paste("Mapping quality:", sample), y = "Count") +
   theme_classic() +
   theme(
@@ -186,7 +187,7 @@ alleles <- subset(alleles, (Allele1 >= AD_q15 | Allele2 >= AD_q15) &
 # all alleles -------------------------------------------------------------
 p_Chr <- ggplot(alleles) +
   geom_bar(aes(x = chr, fill = is_het)) +
-  scale_fill_manual(name = "Heterozygous", values = pal_material("blue-grey")(10)[c(3, 9)], drop = F) +
+  scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
   labs(title = paste("Alleles on each chromosome:", sample), x = "", y = "Count") +
   theme_classic() +
@@ -206,7 +207,7 @@ p0 <- ggplot(data = alleles_melt) +
   scale_fill_manual(
     name = "Type",
     values = setNames(
-      pal_material("blue-grey")(10)[c(9, 3)],
+      color[c(2, 1)],
       c("Major_allele", "Minor_allele")
     )
   ) +
@@ -255,7 +256,7 @@ het_alleles <- subset(alleles, Allele1 > AD_q15 & Allele2 > AD_q15 & is_het == T
 
 p_Chr <- ggplot(het_alleles) +
   geom_bar(aes(x = chr, fill = is_het)) +
-  scale_fill_manual(name = "Heterozygous", values = pal_material("blue-grey")(10)[c(3, 9)], drop = F) +
+  scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
   labs(title = paste("Alleles on each chromosome:", sample), x = "", y = "Count") +
   theme_classic() +
@@ -277,7 +278,7 @@ p0 <- ggplot(data = het_alleles_melt) +
   scale_fill_manual(
     name = "Type",
     values = setNames(
-      pal_material("blue-grey")(10)[c(9, 3)],
+      color[c(2, 1)],
       c("Major_allele", "Minor_allele")
     )
   ) +
@@ -337,7 +338,6 @@ if (file.exists("Rplots.pdf")) {
 chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
 p1 <- readRDS(file = paste0(CNV_prefix, ".p1.rds"))
 p2 <- readRDS(file = paste0(CNV_prefix, ".p2.rds"))
-color <- pal_material("blue-grey")(10)[c(3,9,1,4)]
 
 all_df <- merge(x = alleles, y = chr_info, by = "chr", all.x = T)
 all_df[, "cum_pos"] <- all_df[, "Position"] + all_df[, "offset"]
