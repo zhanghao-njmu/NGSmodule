@@ -246,12 +246,12 @@ gt_label_chr[, "chr"] <- factor(
 )
 gt_label_chr <- gt_label_chr %>% mutate(color = case_when(
   chr %in% c("X") ~ "red3",
-  chr %in% c("Y") ~ "forestgreen",
+  chr %in% c("Y") ~ "royalblue3",
   TRUE ~ "black"
 ))
 gt_label_chr <- gt_label_chr %>% mutate(fill = case_when(
   chr %in% c("X") ~ "red3",
-  chr %in% c("Y") ~ "forestgreen",
+  chr %in% c("Y") ~ "royalblue3",
   TRUE ~ "#90A4ADFF"
 ))
 gt_label_chr <- gt_label_chr %>%
