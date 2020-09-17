@@ -255,7 +255,17 @@ gt_label_chr <- gt_label_chr %>% mutate(fill = case_when(
   TRUE ~ "#90A4ADFF"
 ))
 gt_label_chr <- gt_label_chr %>%
-  mutate(ratio_adj = ifelse(ratio > 1, 1, ratio))
+  mutate(
+    log10ratio = case_when(
+      log10(ratio) < (-3) ~ -3,
+      log10(ratio) > 3 ~ 3,
+      TRUE ~ log10(ratio)
+    ),
+    hjust = case_when(
+      log10(ratio) <= 0 ~ -0.1,
+      log10(ratio) > 0 ~ 1
+    )
+  )
 
 p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   geom_text(
@@ -266,29 +276,33 @@ p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   labs(title = paste("All alleles:", sample))
 plotlist[["All_alleles_frequency_bychr"]] <- p
 
-p_ratio1 <- ggplot(gt_label_chr, aes(x = ratio_adj, color = color)) +
+p_ratio1 <- ggplot(gt_label_chr, aes(x = log10ratio, color = color)) +
   geom_density(fill = color[4]) +
+  geom_vline(xintercept = 0, color = "black", size = 1) +
+  geom_vline(xintercept = c(-1, 1), color = c("royalblue4", "red3"), size = 1, linetype = 2) +
   geom_rug() +
-  geom_point(aes(y = 0), position = position_jitter(seed = 11, height = 0.5)) +
+  geom_point(aes(y = -0.2), size = 2, position = position_jitter(seed = 11)) +
   scale_color_identity() +
-  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1.1)) +
-  labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
+  scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
+  labs(title = paste("Het/Hom ratio:", sample), x = "log10(Het/Hom)", y = "Density") +
   theme_classic() +
   theme(
-    aspect.ratio = 1,
+    aspect.ratio = 0.8,
     panel.grid.major = element_line(colour = "grey80")
   )
-p_ratio2 <- ggplot(gt_label_chr, aes(x = ratio_adj, y = reorder(chr, desc(chr)), fill = fill)) +
+p_ratio2 <- ggplot(gt_label_chr, aes(x = log10ratio, y = reorder(chr, desc(chr)), fill = fill, hjust = hjust)) +
   geom_col(color = "black") +
-  geom_text(aes(label = ratio, color = color), hjust = -0.1) +
+  geom_vline(xintercept = 0, color = "black", size = 1) +
+  geom_vline(xintercept = c(-1, 1), color = c("royalblue4", "red3"), size = 1, linetype = 2) +
+  geom_text(aes(x = 0, label = round(log10ratio, digits = 3), color = color), size = 5) +
   scale_fill_identity() +
   scale_color_identity() +
-  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0, 1.1)) +
-  labs(title = paste("Het/Hom ratio:", sample), x = "Ratio", y = "Density") +
+  scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
+  labs(title = paste("Het/Hom ratio:", sample), x = "log10(Het/Hom)", y = "Chromosome") +
   theme_classic() +
   theme(
-    aspect.ratio = 1,
-    panel.grid.major = element_line(colour = "grey80")
+    aspect.ratio = 0.8,
+    panel.grid.major.y = element_line(colour = "grey80")
   )
 plotlist[["HetHom_ratio"]] <- plot_grid(p_ratio1, p_ratio2, nrow = 1)
 
