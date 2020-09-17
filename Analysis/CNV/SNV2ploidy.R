@@ -89,7 +89,7 @@ genetype_summary <- function(GeneType_table) {
   if (is.null(ratio)) {
     ratio <- as.character(round(sum(x[het]) / sum(x[!het]), digits = 4))
   }
-  x <- sort(x, decreasing = T)[1:4]
+  x <- sort(x, decreasing = T)[1:min(4,length(x))]
   n <- names(x)
   x <- x[!is.na(x)]
   res <- paste0(paste0("Het/Hom=", ratio, "\n"), paste0(" ", n, ": ", x, collapse = "\n"))
