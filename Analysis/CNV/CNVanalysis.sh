@@ -109,7 +109,7 @@ for sample in "${arr[@]}"; do
       $GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz
       bcftools view $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz
     fi
-    Rscript $2 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz ${sample}.${Aligner}.GATK3
+    Rscript $2 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy ${sample}.${Aligner}.GATK3
 
     ### Strelka2 #####
     mkdir -p $dir/$Aligner/SNV/Strelka2
@@ -122,7 +122,7 @@ for sample in "${arr[@]}"; do
       $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads
       bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz
     fi
-    Rscript $2 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz ${sample}.${Aligner}.Strelka2
+    Rscript $2 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy ${sample}.${Aligner}.Strelka2
 
     echo >&1000
   } &
