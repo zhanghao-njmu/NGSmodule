@@ -121,7 +121,7 @@ p2 <- ggplot() +
 plot <- aplot::plot_list(gglist = list(p1,p2),nrow = 1,widths = c(0.9,0.1))
 
 ##### output report #####
-pdf(paste0(sample, ".HMMcopy.pdf"), width = nrow(chr_info)/2, height = 3)
+pdf(paste0(sample, ".plot.pdf"), width = nrow(chr_info)/2, height = 3)
 invisible(print(plot))
 invisible(dev.off())
 
