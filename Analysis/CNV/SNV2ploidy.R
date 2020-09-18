@@ -320,19 +320,14 @@ p_ratio2 <- ggplot(data = gt_label_chr_melt, aes(x = chr, y = value, fill = Type
     labels = c("FALSE", "TRUE")
   ) +
   # scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
-  labs(title = paste("Het/Hom ratio:", sample), y = "Allele counts per reads") +
+  labs(title = paste("Het/Hom ratio:", sample), y = "Average number of alleles per reads") +
   theme_classic() +
   theme(
     aspect.ratio = 0.8,
     axis.title.x = element_blank(),
     panel.grid.major = element_line(colour = "grey80")
   )
-
 plotlist[["HetHom_ratio"]] <- plot_grid(p_ratio1, p_ratio2, nrow = 1)
-
-
-
-
 
 # het alleles -------------------------------------------------------------
 het_alleles <- subset(alleles, Allele1 > AD_q15 & Allele2 > AD_q15 & is_het == TRUE)
