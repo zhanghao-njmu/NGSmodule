@@ -319,7 +319,6 @@ p_ratio2 <- ggplot(data = gt_label_chr_melt, aes(x = chr, y = value, fill = Type
     values = setNames(color[c(1, 2)], c("hom_norm", "het_norm")),
     labels = c("FALSE", "TRUE")
   ) +
-  # scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
   labs(title = paste("Het/Hom ratio:", sample), y = "Average number of alleles per reads") +
   theme_classic() +
   theme(
