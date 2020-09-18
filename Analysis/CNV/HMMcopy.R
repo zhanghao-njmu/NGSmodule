@@ -41,10 +41,12 @@ corrected[, "sample"] <- sample
 corrected[, "CN_predict"] <- 2^corrected[, "copy"] * ploid
 corrected[, "state"] <- segments$state
 
-color <- pal_material("blue-grey")(10)[c(3,9,1,4)]
+color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
 chr_info <- corrected %>%
   group_by(chr) %>%
-  dplyr::summarise(chr = unique(chr), length = max(end))
+  dplyr::summarise(chr = unique(chr),
+                   length = max(end),
+                   reads = sum(reads))
 chr_info[, "offset"] <- c(0, cumsum(as.numeric(chr_info$length))[-nrow(chr_info)])
 chr_info[, "chr_cum_median"] <- chr_info[, "offset"] + chr_info[, "length"] / 2
 chr_info[,"chr_cum_end"] <- chr_info[, "offset"] + chr_info[, "length"]

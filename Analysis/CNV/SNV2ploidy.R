@@ -28,6 +28,10 @@ sample_index <- 1
 plotlist <- list()
 color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
 
+chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
+p1 <- readRDS(file = paste0(CNV_prefix, ".p1.rds"))
+p2 <- readRDS(file = paste0(CNV_prefix, ".p2.rds"))
+
 ##### Allele balance #####
 chrom <- vcf@fix[, "CHROM"]
 pos <- as.numeric(vcf@fix[, "POS"])
@@ -63,7 +67,7 @@ colnames(alleles) <- c(
   "Allele1", "Allele2", "Major_allele", "Minor_allele", "DP", "QUAL", "MQ"
 )
 chr_order <- c(1:30, "X", "Y", "MT")
-chr_uniq <- unique(alleles[, "chr"])
+chr_uniq <- unique(pull(chr_info, "chr"))
 chr_levels <- c(
   chr_order[chr_order %in% chr_uniq],
   chr_uniq[!chr_uniq %in% chr_order]
@@ -82,23 +86,29 @@ alleles[, numeric_col] <- sapply(alleles[, numeric_col], as.numeric)
 
 genetype_summary <- function(GeneType_table) {
   x <- GeneType_table
-  het <- c(is.het(as.matrix(names(x))))
+  is_het <- c(is.het(as.matrix(names(x))))
   ratio <- NULL
-  if (all(het)) {
-    ratio <- "Inf"
+  if (all(is_het)) {
+    het <- sum(x[is_het])
+    hom <- 0
+    ratio <- Inf
   }
-  if (all(!het)) {
-    ratio <- "-Inf"
+  if (all(!is_het)) {
+    het <- 0
+    hom <- sum(x[!is_het])
+    ratio <- (-Inf)
   }
   if (is.null(ratio)) {
-    ratio <- as.character(round(sum(x[het]) / sum(x[!het]), digits = 3))
+    het <- sum(x[is_het])
+    hom <- sum(x[!is_het])
+    ratio <- as.character(round(het / hom, digits = 3))
   }
   x <- sort(x, decreasing = T)[1:min(4, length(x))]
   n <- names(x)
   x <- x[!is.na(x)]
   label <- paste0(paste0("Het/Hom=", ratio, "\n"), paste0(" ", n, ": ", x, collapse = "\n"))
 
-  return(setNames(c(as.numeric(ratio), label), c("ratio", "label")))
+  return(setNames(c(het, hom, as.numeric(ratio), label), c("het", "hom", "ratio", "label")))
 }
 
 # Allele Depth distribution -----------------------------------------------
@@ -193,10 +203,11 @@ p_Chr <- ggplot(alleles) +
   geom_bar(aes(x = chr, fill = is_het)) +
   scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
-  labs(title = paste("Alleles on each chromosome:", sample), x = "", y = "Count") +
+  labs(title = paste("Alleles on each chromosome:", sample), y = "Count") +
   theme_classic() +
   theme(
     aspect.ratio = 0.8,
+    axis.title.x = element_blank(),
     strip.background = element_rect(fill = "grey85")
   )
 
@@ -238,6 +249,8 @@ gt_label_chr <- lapply(1:nrow(gt_chr), function(i) {
   genetype_summary(gt_chr[i, ])
 }) %>%
   bind_rows()
+gt_label_chr[, "het"] <- as.numeric(pull(gt_label_chr, "het"))
+gt_label_chr[, "hom"] <- as.numeric(pull(gt_label_chr, "hom"))
 gt_label_chr[, "ratio"] <- as.numeric(pull(gt_label_chr, "ratio"))
 gt_label_chr[, "chr"] <- rownames(gt_chr)
 gt_label_chr[, "chr"] <- factor(
@@ -267,6 +280,14 @@ gt_label_chr <- gt_label_chr %>%
       is.na(log10(ratio)) ~ 0
     )
   )
+gt_label_chr <- merge(x = gt_label_chr, y = chr_info, by = "chr", all.x = TRUE)
+gt_label_chr <- gt_label_chr %>%
+  mutate(
+    het_norm = het / reads,
+    hom_norm = hom / reads
+  )
+gt_label_chr_melt <- melt(gt_label_chr, measure.vars = c("hom_norm", "het_norm"), variable.name = "Type")
+
 
 p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   geom_text(
@@ -277,21 +298,7 @@ p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
   labs(title = paste("All alleles:", sample))
 plotlist[["All_alleles_frequency_bychr"]] <- p
 
-p_ratio1 <- ggplot(gt_label_chr, aes(x = log10ratio, color = color)) +
-  geom_density(fill = color[4]) +
-  geom_vline(xintercept = 0, color = "black", size = 1) +
-  geom_vline(xintercept = c(-1, 1), color = c("royalblue4", "red3"), size = 1, linetype = 2) +
-  geom_rug() +
-  geom_point(aes(y = -0.2), size = 2, position = position_jitter(seed = 11)) +
-  scale_color_identity() +
-  scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
-  labs(title = paste("Het/Hom ratio:", sample), x = "log10(Het/Hom)", y = "Density") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 0.8,
-    panel.grid.major = element_line(colour = "grey80")
-  )
-p_ratio2 <- ggplot(gt_label_chr, aes(x = log10ratio, y = reorder(chr, desc(chr)), fill = fill, hjust = hjust)) +
+p_ratio1 <- ggplot(gt_label_chr, aes(x = log10ratio, y = reorder(chr, desc(chr)), fill = fill, hjust = hjust)) +
   geom_col(color = "black") +
   geom_vline(xintercept = 0, color = "black", size = 1) +
   geom_vline(xintercept = c(-1, 1), color = c("royalblue4", "red3"), size = 1, linetype = 2) +
@@ -305,7 +312,27 @@ p_ratio2 <- ggplot(gt_label_chr, aes(x = log10ratio, y = reorder(chr, desc(chr))
     aspect.ratio = 0.8,
     panel.grid.major.y = element_line(colour = "grey80")
   )
+p_ratio2 <- ggplot(data = gt_label_chr_melt, aes(x = chr, y = value, fill = Type)) +
+  geom_col() +
+  scale_fill_manual(
+    name = "Heterozygous",
+    values = setNames(color[c(1, 2)], c("hom_norm", "het_norm")),
+    labels = c("FALSE", "TRUE")
+  ) +
+  # scale_x_continuous(breaks = seq(-3, 3, 1), limits = c(-3, 3)) +
+  labs(title = paste("Het/Hom ratio:", sample), y = "Allele counts per reads") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 0.8,
+    axis.title.x = element_blank(),
+    panel.grid.major = element_line(colour = "grey80")
+  )
+
 plotlist[["HetHom_ratio"]] <- plot_grid(p_ratio1, p_ratio2, nrow = 1)
+
+
+
+
 
 # het alleles -------------------------------------------------------------
 het_alleles <- subset(alleles, Allele1 > AD_q15 & Allele2 > AD_q15 & is_het == TRUE)
@@ -314,10 +341,11 @@ p_Chr <- ggplot(het_alleles) +
   geom_bar(aes(x = chr, fill = is_het)) +
   scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
-  labs(title = paste("Alleles on each chromosome:", sample), x = "", y = "Count") +
+  labs(title = paste("Alleles on each chromosome:", sample), y = "Count") +
   theme_classic() +
   theme(
     aspect.ratio = 0.8,
+    axis.title.x = element_blank(),
     strip.background = element_rect(fill = "grey85")
   )
 
@@ -378,10 +406,6 @@ plotlist[["Het_alleles_frequency_bychr"]] <- p
 
 
 # Intergrated analysis ----------------------------------------------------
-chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
-p1 <- readRDS(file = paste0(CNV_prefix, ".p1.rds"))
-p2 <- readRDS(file = paste0(CNV_prefix, ".p2.rds"))
-
 all_df <- merge(x = alleles, y = chr_info, by = "chr", all.x = T)
 all_df[, "cum_pos"] <- all_df[, "Position"] + all_df[, "offset"]
 all_df <- subset(all_df, cum_pos < max(chr_info[, "chr_cum_end"]))
