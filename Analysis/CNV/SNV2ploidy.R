@@ -243,9 +243,12 @@ p_Chr <- ggplot(alleles) +
 
 alleles_melt <- reshape2::melt(alleles, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")
 p0 <- ggplot(data = alleles_melt) +
-  geom_histogram(aes(x = value, y = ..density.., fill = Type), color = "black", bins = 50, alpha = 0.8) +
+  geom_histogram(aes(x = value, y = ..density.., fill = Type),
+    color = "black", bins = 50, alpha = 0.8, center = 0.5
+  ) +
   geom_density(aes(x = value), fill = "grey80", color = "black", alpha = 0.5) +
   scale_x_continuous(
+    limits = c(0, 1),
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
   ) +
@@ -319,7 +322,7 @@ gt_label_chr <- gt_label_chr %>%
 gt_label_chr_melt <- reshape2::melt(gt_label_chr, measure.vars = c("hom_norm", "het_norm"), variable.name = "Type")
 
 
-p <- p0 + facet_wrap(. ~ chr, nrow = 4, ) +
+p <- p0 + facet_wrap(. ~ chr, ncol = 6) +
   geom_text(
     data = gt_label_chr, aes(label = label),
     x = 0.1, y = Inf, size = 3,
@@ -376,10 +379,11 @@ p_Chr <- ggplot(het_alleles) +
 het_alleles_melt <- reshape2::melt(het_alleles, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")
 p0 <- ggplot(data = het_alleles_melt) +
   geom_histogram(aes(x = value, y = ..density.., fill = Type),
-    color = "black", bins = 50, alpha = 0.8
+    color = "black", bins = 50, alpha = 0.8, center = 0.5
   ) +
   geom_density(aes(x = value), fill = "grey80", color = "black", alpha = 0.5) +
   scale_x_continuous(
+    limits = c(0, 1),
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
   ) +
@@ -419,7 +423,7 @@ gt_label_chr[, "chr"] <- factor(
   levels = chr_levels
 )
 
-p <- p0 + facet_wrap(. ~ chr, nrow = 4) +
+p <- p0 + facet_wrap(. ~ chr, ncol = 6) +
   geom_text(
     data = gt_label_chr, aes(label = label),
     x = 0.1, y = Inf, size = 3,
@@ -472,9 +476,10 @@ p1 <- ggplot(all_df) +
 p2 <- ggplot(reshape2::melt(all_df, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")) +
   geom_histogram(
     aes(y = value),
-    bins = 50, color = "black", fill = color[4]
+    bins = 50, color = "black", fill = color[4], center = 0.5
   ) +
   scale_y_continuous(
+    limits = c(0, 1),
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
   ) +
@@ -518,9 +523,10 @@ p3 <- ggplot(het_df) +
 p4 <- ggplot(reshape2::melt(het_df, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")) +
   geom_histogram(
     aes(y = value),
-    bins = 50, color = "black", fill = color[4]
+    bins = 50, color = "black", fill = color[4], center = 0.5
   ) +
   scale_y_continuous(
+    limits = c(0, 1),
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
   ) +
