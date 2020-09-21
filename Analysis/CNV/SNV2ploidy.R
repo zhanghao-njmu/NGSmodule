@@ -29,7 +29,7 @@ plotlist <- list()
 color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
 
 chr_info <- readRDS(file = paste0(CNV_prefix, ".chr_info.rds"))
-plotlist <- readRDS(file = paste0(CNV_prefix, ".plotlist.rds"))
+plotlist_cnv <- readRDS(file = paste0(CNV_prefix, ".plotlist.rds"))
 
 ##### Allele balance #####
 chrom <- vcf@fix[, "CHROM"]
@@ -536,7 +536,7 @@ p4 <- ggplot(reshape2::melt(het_df, measure.vars = c("Major_allele", "Minor_alle
     panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
   )
 
-plot <- aplot::plot_list(c(plotlist, list(p1, p2, p3, p4)),
+plot <- aplot::plot_list(c(plotlist_cnv, list(p1, p2, p3, p4)),
   nrow = 4, ncol = 2,
   widths = rep(c(0.9, 0.1), 4)
 )
