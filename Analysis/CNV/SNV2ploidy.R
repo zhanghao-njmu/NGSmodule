@@ -230,7 +230,7 @@ alleles <- subset(alleles, (Allele1 >= AD_low | Allele2 >= AD_low) &
 
 # all alleles -------------------------------------------------------------
 p_Chr <- ggplot(alleles) +
-  geom_bar(aes(x = chr, fill = is_het)) +
+  geom_bar(aes(x = chr, fill = is_het), color = "black", position = position_dodge()) +
   scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
   labs(title = paste("Alleles on each chromosome:", sample), y = "Count") +
@@ -343,7 +343,7 @@ p_ratio1 <- ggplot(gt_label_chr, aes(x = log10ratio, y = reorder(chr, desc(chr))
     panel.grid.major.y = element_line(colour = "grey80")
   )
 p_ratio2 <- ggplot(data = gt_label_chr_melt, aes(x = chr, y = value, fill = Type)) +
-  geom_col() +
+  geom_col(position = position_dodge(), color = "black") +
   scale_fill_manual(
     name = "Heterozygous",
     values = setNames(color[c(1, 2)], c("hom_norm", "het_norm")),
@@ -362,7 +362,7 @@ plotlist[["HetHom_ratio"]] <- plot_grid(p_ratio1, p_ratio2, nrow = 1)
 het_alleles <- subset(alleles, Allele1 >= AD_low & Allele2 >= AD_low & is_het == TRUE)
 
 p_Chr <- ggplot(het_alleles) +
-  geom_bar(aes(x = chr, fill = is_het)) +
+  geom_bar(aes(x = chr, fill = is_het), color = "black", position = position_dodge()) +
   scale_fill_manual(name = "Heterozygous", values = color[c(1, 2)], drop = F) +
   scale_x_discrete(drop = FALSE) +
   labs(title = paste("Alleles on each chromosome:", sample), y = "Count") +
@@ -471,10 +471,9 @@ p1 <- ggplot(all_df) +
 
 p2 <- ggplot(reshape2::melt(all_df, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")) +
   geom_histogram(
-    aes(x = ..density.., y = value),
+    aes(y = value),
     bins = 50, color = "black", fill = color[4]
   ) +
-  geom_density(aes(y = value), fill = "grey80", color = "black", alpha = 0.5) +
   scale_y_continuous(
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
@@ -518,10 +517,9 @@ p3 <- ggplot(het_df) +
 
 p4 <- ggplot(reshape2::melt(het_df, measure.vars = c("Major_allele", "Minor_allele"), variable.name = "Type")) +
   geom_histogram(
-    aes(x = ..density.., y = value),
+    aes(y = value),
     bins = 50, color = "black", fill = color[4]
   ) +
-  geom_density(aes(y = value), fill = "grey80", color = "black", alpha = 0.5) +
   scale_y_continuous(
     breaks = c(0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1),
     labels = c("0", "1/4", "1/3", "1/2", "1/3", "1/4", "1")
