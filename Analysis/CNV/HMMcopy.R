@@ -44,13 +44,15 @@ corrected[, "state"] <- segments$state
 color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
 chr_info <- corrected %>%
   group_by(chr) %>%
-  dplyr::summarise(chr = unique(chr),
-                   length = max(end),
-                   reads = sum(reads))
+  dplyr::summarise(
+    chr = unique(chr),
+    length = max(end),
+    reads = sum(reads)
+  )
 chr_info[, "offset"] <- c(0, cumsum(as.numeric(chr_info$length))[-nrow(chr_info)])
 chr_info[, "chr_cum_median"] <- chr_info[, "offset"] + chr_info[, "length"] / 2
-chr_info[,"chr_cum_end"] <- chr_info[, "offset"] + chr_info[, "length"]
-chr_info[,"chr_color"] <- rep(c(color[1], color[2]), times = ceiling(nrow(chr_info) / 2))[1:nrow(chr_info)]
+chr_info[, "chr_cum_end"] <- chr_info[, "offset"] + chr_info[, "length"]
+chr_info[, "chr_color"] <- rep(c(color[1], color[2]), times = ceiling(nrow(chr_info) / 2))[1:nrow(chr_info)]
 
 corrected <- merge(corrected, chr_info, by.x = "chr", by.y = "chr")
 corrected[, "cum_pos"] <- corrected[, "start"] + corrected[, "offset"]
@@ -103,10 +105,9 @@ p1 <- ggplot() +
     axis.ticks = element_blank()
   )
 
-p2 <- ggplot() +
+p2 <- ggplot(data = subset(corrected, CN_predict < 8)) +
   geom_histogram(
-    data = subset(corrected, CN_predict < 8),
-    aes(x = ..density..,y = CN_predict),
+    aes(y = CN_predict),
     bins = 50, color = "black", fill = color[4]
   ) +
   scale_y_continuous(breaks = seq(0, 8, 1)) +
@@ -119,23 +120,55 @@ p2 <- ggplot() +
     panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
   )
 
-plot <- aplot::plot_list(gglist = list(p1,p2),nrow = 1,widths = c(0.9,0.1))
+p3 <- ggplot() +
+  geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
+  geom_point(
+    data = subset(corrected, CN_predict < 8 & reads.x < quantile(reads.x, 0.999)),
+    aes(x = cum_pos, y = reads.x, color = chr_color),
+    shape = 20, alpha = 1
+  ) +
+  scale_color_identity() +
+  scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
+  scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
+  labs(title = sample, y = "Number of reads per bin") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2),
+    panel.border = element_rect(fill = "transparent", color = "black", size = 1),
+    axis.title.x = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+p4 <- ggplot(data = subset(corrected, CN_predict < 8 & reads.x < quantile(reads.x, 0.999))) +
+  geom_histogram(
+    aes(y = reads.x),
+    bins = 50, color = "black", fill = color[4]
+  ) +
+  theme_classic() +
+  theme(
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    axis.line.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey80", linetype = 2)
+  )
+
+plot <- aplot::plot_list(gglist = list(p1, p2, p3, p4), nrow = 2, ncol = 2, widths = rep(c(0.9, 0.1), 2))
 
 ##### output report #####
-pdf(paste0(sample, ".plot.pdf"), width = nrow(chr_info)/2, height = 3)
+pdf(paste0(sample, ".plot.pdf"), width = nrow(chr_info) / 2, height = 3)
 invisible(print(plot))
 invisible(dev.off())
 
-saveRDS(corrected,file = paste0(sample,".corrected.rds"))
-saveRDS(segs,file = paste0(sample,".segs.rds"))
-saveRDS(chr_info,file = paste0(sample,".chr_info.rds"))
-saveRDS(p1,file = paste0(sample,".p1.rds"))
-saveRDS(p2,file = paste0(sample,".p2.rds"))
+saveRDS(corrected, file = paste0(sample, ".corrected.rds"))
+saveRDS(segs, file = paste0(sample, ".segs.rds"))
+saveRDS(chr_info, file = paste0(sample, ".chr_info.rds"))
+saveRDS(list(p1, p2, p3, p4), file = paste0(sample, ".plotlist.rds"))
+
 
 ##### check whether the unwanted file exists and remove it #####
 if (file.exists("Rplots.pdf")) {
   invisible(file.remove("Rplots.pdf"))
 }
-
-
-
