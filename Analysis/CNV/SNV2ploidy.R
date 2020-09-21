@@ -114,7 +114,7 @@ genetype_summary <- function(GeneType_table) {
   ))
 }
 
-cutoff <- function(x, trim_low = 0.10, trim_high = 0.95) {
+cutoff <- function(x, trim_low = 0.15, trim_high = 0.95) {
   low_cutoff <- max(quantile(x, 0.25) - 1.5 * IQR(x), quantile(x, trim_low))
   high_cutoff <- min(quantile(x, 0.75) + 1.5 * IQR(x), quantile(x, trim_high))
   low_extend <- low_cutoff - 0.2 * (high_cutoff - low_cutoff)
