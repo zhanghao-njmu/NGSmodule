@@ -117,8 +117,6 @@ fi
 declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
     while IFS=',' read -r LibraryID SampleID; do
-        SampleID=$(echo $SampleID | xargs)
-        LibraryID=$(echo $LibraryID | xargs)
         Sample_dict[$LibraryID]=$SampleID
     done <$SampleInfoFile
 else
