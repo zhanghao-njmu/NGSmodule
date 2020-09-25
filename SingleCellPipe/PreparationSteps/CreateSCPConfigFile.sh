@@ -38,8 +38,8 @@ cellranger_ref="/data/database/CellRanger/custom/GFP_and_refdata-gex-GRCh38-2020
 
 ### velocyto and dropEst ###
 dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
-gene_gtf="$cellranger_ref/genes/genes.gtf"
-rmsk_gtf="$cellranger_ref/genes/rmsk.gtf"
+gene_gtf="\$cellranger_ref/genes/genes.gtf"
+rmsk_gtf="\$cellranger_ref/genes/rmsk.gtf"
 
 
 
