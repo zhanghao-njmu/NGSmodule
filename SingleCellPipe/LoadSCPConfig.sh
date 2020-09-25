@@ -119,7 +119,7 @@ if [[ -f $SampleInfoFile ]]; then
     while IFS=',' read -r LibraryID SampleID; do
         SampleID=$(echo $SampleID | xargs)
         LibraryID=$(echo $LibraryID | xargs)
-        Sample_dict[$LibraryID]=SampleID
+        Sample_dict[$LibraryID]=$SampleID
     done <$SampleInfoFile
 else
     color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
