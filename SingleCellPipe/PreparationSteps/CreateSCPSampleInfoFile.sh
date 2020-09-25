@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-tmp=(`date +"%Y%m%d%H%M%S"`)
-cat <<- EOF >temp_${tmp}.Sample_info.csv
+tmp=($(date +"%Y%m%d%H%M%S"))
+cat <<-EOF >temp_${tmp}.Sample_info.csv
 LibraryID,SampleID
 Sample1,Brain
 Sample2,Testis
