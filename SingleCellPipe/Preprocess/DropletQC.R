@@ -37,11 +37,13 @@ color <- pal_material("blue-grey")(10)
 # Method: Cellranger ------------------------------------------------------
 path_raw <- paste0(cellranger_dir, "/", id, "/outs/raw_feature_bc_matrix")
 raw <- read10xCounts(path_raw)
+colnames(raw) <- colData(raw)[["Barcode"]]
 rownames(raw) <- rowData(raw)[["Symbol"]] %>% make.unique(sep = "@")
 raw <- raw[, colSums(counts(raw)) > 0]
 
 path_filtered <- paste0(cellranger_dir, "/", id, "/outs/filtered_feature_bc_matrix")
 filtered <- read10xCounts(path_filtered)
+colnames(filtered) <- colData(filtered)[["Barcode"]]
 rownames(filtered) <- rowData(filtered)[["Symbol"]] %>% make.unique(sep = "@")
 filtered <- filtered[, colSums(counts(filtered)) > 0]
 
@@ -311,7 +313,7 @@ p <- plot_grid(
     "emptyDrops-Probability_vs_counts",
     "emptyDrops-BarcodeRank"
   )],
-  nrow = 2, ncol = 2, align = "hv", axis = "tblr"
+  nrow = 2, ncol = 2, align = "hv", axis = "tblr", labels = "auto"
 )
 ggsave(p, filename = paste0(sample, ".emptyDrops.png"), width = 11, height = 8)
 
@@ -485,7 +487,7 @@ p <- plot_grid(
     "dropEst-CellScore",
     "dropEst-BarcodeRank"
   )],
-  nrow = 1, align = "hv", axis = "tblr"
+  nrow = 1, align = "hv", axis = "tblr", labels = "auto"
 )
 ggsave(p, filename = paste0(sample, ".dropEst.png"), width = 11, height = 8)
 
@@ -589,7 +591,9 @@ cell_upset <- colData(raw) %>%
   ) %>%
   dplyr::filter(is_cell == TRUE) %>%
   group_by(Barcode) %>%
-  summarize(Method_list = list(Method), Method_comb = paste(Method, collapse = ","))
+  summarize(Method_list = list(Method),
+            Method_comb = paste(Method, collapse = ","),
+            Method_num = n())
 y_max <- max(table(pull(cell_upset, "Method_comb")))
 
 p <- ggplot(cell_upset, aes(x = Method_list)) +
@@ -616,12 +620,16 @@ p <- plot_grid(
     plotlist[["MethodCompare-Barplot"]],
     nrow = 1, rel_widths = c(0.5, 0.5)
   ),
-  nrow = 2
+  nrow = 2, labels = "auto"
 )
 ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 8)
 
+
+
 # Output the report -------------------------------------------------------
+raw_sub <- raw[, cell_upset %>% subset(Method_num >= 4) %>% pull("Barcode")]
 saveRDS(raw, file = "raw.rds")
+saveRDS(raw_sub, file = "raw_sub.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
 
 pdf(paste0(sample, ".DropletFilter.pdf"), width = 11, height = 8)
