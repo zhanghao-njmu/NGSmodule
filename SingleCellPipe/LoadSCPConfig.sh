@@ -117,14 +117,14 @@ fi
 declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
     while IFS=',' read -r LibraryID SampleID; do
-        SampleID=$(sed 's/\^.*/$/g' $SampleID)
+        SampleID=$(echo $SampleID | sed 's/\^.*/$/g' )
         Sample_dict[$LibraryID]=$SampleID
     done <$SampleInfoFile
 else
     color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
     exit 1
 fi
-echo "Load SampleInfoFile"
+
 
 ###### START ######
 if [[ -d $work_dir ]]; then
