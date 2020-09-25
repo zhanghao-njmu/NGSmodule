@@ -124,6 +124,7 @@ else
     color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
     exit 1
 fi
+echo "Load SampleInfoFile"
 
 ###### START ######
 if [[ -d $work_dir ]]; then
