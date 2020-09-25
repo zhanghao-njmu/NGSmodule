@@ -40,6 +40,7 @@ for file in "${arr[@]}"; do
         color_echo "yellow" "Warning! Cannot find the LibraryId information for the file: $file "
         continue
     else
+        SampleID=$(echo $SampleID | xargs)
         echo "File: ${file_sim}  LibraryId: ${LibraryId}  SampleID: ${SampleID}"
         mkdir -p ${work_dir}/${SampleID}
         ln -fs $file ${work_dir}/$SampleID/${file_sim}
