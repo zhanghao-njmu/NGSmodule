@@ -43,8 +43,8 @@ for file in "${arr[@]}"; do
   fi
 
   if [[ $use_run == "FALSE" ]]; then
-    continue
     color_echo "yellow" "Warning! Cannot find the RunId information for the file: $file "
+    continue
   else
 
     if [[ $Sufix == $R1_Sufix ]]; then
