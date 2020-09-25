@@ -15,8 +15,8 @@ cat <<- EOF >$ConfigFile
 ############# Global Paramaters ###########################################################################
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/rawdata/"
-total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
-total_memory=$(free -g | awk 'NR==2 {print $4}')
+total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads.
+total_memory=$(free -g | awk 'NR==2 {print $4}')                             ## Total memory.
 ntask_per_run="ALL"
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.

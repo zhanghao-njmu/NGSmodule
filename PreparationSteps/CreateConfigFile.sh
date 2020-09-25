@@ -16,7 +16,7 @@ cat <<- EOF >$ConfigFile
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw fastq.gz data.
 SequenceType="rna"                            ## rna,dna,BSdna
-total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads for use.
+total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads.
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
