@@ -90,7 +90,7 @@ CreateSCPConfigFile()
 
 CreateSCPSampleInfoFile()
 {
-  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSampleInfoFile.sh
+  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPSampleInfoFile.sh
 }
 
 CreateSCPWorkDir()
