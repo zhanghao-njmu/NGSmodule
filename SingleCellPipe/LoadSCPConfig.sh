@@ -107,7 +107,7 @@ check_logfile() {
 
 ################################################################################################################
 
-work_dir=$maindir/NGSmoduleSCP_work/
+work_dir=$maindir/NGSmodule_SCP_work/
 if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule CreateSCPWorkDir -c <Config_file>' first!\n"
     exit 1
