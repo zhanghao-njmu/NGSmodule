@@ -139,6 +139,8 @@ cat <<- EOF
     
     # SingleCellPipe
        CreateSCPConfig
+       CreateSCPSampleInfoFile
+       CreateSCPWorkDir
     
   Other options:
     -c, --ConfigFile          Specify the path of configuration file.
