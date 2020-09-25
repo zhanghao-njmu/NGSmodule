@@ -116,8 +116,8 @@ fi
 ############# Load SampleInfoFile ###################################################################
 declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
+    dos2unix $SampleInfoFile &>/dev/null
     while IFS=',' read -r LibraryID SampleID; do
-        SampleID=$(echo $SampleID | sed 's/\$'\r'/$/g' )
         Sample_dict[$LibraryID]=$SampleID
     done <$SampleInfoFile
 else
