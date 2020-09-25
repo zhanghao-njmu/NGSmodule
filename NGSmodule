@@ -138,7 +138,7 @@ cat <<- EOF
        CNVanalysis
     
     # SingleCellPipe
-       CreateSCPConfig
+       CreateSCPConfigFile
        CreateSCPSampleInfoFile
        CreateSCPWorkDir
     
@@ -239,6 +239,15 @@ while true;do
       elif [[ $1 == "CreateSCPConfigFile" ]];then
         CreateSCPConfigFile $ConfigFile
         exit 0
+      elif [[ $1 == "CreateSCPSampleInfoFile" ]];then
+        CreateSCPSampleInfoFile
+        exit 0
+      elif [[ $1 == "CreateSCPWorkDir" ]];then
+        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateSCPWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        CheckConfigFile $ConfigFile
+        CreateSCPWorkDir $ConfigFile
+        exit 0      
       else
         echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
       fi
