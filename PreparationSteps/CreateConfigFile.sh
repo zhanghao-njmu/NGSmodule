@@ -23,7 +23,7 @@ SampleGrepPattern=""                          ## Optional. Perl-compatible regex
 force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE .
 
 
-############# PrepareWorkDir Paramaters ###################################################################
+############# CreateWorkDir Paramaters ###################################################################
 ### raw_run_file_name= RunIdPattern  + SufixPattern
 ### Example: Sample1: R19051060_2020_L001_1.fq.gz, R19051060_2020_L001_2.fq.gz; Sample2: R19051061_2020_L002.fq.gz
 ### RunIdPattern=".*"

@@ -44,6 +44,7 @@ for file in "${arr[@]}"; do
 
   if [[ $use_run == "FALSE" ]]; then
     continue
+    color_echo "yellow" "Warning! Cannot find the RunId information for the file: $file "
   else
 
     if [[ $Sufix == $R1_Sufix ]]; then

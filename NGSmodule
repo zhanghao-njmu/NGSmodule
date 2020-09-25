@@ -9,7 +9,7 @@ shell_folder=$(dirname $(readlink -f "$0"))
 
 CreateConfigFile()
 {
-  source $shell_folder/PreparationSteps/CreateConfigFile.sh
+  source $shell_folder/PreparationSteps/CreateConfigFile.sh $1
 }
 
 CheckConfigFile()
@@ -83,6 +83,23 @@ CNVanalysis()
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
+CreateSCPConfigFile()
+{
+  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPConfigFile.sh $1
+}
+
+CreateSCPSampleInfoFile()
+{
+  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSampleInfoFile.sh
+}
+
+CreateSCPWorkDir()
+{
+  source $1
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh prepare
+  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPWorkDir.sh
+}
+
 help()
 {
 cat <<- EOF
@@ -119,6 +136,9 @@ cat <<- EOF
 
     # CNVAnalysis:
        CNVanalysis
+    
+    # SingleCellPipe
+       CreateSCPConfig
     
   Other options:
     -c, --ConfigFile          Specify the path of configuration file.
@@ -214,6 +234,9 @@ while true;do
         CheckConfigFile $ConfigFile
         CNVanalysis $ConfigFile
         exit 0   
+      elif [[ $1 == "CreateSCPConfigFile" ]];then
+        CreateSCPConfigFile $ConfigFile
+        exit 0
       else
         echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
       fi

@@ -109,7 +109,7 @@ check_logfile() {
 
 work_dir=$maindir/NGSmodule_work/
 if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
-  color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule PrepareWorkDir -c <Config_file>' first!\n"
+  color_echo "red" "Error! Can not find the work_dir: $work_dir\nPlease run 'NGSmodule CreateWorkDir -c <Config_file>' first!\n"
   exit 1
 fi
 
@@ -235,7 +235,7 @@ if [[ -d $work_dir ]]; then
 else
   total_task="Waiting for creating the workdir"
   ntask_per_run="Waiting for creating the workdir"
-  threads="1"
+  threads="Waiting for creating the workdir"
 fi
 
 ################################################################################################################
