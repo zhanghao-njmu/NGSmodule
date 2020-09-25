@@ -9,8 +9,8 @@ if [[ -d $work_dir ]]; then
 fi
 
 grep_pattern="(${RunIdPattern}${SE_SufixPattern})|(${RunIdPattern}${R1_SufixPattern})|(${RunIdPattern}${R2_SufixPattern})"
-color_echo "green" "Grep pattern: $grep_pattern \n" 
-arr=($(find $rawdata_dir -type f | grep -P $grep_pattern ))
+color_echo "green" "Grep pattern: $grep_pattern \n"
+arr=($(find $rawdata_dir -type f | grep -P $grep_pattern))
 if [[ ${#arr} == 0 ]]; then
   color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
   exit 1
@@ -52,7 +52,7 @@ for file in "${arr[@]}"; do
       fq_Layout="PE"
     elif [[ $Sufix == $R2_Sufix ]]; then
       fq=run1_${SampleID}_2.fq.gz
-      fq_Layout="PE" 
+      fq_Layout="PE"
     elif [[ $Sufix == $SE_Sufix ]]; then
       fq=run1_${SampleID}.fq.gz
       fq_Layout="SE"

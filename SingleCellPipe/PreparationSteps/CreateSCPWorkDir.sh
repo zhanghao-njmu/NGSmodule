@@ -25,7 +25,6 @@ for file in "${arr[@]}"; do
         if [[ $Sufix ]] && [[ ${Sample_dict[${file_sim%%$Sufix}]} ]]; then
             LibraryId=${file_sim%%$Sufix}
             SampleID=${Sample_dict[$LibraryId]}
-            Layout=${Layout_dict[$SampleID]}
             if [[ $SampleID == "" ]]; then
                 SampleID=$LibraryId
                 color_echo "yellow" "Warning! Cannot find the SampleID for LibraryId: $LibraryId. Use '$LibraryId' as its SampleID."
@@ -38,34 +37,12 @@ for file in "${arr[@]}"; do
     fi
 
     if [[ $use_run == "FALSE" ]]; then
+        color_echo "yellow" "Warning! Cannot find the RunId information for the file: $file "
         continue
     else
-
-        if [[ $Sufix == $R1_Sufix ]]; then
-            fq=run1_${SampleID}_1.fq.gz
-            fq_Layout="PE"
-        elif [[ $Sufix == $R2_Sufix ]]; then
-            fq=run1_${SampleID}_2.fq.gz
-            fq_Layout="PE"
-        elif [[ $Sufix == $SE_Sufix ]]; then
-            fq=run1_${SampleID}.fq.gz
-            fq_Layout="SE"
-        fi
-
-        if [[ $Layout != $fq_Layout ]]; then
-            color_echo "red" "Error caused by the file:$file\nThe layout of the fastq file:$fq_Layout is conflict with the Layout information of the SampleInfoFile:$Layout"
-            exit 1
-        fi
-
-        echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
+        echo "File: ${file_sim}  LibraryId: ${LibraryId}  SampleID: ${SampleID}"
         mkdir -p ${work_dir}/${SampleID}
-        if [[ ! -f ${work_dir}/$SampleID/${fq} ]]; then
-            ln -s $file ${work_dir}/$SampleID/${fq}
-        else
-            num=$(ls ${work_dir}/$SampleID/run*_${SampleID}${fq##run1_${SampleID}} | wc -l)
-            ln -s $file ${work_dir}/$SampleID/run$(($num + 1))_${fq##run1_}
-        fi
-
+        ln -fs $file ${work_dir}/$SampleID/${file_sim}
     fi
 
 done
