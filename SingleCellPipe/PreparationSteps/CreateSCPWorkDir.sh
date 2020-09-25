@@ -20,7 +20,7 @@ for file in "${arr[@]}"; do
     file_sim=${file##*/}
     Sufix=($(echo "${file_sim}" | grep -oP "$SufixPattern"))
 
-    if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]]; then
+    if [[ "${#Sample_dict[@]}" != 0 ]]; then
         use_run="FALSE"
         if [[ $Sufix ]] && [[ ${Sample_dict[${file_sim%%$Sufix}]} ]]; then
             LibraryId=${file_sim%%$Sufix}
@@ -32,12 +32,12 @@ for file in "${arr[@]}"; do
             use_run="TRUE"
         fi
     else
-        color_echo "red" "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
+        color_echo "red" "Error! Cannot find the SampleID information!"
         exit 1
     fi
 
     if [[ $use_run == "FALSE" ]]; then
-        color_echo "yellow" "Warning! Cannot find the RunId information for the file: $file "
+        color_echo "yellow" "Warning! Cannot find the LibraryId information for the file: $file "
         continue
     else
         echo "File: ${file_sim}  LibraryId: ${LibraryId}  SampleID: ${SampleID}"
