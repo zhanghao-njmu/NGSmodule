@@ -100,6 +100,13 @@ CreateSCPWorkDir()
   source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPWorkDir.sh
 }
 
+RunCellranger()
+{
+  source $1
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
+  source $shell_folder/SingleCellPipe/Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/Preprocess/DropletQC.R
+}
+
 help()
 {
 cat <<- EOF
@@ -141,6 +148,7 @@ cat <<- EOF
        CreateSCPConfigFile
        CreateSCPSampleInfoFile
        CreateSCPWorkDir
+       RunCellranger
     
   Other options:
     -c, --ConfigFile          Specify the path of configuration file.

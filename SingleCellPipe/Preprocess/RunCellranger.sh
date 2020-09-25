@@ -32,7 +32,7 @@ dropest -f -g $gene_gtf -c $dropEst_config $cellranger_dir/$id/outs/possorted_ge
 dropReport.Rsc  $cellranger_dir/$id/dropEst/cell.counts.rds
 
 # droplet-QC
-Rscript
+Rscript $1
 
 }&
 done
