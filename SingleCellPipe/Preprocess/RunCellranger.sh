@@ -50,9 +50,9 @@ elif [[ ! -f $dropEst_config ]]; then
     exit 1
 fi
 
-echo -e "############################# Alignment Parameters #############################\n"
-echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
-echo -e "  Genome_File: ${genome}\n  GTF_File: ${gtf}\n  Aligner_Index: ${index}\n"
+echo -e "########################### RunCellranger Parameters ###########################\n"
+echo -e "  cellranger_ref: ${cellranger_ref}"
+echo -e "  gene_gtf: ${gene_gtf}\n  rmsk_gtf: ${rmsk_gtf}\n  dropEst_config: ${dropEst_config}\n"
 echo -e "################################################################################\n"
 
 echo -e "****************** Start Alignment ******************\n"
@@ -63,31 +63,43 @@ arr=($(find $rawdata_dir -name "*.fastq.gz" | sed "s/\/.*\///g" | sed "s/_2020.*
 for sample in "${arr[@]}"; do
     read -u1000
     {
-        cd $cellranger_dir
-        files=($(find $rawdata_dir -name "${id}_*.fastq.gz" | grep -P "(?<=rawdata\/).*(?=_S\d+)" -o | sort | uniq))
-        sample_run=$(printf ",%s" "${files[@]}")
-        sample_run=${sample_run:1}
-        echo -e "$id: $sample_run"
+        dir=$work_dir/$sample
+        cd $dir
+        
+        # fastqc
+        mkdir $dir/PreAlignmentQC/fastqc
+        files=($(find $dir -type l | grep -P $SufixPattern))
+        fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
 
         # cellranger
-        cellranger count --id ${id} \
-        --fastqs ${rawdata_dir} \
+        mkdir -p $dir/Alignment/Cellranger
+        cd $dir/Alignment/Cellranger
+        sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir).*(?=_S\d+_L\d+)" | sort | uniq))
+        sample_run=$(printf ",%s" "${sample_run[@]}")
+        sample_run=${sample_run:1}
+        echo -e "$sample: $sample_run"
+
+        cellranger count \ 
+        --id ${sample} \
+        --fastqs ${dir} \
         --sample ${sample_run} \
         --localcores $threads \
-        --localmem $((threads * 2)) \
+        --localmem $memory \
         --transcriptome $cellranger_ref
 
         # velocyto
-        velocyto run10x -m $rmsk_gtf --samtools-threads $threads $cellranger_dir/$id $gene_gtf
+        mkdir -p $dir/Alignment/Cellranger/velocyto
+        cd $dir/Alignment/Cellranger/velocyto
+        velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf
 
         # dropEst
-        mkdir -p $cellranger_dir/$id/dropEst
-        cd $cellranger_dir/$id/dropEst
-        dropest -f -g $gene_gtf -c $dropEst_config $cellranger_dir/$id/outs/possorted_genome_bam.bam
-        dropReport.Rsc $cellranger_dir/$id/dropEst/cell.counts.rds
+        mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
+        cd $dir/Alignment/Cellranger/$sample/dropEst
+        dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam
+        dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds
 
-        # droplet-QC
-        Rscript $1
+        # Cell-calling
+        Rscript $1 $dir/Alignment/Cellranger $sample $threads
 
         echo >&1000
     } &

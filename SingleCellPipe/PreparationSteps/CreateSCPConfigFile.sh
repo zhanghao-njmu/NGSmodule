@@ -33,7 +33,6 @@ SufixPattern="_S\d+_L\d+.*\.((fastq)|(fq))\.gz"         ## Must start with and e
 
 ############# Cellranger Paramaters #######################################################################
 ### cellranger ###
-cellranger_dir="/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/cellranger/"
 cellranger_ref="/data/database/CellRanger/custom/GFP_and_refdata-gex-GRCh38-2020-A"
 
 ### velocyto and dropEst ###

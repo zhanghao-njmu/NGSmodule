@@ -1,8 +1,14 @@
+#!/usr/bin/env Rscript
+
+args <- commandArgs(TRUE)
+cellranger_dir <- as.character(args[1])
+sample <- as.character(args[2])
+threads <- as.character(args[3])
+
 # parameters: global settings ---------------------------------------------
-cellranger_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/cellranger"
-id <- "1_P31"
-sample <- "CellLine1"
-threads <- 80
+# cellranger_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/cellranger"
+# sample <- "1_P31"
+# threads <- 80
 
 # parameters: emptyDrops --------------------------------------------------
 empty_thresh <- 200
@@ -35,13 +41,13 @@ plotlist <- list()
 color <- pal_material("blue-grey")(10)
 
 # Method: Cellranger ------------------------------------------------------
-path_raw <- paste0(cellranger_dir, "/", id, "/outs/raw_feature_bc_matrix")
+path_raw <- paste0(cellranger_dir, "/", sample, "/outs/raw_feature_bc_matrix")
 raw <- read10xCounts(path_raw)
 colnames(raw) <- colData(raw)[["Barcode"]]
 rownames(raw) <- rowData(raw)[["Symbol"]] %>% make.unique(sep = "@")
 raw <- raw[, colSums(counts(raw)) > 0]
 
-path_filtered <- paste0(cellranger_dir, "/", id, "/outs/filtered_feature_bc_matrix")
+path_filtered <- paste0(cellranger_dir, "/", sample, "/outs/filtered_feature_bc_matrix")
 filtered <- read10xCounts(path_filtered)
 colnames(filtered) <- colData(filtered)[["Barcode"]]
 rownames(filtered) <- rowData(filtered)[["Symbol"]] %>% make.unique(sep = "@")
@@ -318,7 +324,7 @@ p <- plot_grid(
 ggsave(p, filename = paste0(sample, ".emptyDrops.png"), width = 11, height = 8)
 
 # Method: dropEst ---------------------------------------------------------
-path_dropEst <- paste0(cellranger_dir, "/", id, "/dropEst/cell.counts.rds")
+path_dropEst <- paste0(cellranger_dir, "/", sample, "/dropEst/cell.counts.rds")
 dropest <- readRDS(path_dropEst)
 cell_num <- EstimateCellsNumber(dropest$aligned_umis_per_cell)
 chr <- colnames(dropest$reads_per_chr_per_cells$Exon)
