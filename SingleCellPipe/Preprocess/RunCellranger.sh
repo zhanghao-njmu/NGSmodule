@@ -65,7 +65,7 @@ for sample in "${arr[@]}"; do
         cd $dir
         
         # fastqc
-        mkdir $dir/PreAlignmentQC/fastqc
+        mkdir -p $dir/PreAlignmentQC/fastqc
         files=($(find $dir -type l | grep -P $SufixPattern))
         fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
 
@@ -77,8 +77,7 @@ for sample in "${arr[@]}"; do
         sample_run=${sample_run:1}
         echo -e "$sample: $sample_run"
 
-        cellranger count \ 
-        --id ${sample} \
+        cellranger count --id ${sample} \
         --fastqs ${dir} \
         --sample ${sample_run} \
         --localcores $threads \
