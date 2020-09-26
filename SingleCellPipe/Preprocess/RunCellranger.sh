@@ -67,13 +67,13 @@ for sample in "${arr[@]}"; do
         # fastqc
         mkdir -p $dir/PreAlignmentQC/fastqc
         files=($(find $dir -type l | grep -P $SufixPattern))
-        fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
+        #fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
         color_echo "blue" "+++++ ${sample}: FastQC done +++++"
 
         # cellranger
         mkdir -p $dir/Alignment/Cellranger
         cd $dir/Alignment/Cellranger
-        sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir).*(?=_S\d+_L\d+)" | sort | uniq))
+        sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
         sample_run=$(printf ",%s" "${sample_run[@]}")
         sample_run=${sample_run:1}
         echo -e "$sample: $sample_run"
