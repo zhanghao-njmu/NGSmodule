@@ -68,6 +68,7 @@ for sample in "${arr[@]}"; do
         mkdir -p $dir/PreAlignmentQC/fastqc
         files=($(find $dir -type l | grep -P $SufixPattern))
         fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
+        color_echo "blue" "+++++ ${sample}: FastQC done +++++"
 
         # cellranger
         mkdir -p $dir/Alignment/Cellranger
@@ -83,20 +84,26 @@ for sample in "${arr[@]}"; do
         --localcores $threads \
         --localmem $memory \
         --transcriptome $cellranger_ref
+        color_echo "blue" "+++++ ${sample}: cellranger done +++++"
 
         # velocyto
         mkdir -p $dir/Alignment/Cellranger/velocyto
         cd $dir/Alignment/Cellranger/velocyto
         velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf
+        color_echo "blue" "+++++ ${sample}: velocyto done +++++"
 
         # dropEst
         mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
         cd $dir/Alignment/Cellranger/$sample/dropEst
         dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam
         dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds
+        color_echo "blue" "+++++ ${sample}: dropEst done +++++"
 
         # Cell-calling
         Rscript $1 $dir/Alignment/Cellranger $sample $threads
+        color_echo "blue" "+++++ ${sample}: Cell-calling done +++++"
+
+        color_echo "green" "+++++ ${sample}: RunCellranger completed +++++"
 
         echo >&1000
     } &
