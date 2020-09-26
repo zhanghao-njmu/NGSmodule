@@ -58,8 +58,6 @@ echo -e "#######################################################################
 echo -e "****************** Start Alignment ******************\n"
 SECONDS=0
 
-arr=($(find $rawdata_dir -name "*.fastq.gz" | sed "s/\/.*\///g" | sed "s/_2020.*//g" | sort | uniq))
-
 for sample in "${arr[@]}"; do
     read -u1000
     {
