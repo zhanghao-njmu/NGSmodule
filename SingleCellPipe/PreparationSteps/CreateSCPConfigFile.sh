@@ -28,7 +28,7 @@ force_complete="FALSE"
 ### LibraryIdPattern=".*"
 ### SufixPattern="_2020.*\.fastq\.gz"
 LibraryIdPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
-SufixPattern="_S\d+_L\d+.*\.((fastq)|(fq))\.gz"
+SufixPattern="_S\d+_L\d+.*\.((fastq)|(fq))\.gz"         ## Must start with and end with a fixed string pattern. 
 
 
 ############# Cellranger Paramaters #######################################################################
