@@ -255,7 +255,13 @@ while true;do
         [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateSCPWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
         CreateSCPWorkDir $ConfigFile
-        exit 0      
+        exit 0
+      elif [[ $1 == "RunCellranger" ]];then
+        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in RunCellranger MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        CheckConfigFile $ConfigFile
+        RunCellranger $ConfigFile
+        exit 0         
       else
         echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
       fi
