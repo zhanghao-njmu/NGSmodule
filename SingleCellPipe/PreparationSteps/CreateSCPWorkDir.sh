@@ -43,7 +43,7 @@ for file in "${arr[@]}"; do
         SampleID=$(echo $SampleID | xargs)
         echo "File: ${file_sim}  LibraryId: ${LibraryId}  SampleID: ${SampleID}"
         mkdir -p ${work_dir}/${SampleID}
-        ln -fs $file ${work_dir}/$SampleID/${file_sim}
+        ln -fs $file ${work_dir}/$SampleID/${SampleID}${Sufix}
     fi
 
 done
