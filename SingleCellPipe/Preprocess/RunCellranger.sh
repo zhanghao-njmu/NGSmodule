@@ -71,6 +71,7 @@ for sample in "${arr[@]}"; do
         color_echo "blue" "+++++ ${sample}: FastQC done +++++"
 
         # cellranger
+        rm -rf $dir/Alignment/Cellranger
         mkdir -p $dir/Alignment/Cellranger
         cd $dir/Alignment/Cellranger
         sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
