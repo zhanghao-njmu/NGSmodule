@@ -84,24 +84,26 @@ for sample in "${arr[@]}"; do
         --sample ${sample_run} \
         --localcores $threads \
         --localmem $memory \
-        --transcriptome $cellranger_ref
+        --transcriptome $cellranger_ref &>cellranger.log
         color_echo "blue" "+++++ ${sample}: cellranger done +++++"
 
         # velocyto
-        mkdir -p $dir/Alignment/Cellranger/velocyto
-        cd $dir/Alignment/Cellranger/velocyto
-        velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf
+        mkdir -p $dir/Alignment/Cellranger/$sample/velocyto
+        cd $dir/Alignment/Cellranger/$sample/velocyto
+        velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf &>velocyto.log
         color_echo "blue" "+++++ ${sample}: velocyto done +++++"
 
         # dropEst
         mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
         cd $dir/Alignment/Cellranger/$sample/dropEst
-        dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam
-        dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds
+        dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam &>dropest.log
+        dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds &>dropReport.log
         color_echo "blue" "+++++ ${sample}: dropEst done +++++"
 
         # Cell-calling
-        Rscript $1 $dir/Alignment/Cellranger $sample $threads
+        mkdir -p $dir/Alignment/Cellranger/$sample/CellCalling
+        cd $dir/Alignment/Cellranger/$sample/CellCalling
+        Rscript $1 $dir/Alignment/Cellranger $sample $threads &>CellCalling.log
         color_echo "blue" "+++++ ${sample}: Cell-calling done +++++"
 
         color_echo "green" "+++++ ${sample}: RunCellranger completed +++++"

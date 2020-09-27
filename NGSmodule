@@ -104,7 +104,7 @@ RunCellranger()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/Preprocess/Cell-calling.R
+  source $shell_folder/SingleCellPipe/Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/Preprocess/CellCalling.R
 }
 
 help()
