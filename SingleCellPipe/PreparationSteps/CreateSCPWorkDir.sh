@@ -8,7 +8,7 @@ if [[ -d $work_dir ]]; then
     mkdir "${work_dir}"
 fi
 
-grep_pattern="(${LibraryIdPattern}${SufixPattern})"
+grep_pattern="(^${LibraryIdPattern}${SufixPattern}$)"
 color_echo "green" "Grep pattern: $grep_pattern \n"
 arr=($(find $rawdata_dir -type f | grep -P $grep_pattern))
 if [[ ${#arr} == 0 ]]; then
