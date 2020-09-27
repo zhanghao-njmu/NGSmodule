@@ -29,7 +29,7 @@ SECONDS=0
 mkdir -p $maindir/NGSmodule_analysis/Quantification/postQuantificationQC
 cd $maindir/NGSmodule_analysis/Quantification/postQuantificationQC
 
-Rscript $1 $maindir $Aligner $SampleInfoFile
+Rscript $1 $maindir $Aligner $SampleInfoFile $1
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"

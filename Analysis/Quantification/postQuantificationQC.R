@@ -13,6 +13,7 @@ args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
 aligner <- args[2]
 SampleInfoFile <- args[3]
+script_path <- as.character(args[4])
 
 ######### example 1 ############
 # maindir <- "/data/lab/ZhangHao/tmp/"
