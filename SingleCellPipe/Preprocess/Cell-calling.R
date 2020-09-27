@@ -633,9 +633,7 @@ ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 
 
 
 # Output the report -------------------------------------------------------
-raw_sub <- raw[, cell_upset %>% subset(Method_num >= 4) %>% pull("Barcode")]
 saveRDS(raw, file = "raw.rds")
-saveRDS(raw_sub, file = "raw_sub.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
 
 pdf(paste0(sample, ".DropletFilter.pdf"), width = 11, height = 8)
