@@ -67,7 +67,7 @@ for sample in "${arr[@]}"; do
         # fastqc
         mkdir -p $dir/PreAlignmentQC/fastqc
         files=($(find $dir -type l | grep -P $SufixPattern))
-        #fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
+        fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
         color_echo "blue" "+++++ ${sample}: FastQC done +++++"
 
         # cellranger
