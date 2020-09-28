@@ -20,20 +20,20 @@ dropest_quality <- 0.99
 
 
 ########################### Start the workflow ############################
+library(SingleCellExperiment)
 library(DropletUtils)
 library(dropestr)
 library(ggplot2)
 library(ggrepel)
 library(ggupset)
 library(ggsci)
+library(png)
+library(grid)
+library(gridExtra)
 library(cowplot)
+library(scales)
 library(dplyr)
 library(reshape2)
-library(SingleCellExperiment)
-library(grid)
-library(png)
-library(gridExtra)
-library(scales)
 
 set.seed(11)
 bpparam <- BiocParallel::MulticoreParam(workers = threads)
