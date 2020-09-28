@@ -234,11 +234,11 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_trim.fq ]]; then
-          pigz -p $threads -f $dir/${sample}_trim.fq
+          pigz -p "$threads" -f "$dir"/"${sample}"_trim.fq
         fi
 
         if [[ -f $dir/${sample}_trim.fq.gz ]]; then
-          pigz -t $dir/${sample}_trim.fq.gz 2>/dev/null
+          pigz -t "$dir"/"${sample}"_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! ${sample}_trim.fq.gz is not a completed .gz file."
             force="TRUE"
@@ -410,17 +410,17 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_1_trim.fq ]] && [[ -f $dir/${sample}_2_trim.fq ]]; then
-          pigz -p $threads -f $dir/${sample}_1_trim.fq $dir/${sample}_2_trim.fq
+          pigz -p "$threads" -f "$dir"/"${sample}"_1_trim.fq "$dir"/"${sample}"_2_trim.fq
         fi
 
         if [[ -f $dir/${sample}_1_trim.fq.gz ]] && [[ -f $dir/${sample}_2_trim.fq.gz ]]; then
-          pigz -t $dir/${sample}_1_trim.fq.gz 2>/dev/null
+          pigz -t "$dir"/"${sample}"_1_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! ${sample}_1_trim.fq.gz is not a completed .gz file."
             force="TRUE"
             continue
           fi
-          pigz -t $dir/${sample}_2_trim.fq.gz 2>/dev/null
+          pigz -t "$dir"/"${sample}"_2_trim.fq.gz 2>/dev/null
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! ${sample}_2_trim.fq.gz is not a completed .gz file."
             force="TRUE"
