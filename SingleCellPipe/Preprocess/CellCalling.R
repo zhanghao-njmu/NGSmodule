@@ -12,7 +12,7 @@ threads <- as.character(args[3])
 
 # parameters: emptyDrops --------------------------------------------------
 empty_thresh <- 200
-iters <- 5e+4
+iters <- 1e+5
 fdr <- 1e-3
 
 # parameters: dropEst -----------------------------------------------------
