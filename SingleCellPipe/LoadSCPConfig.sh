@@ -167,7 +167,7 @@ if [[ -d $work_dir ]]; then
     done
 
     ###### temp file ######
-    tmpfile=$(mktemp /tmp/NGSmodule-SCP.XXXXXXXXXXXXXX) || exit 1
+    tmpfile=$(mktemp /tmp/NGSmodule_SCP.XXXXXXXXXXXXXX) || exit 1
     trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT
 
 else
