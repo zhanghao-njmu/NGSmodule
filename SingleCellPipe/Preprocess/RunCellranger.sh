@@ -29,7 +29,7 @@ Rscript &>/dev/null
 
 R_packages=("DropletUtils" "dropestr" "ggplot2" "ggupset" "ggsci" "cowplot" "dplyr" "reshape2" "SingleCellExperiment" "grid" "png" "gridExtra" "scales")
 for package in "${R_packages[@]}"; do
-    Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
+    Rscript -e "installed.packages()" | awk '{print $1}' | grep "$package" &>/dev/null
     [ $? -ne 0 ] && {
         color_echo "red" "Cannot find the R package $package.\n"
         exit 1
@@ -62,7 +62,7 @@ for sample in "${arr[@]}"; do
     read -u1000
     {
         dir=$work_dir/$sample
-        cd $dir
+        cd "$dir"
 
         force=${force_complete}
         status="uncompleted"
@@ -108,7 +108,7 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment/Cellranger
                 mkdir -p "$dir"/Alignment/Cellranger
                 cd "$dir"/Alignment/Cellranger
-                sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
+                sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
                 sample_run=$(printf ",%s" "${sample_run[@]}")
                 sample_run=${sample_run:1}
                 echo -e "$sample: $sample_run"
@@ -120,7 +120,7 @@ for sample in "${arr[@]}"; do
                 --localmem "$memory" \
                 --transcriptome "$cellranger_ref" &>"$dir"/Alignment/Cellranger/cellranger.log
 
-                check_logfile $sample "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
                     continue
