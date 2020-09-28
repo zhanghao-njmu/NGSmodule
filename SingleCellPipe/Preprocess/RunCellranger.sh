@@ -80,7 +80,7 @@ for sample in "${arr[@]}"; do
                 existlogs+=("$line")
             done < <(find ${dir} -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
             if ((${#existlogs} >= 1)); then
-                for existlog in ${existlogs[@]}; do
+                for existlog in "${existlogs[@]}"; do
                     if [[ $force == "TRUE" ]] || [[ $(grep -iP ${error_pattern} ${existlog}) ]] || [[ ! $(grep -iP ${complete_pattern} ${existlog}) ]]; then
                         rm -f ${existlog}
                     fi
@@ -118,7 +118,7 @@ for sample in "${arr[@]}"; do
                 --localcores $threads \
                 --localmem $memory \
                 --transcriptome $cellranger_ref &>$dir/Alignment/Cellranger/cellranger.log
-                
+
                 check_logfile $sample "cellranger" $dir/Alignment/Cellranger/cellranger.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
@@ -132,7 +132,7 @@ for sample in "${arr[@]}"; do
                 mkdir -p $dir/Alignment/Cellranger/$sample/velocyto
                 cd $dir/Alignment/Cellranger/$sample/velocyto
                 velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf &>$dir/Alignment/Cellranger/$sample/velocyto/velocyto.log
-                
+
                 check_logfile $sample "velocyto" $dir/Alignment/Cellranger/$sample/velocyto/velocyto.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
@@ -146,7 +146,7 @@ for sample in "${arr[@]}"; do
                 mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
                 cd $dir/Alignment/Cellranger/$sample/dropEst
                 dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam &>$dir/Alignment/Cellranger/$sample/dropEst/dropEst.log
-                
+
                 check_logfile $sample "dropEst" $dir/Alignment/Cellranger/$sample/dropEst/dropEst.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
@@ -159,21 +159,21 @@ for sample in "${arr[@]}"; do
                 mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
                 cd $dir/Alignment/Cellranger/$sample/dropEst
                 dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds &>$dir/Alignment/Cellranger/$sample/dropEst/dropReport.log
-                
+
                 check_logfile $sample "dropReport" $dir/Alignment/Cellranger/$sample/dropEst/dropReport.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
                     continue
                 fi
             fi
-            
+
             # Cell-calling
             check_logfile $sample "CellCalling" $dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log $error_pattern $complete_pattern "precheck"
             if [[ $? == 1 ]]; then
                 mkdir -p $dir/Alignment/Cellranger/$sample/CellCalling
                 cd $dir/Alignment/Cellranger/$sample/CellCalling
                 Rscript $1 $dir/Alignment/Cellranger $sample $threads &>$dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log
-                
+
                 check_logfile $sample "CellCalling" $dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
                     force="TRUE"
