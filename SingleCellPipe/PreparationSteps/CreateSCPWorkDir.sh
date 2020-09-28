@@ -51,7 +51,6 @@ for RunID in "${PE_RunID[@]}"; do
                 color_echo "yellow" "Warning! Cannot find the SampleID for RunID: $RunID. Use '$RunID' as its SampleID."
             fi
             use_run="TRUE"
-            break
         fi
     else
         color_echo "red" "Error! Cannot find the RunID-SampleID matching from the SampleInfoFile."
