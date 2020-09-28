@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
+pigz --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command pigz.\n"
+  exit 1
+}
+fastqc --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command fastqc.\n"
+  exit 1
+}
+fastq_screen --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the command fastq_screen.\n"
+  exit 1
+}
 cellranger &>/dev/null
 [ $? -eq 127 ] && {
     echo -e "Cannot find the command cellranger.\n"
@@ -26,6 +41,11 @@ Rscript &>/dev/null
     echo -e "Cannot find the command Rscript.\n"
     exit 1
 }
+force_complete_option=("TRUE" "FALSE")
+if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]]; then
+  color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
+  exit 1
+fi
 
 R_packages=("DropletUtils" "dropestr" "ggplot2" "ggupset" "ggsci" "cowplot" "dplyr" "reshape2" "SingleCellExperiment" "grid" "png" "gridExtra" "scales")
 for package in "${R_packages[@]}"; do

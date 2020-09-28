@@ -33,6 +33,9 @@ R2_SufixPattern="_2020.*_S\d+_L\d+_R2_\d+\.((fastq)|(fq))\.gz"             ## Mu
 R1_to_R2="_R1_/_R2_"
 
 ############# Cellranger Paramaters #######################################################################
+### FastqScreen ###
+FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+
 ### cellranger ###
 cellranger_ref="/data/database/CellRanger/refdata-gex-GRCh38-2020-A"
 
