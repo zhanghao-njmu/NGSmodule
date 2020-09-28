@@ -117,14 +117,13 @@ fi
 declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
     dos2unix $SampleInfoFile &>/dev/null
-    while IFS=',' read -r LibraryID SampleID; do
-        Sample_dict[$LibraryID]=$SampleID
+    while IFS=',' read -r RunID SampleID; do
+        Sample_dict[$RunID]=$SampleID
     done <$SampleInfoFile
 else
     color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
     exit 1
 fi
-
 
 ###### START ######
 if [[ -d $work_dir ]]; then
@@ -132,7 +131,7 @@ if [[ -d $work_dir ]]; then
     arr=()
     while IFS='' read -r line; do
         arr+=("$line")
-    done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern")
+    done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern" | sort)
 
     total_task=${#arr[@]}
     if [[ "$total_task" == 0 ]]; then

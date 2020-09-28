@@ -177,7 +177,7 @@ if [[ -d $work_dir ]]; then
   arr=()
   while IFS='' read -r line; do
     arr+=("$line")
-  done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern")
+  done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern" | sort)
 
   total_task=${#arr[@]}
   if [[ "$total_task" == 0 ]]; then

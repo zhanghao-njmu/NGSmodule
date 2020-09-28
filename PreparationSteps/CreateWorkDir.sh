@@ -8,11 +8,11 @@ if [[ -d $work_dir ]]; then
   mkdir "${work_dir}"
 fi
 
-grep_pattern="(^${RunIdPattern}${SE_SufixPattern}$)|(^${RunIdPattern}${R1_SufixPattern}$)|(^${RunIdPattern}${R2_SufixPattern}$)"
-color_echo "green" "Grep pattern: $grep_pattern \n"
-arr=($(find $rawdata_dir -type f | grep -P $grep_pattern))
+grep_pattern="(^${RunIDPattern}${SE_SufixPattern}$)|(^${RunIDPattern}${R1_SufixPattern}$)|(^${RunIDPattern}${R2_SufixPattern}$)"
+
+arr=($(find $rawdata_dir -type f | grep -P $grep_pattern |sort))
 if [[ ${#arr} == 0 ]]; then
-  color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIdPattern and SufixPattern in the ConfigFile!\n"
+  color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIDPattern and SufixPattern in the ConfigFile!\n"
   exit 1
 fi
 
@@ -27,23 +27,23 @@ for file in "${arr[@]}"; do
     for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix; do
       if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]]; then
         Sufix=$map_Sufix
-        RunId=${file_sim%%$map_Sufix}
-        SampleID=${Sample_dict[$RunId]}
+        RunID=${file_sim%%$map_Sufix}
+        SampleID=${Sample_dict[$RunID]}
         Layout=${Layout_dict[$SampleID]}
         if [[ $SampleID == "" ]]; then
-          SampleID=$RunId
-          color_echo "yellow" "Warning! Cannot find the SampleID for RunId: $RunId. Use '$RunId' as its SampleID."
+          SampleID=$RunID
+          color_echo "yellow" "Warning! Cannot find the SampleID for RunID: $RunID. Use '$RunID' as its SampleID."
         fi
         use_run="TRUE"
       fi
     done
   else
-    color_echo "red" "Error! Cannot find the SampleID or Layout information. Please check the SampleInfoFile."
+    color_echo "red" "Error! Cannot find the RunID-SampleID matching or Layout information from the SampleInfoFile."
     exit 1
   fi
 
   if [[ $use_run == "FALSE" ]]; then
-    color_echo "yellow" "Warning! Cannot find the RunId information for the file: $file "
+    color_echo "yellow" "Warning! SampleInfoFile have no RunID-SampleID matching information for the file: $file "
     continue
   else
 
@@ -63,7 +63,7 @@ for file in "${arr[@]}"; do
       exit 1
     fi
 
-    echo "File: ${file_sim}  RunId: ${RunId}  SampleID: ${SampleID}"
+    echo "File: ${file_sim}  RunID: ${RunID}  SampleID: ${SampleID}"
     mkdir -p ${work_dir}/${SampleID}
     if [[ ! -f ${work_dir}/$SampleID/${fq} ]]; then
       ln -s $file ${work_dir}/$SampleID/${fq}

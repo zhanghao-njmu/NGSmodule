@@ -128,6 +128,7 @@ for sample in "${arr[@]}"; do
             # velocyto
             check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                rm -rf "$dir"/Alignment/Cellranger/"$sample"/velocyto
                 mkdir -p "$dir"/Alignment/Cellranger/"$sample"/velocyto
                 cd "$dir"/Alignment/Cellranger/"$sample"/velocyto
                 velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
@@ -141,6 +142,7 @@ for sample in "${arr[@]}"; do
             # dropEst
             check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                rm -rf "$dir"/Alignment/Cellranger/"$sample"/dropEst
                 mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
                 cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
                 dropest -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log

@@ -2,7 +2,7 @@
 
 tmp=($(date +"%Y%m%d%H%M%S"))
 cat <<-EOF >temp_${tmp}.Sample_info.csv
-LibraryID,SampleID
+RunId,SampleID
 Sample1,Brain
 Sample2,Testis
 Sample3,Kidney
