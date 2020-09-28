@@ -19,7 +19,7 @@ fi
 for RunID in "${PE_RunID[@]}"; do
     R1_pattern="/${RunID}${R1_SufixPattern}$"
     R1_arr=($(find $rawdata_dir -type f | grep -P $R1_pattern | sort))
-    R2_pattern="${RunID}${R2_SufixPattern}$"
+    R2_pattern="/${RunID}${R2_SufixPattern}$"
     R2_arr=($(find $rawdata_dir -type f | grep -P $R2_pattern | sort))
 
     if ((${#R1_arr} == 0)); then
