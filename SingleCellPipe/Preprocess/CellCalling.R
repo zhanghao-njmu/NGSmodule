@@ -626,8 +626,8 @@ plotlist[["MethodCompare-upsetR"]] <- p
 
 p <- plot_grid(
   plotlist[["MethodCompare-BarcodeRank"]],
-  plot_grid(plotlist[["MethodCompare-upsetR"]],
-    plotlist[["MethodCompare-Barplot"]],
+  plot_grid(plotlist[["MethodCompare-Barplot"]],
+    plotlist[["MethodCompare-upsetR"]],
     nrow = 1, rel_widths = c(0.5, 0.5)
   ),
   nrow = 2
