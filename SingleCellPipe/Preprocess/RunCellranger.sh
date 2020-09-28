@@ -81,7 +81,7 @@ for sample in "${arr[@]}"; do
             done < <(find ${dir} -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
             if ((${#existlogs} >= 1)); then
                 for existlog in "${existlogs[@]}"; do
-                    if [[ $force == "TRUE" ]] || [[ $(grep -iP ${error_pattern} ${existlog}) ]] || [[ ! $(grep -iP ${complete_pattern} ${existlog}) ]]; then
+                    if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
                         rm -f ${existlog}
                     fi
                 done
