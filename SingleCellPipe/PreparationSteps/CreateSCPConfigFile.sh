@@ -33,7 +33,7 @@ SufixPattern="_S\d+_L\d+.*\.((fastq)|(fq))\.gz"         ## Must start with and e
 
 ############# Cellranger Paramaters #######################################################################
 ### cellranger ###
-cellranger_ref="/data/database/CellRanger/custom/GFP_and_refdata-gex-GRCh38-2020-A"
+cellranger_ref="/data/database/CellRanger/refdata-gex-GRCh38-2020-A"
 
 ### velocyto and dropEst ###
 dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
