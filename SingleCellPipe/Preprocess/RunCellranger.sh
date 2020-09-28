@@ -63,50 +63,136 @@ for sample in "${arr[@]}"; do
     {
         dir=$work_dir/$sample
         cd $dir
-        
-        # fastqc
-        mkdir -p $dir/PreAlignmentQC/fastqc
-        files=($(find $dir -type l | grep -P $SufixPattern))
-        fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
-        color_echo "blue" "+++++ ${sample}: FastQC done +++++"
 
-        # cellranger
-        rm -rf $dir/Alignment/Cellranger
-        mkdir -p $dir/Alignment/Cellranger
-        cd $dir/Alignment/Cellranger
-        sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
-        sample_run=$(printf ",%s" "${sample_run[@]}")
-        sample_run=${sample_run:1}
-        echo -e "$sample: $sample_run"
+        force=${force_complete}
+        status="uncompleted"
+        attempt=0
 
-        cellranger count --id ${sample} \
-        --fastqs ${dir} \
-        --sample ${sample_run} \
-        --localcores $threads \
-        --localmem $memory \
-        --transcriptome $cellranger_ref &>cellranger.log
-        color_echo "blue" "+++++ ${sample}: cellranger done +++++"
+        while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+            ((attempt++))
+            if [[ $attempt != 1 ]]; then
+                echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
+            fi
 
-        # velocyto
-        mkdir -p $dir/Alignment/Cellranger/$sample/velocyto
-        cd $dir/Alignment/Cellranger/$sample/velocyto
-        velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf &>velocyto.log
-        color_echo "blue" "+++++ ${sample}: velocyto done +++++"
+            ### clear existed logs
+            existlogs=()
+            while IFS='' read -r line; do
+                existlogs+=("$line")
+            done < <(find "${dir}" -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
+            if ((${#existlogs} >= 1)); then
+                for existlog in "${existlogs[@]}"; do
+                    if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+                        rm -f "${existlog}"
+                    fi
+                done
+            fi
 
-        # dropEst
-        mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
-        cd $dir/Alignment/Cellranger/$sample/dropEst
-        dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam &>dropest.log
-        dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds &>dropReport.log
-        color_echo "blue" "+++++ ${sample}: dropEst done +++++"
+            # fastqc
+            check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p $dir/PreAlignmentQC/fastqc
+                files=($(find $dir -type l | grep -P $SufixPattern))
+                fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
 
-        # Cell-calling
-        mkdir -p $dir/Alignment/Cellranger/$sample/CellCalling
-        cd $dir/Alignment/Cellranger/$sample/CellCalling
-        Rscript $1 $dir/Alignment/Cellranger $sample $threads &>CellCalling.log
-        color_echo "blue" "+++++ ${sample}: Cell-calling done +++++"
+                check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
 
-        color_echo "green" "+++++ ${sample}: RunCellranger completed +++++"
+            # cellranger
+            check_logfile $sample "cellranger" $dir/Alignment/Cellranger/cellranger.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir/Alignment/Cellranger
+                mkdir -p $dir/Alignment/Cellranger
+                cd $dir/Alignment/Cellranger
+                sample_run=($(find $dir -type l | grep -P $SufixPattern | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
+                sample_run=$(printf ",%s" "${sample_run[@]}")
+                sample_run=${sample_run:1}
+                echo -e "$sample: $sample_run"
+
+                cellranger count --id ${sample} \
+                --fastqs ${dir} \
+                --sample ${sample_run} \
+                --localcores $threads \
+                --localmem $memory \
+                --transcriptome $cellranger_ref &>$dir/Alignment/Cellranger/cellranger.log
+                
+                check_logfile $sample "cellranger" $dir/Alignment/Cellranger/cellranger.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            # velocyto
+            check_logfile $sample "velocyto" $dir/Alignment/Cellranger/$sample/velocyto/velocyto.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p $dir/Alignment/Cellranger/$sample/velocyto
+                cd $dir/Alignment/Cellranger/$sample/velocyto
+                velocyto run10x -m $rmsk_gtf --samtools-threads $threads $dir/Alignment/Cellranger/$sample $gene_gtf &>$dir/Alignment/Cellranger/$sample/velocyto/velocyto.log
+                
+                check_logfile $sample "velocyto" $dir/Alignment/Cellranger/$sample/velocyto/velocyto.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            # dropEst
+            check_logfile $sample "dropEst" $dir/Alignment/Cellranger/$sample/dropEst/dropEst.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
+                cd $dir/Alignment/Cellranger/$sample/dropEst
+                dropest -f -g $gene_gtf -c $dropEst_config $dir/Alignment/Cellranger/$sample/outs/possorted_genome_bam.bam &>$dir/Alignment/Cellranger/$sample/dropEst/dropEst.log
+                
+                check_logfile $sample "dropEst" $dir/Alignment/Cellranger/$sample/dropEst/dropEst.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            check_logfile $sample "dropReport" $dir/Alignment/Cellranger/$sample/dropEst/dropReport.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p $dir/Alignment/Cellranger/$sample/dropEst
+                cd $dir/Alignment/Cellranger/$sample/dropEst
+                dropReport.Rsc $dir/Alignment/Cellranger/$sample/dropEst/cell.counts.rds &>$dir/Alignment/Cellranger/$sample/dropEst/dropReport.log
+                
+                check_logfile $sample "dropReport" $dir/Alignment/Cellranger/$sample/dropEst/dropReport.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+            
+            # Cell-calling
+            check_logfile $sample "CellCalling" $dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log $error_pattern $complete_pattern "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p $dir/Alignment/Cellranger/$sample/CellCalling
+                cd $dir/Alignment/Cellranger/$sample/CellCalling
+                Rscript $1 $dir/Alignment/Cellranger $sample $threads &>$dir/Alignment/Cellranger/$sample/CellCalling/cellcalling.log
+                
+                check_logfile $sample "CellCalling" $dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log $error_pattern $complete_pattern "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            status="completed"
+
+        done
+
+        if [[ "$status" == "completed" ]]; then
+            echo "Completed: $sample" >>"$tmpfile"
+        else
+            echo "Interrupted: $sample" >>"$tmpfile"
+            color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log."
+        fi
+
+        color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
 
         echo >&1000
     } &
