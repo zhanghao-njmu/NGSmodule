@@ -3,18 +3,18 @@ trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 pigz --version &>/dev/null
 [ $? -ne 0 ] && {
-  color_echo "red" "Cannot find the command pigz.\n"
-  exit 1
+    color_echo "red" "Cannot find the command pigz.\n"
+    exit 1
 }
 fastqc --version &>/dev/null
 [ $? -ne 0 ] && {
-  color_echo "red" "Cannot find the command fastqc.\n"
-  exit 1
+    color_echo "red" "Cannot find the command fastqc.\n"
+    exit 1
 }
 fastq_screen --version &>/dev/null
 [ $? -ne 0 ] && {
-  color_echo "red" "Cannot find the command fastq_screen.\n"
-  exit 1
+    color_echo "red" "Cannot find the command fastq_screen.\n"
+    exit 1
 }
 cellranger &>/dev/null
 [ $? -eq 127 ] && {
@@ -43,8 +43,8 @@ Rscript &>/dev/null
 }
 force_complete_option=("TRUE" "FALSE")
 if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]]; then
-  color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
-  exit 1
+    color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
+    exit 1
 fi
 
 R_packages=("DropletUtils" "dropestr" "ggplot2" "ggupset" "ggsci" "cowplot" "dplyr" "reshape2" "SingleCellExperiment" "grid" "png" "gridExtra" "scales")
@@ -56,7 +56,10 @@ for package in "${R_packages[@]}"; do
     }
 done
 
-if [[ ! -d $cellranger_ref ]]; then
+if [[ ! -f $FastqScreen_config ]]; then
+    color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}\n"
+    exit 1
+elif [[ ! -d $cellranger_ref ]]; then
     color_echo "red" "ERROR! Cannot find the cellranger_ref directory: $cellranger_ref\nPlease check the path.\n"
     exit 1
 elif [[ ! -f $gene_gtf ]]; then
@@ -98,7 +101,7 @@ for sample in "${arr[@]}"; do
             existlogs=()
             while IFS='' read -r line; do
                 existlogs+=("$line")
-            done < <(find "$dir" -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
+            done < <(find "$dir" -name "fqcheck.log" -o -name "fastqc.log" -o -name "fastq_screen.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
             if ((${#existlogs} >= 1)); then
                 for existlog in "${existlogs[@]}"; do
                     if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
@@ -108,15 +111,84 @@ for sample in "${arr[@]}"; do
                 done
             fi
 
-            # fastqc
+            if (($(ls "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz | wc -l) == 1)); then
+                cp -fa "${dir}"/run1_"${sample}"_S1_L001_R1_001.fastq.gz "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
+                cp -fa "${dir}"/run1_"${sample}"_S1_L001_R2_001.fastq.gz "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
+                echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_S1_L001_R1_001.fastq.gz ======\n${dir}/run1_${sample}_S1_L001_R1_001.fastq.gz\n====== ${sample}_S1_L001_R2_001.fastq.gz ======\n${dir}/run1_${sample}_S1_L001_R2_001.fastq.gz" >"$dir"/fq_prepare.log
+            else
+                runs1=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz)
+                runs2=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R2_001.fastq.gz)
+                if [[ ! -f ${dir}/${sample}_S1_L001_R1_001.fastq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
+                    rm -f "$dir"/fq_prepare.log
+                    echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
+                fi
+                if [[ ! -f ${dir}/${sample}_S1_L001_R2_001.fastq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
+                    rm -f "$dir"/fq_prepare.log
+                    echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
+                fi
+                echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_S1_L001_R1_001.fastq.gz ======\n${runs1[*]}\n====== ${sample}_S1_L001_R2_001.fastq.gz ======\n${runs2[*]}" >"$dir"/fq_prepare.log
+            fi
+
+            fq1=${dir}/${sample}_S1_L001_R1_001.fastq.gz
+            fq2=${dir}/${sample}_S1_L001_R2_001.fastq.gz
+
+            pigz -t $(realpath ${fq1}) 2>/dev/null
+            if [[ $? != 0 ]]; then
+                color_echo "yellow" "Warning! ${fq1} is not a completed .gz file."
+                force="TRUE"
+                continue
+            fi
+            pigz -t $(realpath ${fq2}) 2>/dev/null
+            if [[ $? != 0 ]]; then
+                color_echo "yellow" "Warning! ${fq2} is not a completed .gz file."
+                force="TRUE"
+                continue
+            fi
+
+            ##To verify that reads appear to be correctly paired
+            check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                fq1_nlines=$(unpigz -c "$fq1" | wc -l)
+                fq2_nlines=$(unpigz -c "$fq2" | wc -l)
+                echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqcheck.log
+                if [[ $fq1_nlines != "$fq2_nlines" ]]; then
+                    echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqcheck.log
+                elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
+                    echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
+                else
+                    echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+                fi
+
+                check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            # FastQC
             check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
                 mkdir -p "$dir"/PreAlignmentQC/fastqc
-                files=($(find "$dir" -type l | grep -P "$SufixPattern"))
-                fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" $(printf " %s" "${files[@]}") &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
+                fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
-                check_logfile "$sample" "FastQC" "$dir/PreAlignmentQC/fastqc/fastqc.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
+                    force="TRUE"
+                    continue
+                fi
+            fi
+
+            #FastQ_Screen
+            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                mkdir -p "$dir"/PreAlignmentQC/fastq_screen
+                fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq2" \
+                --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
+
+                check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    force="TRUE"
                     continue
                 fi
             fi
@@ -127,14 +199,14 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment/Cellranger
                 mkdir -p "$dir"/Alignment/Cellranger
                 cd "$dir"/Alignment/Cellranger
-                sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
-                sample_run=$(printf ",%s" "${sample_run[@]}")
-                sample_run=${sample_run:1}
-                echo -e "$sample: $sample_run"
+                # sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
+                # sample_run=$(printf ",%s" "${sample_run[@]}")
+                # sample_run=${sample_run:1}
+                # echo -e "$sample: $sample_run"
 
                 cellranger count --id "${sample}" \
                 --fastqs "${dir}" \
-                --sample "${sample_run}" \
+                --sample "${sample}" \
                 --localcores "$threads" \
                 --localmem "$memory" \
                 --transcriptome "$cellranger_ref" &>"$dir"/Alignment/Cellranger/cellranger.log

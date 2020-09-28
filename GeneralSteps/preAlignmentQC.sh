@@ -144,6 +144,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
+        # FastQC
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
@@ -156,6 +157,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
+        # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
@@ -179,7 +181,7 @@ for sample in "${arr[@]}"; do
         fq1=$dir/${sample}.fq
 
         if [[ -f $fq1 ]]; then
-
+          #FastQ_Screen
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
@@ -193,6 +195,7 @@ for sample in "${arr[@]}"; do
             fi
           fi
 
+          #SortMeRNA
           if [[ $SequenceType == "rna" ]]; then
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
@@ -318,6 +321,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
+        # FastQC
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastqc
@@ -330,6 +334,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
+        # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
@@ -354,7 +359,7 @@ for sample in "${arr[@]}"; do
         fq2=$dir/${sample}_2.fq
 
         if [[ -f $fq1 ]] && [[ -f $fq2 ]]; then
-
+          #FastQ_Screen
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
@@ -368,6 +373,7 @@ for sample in "${arr[@]}"; do
             fi
           fi
 
+          #SortMeRNA
           if [[ $SequenceType == "rna" ]]; then
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
