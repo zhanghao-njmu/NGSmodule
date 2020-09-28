@@ -83,7 +83,7 @@ for sample in "${arr[@]}"; do
                 for existlog in "${existlogs[@]}"; do
                     if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
                         color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-                        rm -f ${existlog}
+                        #rm -f ${existlog}
                     fi
                 done
             fi
