@@ -647,3 +647,5 @@ invisible(dev.off())
 if (file.exists("Rplots.pdf")) {
   invisible(file.remove("Rplots.pdf"))
 }
+
+cat("Successfully")

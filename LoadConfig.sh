@@ -59,7 +59,7 @@ processbar() {
 bar=0
 
 ###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern> <mode>######
-error_pattern="(error)|(fatal)|(terrible)|(corrupt)|(interrupt)|(unexpected)|(denied)|(refused)|(unrecognized)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
+error_pattern="(error)|(fatal)|(terrible)|(corrupt)|(interrupt)|(unexpected)|(denied)|(refused)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
 complete_pattern="(FastqCheck passed)|(Analysis complete)|(fastp.json)|(Processing complete)|(Done Reports generation)|(Coverage by database)"
 
 check_logfile() {
