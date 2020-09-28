@@ -37,7 +37,7 @@ for RunID in "${PE_RunID[@]}"; do
     if ((${#R2_arr} > 1)); then
         color_echo "yellow" "Warning! RunID: $RunID have more than one R2 fastq file: ${R2_arr[*]}"
     fi
-    if ((${#R1_arr} != ${#R2_arr}));then
+    if ((${#R1_arr} != ${#R2_arr})); then
         color_echo "red" "Error! RunID: $RunID have no diffent number of R1,R2 fastq file!"
         exit 1
     fi
@@ -65,9 +65,13 @@ for RunID in "${PE_RunID[@]}"; do
 
         echo "RunID: ${RunID}  SampleID: ${SampleID}"
         mkdir -p "${work_dir}"/"${SampleID}"
-        for run in ${R1_arr[@]};do
+        for run in ${R1_arr[@]}; do
             R1_raw=$run
-            R2_raw=$(echo ${run}| sed)
+            R2_raw=$(echo ${run} | perl -pe "s/$R1_to_R2/g")
+            if [[ ! -f $R2_raw ]]; then
+                color_echo "red" "Error! Cannot find the R1 corresponding R2 file: $R2_raw"
+                exit 1
+            fi
             R1_new=run1_${SampleID}_S1_L001_R1_001.fastq.gz
             R2_new=run1_${SampleID}_S1_L001_R2_001.fastq.gz
 
@@ -80,7 +84,7 @@ for RunID in "${PE_RunID[@]}"; do
                 num2=$(ls ${work_dir}/$SampleID/run*_${SampleID}_S1_L001_R2_001.fastq.gz | wc -l)
                 R2_new=run$(($num2 + 1))_${SampleID}_S1_L001_R2_001.fastq.gz
 
-                if (($num1==$num2));then
+                if (($num1 == $num2)); then
                     ln -s "$R1_raw" "${work_dir}"/"$SampleID"/"${R1_new}"
                     ln -s "$R2_raw" "${work_dir}"/"$SampleID"/"${R2_new}"
                 else
