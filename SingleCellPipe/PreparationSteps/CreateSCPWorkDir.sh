@@ -21,27 +21,25 @@ for RunID in "${PE_RunID[@]}"; do
     R1_pattern="/${RunID}${R1_SufixPattern}$"
     R1_arr=()
     while IFS='' read -r line; do R1_arr+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort)
-    R1_arr_len="$(find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort|wc -l )"
 
     R2_pattern="/${RunID}${R2_SufixPattern}$"
     R2_arr=()
     while IFS='' read -r line; do R2_arr+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$R2_pattern" | sort)
-    R2_arr_len="$(find "$rawdata_dir" -type f | grep -P "$R2_pattern" | sort | wc -l )"
 
-    if ((${#R1_arr} == 0)); then
+    if ((${#R1_arr[*]} == 0)); then
         color_echo "red" "Error! RunID: $RunID have no R1 fastq file!"
         exit 1
     fi
-    if ((${#R2_arr} == 0)); then
+    if ((${#R2_arr[*]} == 0)); then
         color_echo "red" "Error! RunID: $RunID have no R2 fastq file!"
         exit 1
     fi
 
-    if ((${#R1_arr} > 1)) || ((${#R2_arr} > 1)); then
+    if ((${#R1_arr[*]} > 1)) || ((${#R2_arr[*]} > 1)); then
         color_echo "yellow" "Warning! RunID: $RunID have more than one R1(${#R1_arr[*]}) or R2(${#R2_arr[*]}) fastq file."
         color_echo "yellow" "R1:${R1_arr[*]}\nR2:${R2_arr[*]}"
     fi
-    if ((${#R1_arr} != ${#R2_arr})); then
+    if ((${#R1_arr[*]} != ${#R2_arr[*]})); then
         color_echo "red" "Error! RunID: $RunID have no diffent number of R1,R2 fastq file!"
         exit 1
     fi
