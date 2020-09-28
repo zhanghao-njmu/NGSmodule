@@ -92,7 +92,7 @@ for sample in "${arr[@]}"; do
             check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern "precheck"
             if [[ $? == 1 ]]; then
                 mkdir -p $dir/PreAlignmentQC/fastqc
-                files=($(find $dir -type l | grep -P $SufixPattern))
+                files=($( find $dir -type l | grep -P "$SufixPattern" ))
                 fastqc -o $dir/PreAlignmentQC/fastqc -t $threads $(printf " %s" "${files[@]}") &>$dir/PreAlignmentQC/fastqc/fastqc.log
 
                 check_logfile $sample "FastQC" $dir/PreAlignmentQC/fastqc/fastqc.log $error_pattern $complete_pattern "postcheck"
