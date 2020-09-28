@@ -13,6 +13,7 @@ PE_RunID=($(find $rawdata_dir -type f | grep -P $PE_pattern | sort | sed "s/.*\/
 
 if [[ ${#PE_RunID} == 0 ]]; then
     color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIDPattern and SufixPattern in the ConfigFile!\n"
+    echo $PE_RunID
     exit 1
 fi
 
