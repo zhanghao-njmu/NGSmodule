@@ -59,7 +59,7 @@ for RunID in "${PE_RunID[@]}"; do
         continue
     else
 
-        echo "RunID: ${RunID}  SampleID: ${SampleID}"
+        color_echo "green" "RunID: ${RunID}  SampleID: ${SampleID}"
         mkdir -p "${work_dir}"/"${SampleID}"
         for run in ${R1_arr[@]}; do
             R1_raw=$run
