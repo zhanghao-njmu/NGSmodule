@@ -636,7 +636,7 @@ ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 
 saveRDS(raw, file = "raw.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
 
-pdf(paste0(sample, ".DropletFilter.pdf"), width = 11, height = 8)
+pdf(paste0(sample, ".CellCalling.pdf"), width = 11, height = 8)
 invisible(lapply(paste0(sample, c(".emptyDrops.png", ".dropEst.png", ".MethodCompare.png")), function(x) {
   grid.arrange(rasterGrob(readPNG(x, native = FALSE),
     interpolate = FALSE
