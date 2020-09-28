@@ -27,8 +27,9 @@ force_complete="FALSE"
 ### Example: 1_P31_20200911NB_S244_L004_R2_001.fastq.gz
 ### LibraryIdPattern=".*"
 ### SufixPattern="_2020.*\.fastq\.gz"
-LibraryIdPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
-SufixPattern="_S\d+_L\d+.*\.((fastq)|(fq))\.gz"         ## Must start with and end with a fixed string pattern. 
+LibraryIdPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.    
+R1_SufixPattern="_S\d+_L\d+.*_1\.((fastq)|(fq))\.gz"                ## Must start with and end with a fixed string pattern. 
+R2_SufixPattern="_S\d+_L\d+.*_2\.((fastq)|(fq))\.gz"                ## Must start with and end with a fixed string pattern. 
 
 
 ############# Cellranger Paramaters #######################################################################
