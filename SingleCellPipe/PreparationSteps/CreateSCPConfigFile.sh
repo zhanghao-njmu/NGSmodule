@@ -24,7 +24,7 @@ force_complete="FALSE"
 
 ############# CreateWorkDir Paramaters ###################################################################
 ### raw_fastq_file_name= LibraryIdPattern  + SufixPattern
-### Example: 1_P31_20200911NB_S244_L004_R2_001.fastq.gz
+### Example: ESC_20200911NB_S244_L004_R1_001.fastq.gz
 ### LibraryIdPattern=".*"
 ### SufixPattern="_2020.*\.fastq\.gz"
 RunIDPattern=".*"                                                          ## This pattern must could be matched with the LibraryId after excluding Sufix.    
