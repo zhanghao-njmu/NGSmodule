@@ -16,7 +16,7 @@ if [[ ${#PE_RunID} == 0 ]]; then
     echo $PE_RunID
     echo ${#PE_RunID}
     echo $PE_pattern
-    echo $((find $rawdata_dir -type f | grep -P $PE_pattern | sort | sed "s/.*\///g"))
+    echo `find $rawdata_dir -type f | grep -P $PE_pattern | sort | sed "s/.*\///g"`
     exit 1
 fi
 
