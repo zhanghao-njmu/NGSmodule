@@ -78,11 +78,11 @@ for sample in "${arr[@]}"; do
             existlogs=()
             while IFS='' read -r line; do
                 existlogs+=("$line")
-            done < <(find "${dir}" -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
+            done < <(find ${dir} -name "fastqc.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
             if ((${#existlogs} >= 1)); then
-                for existlog in "${existlogs[@]}"; do
-                    if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-                        rm -f "${existlog}"
+                for existlog in ${existlogs[@]}; do
+                    if [[ $force == "TRUE" ]] || [[ $(grep -iP ${error_pattern} ${existlog}) ]] || [[ ! $(grep -iP ${complete_pattern} ${existlog}) ]]; then
+                        rm -f ${existlog}
                     fi
                 done
             fi
