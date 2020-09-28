@@ -26,16 +26,19 @@ for RunID in "${PE_RunID[@]}"; do
         color_echo "red" "Error! RunID: $RunID have no R1 fastq file!"
         exit 1
     fi
-    if ((${#R1_arr} > 1)); then
-        color_echo "red" "Error! RunID: $RunID have more than one R1 fastq file: ${R1_arr[*]}"
-        exit 1
-    fi
     if ((${#R2_arr} == 0)); then
         color_echo "red" "Error! RunID: $RunID have no R2 fastq file!"
         exit 1
     fi
+
+    if ((${#R1_arr} > 1)); then
+        color_echo "yellow" "Warning! RunID: $RunID have more than one R1 fastq file: ${R1_arr[*]}"
+    fi
     if ((${#R2_arr} > 1)); then
-        color_echo "red" "Error! RunID: $RunID have more than one R2 fastq file: ${R2_arr[*]}"
+        color_echo "yellow" "Warning! RunID: $RunID have more than one R2 fastq file: ${R2_arr[*]}"
+    fi
+    if ((${#R1_arr} != ${#R2_arr}));then
+        color_echo "red" "Error! RunID: $RunID have no diffent number of R1,R2 fastq file!"
         exit 1
     fi
 
@@ -62,29 +65,30 @@ for RunID in "${PE_RunID[@]}"; do
 
         echo "RunID: ${RunID}  SampleID: ${SampleID}"
         mkdir -p "${work_dir}"/"${SampleID}"
+        for run in ${R1_arr[@]};do
+            R1_raw=$run
+            R2_raw=$(echo ${run}| sed)
+            R1_new=run1_${SampleID}_S1_L001_R1_001.fastq.gz
+            R2_new=run1_${SampleID}_S1_L001_R2_001.fastq.gz
 
-        R1_raw=${R1_arr[1]}
-        R2_raw=${R2_arr[1]}
-        R1_new=run1_${SampleID}_S1_L001_R1_001.fastq.gz
-        R2_new=run1_${SampleID}_S1_L001_R2_001.fastq.gz
-
-        if [[ ! -f ${work_dir}/$SampleID/${R1_new} ]] && [[ ! -f ${work_dir}/$SampleID/${R2_new} ]]; then
-            ln -s "$R1_raw" "${work_dir}"/"$SampleID"/"${R1_new}"
-            ln -s "$R2_raw" "${work_dir}"/"$SampleID"/"${R2_new}"
-        else
-            num1=$(ls ${work_dir}/$SampleID/run*_${SampleID}_S1_L001_R1_001.fastq.gz | wc -l)
-            R1_new=run$(($num1 + 1))_${SampleID}_S1_L001_R1_001.fastq.gz
-            num2=$(ls ${work_dir}/$SampleID/run*_${SampleID}_S1_L001_R2_001.fastq.gz | wc -l)
-            R2_new=run$(($num2 + 1))_${SampleID}_S1_L001_R2_001.fastq.gz
-
-            if (($num1==$num2));then
+            if [[ ! -f ${work_dir}/$SampleID/${R1_new} ]] && [[ ! -f ${work_dir}/$SampleID/${R2_new} ]]; then
                 ln -s "$R1_raw" "${work_dir}"/"$SampleID"/"${R1_new}"
                 ln -s "$R2_raw" "${work_dir}"/"$SampleID"/"${R2_new}"
             else
-                color_echo "red" "Error! RunID:$RunID have different R1/R2 file in the dir: ${work_dir}/$SampleID "
-                exit 1
+                num1=$(ls ${work_dir}/$SampleID/run*_${SampleID}_S1_L001_R1_001.fastq.gz | wc -l)
+                R1_new=run$(($num1 + 1))_${SampleID}_S1_L001_R1_001.fastq.gz
+                num2=$(ls ${work_dir}/$SampleID/run*_${SampleID}_S1_L001_R2_001.fastq.gz | wc -l)
+                R2_new=run$(($num2 + 1))_${SampleID}_S1_L001_R2_001.fastq.gz
+
+                if (($num1==$num2));then
+                    ln -s "$R1_raw" "${work_dir}"/"$SampleID"/"${R1_new}"
+                    ln -s "$R2_raw" "${work_dir}"/"$SampleID"/"${R2_new}"
+                else
+                    color_echo "red" "Error! RunID:$RunID have different R1/R2 file in the dir: ${work_dir}/$SampleID "
+                    exit 1
+                fi
             fi
-        fi
+        done
 
     fi
 done

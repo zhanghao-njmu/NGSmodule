@@ -30,7 +30,7 @@ force_complete="FALSE"
 RunIDPattern=".*"                                                      ## This pattern must could be matched with the LibraryId after excluding Sufix.    
 R1_SufixPattern="_S\d+_L\d+_R1_\d+\.((fastq)|(fq))\.gz"                ## Must start with and end with a fixed string pattern. 
 R2_SufixPattern="_S\d+_L\d+_R2_\d+\.((fastq)|(fq))\.gz"                ## Must start with and end with a fixed string pattern. 
-
+R1_to_R2="_R1_/_R2_"
 
 ############# Cellranger Paramaters #######################################################################
 ### cellranger ###
