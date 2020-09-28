@@ -97,7 +97,6 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "FastQC" "$dir/PreAlignmentQC/fastqc/fastqc.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
@@ -122,7 +121,6 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
@@ -136,7 +134,6 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
@@ -150,7 +147,6 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
@@ -163,7 +159,6 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "dropReport" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
@@ -177,13 +172,11 @@ for sample in "${arr[@]}"; do
 
                 check_logfile "$sample" "CellCalling" "$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
-                    force="TRUE"
                     continue
                 fi
             fi
 
             status="completed"
-
         done
 
         if [[ "$status" == "completed" ]]; then
