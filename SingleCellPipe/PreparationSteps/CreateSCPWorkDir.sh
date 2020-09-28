@@ -64,7 +64,7 @@ for RunID in "${PE_RunID[@]}"; do
         for run in ${R1_arr[@]}; do
             R1_raw=$run
             R2_raw=$(echo ${run} | perl -pe "s/$R1_to_R2/g")
-            echo -e "${R1_raw##*/}      ${R2_raw##*/}"
+            echo -e "R1:${R1_raw##*/}       R2:${R2_raw##*/}"
             if [[ ! -f $R2_raw ]]; then
                 color_echo "red" "Error! Cannot find the R1 corresponding R2 file: $R2_raw"
                 exit 1
