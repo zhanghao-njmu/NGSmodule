@@ -61,7 +61,7 @@ for RunID in "${PE_RunID[@]}"; do
 
         color_echo "green" "RunID: ${RunID}  SampleID: ${SampleID}"
         mkdir -p "${work_dir}"/"${SampleID}"
-        for run in ${R1_arr[@]}; do
+        for run in "${R1_arr[@]}"; do
             R1_raw=$run
             R2_raw=$(echo ${run} | perl -pe "s/$R1_to_R2/g")
             echo -e "R1:${R1_raw##*/}   R2:${R2_raw##*/}"
