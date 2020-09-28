@@ -31,11 +31,8 @@ for RunID in "${PE_RunID[@]}"; do
         exit 1
     fi
 
-    if ((${#R1_arr} > 1)); then
-        color_echo "yellow" "Warning! RunID: $RunID have more than one R1 fastq file"
-    fi
-    if ((${#R2_arr} > 1)); then
-        color_echo "yellow" "Warning! RunID: $RunID have more than one R2 fastq file"
+    if ((${#R1_arr} > 1)) || ((${#R2_arr} > 1)); then
+        color_echo "yellow" "Warning! RunID: $RunID have more than one R1 or R2 fastq file."
     fi
     if ((${#R1_arr} != ${#R2_arr})); then
         color_echo "red" "Error! RunID: $RunID have no diffent number of R1,R2 fastq file!"
