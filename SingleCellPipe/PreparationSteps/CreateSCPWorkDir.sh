@@ -9,7 +9,8 @@ if [[ -d $work_dir ]]; then
 fi
 
 PE_pattern="(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
-PE_RunID=($(find $rawdata_dir -type f | grep -P $PE_pattern | sort | sed "s/.*\///g" | perl -pe "s/(${R1_SufixPattern})|(${R2_SufixPattern})//g" | sort | uniq))
+PE_RunID=()
+while IFS='' read -r line; do PE_RunID+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$PE_pattern" | sort | sed "s/.*\///g" | perl -pe "s/(${R1_SufixPattern})|(${R2_SufixPattern})//g" | sort | uniq)
 
 if [[ ${#PE_RunID} == 0 ]]; then
     color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIDPattern and SufixPattern in the ConfigFile!\n"
@@ -18,9 +19,12 @@ fi
 
 for RunID in "${PE_RunID[@]}"; do
     R1_pattern="/${RunID}${R1_SufixPattern}$"
-    R1_arr=( "$(find $rawdata_dir -type f | grep -P "$R1_pattern" | sort)")
+    R1_arr=()
+    while IFS='' read -r line; do R1_arr+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort)
+
     R2_pattern="/${RunID}${R2_SufixPattern}$"
-    R2_arr=("$(find $rawdata_dir -type f | grep -P "$R2_pattern" | sort)")
+    R2_arr=()
+    while IFS='' read -r line; do R2_arr+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$R2_pattern" | sort)
 
     if ((${#R1_arr} == 0)); then
         color_echo "red" "Error! RunID: $RunID have no R1 fastq file!"
