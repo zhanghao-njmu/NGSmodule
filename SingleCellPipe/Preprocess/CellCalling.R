@@ -72,7 +72,7 @@ p <- colData(raw) %>%
   ) +
   geom_point(
     aes(color = log10(UMIcounts)),
-    alpha = 0.4
+    alpha = 0.5, shape = 16
   ) +
   geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
   geom_hline(
@@ -176,7 +176,7 @@ p <- colData(raw) %>%
   as.data.frame() %>%
   ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
   geom_point(aes(color = EmptyDrops),
-    alpha = 0.4
+    alpha = 0.5, shape = 16
   ) +
   geom_vline(
     xintercept = metadata(bc_ranks)$knee,
@@ -249,7 +249,7 @@ p <- colData(raw) %>%
   ) +
   geom_point(
     aes(color = EmptyDrops),
-    alpha = 0.4
+    alpha = 0.5, shape = 16
   ) +
   geom_hline(
     yintercept = metadata(bc_ranks)$knee,
@@ -347,7 +347,9 @@ colData(raw)$dropEst <- colData(raw)$Barcode %in% qualified
 cell_score <- data.frame(colData(raw)[, c("Barcode", "BarcodeRank", "UMIcounts", "dropEst")], row.names = 1)
 cell_score[, "Score"] <- scores[rownames(cell_score)]
 p <- ggplot(cell_score) +
-  geom_point(aes(x = BarcodeRank, y = Score, color = dropEst), alpha = 0.5) +
+  geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
+    alpha = 0.5, shape = 16
+  ) +
   geom_hline(yintercept = dropest_quality, linetype = "dashed") +
   annotate("text",
     x = 1, y = dropest_quality,
@@ -401,7 +403,7 @@ p <- colData(raw) %>%
   ) +
   geom_point(
     aes(color = dropEst),
-    alpha = 0.4
+    alpha = 0.5, shape = 16
   ) +
   geom_vline(
     xintercept = cell_num$min,
@@ -521,7 +523,7 @@ cell_rank[, "Method"] <- factor(pull(cell_rank, "Method"),
 p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
   geom_point(
     aes(color = is_cell),
-    alpha = 0.4
+    alpha = 0.5, shape = 16
   ) +
   geom_hline(
     yintercept = metadata(bc_ranks)$knee,
@@ -597,9 +599,11 @@ cell_upset <- colData(raw) %>%
   ) %>%
   dplyr::filter(is_cell == TRUE) %>%
   group_by(Barcode) %>%
-  summarize(Method_list = list(Method),
-            Method_comb = paste(Method, collapse = ","),
-            Method_num = n())
+  summarize(
+    Method_list = list(Method),
+    Method_comb = paste(Method, collapse = ","),
+    Method_num = n()
+  )
 y_max <- max(table(pull(cell_upset, "Method_comb")))
 
 p <- ggplot(cell_upset, aes(x = Method_list)) +
