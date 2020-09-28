@@ -172,7 +172,7 @@ else
 fi
 
 ###### START ######
-if [[ -d $work_dir ]]; then
+if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
 
   arr=()
   while IFS='' read -r line; do
