@@ -20,7 +20,7 @@ fi
 for RunID in "${PE_RunID[@]}"; do
     R1_pattern="/${RunID}${R1_SufixPattern}$"
     R1_arr=()
-    while IFS='' read -r line; do R1_arr+=("$line"); done < < (find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort)
+    while IFS='' read -r line; do R1_arr+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort)
     R1_arr_len="$(find "$rawdata_dir" -type f | grep -P "$R1_pattern" | sort|wc -l )"
 
     R2_pattern="/${RunID}${R2_SufixPattern}$"
