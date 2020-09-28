@@ -8,7 +8,7 @@ if [[ -d $work_dir ]]; then
     mkdir "${work_dir}"
 fi
 
-PE_pattern="(${RunIDPattern}${R1_SufixPattern}$)|(${RunIDPattern}${R2_SufixPattern}$)"
+PE_pattern="(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
 PE_RunID=($(find $rawdata_dir -type f | grep -P $PE_pattern | sort | sed "s/.*\///g" | perl -pe "s/(${R1_SufixPattern})|(${R2_SufixPattern})//g" | sort | uniq))
 
 if [[ ${#PE_RunID} == 0 ]]; then
@@ -17,7 +17,7 @@ if [[ ${#PE_RunID} == 0 ]]; then
 fi
 
 for RunID in "${PE_RunID[@]}"; do
-    R1_pattern="${RunID}${R1_SufixPattern}$"
+    R1_pattern="/${RunID}${R1_SufixPattern}$"
     R1_arr=($(find $rawdata_dir -type f | grep -P $R1_pattern | sort))
     R2_pattern="${RunID}${R2_SufixPattern}$"
     R2_arr=($(find $rawdata_dir -type f | grep -P $R2_pattern | sort))
