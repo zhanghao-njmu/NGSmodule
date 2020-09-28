@@ -64,6 +64,12 @@ colData(raw)$BarcodeRank <- bc_ranks$rank
 colData(raw)$Fitted <- bc_ranks$fitted
 colData(raw)$knee <- colData(raw)$UMIcounts > metadata(bc_ranks)$knee
 colData(raw)$inflection <- colData(raw)$UMIcounts > metadata(bc_ranks)$inflection
+# colData(raw) %>%
+#   as.data.frame() %>%
+#   arrange(BarcodeRank) %>%
+#   mutate(cumsum = cumsum(UMIcounts)) %>%
+#   ggplot(aes(x = BarcodeRank, y = cumsum)) +
+#   geom_point()
 
 p <- colData(raw) %>%
   as.data.frame() %>%
