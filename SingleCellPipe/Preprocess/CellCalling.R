@@ -112,7 +112,7 @@ p <- colData(raw) %>%
       " UMI=", empty_thresh,
       " Rank=", sum(colData(raw)$UMIcounts > empty_thresh)
     ),
-    colour = "darkorchid", size = 3, hjust = 0, vjust = -0.5
+    colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
   ) +
   scale_y_continuous(
     trans = log10_trans(),
@@ -197,7 +197,7 @@ p <- colData(raw) %>%
       " UMI=", round(metadata(bc_ranks)$knee),
       " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
     ),
-    colour = "dodgerblue", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
   ) +
   annotate("text",
     y = 1, x = metadata(bc_ranks)$inflection,
@@ -206,7 +206,7 @@ p <- colData(raw) %>%
       " UMI=", round(metadata(bc_ranks)$inflection),
       " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
     ),
-    colour = "forestgreen", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
   ) +
   annotate("text",
     y = 1, x = empty_thresh,
@@ -288,7 +288,7 @@ p <- colData(raw) %>%
       " UMI=", empty_thresh,
       " Rank=", sum(colData(raw)$UMIcounts > empty_thresh)
     ),
-    colour = "darkorchid", size = 3, hjust = 0, vjust = -0.5
+    colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
   ) +
   scale_y_continuous(
     trans = log10_trans(),
@@ -319,7 +319,7 @@ p <- plot_grid(
     "emptyDrops-Probability_vs_counts",
     "emptyDrops-BarcodeRank"
   )],
-  nrow = 2, ncol = 2, align = "hv", axis = "tblr", labels = "auto"
+  nrow = 2, ncol = 2, align = "hv", axis = "tblr"
 )
 ggsave(p, filename = paste0(sample, ".emptyDrops.png"), width = 11, height = 8)
 
@@ -464,7 +464,7 @@ p <- colData(raw) %>%
       " UMI=", empty_thresh,
       " Rank=", sum(colData(raw)$UMIcounts > empty_thresh)
     ),
-    colour = "darkorchid", size = 3, hjust = 0, vjust = -0.5
+    colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
   ) +
   scale_y_continuous(
     trans = log10_trans(),
@@ -493,7 +493,7 @@ p <- plot_grid(
     "dropEst-CellScore",
     "dropEst-BarcodeRank"
   )],
-  nrow = 1, align = "hv", axis = "tblr", labels = "auto"
+  nrow = 1, align = "hv", axis = "tblr"
 )
 ggsave(p, filename = paste0(sample, ".dropEst.png"), width = 11, height = 8)
 
@@ -626,7 +626,7 @@ p <- plot_grid(
     plotlist[["MethodCompare-Barplot"]],
     nrow = 1, rel_widths = c(0.5, 0.5)
   ),
-  nrow = 2, labels = "auto"
+  nrow = 2
 )
 ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 8)
 
