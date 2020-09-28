@@ -172,7 +172,7 @@ for sample in "${arr[@]}"; do
             if [[ $? == 1 ]]; then
                 mkdir -p $dir/Alignment/Cellranger/$sample/CellCalling
                 cd $dir/Alignment/Cellranger/$sample/CellCalling
-                Rscript $1 $dir/Alignment/Cellranger $sample $threads &>$dir/Alignment/Cellranger/$sample/CellCalling/cellcalling.log
+                Rscript $1 $dir/Alignment/Cellranger $sample $threads &>$dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log
                 
                 check_logfile $sample "CellCalling" $dir/Alignment/Cellranger/$sample/CellCalling/CellCalling.log $error_pattern $complete_pattern "postcheck"
                 if [[ $? == 1 ]]; then
