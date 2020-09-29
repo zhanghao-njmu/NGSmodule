@@ -156,6 +156,7 @@ cat <<- EOF
        CreateSCPSampleInfoFile
        CreateSCPWorkDir
        RunCellranger
+       Integration
     
   Other options:
     -c, --ConfigFile          Specify the path of configuration file.
