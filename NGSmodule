@@ -85,26 +85,33 @@ CNVanalysis()
 
 CreateSCPConfigFile()
 {
-  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPConfigFile.sh $1
+  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPConfigFile.sh $1
 }
 
 CreateSCPSampleInfoFile()
 {
-  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPSampleInfoFile.sh
+  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPSampleInfoFile.sh
 }
 
 CreateSCPWorkDir()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh prepare
-  source $shell_folder/SingleCellPipe/PreparationSteps/CreateSCPWorkDir.sh
+  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPWorkDir.sh
 }
 
 RunCellranger()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/Preprocess/CellCalling.R
+  source $shell_folder/SingleCellPipe/SCP-Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-Preprocess/CellCalling.R
+}
+
+Integration()
+{
+  source $1
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
+  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration.sh $shell_folder/SingleCellPipe/SCP-Analysis/Integration.R
 }
 
 help()
@@ -244,6 +251,8 @@ while true;do
         CheckConfigFile $ConfigFile
         CNVanalysis $ConfigFile
         exit 0   
+
+      ### SingleCellPipe
       elif [[ $1 == "CreateSCPConfigFile" ]];then
         CreateSCPConfigFile $ConfigFile
         exit 0
@@ -261,7 +270,14 @@ while true;do
         [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in RunCellranger MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
         RunCellranger $ConfigFile
-        exit 0         
+        exit 0
+      elif [[ $1 == "Integration" ]];then
+        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in Integration MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        CheckConfigFile $ConfigFile
+        Integration $ConfigFile
+        exit 0                  
+
       else
         echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
       fi
