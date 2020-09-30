@@ -44,6 +44,9 @@ dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml
 gene_gtf="\$cellranger_ref/genes/genes.gtf"
 rmsk_gtf="\$cellranger_ref/genes/rmsk.gtf"
 
+############# Intergration #######################################################################
+datasets="ESC,iPSC,PGCd6,CellLine1,CellLine2;"
+
 
 
 EOF
