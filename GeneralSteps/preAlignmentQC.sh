@@ -94,7 +94,7 @@ for sample in "${arr[@]}"; do
       existlogs=()
       while IFS='' read -r line; do
         existlogs+=("$line")
-      done < <(find "${dir}" -name "fqcheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
+      done < <(find "${dir}" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
       if ((${#existlogs[*]} >= 1)); then
         for existlog in "${existlogs[@]}"; do
           if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
@@ -108,14 +108,14 @@ for sample in "${arr[@]}"; do
 
         if (($(ls "${dir}"/run*_"${sample}".fq.gz | wc -l) == 1)); then
           cp -fa "${dir}"/run1_"${sample}".fq.gz "${dir}"/"${sample}".fq.gz
-          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >"$dir"/fq_prepare.log
+          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${dir}/run1_${sample}.fq.gz" >"$dir"/fqPrepare.log
         else
           runs=$(ls -lL "${dir}"/run*_"${sample}".fq.gz)
           if [[ ! -f ${dir}/${sample}.fq.gz ]] || [[ ! $(echo "${runs[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}".fq.gz | awk '{print$5}') ]]; then
-            rm -f "$dir"/fq_prepare.log
+            rm -f "$dir"/fqPrepare.log
             echo "${runs[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}".fq.gz
           fi
-          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fq_prepare.log
+          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}.fq.gz ======\n${runs[*]}" >"$dir"/fqPrepare.log
         fi
 
         fq1=${dir}/${sample}.fq.gz
@@ -127,17 +127,17 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
-        check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
+        check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           fq1_nlines=$(unpigz -c "$fq1" | wc -l)
-          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >"$dir"/fqcheck.log
+          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >"$dir"/fqCheck.log
           if [[ $((fq1_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
+            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqCheck.log
           else
-            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
           fi
 
-          check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -248,14 +248,14 @@ for sample in "${arr[@]}"; do
             continue
           fi
           fq1_nlines=$(unpigz -c "$dir/${sample}_trim.fq.gz" | wc -l)
-          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\n" >>"$dir"/fqcheck.log
+          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\n" >>"$dir"/fqCheck.log
           if [[ $((fq1_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines is not divisible by 4." >>"$dir"/fqcheck.log
+            echo -e "ERROR! trim_fq1_nlines is not divisible by 4." >>"$dir"/fqCheck.log
             color_echo "yellow" "Warning! $sample: trim_fq1_nlines is not divisible by 4."
             force="TRUE"
             continue
           else
-            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
             status="completed"
             color_echo "blue" "+++++ ${sample}: Processing complete +++++"
           fi
@@ -269,19 +269,19 @@ for sample in "${arr[@]}"; do
         if (($(ls "${dir}"/run*_"${sample}"_1.fq.gz | wc -l) == 1)); then
           cp -fa "${dir}"/run1_"${sample}"_1.fq.gz "${dir}"/"${sample}"_1.fq.gz
           cp -fa "${dir}"/run1_"${sample}"_2.fq.gz "${dir}"/"${sample}"_2.fq.gz
-          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >"$dir"/fq_prepare.log
+          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${dir}/run1_${sample}_1.fq.gz\n====== ${sample}_2.fq.gz ======\n${dir}/run1_${sample}_2.fq.gz" >"$dir"/fqPrepare.log
         else
           runs1=$(ls -lL "${dir}"/run*_"${sample}"_1.fq.gz)
           runs2=$(ls -lL "${dir}"/run*_"${sample}"_2.fq.gz)
           if [[ ! -f ${dir}/${sample}_1.fq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_1.fq.gz | awk '{print$5}') ]]; then
-            rm -f "$dir"/fq_prepare.log
+            rm -f "$dir"/fqPrepare.log
             echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_1.fq.gz
           fi
           if [[ ! -f ${dir}/${sample}_2.fq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_2.fq.gz | awk '{print$5}') ]]; then
-            rm -f "$dir"/fq_prepare.log
+            rm -f "$dir"/fqPrepare.log
             echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_2.fq.gz
           fi
-          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >"$dir"/fq_prepare.log
+          echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_1.fq.gz ======\n${runs1[*]}\n====== ${sample}_2.fq.gz ======\n${runs2[*]}" >"$dir"/fqPrepare.log
         fi
 
         fq1=${dir}/${sample}_1.fq.gz
@@ -301,20 +301,20 @@ for sample in "${arr[@]}"; do
         fi
 
         ##To verify that reads appear to be correctly paired
-        check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "precheck"
+        check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           fq1_nlines=$(unpigz -c "$fq1" | wc -l)
           fq2_nlines=$(unpigz -c "$fq2" | wc -l)
-          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqcheck.log
+          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqCheck.log
           if [[ $fq1_nlines != "$fq2_nlines" ]]; then
-            echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqcheck.log
+            echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqCheck.log
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqcheck.log
+            echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqCheck.log
           else
-            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
           fi
 
-          check_logfile "$sample" "FastqCheck" "$dir"/fqcheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck"
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -434,19 +434,19 @@ for sample in "${arr[@]}"; do
           fi
           fq1_nlines=$(unpigz -c "$dir/${sample}_1_trim.fq.gz" | wc -l)
           fq2_nlines=$(unpigz -c "$dir/${sample}_2_trim.fq.gz" | wc -l)
-          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\ntrim_fq2_nlines:$fq2_nlines   trim_fq2_nreads:$((fq2_nlines / 4))\n" >>"$dir"/fqcheck.log
+          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\ntrim_fq2_nlines:$fq2_nlines   trim_fq2_nreads:$((fq2_nlines / 4))\n" >>"$dir"/fqCheck.log
           if [[ $fq1_nlines != "$fq2_nlines" ]]; then
-            echo -e "ERROR! $sample has different numbers of reads between paired files" >>"$dir"/fqcheck.log
+            echo -e "ERROR! $sample has different numbers of reads between paired files" >>"$dir"/fqCheck.log
             color_echo "yellow" "Warning! $sample: has different numbers of reads between trimmed paired fastq."
             force="TRUE"
             continue
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is not divisible by 4." >>"$dir"/fqcheck.log
+            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is not divisible by 4." >>"$dir"/fqCheck.log
             color_echo "yellow" "Warning! $sample: trimmed nlines is not divisible by 4."
             force="TRUE"
             continue
           else
-            echo -e "FastqCheck passed." >>"$dir"/fqcheck.log
+            echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
             status="completed"
             color_echo "blue" "+++++ ${sample}: Processing complete +++++"
           fi
