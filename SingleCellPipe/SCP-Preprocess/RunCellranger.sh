@@ -47,7 +47,7 @@ if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]]; then
     exit 1
 fi
 
-R_packages=("DropletUtils" "dropestr" "ggplot2" "ggupset" "ggsci" "cowplot" "dplyr" "reshape2" "SingleCellExperiment" "grid" "png" "gridExtra" "scales")
+R_packages=("DropletUtils" "dropestr" "ggplot2" "ggupset" "ggsci" "cowplot" "dplyr" "reshape2" "SingleCellExperiment" "grid" "png" "gridExtra" "scales" "inflection")
 for package in "${R_packages[@]}"; do
     Rscript -e "installed.packages()" | awk '{print $1}' | grep "$package" &>/dev/null
     [ $? -ne 0 ] && {
