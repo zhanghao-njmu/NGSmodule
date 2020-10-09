@@ -493,6 +493,7 @@ colData(raw)$zUMIs <- colData(raw)$UMIcounts > cutoff_counts
 
 p <- bccount %>%
   filter(UMIcounts > empty_thresh) %>%
+  mutate(zUMIs = UMIcounts > cutoff_counts) %>%
   arrange(BarcodeRank) %>%
   mutate(BarcodeRank_uniq = 1:n()) %>%
   ggplot(aes(x = BarcodeRank_uniq, y = UMIcounts)) +
