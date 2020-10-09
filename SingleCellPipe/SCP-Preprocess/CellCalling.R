@@ -610,6 +610,7 @@ cell_upset <- colData(raw) %>%
     Method_comb = paste(Method, collapse = ","),
     Method_num = n()
   )
+rownames(cell_upset) <- pull(cell_upset,"Barcode")
 y_max <- max(table(pull(cell_upset, "Method_comb")))
 
 p <- ggplot(cell_upset, aes(x = Method_list)) +
