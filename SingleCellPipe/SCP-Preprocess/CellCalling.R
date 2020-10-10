@@ -545,7 +545,7 @@ p <- colData(raw) %>%
   labs(
     x = "UMI counts", y = "Density",
     title = "Density plot of the UMI counts",
-    subtitle = "red line indicated the intact-cell threshold of zUMIs."
+    subtitle = "red line indicated the intact-cell threshold."
   ) +
   theme_classic() +
   theme(
