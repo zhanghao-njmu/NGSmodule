@@ -6,13 +6,13 @@ sample <- as.character(args[2])
 threads <- as.character(args[3])
 
 # parameters: global settings ---------------------------------------------
-# cellranger_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/cellranger"
-# sample <- "1_P31"
+# cellranger_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/d7/Alignment/Cellranger/"
+# sample <- "d7"
 # threads <- 80
 
 # parameters: emptyDrops --------------------------------------------------
 empty_thresh <- 100
-iters <- 1e+5
+iters <- 2e+5
 fdr <- 1e-3
 
 # parameters: dropEst -----------------------------------------------------
@@ -139,17 +139,22 @@ p <- colData(raw) %>%
   )
 plotlist[["emptyDrops-BarcodeRankFitted"]] <- p
 
-cat("niters:", iters, "\n")
-mito_gene <- grep(x = rownames(raw), pattern = "^(MT-)|(mt-)", perl = T)
-ribo_gene <- grep(x = rownames(raw), pattern = "^(RP[SL]\\d+)|(rp[sl]\\d+)", perl = T)
-keep <- !1:nrow(raw) %in% c(mito_gene, ribo_gene)
-emp_drops <- emptyDrops(counts(raw)[keep, ],
-  lower = empty_thresh, test.ambient = TRUE,
-  niters = iters, BPPARAM = bpparam
-)
-is_cell <- emp_drops$FDR < fdr
-is_cell[is.na(is_cell)] <- FALSE
-table(Limited = emp_drops$Limited, Significant = is_cell)
+
+mito_gene <- grep(x = rownames(raw), pattern = "^(MT-)|(mt-)|(^Mt-)", perl = T)
+ribo_gene <- grep(x = rownames(raw), pattern = "^(RP[SL]\\d+)|(rp[sl]\\d+)|((Rp[sl]\\d+))", perl = T)
+residual <- 1000
+while (residual != 0) {
+  cat("niters:", iters, "\n")
+  emp_drops <- emptyDrops(counts(raw)[-c(mito_gene, ribo_gene), ],
+    lower = empty_thresh, test.ambient = TRUE, retain = Inf,
+    niters = iters, BPPARAM = bpparam
+  )
+  is_cell <- emp_drops$FDR < fdr
+  is_cell[is.na(is_cell)] <- FALSE
+  print(table(Limited = emp_drops$Limited, Significant = is_cell))
+  residual <- table(Limited = emp_drops$Limited, Significant = is_cell)[2, 1]
+  iters <- iters * 2
+}
 
 colData(raw)$EmpDropsLogProb <- emp_drops$LogProb
 colData(raw)$EmpDropsPValue <- emp_drops$PValue
