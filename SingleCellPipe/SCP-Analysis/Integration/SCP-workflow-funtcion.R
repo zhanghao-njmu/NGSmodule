@@ -179,7 +179,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   }
 
   DefaultAssay(object = srt_integrated) <- "integrated"
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ";")
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
     levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
@@ -291,7 +291,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   }
 
   DefaultAssay(object = srt_integrated) <- "integrated"
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ";")
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
     levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
@@ -394,7 +394,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ";")
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
     levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
@@ -503,7 +503,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ";")
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
     levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
