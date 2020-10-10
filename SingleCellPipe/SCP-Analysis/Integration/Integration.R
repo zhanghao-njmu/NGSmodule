@@ -1,19 +1,20 @@
 #!/usr/bin/env Rscript
 
 args <- commandArgs(TRUE)
-work_dir <- as.character(args[1])
-NGSmodule_SCP_dir <- as.character(args[2])
-threads <- as.numeric(args[3])
-datasets_raw <- as.character(args[4])
-species <- as.character(args[5])
-exogenous_genes <- as.character(args[6])
-cell_calling_methodNum <- as.numeric(args[7])
-HVF_source <- as.character(args[8])
-nHVF <- as.numeric(args[9])
-anchor_dims <- 1:as.numeric(args[10])
-integrate_dims <- 1:as.numeric(args[11])
-maxPC <- as.numeric(args[12])
-resolution <- as.numeric(args[13])
+script_path <- as.character(args[1])
+work_dir <- as.character(args[2])
+NGSmodule_SCP_dir <- as.character(args[3])
+threads <- as.numeric(args[4])
+datasets_raw <- as.character(args[5])
+species <- as.character(args[6])
+exogenous_genes <- as.character(args[7])
+cell_calling_methodNum <- as.numeric(args[8])
+HVF_source <- as.character(args[9])
+nHVF <- as.numeric(args[10])
+anchor_dims <- 1:as.numeric(args[11])
+integrate_dims <- 1:as.numeric(args[12])
+maxPC <- as.numeric(args[13])
+resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
 
@@ -125,8 +126,11 @@ options(future.fork.enable = TRUE)
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
-source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
-source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
+script_dir <- gsub(x = script_path,pattern = "Integration.R",replacement = "")
+source(paste0(script_dir,"/SCP-workflow-funtcion.R"))
+
+# source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
+# source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
 plotlist <- list()
 
 # Preprocessing: load data ------------------------------------------------

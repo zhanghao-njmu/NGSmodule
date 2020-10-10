@@ -155,6 +155,12 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
     memory=$(((total_memory + ntask_per_run) / ntask_per_run - 1))
 
+    if ((threads > 120)); then
+        integration_threads=120
+    else
+        integration_threads=$threads
+    fi
+
     ###### fifo ######
     tempfifo=$$.fifo
     trap_add "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT

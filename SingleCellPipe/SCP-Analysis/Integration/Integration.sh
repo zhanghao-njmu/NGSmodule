@@ -23,52 +23,28 @@ for package in "${R_packages[@]}"; do
   fi
 done
 
-
-if [[ ! -f $gtf ]]; then
-  color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
-  exit 1
-fi
-
 echo -e "########################## Quantification Parameters ###########################\n"
-echo -e "  Rscript path: $(which Rscript)"
-echo -e "  featurecounts_threads: ${threads_featurecounts}\n  Strand_Specific: ${strandspecific} (0=unstranded,1=stranded,2=reversely stranded)\n"
-echo -e "  GTF_File: ${gtf}\n "
+echo -e ">base parameters:"
+echo -e "  Rscript path: $(which Rscript)\n  datasets: ${datasets}\n  species: ${species}\n  exogenous_genes: ${exogenous_genes}"
+echo -e ">cell-filtering parameters:"
+echo -e "  cell_calling_methodNum: ${cell_calling_methodNum}"
+echo -e ">integration parameters:"
+echo -e "  HVF_source: ${HVF_source}\n  nHVF: ${nHVF}\n  anchor_dims: ${anchor_dims}\n  integrate_dims: ${integrate_dims}"
+echo -e ">clustering parameters:"
+echo -e "  maxPC: ${maxPC}\n  resolution: ${resolution}"
 echo -e "################################################################################\n"
 
-echo -e "****************** Start Quantification ******************\n"
+echo -e "****************** Start Integration ******************\n"
 SECONDS=0
 
-for sample in "${arr[@]}"; do
-  read -u1000
-  {
-    echo "+++++ $sample +++++"
-    dir=$work_dir/$sample
-    cell_upset="$dir"/Alignment/Cellranger/"$sample"/CellCalling/cell_upset.rds
-    if [[ ! -f $bam ]]; then
-      echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
-      exit 1
-    fi
+echo -e "\nIntegrating the data....\n"
+mkdir -p $maindir/NGSmodule_SCP_analysis/Integration
+cd $maindir/NGSmodule_SCP_analysis/Integration
 
-    mkdir -p $dir/$Aligner/Quantification
-    cd $dir/$Aligner/Quantification
-    Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
-
-    echo "Completed: $sample" >>$tmpfile
-    color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
-
-    echo >&1000
-  } &
-  ((bar++))
-  processbar $bar $total_task
-done
-wait
-
-echo -e "\nIntegrating and annotating the matrix....\n"
-mkdir -p $maindir/NGSmodule_analysis/Quantification
-cd $maindir/NGSmodule_analysis/Quantification
-
-Rscript $2 $work_dir $gtf $Aligner $Species $Source &>Annotation.R.log
-echo -e "Integrated quantification matrix: $maindir/NGSmodule_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
+Rscript $1 $maindir/NGSmodule_SCP_analysis/Integration $work_dir $integration_threads $datasets \
+  $species $exogenous_genes $cell_calling_methodNum $HVF_source $nHVF \
+  $anchor_dims $integrate_dims $maxPC $resolution &>Integration.log
+echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
