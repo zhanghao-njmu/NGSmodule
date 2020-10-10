@@ -2,7 +2,7 @@
 
 args <- commandArgs(TRUE)
 script_path <- as.character(args[1])
-work_dir <- as.character(args[2])
+SCPanalysis_dir <- as.character(args[2])
 NGSmodule_SCP_dir <- as.character(args[3])
 threads <- as.numeric(args[4])
 datasets_raw <- as.character(args[5])
@@ -44,12 +44,14 @@ library(velocyto.R)
 library(scDblFinder)
 library(biomaRt)
 
-datasets <- strsplit(datasets_raw,split = ";") %>%
-  unlist() %>% 
-  lapply(.,function(x){
-    strsplit(x,split = ",") %>% unlist()
+datasets <- strsplit(datasets_raw, split = ";") %>%
+  unlist() %>%
+  lapply(., function(x) {
+    strsplit(x, split = ",") %>% unlist()
   })
-samples <- datasets %>% unlist() %>% unique()
+samples <- datasets %>%
+  unlist() %>%
+  unique()
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -77,10 +79,10 @@ if (species == "Homo_sapiens") {
       filters = c("external_gene_name"),
       values = list(Seurat::cc.genes.updated.2019$g2m.genes)
     )[[1]]
-    
+
     if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
       warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
-      }
+    }
   } else {
     warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
   }
@@ -89,7 +91,7 @@ if (species == "Homo_sapiens") {
 
 # ##### test #####
 # # parameters: global settings ---------------------------------------------
-# work_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_1002/"
+# SCPanalysis_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_1002/"
 # NGSmodule_SCP_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/"
 # threads <- 80
 # datasets <- list(
@@ -98,20 +100,20 @@ if (species == "Homo_sapiens") {
 # samples <- datasets %>%
 #   unlist() %>%
 #   unique()
-# 
+#
 # cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
 # cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
 # exogenous_genes <- NULL
-# 
+#
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
-# 
+#
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "separate"
 # nHVF <- 3000
 # anchor_dims <- 1:30
 # integrate_dims <- 1:30
-# 
+#
 # # parameters: clustering --------------------------------------------------
 # maxPC <- 100
 # resolution <- 0.8
@@ -119,15 +121,15 @@ if (species == "Homo_sapiens") {
 
 
 ########################### Start the workflow ############################
-setwd(work_dir)
+setwd(SCPanalysis_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
 options(future.fork.enable = TRUE)
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
-script_dir <- gsub(x = script_path,pattern = "Integration.R",replacement = "")
-source(paste0(script_dir,"/SCP-workflow-funtcion.R"))
+script_dir <- gsub(x = script_path, pattern = "Integration.R", replacement = "")
+source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
@@ -136,8 +138,8 @@ plotlist <- list()
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
   cat("[", i, "]", "samples:", samples[i], "\n", sep = "")
-  cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds"))) 
-  rownames(cell_upset) <- cell_upset[,"Barcode"]
+  cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
+  rownames(cell_upset) <- cell_upset[, "Barcode"]
   cells <- cell_upset %>%
     filter(Method_num >= cell_calling_methodNum) %>%
     pull("Barcode")
@@ -164,8 +166,8 @@ for (i in 1:length(samples)) {
   srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
   srt[["orig.ident"]] <- samples[i]
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(mt-)|(Mt-)")
-  srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt),"Method_comb"]
-  srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt),"Method_num"]
+  srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
+  srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
   srt <- RenameCells(object = srt, add.cell.id = samples[i])
   sc_list[[samples[i]]] <- srt
 
@@ -383,14 +385,13 @@ if (!file.exists("srt_list_Harmony.rds")) {
   saveRDS(object = srt_list_Harmony, file = "srt_list_Harmony.rds")
 }
 
-for (srt_name in c("srt_list_Standard","srt_list_SCT","srt_list_fastMNN","srt_list_Harmony")) {
-  srt_use <- get(srt_name)[[1]]
-  DefaultAssay(srt_use) <- "RNA"
-  srt_use$batch <- srt_use$orig.ident
-  project_name <- srt_use@project.name
-  p <- summary_plot(
-    srt = srt_use, return_list = F,features = "DDX4", color_by = "seurat_clusters", reduction = "umap", split_by = "batch", palette = "nejm",
-    do_save = T, file_save = paste0(srt_name, ".summary.png")
-  )
-}
-
+# for (srt_name in c("srt_list_Standard","srt_list_SCT","srt_list_fastMNN","srt_list_Harmony")) {
+#   srt_use <- get(srt_name)[[1]]
+#   DefaultAssay(srt_use) <- "RNA"
+#   srt_use$batch <- srt_use$orig.ident
+#   project_name <- srt_use@project.name
+#   p <- summary_plot(
+#     srt = srt_use, return_list = F,features = "DDX4", color_by = "seurat_clusters", reduction = "umap", split_by = "batch", palette = "nejm",
+#     do_save = T, file_save = paste0(srt_name, ".summary.png")
+#   )
+# }
