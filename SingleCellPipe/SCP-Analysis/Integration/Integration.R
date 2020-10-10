@@ -202,8 +202,11 @@ sc_list_filter <- bplapply(setNames(samples, samples), function(sc_set) {
   srt <- sc_list[[sc_set]]
   sce <- as.SingleCellExperiment(srt)
   sce <- scDblFinder(sce, verbose = FALSE)
+  # print(table(sce$scDblFinder.class))
+  ndoublets <- sum(sce$scDblFinder.class == "doublet")
   sce <- subset(sce, , scDblFinder.class == "singlet")
   srt <- subset(x = srt, cells = colnames(sce))
+  cat(sc_set, ": filter out", ndoublets, "potential doublets\n")
 
   log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
   log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
@@ -239,8 +242,10 @@ sc_list_filter <- bplapply(setNames(samples, samples), function(sc_set) {
     (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08)
   out <- c(out, list(mt = which(mtout)))
   out <- table(unlist(out))
+  # print(table(out))
   out <- as.numeric(names(out)[which(out >= 2)])
   if (length(out) > 0) {
+    cat(sc_set, ": filter out", length(out), "unqualified cells\n")
     srt <- subset(srt, cell = colnames(srt)[-out])
   }
 
