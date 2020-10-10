@@ -45,9 +45,23 @@ gene_gtf="\$cellranger_ref/genes/genes.gtf"
 rmsk_gtf="\$cellranger_ref/genes/rmsk.gtf"
 
 ############# Intergration #######################################################################
+### base parameters ###
 datasets="ESC,iPSC,PGCd6,CellLine1,CellLine2;"
+species="Homo_sapiens"                           # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
+exogenous_genes=""
 
+### cell-filtering ###
+cell_calling_methodNum=3
 
+### integration ###
+HVF_source="separate"
+nHVF=3000
+anchor_dims=30
+integrate_dims=30
+
+### clustering ###
+maxPC=100
+resolution=0.8
 
 EOF
 

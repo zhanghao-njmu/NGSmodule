@@ -1,45 +1,27 @@
 #!/usr/bin/env Rscript
 
-# parameters: global settings ---------------------------------------------
-work_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/"
-NGSmodule_SCP_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/"
-threads <- 80
-samples <- c("d0", "d1","d3","d5","d7")
-compare_list <- list(
-  c("d0", "d1","d3","d5","d7")
-)
-
-cc_S_genes <- cc.genes.updated.2019$s.genes
-cc_G2M_genes <- cc.genes.updated.2019$g2m.genes
-exogenous_gene <- NULL
-
-# parameters: cell filtering ----------------------------------------------
-cell_calling <- 4
-minGene <- 1000
-maxGene <- 10000
-minUMI <- 1000
-maxUMI <- 40000
-maxMitoPercent <- 20
-
-# parameters: integration -------------------------------------------------
-HVF_source <- "separate"
-nHVF <- 3000
-anchor_dims <- 1:30
-integrate_dims <- 1:30
-
-# parameters: clustering --------------------------------------------------
-maxPC <- 100
-resolution <- 0.8
+args <- commandArgs(TRUE)
+work_dir <- as.character(args[1])
+NGSmodule_SCP_dir <- as.character(args[2])
+threads <- as.numeric(args[3])
+datasets_raw <- as.character(args[4])
+species <- as.character(args[5])
+exogenous_genes <- as.character(args[6])
+cell_calling_methodNum <- as.numeric(args[7])
+HVF_source <- as.character(args[8])
+nHVF <- as.numeric(args[9])
+anchor_dims <- 1:as.numeric(args[10])
+integrate_dims <- 1:as.numeric(args[11])
+maxPC <- as.numeric(args[12])
+resolution <- as.numeric(args[13])
+Ensembl_version <- 101
 
 
-
-
-########################### Start the workflow ############################
 library(sctransform)
 library(Seurat)
-library(SeuratData)
 library(SeuratWrappers)
 library(intrinsicDimension)
+library(scater)
 library(Matrix)
 library(BiocParallel)
 library(future)
@@ -58,7 +40,84 @@ library(cowplot)
 library(reshape2)
 library(stringr)
 library(velocyto.R)
+library(scDblFinder)
+library(biomaRt)
 
+datasets <- strsplit(datasets_raw,split = ";") %>%
+  unlist() %>% 
+  lapply(.,function(x){
+    strsplit(x,split = ",") %>% unlist()
+  })
+samples <- datasets %>% unlist() %>% unique()
+
+if (species == "Homo_sapiens") {
+  cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
+  cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
+} else {
+  species_split <- unlist(strsplit(species, split = "_"))
+  species_homolog <- paste0(tolower(substring(species_split[1], 1, 1)), species_split[2], "_homolog_associated_gene_name")
+
+  archives <- listEnsemblArchives()
+  url <- archives[which(archives$version == Ensembl_version), "url"]
+
+  mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl", host = url)
+  homolog <- listAttributes(mart)$name
+
+  if (species_homolog %in% homolog) {
+    cc_S_genes <- getBM(
+      mart = mart,
+      attributes = c(species_homolog),
+      filters = c("external_gene_name"),
+      values = list(Seurat::cc.genes.updated.2019$s.genes)
+    )[[1]]
+    cc_G2M_genes <- getBM(
+      mart = mart,
+      attributes = c(species_homolog),
+      filters = c("external_gene_name"),
+      values = list(Seurat::cc.genes.updated.2019$g2m.genes)
+    )[[1]]
+    
+    if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
+      warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
+      }
+  } else {
+    warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
+  }
+}
+
+
+# ##### test #####
+# # parameters: global settings ---------------------------------------------
+# work_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_1002/"
+# NGSmodule_SCP_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/"
+# threads <- 80
+# datasets <- list(
+#   c("d0", "d1", "d3")
+# )
+# samples <- datasets %>%
+#   unlist() %>%
+#   unique()
+# 
+# cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
+# cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
+# exogenous_genes <- NULL
+# 
+# # parameters: cell filtering ----------------------------------------------
+# cell_calling_methodNum <- 3
+# 
+# # parameters: integration -------------------------------------------------
+# HVF_source <- "separate"
+# nHVF <- 3000
+# anchor_dims <- 1:30
+# integrate_dims <- 1:30
+# 
+# # parameters: clustering --------------------------------------------------
+# maxPC <- 100
+# resolution <- 0.8
+
+
+
+########################### Start the workflow ############################
 setwd(work_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
@@ -73,13 +132,23 @@ plotlist <- list()
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
   cat("[", i, "]", "samples:", samples[i], "\n", sep = "")
+  cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds"))) 
+  rownames(cell_upset) <- cell_upset[,"Barcode"]
+  cells <- cell_upset %>%
+    filter(Method_num >= cell_calling_methodNum) %>%
+    pull("Barcode")
+  assign(
+    x = paste0(samples[i], "_cellcalling"),
+    value = cell_upset
+  )
+
   assign(
     x = paste0(samples[i], "_10X"),
-    value = Read10X(data.dir = paste0(NGSmodule_SCP_dir,"/",samples[i], "/", "Alignment/Cellranger/",samples[i], "/outs/filtered_feature_bc_matrix/"))
+    value = Read10X(data.dir = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
   )
   assign(
     x = paste0(samples[i], "_velocity"),
-    value = ReadVelocity(file = paste0(NGSmodule_SCP_dir,"/",samples[i], "/", "Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+    value = ReadVelocity(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
   )
 }
 
@@ -89,17 +158,19 @@ velocity_list <- list()
 for (i in 1:length(samples)) {
   cat(samples[i], "\n")
   srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
-  srt <- RenameCells(object = srt, add.cell.id = samples[i])
   srt[["orig.ident"]] <- samples[i]
-  srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(mt-)")
+  srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(mt-)|(Mt-)")
+  srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt),"Method_comb"]
+  srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt),"Method_num"]
+  srt <- RenameCells(object = srt, add.cell.id = samples[i])
   sc_list[[samples[i]]] <- srt
 
   velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
   velocity <- RenameCells(
     object = velocity,
-    new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "",perl = TRUE) %>%
-      gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>% 
-      paste0(samples[i],"_",.)
+    new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "", perl = TRUE) %>%
+      gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
+      paste0(samples[i], "_", .)
   )
   velocity[["orig.ident"]] <- samples[i]
   velocity_list[[samples[i]]] <- velocity
@@ -109,7 +180,7 @@ if (length(sc_list) == 1) {
   velocity_merge <- velocity_list[[1]]
 } else {
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  Idents(sc_merge) <- factor(sc_merge[["orig.ident"]], levels = samples)
+  Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
   # p <- VlnPlot(object = sc_merge, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0.1, combine = F) %>%
   #   custom_Vln_plot(
   #     alpha = 0, y_cutoff = c(minGene, minUMI, maxMitoPercent), pass = c("h", "h", "l"), combine = T,
@@ -117,50 +188,92 @@ if (length(sc_list) == 1) {
   #   )
 
   velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
-  Idents(velocity_merge) <- factor(velocity_merge[["orig.ident"]], levels = samples)
+  Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
 }
 
 # Preprocessing: cell filtering -----------------------------------
 sc_list_filter <- bplapply(setNames(samples, samples), function(sc_set) {
   srt <- sc_list[[sc_set]]
-  srt <- subset(
-    x = srt,
-    subset = nFeature_RNA > minGene &
-      nFeature_RNA < maxGene &
-      nCount_RNA > minUMI &
-      nCount_RNA < maxUMI &
-      percent.mt < maxMitoPercent
+  sce <- as.SingleCellExperiment(srt)
+  sce <- scDblFinder(sce, verbose = FALSE)
+  sce <- subset(sce, , scDblFinder.class == "singlet")
+  srt <- subset(x = srt, cells = colnames(sce))
+
+  log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
+  log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
+
+  mod <- loess(log10_total_features ~ log10_total_counts)
+  pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
+  featcount_dist <- log10_total_features - pred
+  # ggplot(data.frame(x=log10_total_counts,y=log10_total_features,diff=diff),
+  #        aes(x=x, y=y, colour=diff)) +
+  #   geom_point() + geom_smooth(method = "loess", col="black")
+
+  sce <- addPerCellQC(sce, percent_top = c(20))
+  pct_counts_in_top_20_features <- colData(sce)$percent_top_20
+
+  pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
+
+  filters <- c(
+    "log10_total_counts:higher:2.5",
+    "log10_total_counts:lower:5",
+    "log10_total_features:higher:2.5",
+    "log10_total_features:lower:5",
+    "pct_counts_in_top_20_features:both:5",
+    "featcount_dist:both:5"
   )
+  out <- lapply(strsplit(filters, ":"), function(f) {
+    which(isOutlier(get(f[1]),
+      log = FALSE,
+      nmads = as.numeric(f[3]),
+      type = f[2]
+    ))
+  })
+  mtout <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
+    (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08)
+  out <- c(out, list(mt = which(mtout)))
+  out <- table(unlist(out))
+  out <- as.numeric(names(out)[which(out >= 2)])
+  if (length(out) > 0) {
+    srt <- subset(srt, cell = colnames(srt)[-out])
+  }
+
   return(srt)
 }, BPPARAM = MulticoreParam())
 
 # Integration: Standard workflow ------------------------------------------
 sc_list_filter_Standard <- bplapply(setNames(samples, samples), function(sc_set) {
   srt <- sc_list_filter[[sc_set]]
-  srt <- Standard_SCP(sc = srt,nHVF = nHVF,maxPC = maxPC,resolution = resolution,
-                      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                      exogenous_genes = NULL, assay = "RNA")
+  srt <- Standard_SCP(
+    sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+    cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+    exogenous_genes = exogenous_genes, assay = "RNA"
+  )
 
   return(srt)
 }, BPPARAM = MulticoreParam())
 
 srt_list_Standard <- list()
-for (compare in compare_list) {
-  cat(paste0(compare, collapse = "-"), "\n")
-  if (length(compare) == 0)  {
+for (dataset in datasets) {
+  cat(paste0(dataset, collapse = "-"), "\n")
+  if (length(dataset) == 0) {
     next
   }
-  if (length(compare) == 1)  {
-    srt_integrated <-  Standard_SCP(sc = sc_list_filter_Standard[[compare]],nHVF = nHVF,maxPC = maxPC,resolution = resolution,
-                                    cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                    exogenous_genes = NULL, assay = "RNA")
+  if (length(dataset) == 1) {
+    srt_integrated <- Standard_SCP(
+      sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA"
+    )
   }
-  if (length(compare) > 1) {
-    srt_integrated <- Standard_integrate(sc_list = sc_list_filter_Standard[compare], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = anchor_dims, maxPC = maxPC, resolution = resolution,
-                                         HVF_source = HVF_source,
-                                         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                         exogenous_genes = NULL)
-  } 
+  if (length(dataset) > 1) {
+    srt_integrated <- Standard_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+  }
 
   srt_list_Standard[[srt_integrated@project.name]] <- srt_integrated
 }
@@ -181,22 +294,26 @@ sc_list_filter_SCT <- bplapply(setNames(samples, samples), function(sc_set) {
 }, BPPARAM = MulticoreParam())
 
 srt_list_SCT <- list()
- for (compare in compare_list) {
-  cat(paste0(compare, collapse = "-"), "\n")
-   if (length(compare) == 0)  {
-     next
-   }
-   if (length(compare) == 1)  {
-     srt_integrated <-  SCTransform_SCP(sc = sc_list_filter_SCT[[compare]],nHVF = nHVF,maxPC = maxPC,resolution = resolution,
-                                        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                        exogenous_genes = NULL, assay = "RNA")
-   }
-   if (length(compare) > 1) {
-     srt_integrated <- SCTransform_integrate(sc_list = sc_list_filter_SCT[compare], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = anchor_dims, maxPC = maxPC, resolution = resolution,
-                                             HVF_source = HVF_source,
-                                             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                             exogenous_genes = NULL)
-   }
+for (dataset in datasets) {
+  cat(paste0(dataset, collapse = "-"), "\n")
+  if (length(dataset) == 0) {
+    next
+  }
+  if (length(dataset) == 1) {
+    srt_integrated <- SCTransform_SCP(
+      sc = sc_list_filter_SCT[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA"
+    )
+  }
+  if (length(dataset) > 1) {
+    srt_integrated <- SCTransform_integrate(
+      sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+  }
 
   srt_list_SCT[[srt_integrated@project.name]] <- srt_integrated
 }
@@ -207,21 +324,25 @@ if (!file.exists("srt_list_SCT.rds")) {
 
 # Integration: fastMNN workflow -------------------------------------------
 srt_list_fastMNN <- list()
-for (compare in compare_list) {
-  cat(paste0(compare, collapse = "-"), "\n")
-  if (length(compare) == 0)  {
+for (dataset in datasets) {
+  cat(paste0(dataset, collapse = "-"), "\n")
+  if (length(dataset) == 0) {
     next
   }
-  if (length(compare) == 1)  {
-    srt_integrated <-  Standard_SCP(sc = sc_list_filter_Standard[[compare]],nHVF = nHVF,maxPC = maxPC,resolution = resolution,
-                                    cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                    exogenous_genes = NULL, assay = "RNA")
+  if (length(dataset) == 1) {
+    srt_integrated <- Standard_SCP(
+      sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA"
+    )
   }
-  if (length(compare) > 1) {
-    srt_integrated <- fastMNN_integrate(sc_list = sc_list_filter_Standard[compare], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = anchor_dims, maxPC = maxPC, resolution = resolution,
-                                         HVF_source = HVF_source,
-                                         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                         exogenous_genes = NULL)
+  if (length(dataset) > 1) {
+    srt_integrated <- fastMNN_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
   }
   srt_list_fastMNN[[srt_integrated@project.name]] <- srt_integrated
 }
@@ -232,21 +353,25 @@ if (!file.exists("srt_list_fastMNN.rds")) {
 
 # Integration: Harmony workflow -------------------------------------------
 srt_list_Harmony <- list()
-for (compare in compare_list) {
-  cat(paste0(compare, collapse = "-"), "\n")
-  if (length(compare) == 0)  {
+for (dataset in datasets) {
+  cat(paste0(dataset, collapse = "-"), "\n")
+  if (length(dataset) == 0) {
     next
   }
-  if (length(compare) == 1)  {
-    srt_integrated <-  Standard_SCP(sc = sc_list_filter_Standard[[compare]],nHVF = nHVF,maxPC = maxPC,resolution = resolution,
-                                    cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                    exogenous_genes = NULL, assay = "RNA")
+  if (length(dataset) == 1) {
+    srt_integrated <- Standard_SCP(
+      sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA"
+    )
   }
-  if (length(compare) > 1) {
-    srt_integrated <- Harmony_integrate(sc_list = sc_list_filter_Standard[compare], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = anchor_dims, maxPC = maxPC, resolution = resolution,
-                                        HVF_source = HVF_source,
-                                        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-                                        exogenous_genes = NULL)
+  if (length(dataset) > 1) {
+    srt_integrated <- Harmony_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
   }
   srt_list_Harmony[[srt_integrated@project.name]] <- srt_integrated
 }
@@ -254,59 +379,14 @@ if (!file.exists("srt_list_Harmony.rds")) {
   saveRDS(object = srt_list_Harmony, file = "srt_list_Harmony.rds")
 }
 
-
-# Run velocity ------------------------------------------------------------
-# srt_list_Standard <- readRDS(file = "srt_list_Standard.rds")
-# srt_list_SCT <- readRDS(file = "srt_list_SCT.rds")
-# srt_list_fastMNN <- readRDS(file = "srt_list_fastMNN.rds")
-# srt_list_Harmony <- readRDS(file = "srt_list_Harmony.rds")
-
-for (method in c("Standard", "SCT", "fastMNN", "Harmony")) {
-  srt_integrated <- get(paste0("srt_list_", method))[[1]]
-
-  velocity_merge <- subset(velocity_merge, cells = Cells(srt_integrated))
-  srt_integrated[["spliced"]] <- velocity_merge[["spliced"]]
-  srt_integrated[["unspliced"]] <- velocity_merge[["unspliced"]]
-  srt_integrated[["ambiguous"]] <- velocity_merge[["ambiguous"]]
-
-  srt_integrated <- RunVelocity(
-    object = srt_integrated,
-    spliced = "spliced",
-    unspliced = "unspliced",
-    ambiguous = "ambiguous",
-    reduction = "umap",
-    deltaT = 1,
-    kCells = 25,
-    fit.quantile = 0.02,
-    ncores = threads
+for (srt_name in c("srt_list_Standard","srt_list_SCT","srt_list_fastMNN","srt_list_Harmony")) {
+  srt_use <- get(srt_name)[[1]]
+  DefaultAssay(srt_use) <- "RNA"
+  srt_use$batch <- srt_use$orig.ident
+  project_name <- srt_use@project.name
+  p <- summary_plot(
+    srt = srt_use, return_list = F,features = "DDX4", color_by = "seurat_clusters", reduction = "umap", split_by = "batch", palette = "nejm",
+    do_save = T, file_save = paste0(srt_name, ".summary.png")
   )
-
-  ident_colors <- scales::hue_pal()(length(levels(Idents(srt_integrated))))
-  names(ident_colors) <- levels(Idents(srt_integrated))
-  cell_colors <- ident_colors[Idents(object = srt_integrated)]
-  names(cell_colors) <- colnames(srt_integrated)
-
-  vel_out <- show.velocity.on.embedding.cor(
-    emb = Embeddings(object = srt_integrated, reduction = "umap"),
-    vel = Tool(object = srt_integrated, slot = "RunVelocity"),
-    n = 200,
-    scale = "sqrt",
-    cell.colors = ac(x = cell_colors, alpha = 0.5),
-    cex = 0.8,
-    arrow.scale = 3,
-    show.grid.flow = TRUE,
-    min.grid.cell.mass = 0.5,
-    grid.n = 40,
-    arrow.lwd = 1,
-    do.par = FALSE,
-    cell.border.alpha = 0.1,
-    n.cores = threads,
-    return.details = T
-  )
-  
-  if (!file.exists(paste0("srt_list_", method, ".velocity.rds"))) {
-    saveRDS(object = vel_out, file = paste0("srt_list_", method, ".velocity.rds"))
-  }
-  
-  
 }
+

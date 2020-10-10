@@ -9,7 +9,7 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
+R_packages=("sctransform" "Seurat" "SeuratWrappers" "intrinsicDimension" "scater" "Matrix" "BiocParallel" "future" "reticulate" "harmony" "plyr" "dplyr" "RColorBrewer" "scales" "gtools" "ggsci" "ggpubr" "ggplot2" "ggtree" "cowplot" "reshape2" "stringr" "velocyto.R" "scDblFinder" "biomaRt")
 for package in "${R_packages[@]}"; do
   Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   if [ $? -ne 0 ]; then
@@ -22,6 +22,7 @@ for package in "${R_packages[@]}"; do
     exit 1
   fi
 done
+
 
 if [[ ! -f $gtf ]]; then
   color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
@@ -42,7 +43,7 @@ for sample in "${arr[@]}"; do
   {
     echo "+++++ $sample +++++"
     dir=$work_dir/$sample
-    bam=$dir/$Aligner/${sample}.${Aligner}.bam
+    cell_upset="$dir"/Alignment/Cellranger/"$sample"/CellCalling/cell_upset.rds
     if [[ ! -f $bam ]]; then
       echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
       exit 1
