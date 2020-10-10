@@ -57,7 +57,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL, assay = "RNA") {
   DefaultAssay(sc) <- assay
-  if (!"SCT" %in% Assays(sc)) {
+  if (!"SCT" %in% Seurat::Assays(sc)) {
     sc <- SCTransform(
       object = sc,
       variable.features.n = nHVF,
@@ -227,7 +227,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   }
 
   for (i in 1:length(sc_list)) {
-    if (!"SCT" %in% Assays(sc_list[[i]])) {
+    if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
       sc_list[[i]] <- SCTransform(
         object = sc_list[[i]],
         variable.features.n = nHVF,
