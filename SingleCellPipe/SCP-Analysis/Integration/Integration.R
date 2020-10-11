@@ -81,7 +81,7 @@ if (species == "Homo_sapiens") {
     )[[1]]
 
     if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
-      warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
+      warning(paste0("Number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
     }
   } else {
     warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))

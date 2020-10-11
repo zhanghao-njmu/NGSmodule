@@ -85,26 +85,26 @@ CNVanalysis()
 
 CreateSCPConfigFile()
 {
-  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPConfigFile.sh $1
+  source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPConfigFile.sh $1
 }
 
 CreateSCPSampleInfoFile()
 {
-  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPSampleInfoFile.sh
+  source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPSampleInfoFile.sh
 }
 
 CreateSCPWorkDir()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh prepare
-  source $shell_folder/SingleCellPipe/SCP-Preparation/CreateSCPWorkDir.sh
+  source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPWorkDir.sh
 }
 
 RunCellranger()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-Preprocess/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-Preprocess/CellCalling.R
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/CellCalling.R
 }
 
 Integration()
