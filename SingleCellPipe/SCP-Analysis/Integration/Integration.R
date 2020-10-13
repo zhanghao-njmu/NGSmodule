@@ -18,6 +18,7 @@ resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
 
+# Library -----------------------------------------------------------------
 library(sctransform)
 library(Seurat)
 library(SeuratWrappers)
@@ -43,6 +44,8 @@ library(stringr)
 library(velocyto.R)
 library(scDblFinder)
 library(biomaRt)
+library(rvest)
+library(xml2)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
   unlist() %>%
@@ -61,6 +64,11 @@ if (species == "Homo_sapiens") {
   species_homolog <- paste0(tolower(substring(species_split[1], 1, 1)), species_split[2], "_homolog_associated_gene_name")
 
   archives <- listEnsemblArchives()
+  # web <- read_html(httr::RETRY("GET", "http://www.ensembl.org/info/website/archives/index.html?redirect=no", times = 1000, timeout(1000)))
+  # urls <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_attr("href")
+  # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>% 
+  #   gsub(pattern = "(Ensembl )|(:.*)",replacement = "",x = .,perl = T)
+  # archives <- data.frame(version=version,url=urls,stringsAsFactors = F)
   url <- archives[which(archives$version == Ensembl_version), "url"]
 
   mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl", host = url)
@@ -81,8 +89,9 @@ if (species == "Homo_sapiens") {
     )[[1]]
 
     if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
-      warning(paste0("Number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
+      warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
     }
+    
   } else {
     warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
   }
@@ -95,25 +104,26 @@ if (species == "Homo_sapiens") {
 # NGSmodule_SCP_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/"
 # threads <- 80
 # datasets <- list(
-#   c("d0", "d1", "d3")
+#   # c("d0", "d1", "d3")
+#   c("d5","d7")
 # )
 # samples <- datasets %>%
 #   unlist() %>%
 #   unique()
-#
+# 
 # cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
 # cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
 # exogenous_genes <- NULL
-#
+# 
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
-#
+# 
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "separate"
 # nHVF <- 3000
 # anchor_dims <- 1:30
 # integrate_dims <- 1:30
-#
+# 
 # # parameters: clustering --------------------------------------------------
 # maxPC <- 100
 # resolution <- 0.8
@@ -260,7 +270,6 @@ sc_list_filter_Standard <- bplapply(setNames(samples, samples), function(sc_set)
     cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
     exogenous_genes = exogenous_genes, assay = "RNA"
   )
-
   return(srt)
 }, BPPARAM = MulticoreParam())
 
@@ -400,3 +409,20 @@ if (!file.exists("srt_list_Harmony.rds")) {
 #     do_save = T, file_save = paste0(srt_name, ".summary.png")
 #   )
 # }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
