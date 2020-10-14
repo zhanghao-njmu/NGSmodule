@@ -61,7 +61,7 @@ integrate_dims=30
 
 ### clustering ###
 maxPC=100
-resolution=0.8
+resolution=1
 
 EOF
 
