@@ -53,7 +53,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
   DefaultAssay(sc) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
@@ -116,7 +116,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
   DefaultAssay(sc) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
@@ -244,7 +244,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   DefaultAssay(srt_integrated) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
@@ -370,7 +370,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   DefaultAssay(srt_integrated) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
@@ -485,7 +485,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   DefaultAssay(srt_integrated) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
@@ -607,7 +607,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   DefaultAssay(srt_integrated) <- "RNA"
   Markers_MAST <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST", latent.vars = "orig.ident"
+    test.use = "MAST"#, latent.vars = "orig.ident"
   )
   Markers_ROC <- FindAllMarkers(
     object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
