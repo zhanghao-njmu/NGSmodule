@@ -240,7 +240,7 @@ if (nrow(sample_info) <= 6) {
 
 ##### PCA #####
 cat(">>> Principal Components Analysis\n")
-df_pca <- prcomp(t(logcpm_adj_scale), center = F, scale. = F)
+df_pca <- prcomp(t(logcpm_scale), center = F, scale. = F)
 df_pca <- summary(df_pca)
 PoV <- round(df_pca$importance[2, ] * 100, 2)
 x <- df_pca$x[, "PC1"]
