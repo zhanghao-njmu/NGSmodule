@@ -46,6 +46,7 @@ library(scDblFinder)
 library(biomaRt)
 library(rvest)
 library(xml2)
+set.seed(11)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
   unlist() %>%
