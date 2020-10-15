@@ -55,7 +55,7 @@ cell_calling_methodNum=3
 
 ### integration ###
 HVF_source="separate"
-nHVF=3000
+nHVF=4000
 anchor_dims=30
 integrate_dims=30
 
