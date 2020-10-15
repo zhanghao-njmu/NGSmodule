@@ -111,7 +111,7 @@ Integration()
 {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration.sh $shell_folder/SingleCellPipe/SCP-Analysis/Integration.R
+  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.R
 }
 
 help()
