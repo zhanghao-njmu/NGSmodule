@@ -154,7 +154,7 @@ for (i in 1:length(samples)) {
   cells <- cell_upset %>%
     filter(Method_num >= cell_calling_methodNum) %>%
     pull("Barcode")
-  cat(length(cells),"cells with calling methods >=", cell_calling_methodNum, sep = " ")
+  cat(length(cells),"cells with calling methods >=", cell_calling_methodNum, "\n", sep = " ")
   assign(
     x = paste0(samples[i], "_cellcalling"),
     value = cell_upset
