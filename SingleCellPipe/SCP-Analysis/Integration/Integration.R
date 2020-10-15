@@ -148,12 +148,13 @@ plotlist <- list()
 
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
-  cat("[", i, "]", "samples:", samples[i], "\n", sep = "")
+  cat("[", i, "]", " sample: ", samples[i], "\n", sep = "")
   cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cells <- cell_upset %>%
     filter(Method_num >= cell_calling_methodNum) %>%
     pull("Barcode")
+  cat(length(cells),"cells with calling methods >=", cell_calling_methodNum, sep = " ")
   assign(
     x = paste0(samples[i], "_cellcalling"),
     value = cell_upset
