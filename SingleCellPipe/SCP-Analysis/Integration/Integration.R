@@ -18,6 +18,29 @@ resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
 
+# ##### test #####
+# # parameters: global settings ---------------------------------------------
+# SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
+# NGSmodule_SCP_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_work/"
+# threads <- 120
+# datasets_raw <- "ESC,iPSC,PGCd6,CellLine1,CellLine2;CellLine1,CellLine2,Testis_d10,Testis_d20,Testis_d30,Testis_d40,Testis_d50;"
+# 
+# species <- "Homo_sapiens"
+# exogenous_genes <- "GFP"
+# 
+# # parameters: cell filtering ----------------------------------------------
+# cell_calling_methodNum <- 3
+# 
+# # parameters: integration -------------------------------------------------
+# HVF_source <- "global"
+# nHVF <- 4000
+# anchor_dims <- 1:30
+# integrate_dims <- 1:30
+# 
+# # parameters: clustering --------------------------------------------------
+# maxPC <- 100
+# resolution <- 1
+
 # Library -----------------------------------------------------------------
 library(sctransform)
 library(Seurat)
@@ -46,6 +69,7 @@ library(scDblFinder)
 library(biomaRt)
 library(rvest)
 library(xml2)
+library(BiocNeighbors)
 set.seed(11)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
@@ -67,7 +91,7 @@ if (species == "Homo_sapiens") {
   archives <- listEnsemblArchives()
   # web <- read_html(httr::RETRY("GET", "http://www.ensembl.org/info/website/archives/index.html?redirect=no", times = 1000, timeout(1000)))
   # urls <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_attr("href")
-  # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>% 
+  # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>%
   #   gsub(pattern = "(Ensembl )|(:.*)",replacement = "",x = .,perl = T)
   # archives <- data.frame(version=version,url=urls,stringsAsFactors = F)
   url <- archives[which(archives$version == Ensembl_version), "url"]
@@ -92,42 +116,12 @@ if (species == "Homo_sapiens") {
     if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
       warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
     }
-    
   } else {
     warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
   }
 }
 
 
-# ##### test #####
-# # parameters: global settings ---------------------------------------------
-# SCPanalysis_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_1002/"
-# NGSmodule_SCP_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/"
-# threads <- 80
-# datasets <- list(
-#   # c("d0", "d1", "d3")
-#   c("d5","d7")
-# )
-# samples <- datasets %>%
-#   unlist() %>%
-#   unique()
-# 
-# cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
-# cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
-# exogenous_genes <- NULL
-# 
-# # parameters: cell filtering ----------------------------------------------
-# cell_calling_methodNum <- 3
-# 
-# # parameters: integration -------------------------------------------------
-# HVF_source <- "separate"
-# nHVF <- 3000
-# anchor_dims <- 1:30
-# integrate_dims <- 1:30
-# 
-# # parameters: clustering --------------------------------------------------
-# maxPC <- 100
-# resolution <- 0.8
 
 
 
@@ -154,7 +148,7 @@ for (i in 1:length(samples)) {
   cells <- cell_upset %>%
     filter(Method_num >= cell_calling_methodNum) %>%
     pull("Barcode")
-  cat(length(cells),"cells with calling methods >=", cell_calling_methodNum, "\n", sep = " ")
+  cat(length(cells), "cells with calling methods >=", cell_calling_methodNum, "\n", sep = " ")
   assign(
     x = paste0(samples[i], "_cellcalling"),
     value = cell_upset
@@ -270,7 +264,7 @@ sc_list_filter_Standard <- bplapply(setNames(samples, samples), function(sc_set)
   srt <- Standard_SCP(
     sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
     cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-    exogenous_genes = exogenous_genes, assay = "RNA"
+    exogenous_genes = exogenous_genes, FindAllMarkers = FALSE, assay = "RNA"
   )
   return(srt)
 }, BPPARAM = MulticoreParam())
@@ -285,7 +279,7 @@ for (dataset in datasets) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -293,7 +287,7 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
     )
   }
 
@@ -325,7 +319,7 @@ for (dataset in datasets) {
     srt_integrated <- SCTransform_SCP(
       sc = sc_list_filter_SCT[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -333,7 +327,7 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
     )
   }
 
@@ -355,7 +349,7 @@ for (dataset in datasets) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -363,7 +357,7 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
     )
   }
   srt_list_fastMNN[[srt_integrated@project.name]] <- srt_integrated
@@ -384,7 +378,7 @@ for (dataset in datasets) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -392,7 +386,7 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes
+      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
     )
   }
   srt_list_Harmony[[srt_integrated@project.name]] <- srt_integrated
@@ -411,20 +405,3 @@ if (!file.exists("srt_list_Harmony.rds")) {
 #     do_save = T, file_save = paste0(srt_name, ".summary.png")
 #   )
 # }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

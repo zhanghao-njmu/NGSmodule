@@ -1,6 +1,6 @@
 Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                         exogenous_genes = NULL, assay = "RNA") {
+                         exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
   if (identical(
     x = GetAssayData(sc, slot = "counts"),
@@ -50,26 +50,28 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(sc) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  sc@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(sc) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    sc@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(sc)
 }
 
 SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                            exogenous_genes = NULL, assay = "RNA") {
+                            exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
   if (!"SCT" %in% Seurat::Assays(sc)) {
     sc <- SCTransform(
@@ -113,19 +115,21 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(sc) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  sc@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(sc) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    sc@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(sc)
 }
@@ -133,7 +137,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
 Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8,
                                HVF_source = "separate",
                                cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                               exogenous_genes = NULL) {
+                               exogenous_genes = NULL, FindAllMarkers = FALSE) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -241,19 +245,21 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(srt_integrated) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  srt_integrated@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(srt_integrated) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    srt_integrated@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(srt_integrated)
 }
@@ -261,7 +267,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
 SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8,
                                   HVF_source = "separate",
                                   cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                                  exogenous_genes = NULL) {
+                                  exogenous_genes = NULL, FindAllMarkers = FALSE) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -367,19 +373,21 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(srt_integrated) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  srt_integrated@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(srt_integrated) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    srt_integrated@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(srt_integrated)
 }
@@ -387,7 +395,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
 fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8,
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                              exogenous_genes = NULL) {
+                              exogenous_genes = NULL, FindAllMarkers = FALSE) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -482,19 +490,21 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(srt_integrated) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  srt_integrated@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(srt_integrated) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    srt_integrated@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(srt_integrated)
 }
@@ -502,7 +512,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8,
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                              exogenous_genes = NULL) {
+                              exogenous_genes = NULL, FindAllMarkers = FALSE) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -604,19 +614,21 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  DefaultAssay(srt_integrated) <- "RNA"
-  Markers_MAST <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "MAST" # , latent.vars = "orig.ident"
-  )
-  Markers_ROC <- FindAllMarkers(
-    object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-    test.use = "roc"
-  )
-  srt_integrated@tools$FindAllMarkers <- setNames(
-    object = list(Markers_MAST, Markers_ROC),
-    nm = c("Markers_MAST", "Markers_ROC")
-  )
+  if (isTRUE(FindAllMarkers)) {
+    DefaultAssay(srt_integrated) <- "RNA"
+    Markers_MAST <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "MAST" # , latent.vars = "orig.ident"
+    )
+    Markers_ROC <- FindAllMarkers(
+      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
+      test.use = "roc"
+    )
+    srt_integrated@tools$FindAllMarkers <- setNames(
+      object = list(Markers_MAST, Markers_ROC),
+      nm = c("Markers_MAST", "Markers_ROC")
+    )
+  }
 
   return(srt_integrated)
 }
