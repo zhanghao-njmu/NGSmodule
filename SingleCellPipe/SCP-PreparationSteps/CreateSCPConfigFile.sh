@@ -48,7 +48,7 @@ rmsk_gtf="\$cellranger_ref/genes/rmsk.gtf"
 ### base parameters ###
 datasets="ESC,iPSC,PGCd6,CellLine1,CellLine2;"
 species="Homo_sapiens"                           # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
-exogenous_genes=""
+exogenous_genes="GFP"
 
 ### cell-filtering ###
 cell_calling_methodNum=3
@@ -62,6 +62,7 @@ integrate_dims=30
 ### clustering ###
 maxPC=100
 resolution=1
+
 
 EOF
 
