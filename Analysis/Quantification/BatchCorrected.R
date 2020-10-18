@@ -97,6 +97,7 @@ mod0 <- model.matrix(~1, data = sample_info)
 n.sv <- num.sv(dat = logcpm, mod = mod1, method = "leek", seed = 11)
 
 # apply raw ComBat funtion ------------------------------------------------
+cat(">>> Apply raw ComBat funtion\n")
 logcpm_adj_rawComBat <- ComBat(
   dat = logcpm,
   batch = as.factor(sample_info[["BatchID"]]),
@@ -106,6 +107,7 @@ logcpm_adj_rawComBat <- ComBat(
 )
 
 # apply ComBat-seq funtion ------------------------------------------------
+cat(">>> Apply ComBat-seq funtion\n")
 count_adj <- ComBat_seq_custom(
   counts = counts_matrix,
   batch = as.factor(sample_info[["BatchID"]]),
@@ -114,10 +116,12 @@ count_adj <- ComBat_seq_custom(
 logcpm_adj_ComBatSeq <- cpm(count_adj, log = TRUE, prior.count = 2)
 
 # apply SVA function ------------------------------------------------------
+cat(">>> Apply SVA funtion\n")
 svobj <- sva(dat = logcpm, mod = mod1, mod0 = mod0, n.sv = n.sv)
 logcpm_adj_SVA <- cleanY(y = logcpm, mod = mod1, svs = svobj$sv)
 
 # apply removeBatchEffect function ----------------------------------------
+cat(">>> Apply removeBatchEffect funtion\n")
 logcpm_adj_removeBatchEffect <- removeBatchEffect(
   x = logcpm,
   batch = as.factor(sample_info[["BatchID"]]),
