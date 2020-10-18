@@ -132,7 +132,7 @@ for sample in "${arr[@]}"; do
           fq1_nlines=$(unpigz -c "$fq1" | wc -l)
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >"$dir"/fqCheck.log
           if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
-            echo -e "ERROR! Line count is zero or cannot divided by 4." >>"$dir"/fqCheck.log
+            echo -e "ERROR! Line count is zero or not divisible by 4." >>"$dir"/fqCheck.log
           else
             echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
           fi
@@ -249,9 +249,9 @@ for sample in "${arr[@]}"; do
           fi
           fq1_nlines=$(unpigz -c "$dir/${sample}_trim.fq.gz" | wc -l)
           echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\n" >>"$dir"/fqCheck.log
-          if [[ $((fq1_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines is not divisible by 4." >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: trim_fq1_nlines is not divisible by 4."
+          if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
+            echo -e "ERROR! trim_fq1_nlines is zero or not divisible by 4." >>"$dir"/fqCheck.log
+            color_echo "yellow" "Warning! $sample: trim_fq1_nlines is zero or not divisible by 4."
             force="TRUE"
             continue
           else
@@ -309,7 +309,7 @@ for sample in "${arr[@]}"; do
           if [[ $fq1_nlines != "$fq2_nlines" ]]; then
             echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqCheck.log
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
-            echo -e "ERROR! Line count is zero or cannot divided by 4." >>"$dir"/fqCheck.log
+            echo -e "ERROR! Line count is zero or not divisible by 4." >>"$dir"/fqCheck.log
           else
             echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
           fi
@@ -440,9 +440,9 @@ for sample in "${arr[@]}"; do
             color_echo "yellow" "Warning! $sample: has different numbers of reads between trimmed paired fastq."
             force="TRUE"
             continue
-          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is not divisible by 4." >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: trimmed nlines is not divisible by 4."
+          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
+            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is zero or not divisible by 4." >>"$dir"/fqCheck.log
+            color_echo "yellow" "Warning! $sample: trimmed nlines is zero or not divisible by 4."
             force="TRUE"
             continue
           else
