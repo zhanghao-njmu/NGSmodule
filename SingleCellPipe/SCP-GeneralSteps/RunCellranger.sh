@@ -154,8 +154,8 @@ for sample in "${arr[@]}"; do
                 echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))\n" >"$dir"/fqCheck.log
                 if [[ $fq1_nlines != "$fq2_nlines" ]]; then
                     echo -e "ERROR! $sample has different numbers of reads between paired fastq." >>"$dir"/fqCheck.log
-                elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]]; then
-                    echo -e "ERROR! Line count is not divisible by 4." >>"$dir"/fqCheck.log
+                elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
+                    echo -e "ERROR! Line count is zero or cannot divided by 4." >>"$dir"/fqCheck.log
                 else
                     echo -e "FastqCheck passed." >>"$dir"/fqCheck.log
                 fi
