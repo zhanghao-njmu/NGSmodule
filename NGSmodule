@@ -69,11 +69,11 @@ postQuantificationQC()
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
-BatchCorrected()
+BatchCorrection()
 {
   source $1
   source $shell_folder/LoadConfig.sh 
-  source $shell_folder/Analysis/Quantification/BatchCorrected.sh $shell_folder/Analysis/Quantification/BatchCorrected.R
+  source $shell_folder/Analysis/Quantification/BatchCorrection.sh $shell_folder/Analysis/Quantification/BatchCorrection.R
 }
 
 DifferentialExpression()
@@ -149,7 +149,7 @@ cat <<- EOF
        preAlignmentQC           
        Alignment                
        postAlignmentQC
-       BatchCorrected          
+       BatchCorrection          
 
     # ExpressionAnalysis:
        Quantification
@@ -248,11 +248,11 @@ while true;do
         CheckConfigFile $ConfigFile
         postQuantificationQC $ConfigFile
         exit 0   
-      elif [[ $1 == "BatchCorrected" ]];then
+      elif [[ $1 == "BatchCorrection" ]];then
         { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in BatchCorrected MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in BatchCorrection MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
-        BatchCorrected $ConfigFile
+        BatchCorrection $ConfigFile
         exit 0   
       elif [[ $1 == "DifferentialExpression" ]];then
         { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
