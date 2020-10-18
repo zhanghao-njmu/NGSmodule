@@ -271,7 +271,7 @@ sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
   srt <- Standard_SCP(
     sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
     cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-    exogenous_genes = exogenous_genes, assay = "RNA"
+    exogenous_genes = exogenous_genes, assay = "RNA",reduction=""
   )
   return(srt)
 })
