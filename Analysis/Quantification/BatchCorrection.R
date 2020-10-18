@@ -142,7 +142,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   logcpm_adj <- get(paste0("logcpm_adj_", method))
   write.table(
     x = cbind(data.frame(GeneID = rownames(logcpm_adj)), logcpm_adj),
-    file = paste0("BatchCorrection_", method, ".log2CPM.tab"),
+    file = paste0(method,".",aligner, ".log2CPM.tab"),
     sep = "\t", col.names = TRUE, row.names = FALSE, quote = FALSE
   )
   logcpm_adj_scale <- t(scale(t(logcpm_adj)))
