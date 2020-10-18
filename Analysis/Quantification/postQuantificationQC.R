@@ -127,8 +127,8 @@ plot_list[["Hierarchical_Clustering_colored_by_batch"]] <- p
 ##### correlation heatmap #####
 cat(">>> Correlation Heatmap\n")
 logcpm_cor <- round(cor(logcpm, method = "spearman"), 2)
-q1 <- quantile(logcpm_cor, 0.99)
-q2 <- quantile(logcpm_cor, 0.01)
+q1 <- quantile(logcpm_cor, 0.95)
+q2 <- quantile(logcpm_cor, 0.05)
 color_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
 
 df_bottom_annotation <- HeatmapAnnotation(
