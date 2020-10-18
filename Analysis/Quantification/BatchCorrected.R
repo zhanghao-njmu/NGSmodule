@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
+  c(
+    "dplyr", "stringr", "ggplot2", "ggsci", "ggtree", "RColorBrewer", "cowplot",
+    "aplot", "ggplotify", "edgeR", "sva", "limma"
+  ),
+  require,
+  character.only = TRUE
+))))
 
 args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
@@ -21,8 +29,9 @@ library(ggplotify)
 library(edgeR)
 library(sva)
 library(limma)
-script_dir <- gsub(x = script_path,pattern = "BatchCorrected.R",replacement = "")
-source(paste0(script_dir,"/BatchCorrected_function.R"))
+
+script_dir <- gsub(x = script_path, pattern = "BatchCorrected.R", replacement = "")
+source(paste0(script_dir, "/BatchCorrected_function.R"))
 
 count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
 
@@ -229,7 +238,7 @@ p <- lapply(setNames(methods, methods), function(method) {
   return(cowplot::plot_grid(plotlist = plot_list))
 })
 
-pdf("BatchCorrected.pdf",width = 8, height = 5)
+pdf("BatchCorrected.pdf", width = 8, height = 5)
 invisible(lapply(p, print))
 invisible(dev.off())
 
@@ -238,5 +247,3 @@ invisible(dev.off())
 if (file.exists("Rplots.pdf")) {
   invisible(file.remove("Rplots.pdf"))
 }
-
-

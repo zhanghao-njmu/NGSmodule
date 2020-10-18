@@ -69,6 +69,13 @@ postQuantificationQC()
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
+BatchCorrected()
+{
+  source $1
+  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/Analysis/Quantification/BatchCorrected.sh $shell_folder/Analysis/Quantification/BatchCorrected.R
+}
+
 DifferentialExpression()
 {
   source $1
