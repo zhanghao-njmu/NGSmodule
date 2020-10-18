@@ -49,6 +49,7 @@ if (!file.exists(SampleInfoFile)) {
 
 ##### Load data #####
 sample_info <- read.csv(SampleInfoFile, stringsAsFactors = F, header = T)
+sample_info <- as.data.frame(sapply(sample_info, as.character))
 sample_info <- sample_info %>%
   group_by(SampleID) %>%
   mutate(RunID = paste0(RunID, collapse = ",")) %>%
