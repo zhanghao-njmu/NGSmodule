@@ -14,8 +14,10 @@ aligner <- args[2]
 SampleInfoFile <- args[3]
 script_path <- as.character(args[4])
 
-# SampleInfoFile <- "../temp_20200714173936.Sample_info.csv"
-# count_file <- "../NGSmodule_analysis/Quantification/Quantification.hisat2.count.tab"
+# maindir <- "/data/database/SRR_collection/human/early_embyro/"
+# aligner <- "hisat2"
+# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/BatchCorrected.R"
 
 library(dplyr)
 library(stringr)
@@ -29,6 +31,7 @@ library(ggplotify)
 library(edgeR)
 library(sva)
 library(limma)
+set.seed(11)
 
 script_dir <- gsub(x = script_path, pattern = "BatchCorrected.R", replacement = "")
 source(paste0(script_dir, "/BatchCorrected_function.R"))
@@ -61,16 +64,17 @@ rownames(sample_info) <- sample_info[, "SampleID"]
 sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "Group"]))
 sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
 
-counts_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
-counts_matrix <- counts_matrix_raw[, which(str_detect(colnames(counts_matrix_raw), pattern = paste0(".", aligner, ".count"))), drop = FALSE]
-colnames(counts_matrix) <- gsub(x = colnames(counts_matrix), pattern = paste0(".", aligner, ".count"), replacement = "")
-counts_matrix <- counts_matrix[, sample_info[["SampleID"]]]
-logcpm <- cpm(counts_matrix, log = TRUE, prior.count = 2)
-logcpm_scale <- t(scale(t(logcpm)))
+count_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
+count_matrix <- count_matrix_raw[, which(str_detect(colnames(count_matrix_raw), pattern = paste0(".", aligner, ".count"))), drop = FALSE]
+colnames(count_matrix) <- gsub(x = colnames(count_matrix), pattern = paste0(".", aligner, ".count"), replacement = "")
+count_matrix <- count_matrix[, sample_info[["SampleID"]]]
+count_matrix <- count_matrix[rowSums(count_matrix) > 0, ]
+
+logcpm <- cpm(count_matrix, log = TRUE, prior.count = 2)
 logcpm_adj_raw <- logcpm
 
-start <- which(str_detect(colnames(counts_matrix_raw), ">>"))[1]
-annotation_matrix <- counts_matrix_raw[, start:ncol(counts_matrix_raw)]
+start <- which(str_detect(colnames(count_matrix_raw), ">>"))[1]
+annotation_matrix <- count_matrix_raw[, start:ncol(count_matrix_raw)]
 
 
 # select covariates for Combat and removeBatchEffect ----------------------
@@ -109,7 +113,7 @@ logcpm_adj_rawComBat <- ComBat(
 # apply ComBat-seq funtion ------------------------------------------------
 cat("\n>>> Apply ComBat-seq funtion\n")
 count_adj <- ComBat_seq_custom(
-  counts = counts_matrix,
+  counts = count_matrix,
   batch = as.factor(sample_info[["BatchID"]]),
   covar_mod = covar_mod
 )
@@ -132,7 +136,7 @@ logcpm_adj_removeBatchEffect <- removeBatchEffect(
 
 ###################
 methods <- c("raw", "rawComBat", "ComBatSeq", "SVA", "removeBatchEffect")
-p <- lapply(setNames(methods, methods), function(method) {
+pl <- lapply(setNames(methods, methods), function(method) {
   cat("+++", method, "+++\n")
   logcpm_adj <- get(paste0("logcpm_adj_", method))
   write.table(
@@ -242,8 +246,8 @@ p <- lapply(setNames(methods, methods), function(method) {
   return(cowplot::plot_grid(plotlist = plot_list))
 })
 
-pdf("BatchCorrected.pdf", width = 8, height = 5)
-invisible(lapply(p, print))
+pdf("BatchCorrected.pdf", width = 12, height = 8)
+invisible(lapply(pl, print))
 invisible(dev.off())
 
 
