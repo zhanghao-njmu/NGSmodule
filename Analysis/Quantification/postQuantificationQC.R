@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "limma", "edgeR", "data.table", "gplots", "stringr", "ComplexHeatmap",
+    "dplyr","limma", "edgeR", "data.table", "gplots", "stringr", "ComplexHeatmap",
     "ggsci", "ggpubr", "RColorBrewer", "circlize", "ggrepel", "GGally",
     "factoextra", "nord", "aplot", "ggtree","sva"
   ),
@@ -16,23 +16,27 @@ SampleInfoFile <- args[3]
 script_path <- as.character(args[4])
 
 ######### example 1 ############
-# maindir <- "/data/lab/ZhangHao/tmp/"
-# aligner <- "hisat2"
-# SampleInfoFile <- "/data/lab/ZhangHao/tmp/temp_20200413205117.Sample_info.csv"
-################################
-
-######### example 2 ############
 # setwd("/data/lab/HeXi/Rpl39l/RNC-seq/NGSmodule_analysis/Quantification/postQuantificationQC/")
 # maindir <- "/data/lab/HeXi/Rpl39l/RNC-seq/"
 # aligner <- "hisat2"
 # SampleInfoFile <- "/data/lab/HeXi/Rpl39l/RNC-seq/Sample_info.csv"
+# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/postQuantificationQC.R"
 ################################
 
-######### example 3 ############
+######### example 2 ############
 # setwd("/data/database/SRR_collection/human/early_embyro/NGSmodule_analysis/Quantification/postQuantificationQC/")
 # maindir <- "/data/database/SRR_collection/human/early_embyro"
 # aligner <- "hisat2"
 # SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/postQuantificationQC.R"
+################################
+
+######### example 3 ############
+# setwd("/data/lab/HuangMingQian/RNA-seq/ESC-iMeLC-PGCLC-CellLine/NGSmodule_analysis/Quantification/postQuantificationQC/")
+# maindir <- "/data/lab/HuangMingQian/RNA-seq/ESC-iMeLC-PGCLC-CellLine"
+# aligner <- "hisat2"
+# SampleInfoFile <- "/data/lab/HuangMingQian/RNA-seq/ESC-iMeLC-PGCLC-CellLine/temp_20201015023129.Sample_info.csv"
+# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/postQuantificationQC.R"
 ################################
 
 ##### source the function #####
@@ -51,8 +55,17 @@ if (!file.exists(SampleInfoFile)) {
 }
 
 sample_info <- read.csv(SampleInfoFile, stringsAsFactors = F, header = T)
-sample_info <- unique(sample_info[, colnames(sample_info) != "RunID"])
+sample_info <- as.data.frame(sapply(sample_info, as.character))
+sample_info <- sample_info %>%
+  group_by(SampleID) %>%
+  mutate(RunID = paste0(RunID, collapse = ",")) %>%
+  distinct() %>%
+  as.data.frame()
 rownames(sample_info) <- sample_info[, "SampleID"]
+sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "Group"]))
+sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
+
+
 
 count_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
 count_matrix <- count_matrix_raw[, which(str_detect(colnames(count_matrix_raw), pattern = paste0(".", aligner, ".count"))), drop = FALSE]
@@ -280,8 +293,8 @@ p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sa
   geom_point(shape = 21, alpha = 0.8) +
   geom_rug(aes(color = Batch), show.legend = FALSE) +
   labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
-  scale_fill_manual(values = col_color) +
-  scale_color_manual(values = col_color) +
+  scale_fill_manual(values = batch_color) +
+  scale_color_manual(values = batch_color) +
   guides(colour = guide_legend(override.aes = list(size = 5))) +
   xlim(-m, m) +
   ylim(-m, m) +
