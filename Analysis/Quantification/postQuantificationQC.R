@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "dplyr","limma", "edgeR", "data.table", "gplots", "stringr", "ComplexHeatmap",
+    "dplyr", "limma", "edgeR", "data.table", "gplots", "stringr", "ComplexHeatmap",
     "ggsci", "ggpubr", "RColorBrewer", "circlize", "ggrepel", "GGally",
-    "factoextra", "nord", "aplot", "ggtree","sva"
+    "factoextra", "nord", "aplot", "ggtree", "sva"
   ),
   require,
   character.only = TRUE
@@ -40,8 +40,8 @@ script_path <- as.character(args[4])
 ################################
 
 ##### source the function #####
-script_dir <- gsub(x = script_path,pattern = "postQuantificationQC.R",replacement = "")
-source(paste0(script_dir,"/postQuantificationQC_function.R"))
+script_dir <- gsub(x = script_path, pattern = "postQuantificationQC.R", replacement = "")
+source(paste0(script_dir, "/postQuantificationQC_function.R"))
 
 count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
 
@@ -202,27 +202,27 @@ r_max <- 0.408 / ncol(logcpm_cor)
 #     )
 #   )
 # } else {
-  ht <- Heatmap(logcpm_cor,
-    col = colorRamp2(seq(q1, q2, length = 100), color_palette),
-    show_row_names = FALSE,
-    show_column_names = FALSE,
-    column_names_gp = gpar(fontsize = 10),
-    row_names_gp = gpar(fontsize = 10),
-    border = T,
-    bottom_annotation = df_bottom_annotation,
-    right_annotation = df_right_annotation,
-    heatmap_legend_param = list(
-      title = "Spearman's correlation coefficient",
-      title_gp = gpar(fontsize = 12, fontfamily = "sans"),
-      title_position = "lefttop",
-      grid_height = unit(4, "mm"),
-      grid_width = unit(4, "mm"),
-      border = "black",
-      labels_gp = gpar(fontsize = 8),
-      legend_direction = "horizontal",
-      legend_width = unit(4, "cm")
-    )
+ht <- Heatmap(logcpm_cor,
+  col = colorRamp2(seq(q1, q2, length = 100), color_palette),
+  show_row_names = FALSE,
+  show_column_names = FALSE,
+  column_names_gp = gpar(fontsize = 10),
+  row_names_gp = gpar(fontsize = 10),
+  border = T,
+  bottom_annotation = df_bottom_annotation,
+  right_annotation = df_right_annotation,
+  heatmap_legend_param = list(
+    title = "Spearman's correlation coefficient",
+    title_gp = gpar(fontsize = 12, fontfamily = "sans"),
+    title_position = "lefttop",
+    grid_height = unit(4, "mm"),
+    grid_width = unit(4, "mm"),
+    border = "black",
+    labels_gp = gpar(fontsize = 8),
+    legend_direction = "horizontal",
+    legend_width = unit(4, "cm")
   )
+)
 # }
 grob <- grid.grabExpr(ComplexHeatmap::draw(ht, heatmap_legend_side = "top"))
 p <- as_ggplot(grob) + theme(aspect.ratio = 1)
@@ -268,7 +268,7 @@ df <- data.frame(
 )
 
 p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sample)) +
-  geom_point(shape = 21, alpha = 0.8) +
+  geom_point(shape = 21, alpha = 0.8, size = 2) +
   geom_rug(aes(color = Group), show.legend = FALSE) +
   labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
   scale_fill_manual(values = col_color) +
@@ -284,13 +284,13 @@ p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sa
 if (nrow(sample_info) < 20) {
   p <- p + geom_label_repel(
     size = 2.5, color = "white",
-    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8,show.legend = FALSE
+    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8, show.legend = FALSE
   )
 }
 plot_list[["PCA_colored_by_group"]] <- p
 
 p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sample)) +
-  geom_point(shape = 21, alpha = 0.8) +
+  geom_point(shape = 21, alpha = 0.8, size = 2) +
   geom_rug(aes(color = Batch), show.legend = FALSE) +
   labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
   scale_fill_manual(values = batch_color) +
@@ -306,7 +306,7 @@ p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sa
 if (nrow(sample_info) < 20) {
   p <- p + geom_label_repel(
     size = 2.5, color = "white",
-    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8,show.legend = FALSE
+    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8, show.legend = FALSE
   )
 }
 plot_list[["PCA_colored_by_batch"]] <- p

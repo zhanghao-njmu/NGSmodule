@@ -201,7 +201,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   )
 
   p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sample)) +
-    geom_point(shape = 21, alpha = 0.8) +
+    geom_point(shape = 21, alpha = 0.8, size = 2) +
     geom_rug(aes(color = Group), show.legend = FALSE) +
     labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
     scale_fill_manual(values = col_color) +
@@ -223,7 +223,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   plot_list[["PCA_colored_by_group"]] <- p
 
   p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sample)) +
-    geom_point(shape = 21, alpha = 0.8) +
+    geom_point(shape = 21, alpha = 0.8, size = 2) +
     geom_rug(aes(color = Batch), show.legend = FALSE) +
     labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
     scale_fill_manual(values = batch_color) +
