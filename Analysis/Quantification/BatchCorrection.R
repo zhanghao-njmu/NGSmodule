@@ -244,7 +244,21 @@ pl <- lapply(setNames(methods, methods), function(method) {
   }
   plot_list[["PCA_colored_by_batch"]] <- p
 
-  return(cowplot::plot_grid(plotlist = plot_list))
+  title <- ggdraw() +
+    draw_label(
+      label = paste("Batch-correction method:",method),
+      fontface = "bold", x = 0, hjust = 0
+    ) +
+    theme(
+      plot.margin = margin(0, 0, 0, 7)
+    )
+  res <- plot_grid(
+    title, plot_grid(plotlist = plot_list),
+    ncol = 1,
+    rel_heights = c(0.05, 1)
+  )
+  
+  return(res)
 })
 
 pdf("BatchCorrected.pdf", width = 12, height = 8)
