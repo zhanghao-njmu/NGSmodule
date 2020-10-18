@@ -164,6 +164,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
       arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
+    sc_merge <- NULL
   }
   if (HVF_source == "separate") {
     hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
@@ -292,6 +293,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
       arrange(desc(residual_variance)) %>%
       rownames(.) %>%
       head(n = nHVF)
+    sc_merge <- NULL
   }
   if (HVF_source == "separate") {
     hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
@@ -418,6 +420,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
+    sc_merge <- NULL
   }
   if (HVF_source == "separate") {
     hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
@@ -549,6 +552,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     epsilon.cluster = 1e-16,
     epsilon.harmony = 1e-16
   )
+  sc_merge <- NULL
 
   DefaultAssay(object = srt_integrated) <- "RNA"
   if (identical(
