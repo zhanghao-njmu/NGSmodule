@@ -29,9 +29,9 @@ force_complete="FALSE"                        ## A global option to determine wh
 ### RunIDPattern=".*"
 ### SE_SufixPattern="_2020.*\.fastq\.gz"; R1_SufixPattern="_2020.*_1\.fastq\.gz"; R2_SufixPattern="_2020.*_2\.fastq\.gz"
 RunIDPattern=".*"                      ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
-SE_SufixPattern="\.((fastq)|(fq))\.gz"
-R1_SufixPattern="_1\.((fastq)|(fq))\.gz"
-R2_SufixPattern="_2\.((fastq)|(fq))\.gz"
+SE_SufixPattern="\.((fastq)|(fq))\.gz"          # Must start with and end with a fixed string. 
+R1_SufixPattern="_1\.((fastq)|(fq))\.gz"        # Must start with and end with a fixed string.     
+R2_SufixPattern="_2\.((fastq)|(fq))\.gz"        # Must start with and end with a fixed string. 
 
 
 ############# preAlignmentQC Paramaters ###################################################################
