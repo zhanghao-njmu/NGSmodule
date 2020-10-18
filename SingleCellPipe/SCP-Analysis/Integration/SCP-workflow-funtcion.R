@@ -1,6 +1,6 @@
-Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
+Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                         exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
+                         exogenous_genes = NULL, FindAllMarkers = FALSE, FindPairMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
   if (identical(
     x = GetAssayData(sc, slot = "counts"),
@@ -24,7 +24,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
 
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   sc <- BuildClusterTree(sc, reorder = T)
@@ -39,6 +39,16 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
       to = 1:length(levels(Idents(sc)))
     )
 
+  if ("umap" %in% reduction) {
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    sc <- RunTSNE(
+      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     sc <- CellCycleScoring(
       object = sc,
@@ -50,26 +60,10 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(sc) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
-    )
-    Markers_ROC <- FindAllMarkers(
-      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
-    )
-    sc@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
-    )
-  }
-
   return(sc)
 }
 
-SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
+SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
@@ -78,6 +72,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
       object = sc,
       variable.features.n = nHVF,
       return.only.var.genes = FALSE,
+      assay = "RNA"
     )
   }
   DefaultAssay(sc) <- "SCT"
@@ -89,7 +84,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
     head(n = nHVF)
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   sc <- BuildClusterTree(sc, reorder = T)
@@ -104,6 +99,16 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
       to = 1:length(levels(Idents(sc)))
     )
 
+  if ("umap" %in% reduction) {
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    sc <- RunTSNE(
+      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     sc <- CellCycleScoring(
       object = sc,
@@ -115,26 +120,10 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8,
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(sc) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
-    )
-    Markers_ROC <- FindAllMarkers(
-      object = sc, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
-    )
-    sc@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
-    )
-  }
-
   return(sc)
 }
 
-Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8,
+Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                HVF_source = "separate",
                                cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                                exogenous_genes = NULL, FindAllMarkers = FALSE) {
@@ -165,6 +154,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   if (HVF_source == "global") {
     gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+    DefaultAssay(sc_merge) <- "RNA"
     hvf <- NormalizeData(object = sc_merge) %>%
       FindVariableFeatures(.) %>%
       HVFInfo(.) %>%
@@ -219,7 +209,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
@@ -234,6 +224,16 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     srt_integrated <- CellCycleScoring(
       object = srt_integrated,
@@ -245,26 +245,10 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(srt_integrated) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
-    )
-    Markers_ROC <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
-    )
-    srt_integrated@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
-    )
-  }
-
   return(srt_integrated)
 }
 
-SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8,
+SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                   HVF_source = "separate",
                                   cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                                   exogenous_genes = NULL, FindAllMarkers = FALSE) {
@@ -279,7 +263,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
       sc_list[[i]] <- SCTransform(
         object = sc_list[[i]],
         variable.features.n = nHVF,
-        return.only.var.genes = FALSE,
+        return.only.var.genes = TRUE,
         assay = "RNA"
       )
     }
@@ -293,9 +277,16 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   if (HVF_source == "global") {
     gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-    hvf <- NormalizeData(object = sc_merge) %>%
-      FindVariableFeatures(.) %>%
-      HVFInfo(.) %>%
+    DefaultAssay(sc_merge) <- "RNA"
+    sc_merge <- SCTransform(
+      object = sc_merge,
+      variable.features.n = nHVF,
+      vars.to.regress = "orig.ident",
+      return.only.var.genes = TRUE,
+      assay = "RNA"
+    )
+    DefaultAssay(sc_merge) <- "SCT"
+    hvf <- HVFInfo(sc_merge) %>%
       filter((!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_common) %>%
       arrange(desc(residual_variance)) %>%
@@ -347,7 +338,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
@@ -362,6 +353,16 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     srt_integrated <- CellCycleScoring(
       object = srt_integrated,
@@ -373,26 +374,10 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(srt_integrated) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
-    )
-    Markers_ROC <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
-    )
-    srt_integrated@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
-    )
-  }
-
   return(srt_integrated)
 }
 
-fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8,
+fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL, FindAllMarkers = FALSE) {
@@ -423,6 +408,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   if (HVF_source == "global") {
     gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+    DefaultAssay(sc_merge) <- "RNA"
     hvf <- NormalizeData(object = sc_merge) %>%
       FindVariableFeatures(.) %>%
       HVFInfo(.) %>%
@@ -464,7 +450,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   )
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "mnn"), k = 20, iterations = 100)[["dim.est"]])
-  srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
@@ -479,6 +465,16 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     srt_integrated <- CellCycleScoring(
       object = srt_integrated,
@@ -490,26 +486,10 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
-  if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(srt_integrated) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
-    )
-    Markers_ROC <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
-    )
-    srt_integrated@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
-    )
-  }
-
   return(srt_integrated)
 }
 
-Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8,
+Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL, FindAllMarkers = FALSE) {
@@ -539,9 +519,10 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   }
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  sc_merge <- NormalizeData(object = sc_merge)
-  sc_merge <- FindVariableFeatures(object = sc_merge)
-  sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
+  DefaultAssay(sc_merge) <- "RNA"
+  sc_merge <- NormalizeData(object = sc_merge) %>%
+    FindVariableFeatures(.) %>%
+    ScaleData(features = rownames(.))
 
   if (HVF_source == "global") {
     gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
@@ -589,7 +570,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   )
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "harmony"), k = 20, iterations = 100)[["dim.est"]])
-  srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
@@ -603,6 +584,17 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       from = srt_integrated@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(srt_integrated)))
     )
+
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+    )
+  }
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     srt_integrated <- CellCycleScoring(
       object = srt_integrated,
@@ -614,21 +606,60 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  return(srt_integrated)
+}
+
+
+DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
+                   foldchange_threshold = 1.5, pvalue_threshold = 0.05, roc_threshold = 0.4,
+                   BPPARAM = MulticoreParam()) {
   if (isTRUE(FindAllMarkers)) {
-    DefaultAssay(srt_integrated) <- "RNA"
-    Markers_MAST <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "MAST" # , latent.vars = "orig.ident"
+    DefaultAssay(srt) <- "RNA"
+    AllMarkers_Wilcoxon <- FindAllMarkers(
+      object = srt, only.pos = T, logfc.threshold = log2(foldchange),
+      test.use = "wilcox", return.thresh = pvalue_threshold # , latent.vars = "orig.ident"
     )
-    Markers_ROC <- FindAllMarkers(
-      object = srt_integrated, only.pos = T, min.pct = 0.25, logfc.threshold = 0.25,
-      test.use = "roc"
+    AllMarkers_ROC <- FindAllMarkers(
+      object = srt, only.pos = T, logfc.threshold = log2(foldchange),
+      test.use = "roc", return.thresh = roc_threshold
     )
-    srt_integrated@tools$FindAllMarkers <- setNames(
-      object = list(Markers_MAST, Markers_ROC),
-      nm = c("Markers_MAST", "Markers_ROC")
+    srt@tools$FindAllMarkers <- setNames(
+      object = list(AllMarkers_Wilcoxon, AllMarkers_ROC),
+      nm = c("AllMarkers_Wilcoxon", "AllMarkers_ROC")
     )
   }
 
-  return(srt_integrated)
+  if (isTRUE(FindPairMarkers)) {
+    DefaultAssay(srt) <- "RNA"
+    pair <- expand.grid(x = levels(Idents(srt)), y = levels(Idents(srt)))
+    pair <- pair[pair[, 1] != pair[, 2], ]
+    PairMarkers_Wilcoxon <- bplapply(1:nrow(pair), function(i) {
+      res <- FindMarkers(
+        ident.1 = as.character(pair[i, 1]), ident.2 = as.character(pair[i, 2]),
+        object = srt, only.pos = T, logfc.threshold = log2(foldchange),
+        test.use = "wilcox" # , latent.vars = "orig.ident"
+      )
+      res[, "ident.1"] <- as.character(pair[i, 1])
+      res[, "ident.2"] <- as.character(pair[i, 2])
+      res[, "gene"] <- rownames(res)
+      res <- res[res[["p_val"]] < pvalue_threshold, ]
+
+      return(res)
+    }, BPPARAM = BPPARAM)
+    PairMarkers_Wilcoxon <- bind_rows(PairMarkers_Wilcoxon)
+    PairMarkers_Wilcoxon[, "DEnumber"] <- table(PairMarkers_Wilcoxon[["gene"]])
+
+    srt@tools$FindPairMarkers <- setNames(
+      object = PairMarkers_Wilcoxon,
+      nm = "PairMarkers_Wilcoxon"
+    )
+
+    # exp1<- GetAssayData(object = srt,assay = "RNA",slot = "data")["NEUROD1",WhichCells(srt,idents = as.character(pair[1,1]))]
+    # exp2<- GetAssayData(object = srt,assay = "RNA",slot = "data")["NEUROD1",WhichCells(srt,idents = as.character(pair[2,1]))]
+    # sum(exp1!=0)/length(exp1)
+    # sum(exp2!=0)/length(exp2)
+    # log2(mean(exp(exp1))/mean(exp(exp2)))
+  }
+
+  return(srt)
 }

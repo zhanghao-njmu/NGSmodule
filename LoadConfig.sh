@@ -162,6 +162,7 @@ fi
 declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]]; then
+  dos2unix $SampleInfoFile &>/dev/null
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     Sample_dict[$RunID]=$SampleID
     Layout_dict[$SampleID]=$Layout

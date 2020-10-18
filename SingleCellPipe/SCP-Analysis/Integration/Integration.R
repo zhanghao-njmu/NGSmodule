@@ -69,7 +69,6 @@ library(scDblFinder)
 library(biomaRt)
 library(rvest)
 library(xml2)
-library(BiocNeighbors)
 set.seed(11)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
@@ -122,14 +121,11 @@ if (species == "Homo_sapiens") {
 }
 
 
-
-
-
 ########################### Start the workflow ############################
 setwd(SCPanalysis_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
-options(future.fork.enable = TRUE)
+# options(future.fork.enable = TRUE)
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
@@ -187,32 +183,32 @@ for (i in 1:length(samples)) {
   velocity[["orig.ident"]] <- samples[i]
   velocity_list[[samples[i]]] <- velocity
 }
+
 if (length(sc_list) == 1) {
   sc_merge <- sc_list[[1]]
   velocity_merge <- velocity_list[[1]]
 } else {
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
   Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
-  # p <- VlnPlot(object = sc_merge, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0.1, combine = F) %>%
-  #   custom_Vln_plot(
-  #     alpha = 0, y_cutoff = c(minGene, minUMI, maxMitoPercent), pass = c("h", "h", "l"), combine = T,
-  #     ncol = 3, AddBox = T, palette = "nejm"
-  #   )
-
   velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
   Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
 }
+if (!file.exists("sc_merge.rds")) {
+  saveRDS(sc_merge,file = "sc_merge.rds")
+}
+if (!file.exists("velocity_merge.rds")) {
+  saveRDS(velocity_merge,file = "velocity_merge.rds")
+}
 
 # Preprocessing: cell filtering -----------------------------------
-sc_list_filter <- bplapply(setNames(samples, samples), function(sc_set) {
+sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
   srt <- sc_list[[sc_set]]
+  ntotal <- ncol(srt)
   sce <- as.SingleCellExperiment(srt)
   sce <- scDblFinder(sce, verbose = FALSE)
-  # print(table(sce$scDblFinder.class))
   ndoublets <- sum(sce$scDblFinder.class == "doublet")
   sce <- subset(sce, , scDblFinder.class == "singlet")
   srt <- subset(x = srt, cells = colnames(sce))
-  cat(sc_set, ": filter out", ndoublets, "potential doublets\n")
 
   log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
   log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
@@ -250,36 +246,46 @@ sc_list_filter <- bplapply(setNames(samples, samples), function(sc_set) {
   out <- table(unlist(out))
   # print(table(out))
   out <- as.numeric(names(out)[which(out >= 2)])
+
+  cat(
+    " +++", sc_set, "+++", "\n",
+    ">>>", "Total cells:", ntotal, "\n",
+    ">>>", "Filter out", ndoublets + length(out), "cells (potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
+    ">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n"
+  )
+
   if (length(out) > 0) {
-    cat(sc_set, ": filter out", length(out), "unqualified cells\n")
     srt <- subset(srt, cell = colnames(srt)[-out])
   }
 
   return(srt)
-}, BPPARAM = MulticoreParam())
+})
+if (!file.exists("sc_list_filter.rds")) {
+  saveRDS(sc_list_filter,file = "sc_list_filter.rds")
+}
 
 # Integration: Standard workflow ------------------------------------------
-sc_list_filter_Standard <- bplapply(setNames(samples, samples), function(sc_set) {
+sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
+  cat(" +++", sc_set, "+++", "\n")
   srt <- sc_list_filter[[sc_set]]
   srt <- Standard_SCP(
     sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
     cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-    exogenous_genes = exogenous_genes, FindAllMarkers = FALSE, assay = "RNA"
+    exogenous_genes = exogenous_genes, assay = "RNA"
   )
   return(srt)
-}, BPPARAM = MulticoreParam())
+})
 
-srt_list_Standard <- list()
-for (dataset in datasets) {
+srt_list_Standard <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
   cat(paste0(dataset, collapse = "-"), "\n")
   if (length(dataset) == 0) {
-    next
+    srt_integrated <- NULL
   }
   if (length(dataset) == 1) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -287,39 +293,45 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
+      exogenous_genes = exogenous_genes
     )
   }
+  return(srt_integrated)
+})
 
-  srt_list_Standard[[srt_integrated@project.name]] <- srt_integrated
-}
 if (!file.exists("srt_list_Standard.rds")) {
   saveRDS(object = srt_list_Standard, file = "srt_list_Standard.rds")
 }
 
 
 # Integration: SCTransform workflow  --------------------------------------
-sc_list_filter_SCT <- bplapply(setNames(samples, samples), function(sc_set) {
+sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
+  cat(" +++", sc_set, "+++", "\n")
   srt <- sc_list_filter[[sc_set]]
   srt <- SCTransform(
     object = srt,
     variable.features.n = nHVF,
-    return.only.var.genes = FALSE
+    return.only.var.genes = TRUE,
+    assay = "RNA"
   )
+  VariableFeatures(srt) <- HVFInfo(srt) %>%
+    filter((!rownames(.) %in% exogenous_genes)) %>%
+    arrange(desc(residual_variance)) %>%
+    rownames(.) %>%
+    head(n = nHVF)
   return(srt)
-}, BPPARAM = MulticoreParam())
+})
 
-srt_list_SCT <- list()
-for (dataset in datasets) {
+srt_list_SCT <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
   cat(paste0(dataset, collapse = "-"), "\n")
   if (length(dataset) == 0) {
-    next
+    srt_integrated <- NULL
   }
   if (length(dataset) == 1) {
     srt_integrated <- SCTransform_SCP(
       sc = sc_list_filter_SCT[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -327,29 +339,28 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
+      exogenous_genes = exogenous_genes
     )
   }
+  return(srt_integrated)
+})
 
-  srt_list_SCT[[srt_integrated@project.name]] <- srt_integrated
-}
 if (!file.exists("srt_list_SCT.rds")) {
   saveRDS(object = srt_list_SCT, file = "srt_list_SCT.rds")
 }
 
 
 # Integration: fastMNN workflow -------------------------------------------
-srt_list_fastMNN <- list()
-for (dataset in datasets) {
+srt_list_fastMNN <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
   cat(paste0(dataset, collapse = "-"), "\n")
   if (length(dataset) == 0) {
-    next
+    srt_integrated <- NULL
   }
   if (length(dataset) == 1) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -357,28 +368,28 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
+      exogenous_genes = exogenous_genes
     )
   }
-  srt_list_fastMNN[[srt_integrated@project.name]] <- srt_integrated
-}
+  return(srt_integrated)
+})
+
 if (!file.exists("srt_list_fastMNN.rds")) {
   saveRDS(object = srt_list_fastMNN, file = "srt_list_fastMNN.rds")
 }
 
 
 # Integration: Harmony workflow -------------------------------------------
-srt_list_Harmony <- list()
-for (dataset in datasets) {
+srt_list_Harmony <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
   cat(paste0(dataset, collapse = "-"), "\n")
   if (length(dataset) == 0) {
-    next
+    srt_integrated <- NULL
   }
   if (length(dataset) == 1) {
     srt_integrated <- Standard_SCP(
       sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE, assay = "RNA"
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
   }
   if (length(dataset) > 1) {
@@ -386,11 +397,12 @@ for (dataset in datasets) {
       sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       HVF_source = HVF_source,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, FindAllMarkers = TRUE
+      exogenous_genes = exogenous_genes
     )
   }
-  srt_list_Harmony[[srt_integrated@project.name]] <- srt_integrated
-}
+ return(srt_integrated)
+})
+
 if (!file.exists("srt_list_Harmony.rds")) {
   saveRDS(object = srt_list_Harmony, file = "srt_list_Harmony.rds")
 }
@@ -405,3 +417,6 @@ if (!file.exists("srt_list_Harmony.rds")) {
 #     do_save = T, file_save = paste0(srt_name, ".summary.png")
 #   )
 # }
+
+
+future:::ClusterRegistry("stop")
