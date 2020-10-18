@@ -33,8 +33,8 @@ library(sva)
 library(limma)
 set.seed(11)
 
-script_dir <- gsub(x = script_path, pattern = "BatchCorrected.R", replacement = "")
-source(paste0(script_dir, "/BatchCorrected_function.R"))
+script_dir <- gsub(x = script_path, pattern = "BatchCorrection.R", replacement = "")
+source(paste0(script_dir, "/BatchCorrection_function.R"))
 
 count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
 
