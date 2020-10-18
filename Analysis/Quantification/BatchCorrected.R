@@ -2,7 +2,7 @@
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "dplyr", "stringr", "ggplot2", "ggsci", "ggtree", "RColorBrewer", "cowplot",
-    "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork"
+    "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork", "ggrepel"
   ),
   require,
   character.only = TRUE
@@ -214,7 +214,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  if (nrow(sample_info) <= 30) {
+  if (nrow(sample_info) < 20) {
     p <- p + geom_label_repel(
       size = 2.5, color = "white",
       min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
@@ -236,7 +236,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  if (nrow(sample_info) <= 30) {
+  if (nrow(sample_info) < 20) {
     p <- p + geom_label_repel(
       size = 2.5, color = "white",
       min.segment.length = 0, segment.color = "black", segment.alpha = 0.8

@@ -8,7 +8,7 @@ Rscript &>/dev/null
     color_echo "red" "Cannot find the command Rscript.\n"
     exit 1
 }
-R_packages=("dplyr" "stringr" "ggplot2" "ggsci" "ggtree" "RColorBrewer" "cowplot" "aplot" "ggplotify" "edgeR" "sva" "limma")
+R_packages=("dplyr" "stringr" "ggplot2" "ggsci" "ggtree" "RColorBrewer" "cowplot" "aplot" "ggplotify" "edgeR" "sva" "limma" "ggrepel")
 for package in "${R_packages[@]}"; do
     Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
     [ $? -ne 0 ] && {
