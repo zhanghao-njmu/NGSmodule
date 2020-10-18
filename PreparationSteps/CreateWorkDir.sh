@@ -8,7 +8,7 @@ if [[ -d $work_dir ]]; then
   mkdir "${work_dir}"
 fi
 
-grep_pattern="(^${RunIDPattern}${SE_SufixPattern}$)|(^${RunIDPattern}${R1_SufixPattern}$)|(^${RunIDPattern}${R2_SufixPattern}$)"
+grep_pattern="(${RunIDPattern}${SE_SufixPattern}$)|(${RunIDPattern}${R1_SufixPattern}$)|(${RunIDPattern}${R2_SufixPattern}$)"
 color_echo "green" '>>> grep_pattern= "$grep_pattern"'
 
 arr=($(find $rawdata_dir -type f | grep -P $grep_pattern |sort))
