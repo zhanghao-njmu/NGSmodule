@@ -148,7 +148,8 @@ cat <<- EOF
     # GeneralSteps:
        preAlignmentQC           
        Alignment                
-       postAlignmentQC          
+       postAlignmentQC
+       BatchCorrected          
 
     # ExpressionAnalysis:
        Quantification
@@ -246,6 +247,12 @@ while true;do
         [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in postQuantificationQC MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
         CheckConfigFile $ConfigFile
         postQuantificationQC $ConfigFile
+        exit 0   
+      elif [[ $1 == "BatchCorrected" ]];then
+        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in BatchCorrected MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
+        CheckConfigFile $ConfigFile
+        BatchCorrected $ConfigFile
         exit 0   
       elif [[ $1 == "DifferentialExpression" ]];then
         { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
