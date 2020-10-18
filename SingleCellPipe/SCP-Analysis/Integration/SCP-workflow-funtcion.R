@@ -15,7 +15,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
     HVFInfo(sc) %>%
     filter(variance.standardized > 1 &
       (!rownames(.) %in% exogenous_genes)) %>%
-    arrange(desc(variance.standardized)) %>%
+    dplyr::arrange(desc(variance.standardized)) %>%
     rownames(.) %>%
     head(n = nHVF)
   if (nrow(GetAssayData(sc, slot = "scale.data")) == 0) {
@@ -29,23 +29,23 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   sc <- BuildClusterTree(sc, reorder = T)
   Idents(sc) <- sc[["seurat_clusters"]] <-
-    mapvalues(Idents(sc),
+    plyr::mapvalues(Idents(sc),
       from = levels(Idents(sc)),
       to = 1:length(levels(Idents(sc)))
     )
   sc@tools$BuildClusterTree$tip.label <-
-    mapvalues(sc@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(sc@tools$BuildClusterTree$tip.label,
       from = sc@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(sc)))
     )
 
   if ("umap" %in% reduction) {
-    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
-      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -79,7 +79,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
 
   VariableFeatures(sc) <- HVFInfo(sc) %>%
     filter((!rownames(.) %in% exogenous_genes)) %>%
-    arrange(desc(residual_variance)) %>%
+    dplyr::arrange(desc(residual_variance)) %>%
     rownames(.) %>%
     head(n = nHVF)
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
@@ -89,23 +89,23 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   sc <- BuildClusterTree(sc, reorder = T)
   Idents(sc) <- sc[["seurat_clusters"]] <-
-    mapvalues(Idents(sc),
+    plyr::mapvalues(Idents(sc),
       from = levels(Idents(sc)),
       to = 1:length(levels(Idents(sc)))
     )
   sc@tools$BuildClusterTree$tip.label <-
-    mapvalues(sc@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(sc@tools$BuildClusterTree$tip.label,
       from = sc@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(sc)))
     )
 
   if ("umap" %in% reduction) {
-    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
-      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -147,7 +147,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes)) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   }
@@ -161,7 +161,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_common) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
     sc_merge <- NULL
@@ -215,23 +215,23 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
   Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    mapvalues(Idents(srt_integrated),
+    plyr::mapvalues(Idents(srt_integrated),
       from = levels(Idents(srt_integrated)),
       to = 1:length(levels(Idents(srt_integrated)))
     )
   srt_integrated@tools$BuildClusterTree$tip.label <-
-    mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
       from = srt_integrated@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -271,7 +271,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
     DefaultAssay(sc_list[[i]]) <- "SCT"
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter((!rownames(.) %in% exogenous_genes)) %>%
-      arrange(desc(residual_variance)) %>%
+      dplyr::arrange(desc(residual_variance)) %>%
       rownames(.) %>%
       head(n = nHVF)
   }
@@ -279,18 +279,13 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
     gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
     DefaultAssay(sc_merge) <- "RNA"
-    sc_merge <- SCTransform(
-      object = sc_merge,
-      variable.features.n = nHVF,
-      vars.to.regress = "orig.ident",
-      return.only.var.genes = TRUE,
-      assay = "RNA"
-    )
-    DefaultAssay(sc_merge) <- "SCT"
-    hvf <- HVFInfo(sc_merge) %>%
-      filter((!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      arrange(desc(residual_variance)) %>%
+    hvf <- NormalizeData(object = sc_merge) %>%
+      FindVariableFeatures(.) %>%
+      HVFInfo(.) %>%
+      filter(variance.standardized > 1 &
+               (!rownames(.) %in% exogenous_genes) &
+               rownames(.) %in% gene_common) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
     sc_merge <- NULL
@@ -345,23 +340,23 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
   Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    mapvalues(Idents(srt_integrated),
+    plyr::mapvalues(Idents(srt_integrated),
       from = levels(Idents(srt_integrated)),
       to = 1:length(levels(Idents(srt_integrated)))
     )
   srt_integrated@tools$BuildClusterTree$tip.label <-
-    mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
       from = srt_integrated@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -403,7 +398,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes)) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   }
@@ -417,7 +412,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_common) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
     sc_merge <- NULL
@@ -458,23 +453,23 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
   Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    mapvalues(Idents(srt_integrated),
+    plyr::mapvalues(Idents(srt_integrated),
       from = levels(Idents(srt_integrated)),
       to = 1:length(levels(Idents(srt_integrated)))
     )
   srt_integrated@tools$BuildClusterTree$tip.label <-
-    mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
       from = srt_integrated@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -516,7 +511,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes)) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   }
@@ -533,7 +528,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_common) %>%
-      arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   }
@@ -579,23 +574,23 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
   Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    mapvalues(Idents(srt_integrated),
+    plyr::mapvalues(Idents(srt_integrated),
       from = levels(Idents(srt_integrated)),
       to = 1:length(levels(Idents(srt_integrated)))
     )
   srt_integrated@tools$BuildClusterTree$tip.label <-
-    mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
+    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
       from = srt_integrated@tools$BuildClusterTree$tip.label,
       to = 1:length(levels(Idents(srt_integrated)))
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 3, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 3, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 10000, num_threads = 0, verbose = T
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
