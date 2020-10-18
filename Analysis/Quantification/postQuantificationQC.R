@@ -135,12 +135,12 @@ df_bottom_annotation <- HeatmapAnnotation(
   "Groups" = anno_simple(
     x = sample_info[colnames(logcpm), "Group"],
     col = col_color[sample_info[colnames(logcpm), "Group"]],
-    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+    gp = gpar(col = ifelse(nrow(sample_info) <= 40, "black", "transparent"))
   ),
   "Batches" = anno_simple(
     x = sample_info[colnames(logcpm), "BatchID"],
     col = batch_color,
-    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+    gp = gpar(col = ifelse(nrow(sample_info) <= 40, "black", "transparent"))
   ),
   border = TRUE,
   show_legend = FALSE,
@@ -151,12 +151,12 @@ df_right_annotation <- HeatmapAnnotation(
   "Groups" = anno_simple(
     x = sample_info[colnames(logcpm), "Group"],
     col = col_color[sample_info[colnames(logcpm), "Group"]],
-    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+    gp = gpar(col = ifelse(nrow(sample_info) <= 40, "black", "transparent"))
   ),
   "Batches" = anno_simple(
     x = sample_info[colnames(logcpm), "BatchID"],
     col = batch_color,
-    gp = gpar(col = ifelse(nrow(sample_info) <= 30, "black", "transparent"))
+    gp = gpar(col = ifelse(nrow(sample_info) <= 40, "black", "transparent"))
   ),
   border = TRUE,
   show_legend = FALSE,
@@ -166,42 +166,42 @@ df_right_annotation <- HeatmapAnnotation(
 )
 
 r_max <- 0.408 / ncol(logcpm_cor)
-if (nrow(sample_info) <= 30) {
-  ht <- Heatmap(logcpm_cor,
-    col = colorRamp2(seq(q1, q2, length = 100), color_palette),
-    rect_gp = gpar(type = "none"),
-    cell_fun = function(j, i, x, y, w, h, fill) {
-      p <- logcpm_cor[i, j]
-      perc <- (p - min(logcpm_cor)) / (max(logcpm_cor) - min(logcpm_cor))
-      grid.circle(x, y,
-        r = r_max / 2 * (1 + perc),
-        gp = gpar(col = "black", lwd = 1, fill = fill)
-      )
-      grid.rect(x, y,
-        width = w, height = h,
-        gp = gpar(col = "grey", lwd = 1, fill = "transparent")
-      )
-    },
-    show_row_names = TRUE,
-    show_column_names = TRUE,
-    column_names_gp = gpar(fontsize = 10),
-    row_names_gp = gpar(fontsize = 10),
-    border = T,
-    bottom_annotation = df_bottom_annotation,
-    right_annotation = df_right_annotation,
-    heatmap_legend_param = list(
-      title = "Spearman's correlation coefficient",
-      title_gp = gpar(fontsize = 12, fontfamily = "sans"),
-      title_position = "lefttop",
-      grid_height = unit(4, "mm"),
-      grid_width = unit(4, "mm"),
-      border = "black",
-      labels_gp = gpar(fontsize = 8),
-      legend_direction = "horizontal",
-      legend_width = unit(4, "cm")
-    )
-  )
-} else {
+# if (nrow(sample_info) <= 40) {
+#   ht <- Heatmap(logcpm_cor,
+#     col = colorRamp2(seq(q1, q2, length = 100), color_palette),
+#     rect_gp = gpar(type = "none"),
+#     cell_fun = function(j, i, x, y, w, h, fill) {
+#       p <- logcpm_cor[i, j]
+#       perc <- (p - min(logcpm_cor)) / (max(logcpm_cor) - min(logcpm_cor))
+#       grid.circle(x, y,
+#         r = r_max / 2 * (1 + perc),
+#         gp = gpar(col = "black", lwd = 1, fill = fill)
+#       )
+#       grid.rect(x, y,
+#         width = w, height = h,
+#         gp = gpar(col = "grey", lwd = 1, fill = "transparent")
+#       )
+#     },
+#     show_row_names = TRUE,
+#     show_column_names = TRUE,
+#     column_names_gp = gpar(fontsize = 10),
+#     row_names_gp = gpar(fontsize = 10),
+#     border = T,
+#     bottom_annotation = df_bottom_annotation,
+#     right_annotation = df_right_annotation,
+#     heatmap_legend_param = list(
+#       title = "Spearman's correlation coefficient",
+#       title_gp = gpar(fontsize = 12, fontfamily = "sans"),
+#       title_position = "lefttop",
+#       grid_height = unit(4, "mm"),
+#       grid_width = unit(4, "mm"),
+#       border = "black",
+#       labels_gp = gpar(fontsize = 8),
+#       legend_direction = "horizontal",
+#       legend_width = unit(4, "cm")
+#     )
+#   )
+# } else {
   ht <- Heatmap(logcpm_cor,
     col = colorRamp2(seq(q1, q2, length = 100), color_palette),
     show_row_names = FALSE,
@@ -223,7 +223,7 @@ if (nrow(sample_info) <= 30) {
       legend_width = unit(4, "cm")
     )
   )
-}
+# }
 grob <- grid.grabExpr(ComplexHeatmap::draw(ht, heatmap_legend_side = "top"))
 p <- as_ggplot(grob) + theme(aspect.ratio = 1)
 plot_list[["Correlation_Heatmap"]] <- p
@@ -281,10 +281,10 @@ p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sa
     aspect.ratio = 1,
     panel.grid.major = element_line()
   )
-if (nrow(sample_info) <= 30) {
+if (nrow(sample_info) < 20) {
   p <- p + geom_label_repel(
     size = 2.5, color = "white",
-    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
+    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8,show.legend = FALSE
   )
 }
 plot_list[["PCA_colored_by_group"]] <- p
@@ -303,10 +303,10 @@ p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sa
     aspect.ratio = 1,
     panel.grid.major = element_line()
   )
-if (nrow(sample_info) <= 30) {
+if (nrow(sample_info) < 20) {
   p <- p + geom_label_repel(
     size = 2.5, color = "white",
-    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
+    min.segment.length = 0, segment.color = "black", segment.alpha = 0.8,show.legend = FALSE
   )
 }
 plot_list[["PCA_colored_by_batch"]] <- p
