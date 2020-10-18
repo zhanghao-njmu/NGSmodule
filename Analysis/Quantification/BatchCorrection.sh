@@ -17,20 +17,20 @@ for package in "${R_packages[@]}"; do
     }
 done
 
-echo -e "######################## BatchCorrected Parameters #######################\n"
+echo -e "######################## BatchCorrection Parameters #######################\n"
 echo -e "  Rscript path: $(which Rscript)"
 echo -e "  Aligner: ${Aligner}\n"
 echo -e "  SampleInfoFile: ${SampleInfoFile}\n"
 echo -e "################################################################################\n"
 
-echo -e "****************** Start BatchCorrected ******************\n"
+echo -e "****************** Start BatchCorrection ******************\n"
 SECONDS=0
 
-mkdir -p $maindir/NGSmodule_analysis/Quantification/BatchCorrected
-cd $maindir/NGSmodule_analysis/Quantification/BatchCorrected
+mkdir -p $maindir/NGSmodule_analysis/Quantification/BatchCorrection
+cd $maindir/NGSmodule_analysis/Quantification/BatchCorrection
 
 Rscript $1 $maindir $Aligner $SampleInfoFile $1
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
-echo -e "****************** BatchCorrected Done *******************\n"
+echo -e "****************** BatchCorrection Done *******************\n"
