@@ -5,16 +5,16 @@ trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 Rscript &>/dev/null
 [ $? -eq 127 ] && {
-  color_echo "red" "Cannot find the command Rscript.\n"
-  exit 1
-}
-R_packages=( "dplyr" "stringr" "ggplot2"  "ggsci"  "ggtree"  "RColorBrewer"  "cowplot" "aplot" "ggplotify" "edgeR" "sva" "limma")
-for package in "${R_packages[@]}"; do
-  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
-  [ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the R package $package.\n"
+    color_echo "red" "Cannot find the command Rscript.\n"
     exit 1
-  }
+}
+R_packages=("dplyr" "stringr" "ggplot2" "ggsci" "ggtree" "RColorBrewer" "cowplot" "aplot" "ggplotify" "edgeR" "sva" "limma")
+for package in "${R_packages[@]}"; do
+    Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
+    [ $? -ne 0 ] && {
+        color_echo "red" "Cannot find the R package $package.\n"
+        exit 1
+    }
 done
 
 echo -e "######################## BatchCorrected Parameters #######################\n"
