@@ -4,6 +4,7 @@ args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
 aligner <- args[2]
 SampleInfoFile <- args[3]
+script_path <- as.character(args[4])
 
 # SampleInfoFile <- "../temp_20200714173936.Sample_info.csv"
 # count_file <- "../NGSmodule_analysis/Quantification/Quantification.hisat2.count.tab"
@@ -20,6 +21,8 @@ library(ggplotify)
 library(edgeR)
 library(sva)
 library(limma)
+script_dir <- gsub(x = script_path,pattern = "BatchCorrected.R",replacement = "")
+source(paste0(script_dir,"/BatchCorrected_function.R"))
 
 count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
 
