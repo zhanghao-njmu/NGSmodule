@@ -14,9 +14,9 @@ aligner <- args[2]
 SampleInfoFile <- args[3]
 script_path <- as.character(args[4])
 
-# maindir <- "/data/database/SRR_collection/human/early_embyro/"
+# maindir <- "/data/database/SRR_collection/human/germ_cell_specification//"
 # aligner <- "hisat2"
-# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# SampleInfoFile <- "/data/database/SRR_collection/human/germ_cell_specification/temp_20200803161047.Sample_info.csv"
 # script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/BatchCorrected.R"
 
 library(dplyr)
@@ -85,15 +85,15 @@ for (col in c("Layout.PE.SE.")) {
     covar <- c(covar, col)
   }
 }
-if (length(covar) >= 1) {
-  covar_only_fmla <- as.formula(paste("~", paste(covar, collapse = "+")))
-  covar_only <- model.matrix(covar_only_fmla, data = sample_info)
-  covar_mod_fmla <- as.formula(paste("~", paste(covar, collapse = "+"), "+ Group"))
-  covar_mod <- model.matrix(covar_mod_fmla, data = sample_info)
-} else {
-  covar_only <- NULL
-  covar_mod <- model.matrix(~Group, data = sample_info)
-}
+# if (length(covar) >= 1) {
+#   covar_only_fmla <- as.formula(paste("~", paste(covar, collapse = "+")))
+#   covar_only <- model.matrix(covar_only_fmla, data = sample_info)
+#   covar_mod_fmla <- as.formula(paste("~", paste(covar, collapse = "+"), "+ Group"))
+#   covar_mod <- model.matrix(covar_mod_fmla, data = sample_info)
+# } else {
+covar_only <- NULL
+covar_mod <- model.matrix(~Group, data = sample_info)
+# }
 
 # create design model -----------------------------------------------------
 mod1 <- model.matrix(~ as.factor(Group), data = sample_info)
