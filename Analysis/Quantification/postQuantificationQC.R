@@ -63,6 +63,7 @@ sample_info <- sample_info %>%
   as.data.frame()
 rownames(sample_info) <- sample_info[, "SampleID"]
 sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "Group"]))
+sample_info <- sample_info[order(sample_info[, "Group"]),]
 sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
 
 
