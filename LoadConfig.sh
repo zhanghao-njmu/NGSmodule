@@ -173,10 +173,10 @@ else
   exit 1
 fi
 
-if [[ "${#Sample_dict[@]}" == 0 ]] || [[ "${#Layout_dict[@]}" == 0 ]]; then
-    color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
-    exit 1
-fi
+# if [[ "${#Sample_dict[@]}" == 0 ]] || [[ "${#Layout_dict[@]}" == 0 ]]; then
+#     color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
+#     exit 1
+# fi
 
 ###### START ######
 if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
