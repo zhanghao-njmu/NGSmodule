@@ -17,7 +17,7 @@ maxPC <- as.numeric(args[13])
 resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
-
+# 
 # ##### test #####
 # # parameters: global settings ---------------------------------------------
 # SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
@@ -250,7 +250,7 @@ sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
   cat(
     " +++", sc_set, "+++", "\n",
     ">>>", "Total cells:", ntotal, "\n",
-    ">>>", "Filter out", ndoublets + length(out), "cells (potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
+    ">>>", "Filter out", ndoublets + length(out), "cells ( potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
     ">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n"
   )
 
