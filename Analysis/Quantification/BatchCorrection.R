@@ -190,7 +190,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   df_pca <- prcomp(t(logcpm_adj_scale))
   df_pca <- summary(df_pca)
   PoV <- round(df_pca$importance[2, ] * 100, 2)
-  m <- max(c(abs(x), abs(y)))
+  m <- max(c(abs(df_pca$x[, "PC1"]), abs(df_pca$x[, "PC2"])))
   sample_info <- cbind(sample_info, data.frame(pca1 = df_pca$x[, "PC1"], pca2 = df_pca$x[, "PC2"]))
 
   p <- ggplot(data = sample_info, aes(x = pca1, y = pca2, Group = Group, fill = Group, label = sample)) +
