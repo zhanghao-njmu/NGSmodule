@@ -257,7 +257,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  plot_list[["PCA_colored_by_group"]] <- p
+  plot_list[["tSNE_colored_by_group"]] <- p
 
   p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = BatchID)) +
     geom_point(shape = 21, alpha = 0.8, size = 2) +
@@ -271,7 +271,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  plot_list[["PCA_colored_by_batch"]] <- p
+  plot_list[["tSNE_colored_by_batch"]] <- p
 
   title <- ggdraw() +
     draw_label(
