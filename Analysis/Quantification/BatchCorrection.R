@@ -194,7 +194,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   m <- max(c(abs(df_pca$x[, "PC1"]), abs(df_pca$x[, "PC2"])))
   sample_info <- cbind(sample_info, data.frame(pca1 = df_pca$x[, "PC1"], pca2 = df_pca$x[, "PC2"]))
 
-  p <- ggplot(data = sample_info, aes(x = pca1, y = pca2, Group = Group, fill = Group, label = sample)) +
+  p <- ggplot(data = sample_info, aes(x = pca1, y = pca2, Group = Group, fill = Group, label = SampleID)) +
     geom_point(shape = 21, alpha = 0.8, size = 2) +
     geom_rug(aes(color = Group), show.legend = FALSE) +
     labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
