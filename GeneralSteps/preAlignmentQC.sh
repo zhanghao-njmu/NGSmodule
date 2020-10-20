@@ -24,7 +24,7 @@ fastq_screen --version &>/dev/null
   color_echo "red" "Cannot find the command fastq_screen.\n"
   exit 1
 }
-reformat.sh --version &>/dev/null
+reformat.sh &>/dev/null
 [ $? -ne 0 ] && {
   color_echo "red" "Cannot find the command reformat.sh.\n"
   exit 1
