@@ -162,21 +162,20 @@ fi
 declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]]; then
+  if [[ ! $(grep ".csv" $SampleInfoFile) ]];then
+    color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+    exit 1
+  fi
   dos2unix $SampleInfoFile &>/dev/null
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
-    echo "$RunID $SampleID $Layout"
-    #Sample_dict[$RunID]=$SampleID
-    #Layout_dict[$SampleID]=$Layout
+    Sample_dict[$RunID]=$SampleID
+    Layout_dict[$SampleID]=$Layout
   done <$SampleInfoFile
 else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
 fi
 
-# if [[ "${#Sample_dict[@]}" == 0 ]] || [[ "${#Layout_dict[@]}" == 0 ]]; then
-#     color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
-#     exit 1
-# fi
 
 ###### START ######
 if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
