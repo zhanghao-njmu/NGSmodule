@@ -195,7 +195,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  if (nrow(sample_info) < 20) {
+  if (nrow(sample_info) < 15) {
     p <- p + geom_label_repel(
       size = 2.5, color = "white",
       min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
@@ -217,48 +217,13 @@ pl <- lapply(setNames(methods, methods), function(method) {
       aspect.ratio = 1,
       panel.grid.major = element_line()
     )
-  if (nrow(sample_info) < 20) {
+  if (nrow(sample_info) < 15) {
     p <- p + geom_label_repel(
       size = 2.5, color = "white",
       min.segment.length = 0, segment.color = "black", segment.alpha = 0.8
     )
   }
   plot_list[["PCA_colored_by_batch"]] <- p
-
-
-  ##### t-SNE #####
-  tsne_out <- Rtsne(t(logcpm_adj_scale), perplexity = ceiling(ncol(logcpm_adj_scale) * 0.05), max_iter = 2000, num_threads = 0, verbose = TRUE)
-  df_tsne <- tsne_out$Y %>% as.data.frame()
-  colnames(df_tsne) <- c("tsne1", "tsne2")
-  sample_info <- cbind(sample_info, df_tsne)
-
-  p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = Group)) +
-    geom_point(shape = 21, alpha = 0.8, size = 2) +
-    geom_rug(aes(color = Group), show.legend = FALSE) +
-    labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
-    scale_fill_manual(values = col_color) +
-    scale_color_manual(values = col_color) +
-    guides(colour = guide_legend(override.aes = list(size = 5))) +
-    theme_classic() +
-    theme(
-      aspect.ratio = 1,
-      panel.grid.major = element_line()
-    )
-  plot_list[["tSNE_colored_by_group"]] <- p
-
-  p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = BatchID)) +
-    geom_point(shape = 21, alpha = 0.8, size = 2) +
-    geom_rug(aes(color = BatchID), show.legend = FALSE) +
-    labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
-    scale_fill_manual(values = batch_color) +
-    scale_color_manual(values = batch_color) +
-    guides(colour = guide_legend(override.aes = list(size = 5))) +
-    theme_classic() +
-    theme(
-      aspect.ratio = 1,
-      panel.grid.major = element_line()
-    )
-  plot_list[["tSNE_colored_by_batch"]] <- p
 
   title <- ggdraw() +
     draw_label(
@@ -268,11 +233,54 @@ pl <- lapply(setNames(methods, methods), function(method) {
     theme(
       plot.margin = margin(0, 0, 0, 7)
     )
-  res <- plot_grid(
-    title, plot_grid(plotlist = plot_list, ncol = 3, byrow = FALSE),
-    ncol = 1,
-    rel_heights = c(0.05, 1)
-  )
+
+  if (ncol(logcpm_adj_scale) < 100) {
+    res <- plot_grid(
+      title, plot_grid(plotlist = plot_list, ncol = 2, byrow = FALSE),
+      ncol = 1,
+      rel_heights = c(0.05, 1)
+    )
+  } else {
+    ##### t-SNE #####
+    tsne_out <- Rtsne(t(logcpm_adj_scale), perplexity = ceiling(ncol(logcpm_adj_scale) * 0.05), max_iter = 2000, num_threads = 0, verbose = TRUE)
+    df_tsne <- tsne_out$Y %>% as.data.frame()
+    colnames(df_tsne) <- c("tsne1", "tsne2")
+    sample_info <- cbind(sample_info, df_tsne)
+
+    p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = Group)) +
+      geom_point(shape = 21, alpha = 0.8, size = 2) +
+      geom_rug(aes(color = Group), show.legend = FALSE) +
+      labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
+      scale_fill_manual(values = col_color) +
+      scale_color_manual(values = col_color) +
+      guides(colour = guide_legend(override.aes = list(size = 5))) +
+      theme_classic() +
+      theme(
+        aspect.ratio = 1,
+        panel.grid.major = element_line()
+      )
+    plot_list[["tSNE_colored_by_group"]] <- p
+
+    p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = BatchID)) +
+      geom_point(shape = 21, alpha = 0.8, size = 2) +
+      geom_rug(aes(color = BatchID), show.legend = FALSE) +
+      labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
+      scale_fill_manual(values = batch_color) +
+      scale_color_manual(values = batch_color) +
+      guides(colour = guide_legend(override.aes = list(size = 5))) +
+      theme_classic() +
+      theme(
+        aspect.ratio = 1,
+        panel.grid.major = element_line()
+      )
+    plot_list[["tSNE_colored_by_batch"]] <- p
+
+    res <- plot_grid(
+      title, plot_grid(plotlist = plot_list, ncol = 3, byrow = FALSE),
+      ncol = 1,
+      rel_heights = c(0.05, 1)
+    )
+  }
 
   return(res)
 })
