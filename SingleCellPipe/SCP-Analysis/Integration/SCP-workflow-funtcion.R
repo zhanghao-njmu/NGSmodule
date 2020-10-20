@@ -45,7 +45,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
       object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(sc) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
@@ -105,7 +105,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
       object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(sc) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(sc) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
@@ -231,7 +231,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
@@ -356,7 +356,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
@@ -469,7 +469,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
@@ -590,7 +590,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = ceiling(ncol(srt_integrated) * 0.05), theta = 0.1, max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 3000, num_threads = 0, verbose = T
     )
   }
 
