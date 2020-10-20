@@ -116,6 +116,11 @@ fi
 ############# Load SampleInfoFile ###################################################################
 declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
+    echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
+    if [[ ! $(find $SampleInfoFile | grep ".csv") ]]; then
+        color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+        exit 1
+    fi
     dos2unix $SampleInfoFile &>/dev/null
     while IFS=',' read -r RunID SampleID; do
         Sample_dict[$RunID]=$SampleID
