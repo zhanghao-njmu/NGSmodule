@@ -187,21 +187,13 @@ pl <- lapply(setNames(methods, methods), function(method) {
 
   ##### PCA #####
   cat(">>> Principal Components Analysis\n")
-  df_pca <- prcomp(t(logcpm_adj_scale), center = F, scale. = F)
+  df_pca <- prcomp(t(logcpm_adj_scale))
   df_pca <- summary(df_pca)
   PoV <- round(df_pca$importance[2, ] * 100, 2)
-  x <- df_pca$x[, "PC1"]
-  y <- df_pca$x[, "PC2"]
   m <- max(c(abs(x), abs(y)))
+  sample_info <- cbind(sample_info, data.frame(pca1 = df_pca$x[, "PC1"], pca2 = df_pca$x[, "PC2"]))
 
-  df <- data.frame(
-    x = x, y = y, sample = names(x),
-    Group = sample_info[names(x), "Group"],
-    Batch = sample_info[names(x), "BatchID"],
-    stringsAsFactors = FALSE
-  )
-
-  p <- ggplot(data = df, aes(x = x, y = y, Group = Group, fill = Group, label = sample)) +
+  p <- ggplot(data = sample_info, aes(x = pca1, y = pca2, Group = Group, fill = Group, label = sample)) +
     geom_point(shape = 21, alpha = 0.8, size = 2) +
     geom_rug(aes(color = Group), show.legend = FALSE) +
     labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
@@ -223,9 +215,9 @@ pl <- lapply(setNames(methods, methods), function(method) {
   }
   plot_list[["PCA_colored_by_group"]] <- p
 
-  p <- ggplot(data = df, aes(x = x, y = y, Batch = Batch, fill = Batch, label = sample)) +
+  p <- ggplot(data = sample_info, aes(x = pca1, y = pca2, Batch = BatchID, fill = BatchID, label = SampleID)) +
     geom_point(shape = 21, alpha = 0.8, size = 2) +
-    geom_rug(aes(color = Batch), show.legend = FALSE) +
+    geom_rug(aes(color = BatchID), show.legend = FALSE) +
     labs(title = "Principal Components Analysis", x = paste0("PC1(", PoV[1], "%)"), y = paste0("PC2(", PoV[2], "%)")) +
     scale_fill_manual(values = batch_color) +
     scale_color_manual(values = batch_color) +
@@ -245,26 +237,62 @@ pl <- lapply(setNames(methods, methods), function(method) {
   }
   plot_list[["PCA_colored_by_batch"]] <- p
 
+
+  ##### t-SNE #####
+  tsne_out <- Rtsne(t(logcpm_adj_scale), perplexity = 30, max_iter = 2000, num_threads = 0, verbose = TRUE)
+  df_tsne <- tsne_out$Y %>% as.data.frame()
+  colnames(df_tsne) <- c("tsne1", "tsne2")
+  sample_info <- cbind(sample_info, df_tsne)
+
+  p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = Group)) +
+    geom_point(shape = 21, alpha = 0.8, size = 2) +
+    geom_rug(aes(color = Group), show.legend = FALSE) +
+    labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
+    scale_fill_manual(values = col_color) +
+    scale_color_manual(values = col_color) +
+    guides(colour = guide_legend(override.aes = list(size = 5))) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+      panel.grid.major = element_line()
+    )
+  plot_list[["PCA_colored_by_group"]] <- p
+
+  p <- ggplot(sample_info, aes(x = tsne1, y = tsne2, fill = BatchID)) +
+    geom_point(shape = 21, alpha = 0.8, size = 2) +
+    geom_rug(aes(color = BatchID), show.legend = FALSE) +
+    labs(title = "t-SNE", x = "tSNE-1", y = "tSNE-2") +
+    scale_fill_manual(values = batch_color) +
+    scale_color_manual(values = batch_color) +
+    guides(colour = guide_legend(override.aes = list(size = 5))) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+      panel.grid.major = element_line()
+    )
+  plot_list[["PCA_colored_by_batch"]] <- p
+
   title <- ggdraw() +
     draw_label(
-      label = paste("Batch-correction method:",method),
+      label = paste("Batch-correction method:", method),
       fontface = "bold", x = 0, hjust = 0
     ) +
     theme(
       plot.margin = margin(0, 0, 0, 7)
     )
   res <- plot_grid(
-    title, plot_grid(plotlist = plot_list),
+    title, plot_grid(plotlist = plot_list, ncol = 3, byrow = FALSE),
     ncol = 1,
     rel_heights = c(0.05, 1)
   )
-  
+
   return(res)
 })
 
-pdf("BatchCorrected.pdf", width = 12, height = 8)
+pdf("BatchCorrected.pdf", width = 18, height = 8)
 invisible(lapply(pl, print))
 invisible(dev.off())
+
 
 
 ##### check whether the unwanted file exists and remove it #####
