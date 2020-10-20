@@ -39,7 +39,7 @@ for file in "${arr[@]}"; do
       fi
     done
   else
-    color_echo "red" "Error! Cannot find the RunID-SampleID information(${Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
+    color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
     exit 1
   fi
 
