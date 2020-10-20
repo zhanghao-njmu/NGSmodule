@@ -118,7 +118,7 @@ declare -A Sample_dict
 if [[ -f $SampleInfoFile ]]; then
     echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
     if [[ ! $(find $SampleInfoFile | grep ".csv") ]]; then
-        color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+        color_echo "red" "ERROR! SampleInfoFile must be a comma-separated values file and named with the suffix '.csv' .\n"
         exit 1
     fi
     dos2unix $SampleInfoFile &>/dev/null
