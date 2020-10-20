@@ -162,6 +162,7 @@ fi
 declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]]; then
+  echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
   if [[ ! $(find $SampleInfoFile | grep ".csv" ) ]];then
     color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
     exit 1
