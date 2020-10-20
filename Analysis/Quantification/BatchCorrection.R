@@ -8,6 +8,7 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   require,
   character.only = TRUE
 ))))
+set.seed(11)
 
 args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
@@ -15,24 +16,10 @@ aligner <- args[2]
 SampleInfoFile <- args[3]
 script_path <- as.character(args[4])
 
-# maindir <- "/data/database/SRR_collection/human/germ_cell_specification//"
+# maindir <- "/data/database/SRR_collection/human/early_embyro/"
 # aligner <- "hisat2"
-# SampleInfoFile <- "/data/database/SRR_collection/human/germ_cell_specification/temp_20200803161047.Sample_info.csv"
-# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/BatchCorrected.R"
-
-library(dplyr)
-library(stringr)
-library(ggplot2)
-library(ggsci)
-library(ggtree)
-library(RColorBrewer)
-library(cowplot)
-library(aplot)
-library(ggplotify)
-library(edgeR)
-library(sva)
-library(limma)
-set.seed(11)
+# SampleInfoFile <- "/data/database/SRR_collection/human/early_embyro/temp_20200714173936.Sample_info.csv"
+# script_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/Analysis/Quantification/BatchCorrection.R"
 
 script_dir <- gsub(x = script_path, pattern = "BatchCorrection.R", replacement = "")
 source(paste0(script_dir, "/BatchCorrection_function.R"))
@@ -64,7 +51,7 @@ rownames(sample_info) <- sample_info[, "SampleID"]
 #   )
 # )
 sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "Group"]))
-sample_info <- sample_info[order(sample_info[, "Group"]),]
+sample_info <- sample_info[order(sample_info[, "Group"]), ]
 sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
 
 count_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
@@ -144,7 +131,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
   logcpm_adj <- get(paste0("logcpm_adj_", method))
   write.table(
     x = cbind(data.frame(GeneID = rownames(logcpm_adj)), logcpm_adj),
-    file = paste0(method,".",aligner, ".log2CPM.tab"),
+    file = paste0(method, ".", aligner, ".log2CPM.tab"),
     sep = "\t", col.names = TRUE, row.names = FALSE, quote = FALSE
   )
   logcpm_adj_scale <- t(scale(t(logcpm_adj)))
@@ -240,7 +227,7 @@ pl <- lapply(setNames(methods, methods), function(method) {
 
 
   ##### t-SNE #####
-  tsne_out <- Rtsne(t(logcpm_adj_scale), perplexity = 30, max_iter = 2000, num_threads = 0, verbose = TRUE)
+  tsne_out <- Rtsne(t(logcpm_adj_scale), perplexity = ceiling(ncol(logcpm_adj_scale) * 0.05), max_iter = 2000, num_threads = 0, verbose = TRUE)
   df_tsne <- tsne_out$Y %>% as.data.frame()
   colnames(df_tsne) <- c("tsne1", "tsne2")
   sample_info <- cbind(sample_info, df_tsne)
