@@ -17,7 +17,7 @@ for package in "${R_packages[@]}"; do
     }
 done
 
-echo -e "######################## BatchCorrection Parameters #######################\n"
+echo -e "########################## BatchCorrection Parameters ##########################\n"
 echo -e "  Rscript path: $(which Rscript)"
 echo -e "  Aligner: ${Aligner}\n"
 echo -e "  SampleInfoFile: ${SampleInfoFile}\n"
