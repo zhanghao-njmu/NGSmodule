@@ -23,7 +23,7 @@ Ensembl_version <- 101
 # SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
 # NGSmodule_SCP_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_work/"
 # threads <- 120
-# datasets_raw <- "ESC,iPSC,PGCd6,CellLine1,CellLine2;CellLine1,CellLine2,Testis_d10,Testis_d20,Testis_d30,Testis_d40,Testis_d50;"
+# datasets_raw <- "ESC,iPSC,PGCd6,CellLine1,CellLine2"
 # 
 # species <- "Homo_sapiens"
 # exogenous_genes <- "GFP"
@@ -271,7 +271,7 @@ sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
   srt <- Standard_SCP(
     sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
     cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-    exogenous_genes = exogenous_genes, assay = "RNA",reduction=""
+    exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
   )
   return(srt)
 })
