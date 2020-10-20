@@ -2,7 +2,8 @@
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "dplyr", "stringr", "ggplot2", "ggsci", "ggtree", "RColorBrewer", "cowplot",
-    "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork", "ggrepel"
+    "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork", "ggrepel", "Rtsne",
+    "plotly"
   ),
   require,
   character.only = TRUE
