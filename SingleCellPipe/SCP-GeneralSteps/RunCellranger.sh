@@ -105,9 +105,13 @@ for sample in "${arr[@]}"; do
             done < <(find "$dir" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastq_screen.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
             if ((${#existlogs[@]} >= 1)); then
                 for existlog in "${existlogs[@]}"; do
-                    if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+                    if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
                         color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-                        rm -f ${existlog}
+                        rm -f "${existlog}"
+                    fi
+                    if [[ $force == "TRUE" ]]; then
+                        color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
+                        rm -f "${existlog}"
                     fi
                 done
             fi

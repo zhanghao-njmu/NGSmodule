@@ -97,8 +97,12 @@ for sample in "${arr[@]}"; do
       done < <(find "${dir}" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
       if ((${#existlogs[*]} >= 1)); then
         for existlog in "${existlogs[@]}"; do
-          if [[ $force == "TRUE" ]] || [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+          if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
             color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
+            rm -f "${existlog}"
+          fi
+          if [[ $force == "TRUE" ]];then
+            color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
             rm -f "${existlog}"
           fi
         done
@@ -258,7 +262,7 @@ for sample in "${arr[@]}"; do
           else
             echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
             status="completed"
-            color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+            color_echo "blue" "+++++ ${sample}: preAlignmentQC completed +++++"
           fi
         else
           force="TRUE"
@@ -451,7 +455,7 @@ for sample in "${arr[@]}"; do
           else
             echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
             status="completed"
-            color_echo "blue" "+++++ ${sample}: Processing complete +++++"
+            color_echo "blue" "+++++ ${sample}: preAlignmentQC completed +++++"
           fi
         else
           force="TRUE"
