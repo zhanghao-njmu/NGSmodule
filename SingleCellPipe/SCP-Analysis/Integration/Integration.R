@@ -110,6 +110,10 @@ setwd(SCPanalysis_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
 # options(future.fork.enable = TRUE)
+if (threads >= 125) {
+  cat("Threads number is too large. Re-set it to the 125.\n")
+  threads <- 125
+}
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
@@ -118,7 +122,6 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
-plotlist <- list()
 
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
