@@ -42,33 +42,17 @@ Ensembl_version <- 101
 # resolution <- 1
 
 # Library -----------------------------------------------------------------
-library(sctransform)
-library(Seurat)
-library(SeuratWrappers)
-library(intrinsicDimension)
-library(scater)
-library(Matrix)
-library(BiocParallel)
-library(future)
-library(reticulate)
-library(harmony)
-library(plyr)
-library(dplyr)
-library(RColorBrewer)
-library(scales)
-library(gtools)
-library(ggsci)
-library(ggpubr)
-library(ggplot2)
-library(ggtree)
-library(cowplot)
-library(reshape2)
-library(stringr)
-library(velocyto.R)
-library(scDblFinder)
-library(biomaRt)
-library(rvest)
-library(xml2)
+#!/usr/bin/env Rscript
+suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
+  c(
+    "sctransform", "Seurat", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
+    "future", "reticulate", "harmony", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder", 
+    "velocyto.R", "biomaRt", "rvest", "xml2"
+  ),
+  require,
+  character.only = TRUE
+))))
 set.seed(11)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
