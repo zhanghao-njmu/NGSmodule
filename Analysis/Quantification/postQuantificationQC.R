@@ -66,8 +66,6 @@ sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "G
 sample_info <- sample_info[order(sample_info[, "Group"]),]
 sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
 
-
-
 count_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
 count_matrix <- count_matrix_raw[, which(str_detect(colnames(count_matrix_raw), pattern = paste0(".", aligner, ".count"))), drop = FALSE]
 colnames(count_matrix) <- gsub(x = colnames(count_matrix), pattern = paste0(".", aligner, ".count"), replacement = "")
