@@ -166,7 +166,7 @@ if [[ -f $SampleInfoFile ]]; then
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     echo "$RunID $SampleID $Layout"
     Sample_dict[$RunID]=$SampleID
-    Layout_dict[$SampleID]=$Layout
+    #Layout_dict[$SampleID]=$Layout
   done <$SampleInfoFile
 else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
