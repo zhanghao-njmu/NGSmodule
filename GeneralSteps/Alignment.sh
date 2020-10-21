@@ -290,6 +290,7 @@ for sample in "${arr[@]}"; do
       check_logfile "$sample" "Alignment" "$dir"/BAMprocessStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
+        bam=$(ls ./*.bam)
         samtools quickcheck -v ${bam}
         if [[ $? != 0 ]]; then
           color_echo "yellow" "Warning! $sample: BAM file checked failed."
