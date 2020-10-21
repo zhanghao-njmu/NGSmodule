@@ -163,7 +163,7 @@ declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]]; then
   echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
-  if [[ ! $(find $SampleInfoFile | grep ".csv" ) ]];then
+  if [[ ! $(find $SampleInfoFile | grep ".csv") ]]; then
     color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
     exit 1
   fi
@@ -176,7 +176,6 @@ else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
 fi
-
 
 ###### START ######
 if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
@@ -223,6 +222,18 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_featurecounts=64
   else
     threads_featurecounts=$threads
+  fi
+
+  if ((threads > 64)); then
+    threads_featurecounts=64
+  else
+    threads_featurecounts=$threads
+  fi
+
+  if ((((threads / 4)) == 0)); then
+    bismark_threads=1
+  else
+    bismark_threads=$((threads / 4))
   fi
 
   ###### fifo ######

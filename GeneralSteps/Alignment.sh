@@ -180,8 +180,8 @@ for sample in "${arr[@]}"; do
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage \
+            bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
+            --non_directional --nucleotide_coverage --un --ambiguous \
             --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -189,8 +189,8 @@ for sample in "${arr[@]}"; do
             fi
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $((($threads) / 8)) -p 3 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage \
+            bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
+            --non_directional --nucleotide_coverage --un --ambiguous \
             --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -258,8 +258,8 @@ for sample in "${arr[@]}"; do
             fi
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $((($threads) / 8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage \
+            bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            --non_directional --nucleotide_coverage --un --ambiguous \
             --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -267,8 +267,8 @@ for sample in "${arr[@]}"; do
             fi
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $((($threads) / 8)) -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage \
+            bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            --non_directional --nucleotide_coverage --un --ambiguous \
             --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -290,7 +290,7 @@ for sample in "${arr[@]}"; do
       check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/BAMprocessStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
-        bam=$(ls ./*.bam)
+        bam=$(ls $dir/$Aligner/*.bam)
         samtools quickcheck -v ${bam}
         if [[ $? != 0 ]]; then
           color_echo "yellow" "Warning! $sample: BAM file checked failed."
@@ -300,7 +300,7 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ Samtools stat: $sample +++++"
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          bam=$(ls ./*.bam)
+          bam=$(ls $dir/$Aligner/*.bam)
           samtools stats -@ $threads $bam >${bam}.stats
           samtools flagstat -@ $threads $bam >${bam}.flagstat
         else
@@ -368,7 +368,7 @@ for sample in "${arr[@]}"; do
           --splitting_report $splitting_report \
           --mbias_report $mbias_report \
           --nucleotide_report $nucleotide_report
-                  samtools quickcheck -v ${bam}
+          samtools quickcheck -v ${bam}
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq html report failed."
             force="TRUE"
