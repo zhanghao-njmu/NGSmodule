@@ -24,14 +24,14 @@ for package in "${R_packages[@]}"; do
 done
 
 echo -e "########################## Quantification Parameters ###########################\n"
-echo -e "***base parameters***"
-echo -e "   Rscript path: $(which Rscript)\n   datasets: ${datasets}\n   species: ${species}\n   exogenous_genes: ${exogenous_genes}"
-echo -e "***cell-filtering parameters***"
-echo -e "   cell_calling_methodNum: ${cell_calling_methodNum}"
-echo -e "***integration parameters***"
-echo -e "   HVF_source: ${HVF_source}\n   nHVF: ${nHVF}\n   anchor_dims: ${anchor_dims}\n   integrate_dims: ${integrate_dims}"
-echo -e "***clustering parameters***"
-echo -e "   maxPC: ${maxPC}\n   resolution: ${resolution}"
+echo -e "*** base parameters ***"
+echo -e "    Rscript path: $(which Rscript)\n    datasets: ${datasets}\n    species: ${species}\n    exogenous_genes: ${exogenous_genes}"
+echo -e "*** cell-filtering parameters ***"
+echo -e "    cell_calling_methodNum: ${cell_calling_methodNum}"
+echo -e "*** integration parameters ***"
+echo -e "    HVF_source: ${HVF_source}\n    nHVF: ${nHVF}\n    anchor_dims: ${anchor_dims}\n    integrate_dims: ${integrate_dims}"
+echo -e "*** clustering parameters ***"
+echo -e "    maxPC: ${maxPC}\n    resolution: ${resolution}"
 echo -e "################################################################################\n"
 
 echo -e "****************** Start Integration ******************\n"
