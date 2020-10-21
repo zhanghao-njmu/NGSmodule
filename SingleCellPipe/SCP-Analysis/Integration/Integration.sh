@@ -24,14 +24,14 @@ for package in "${R_packages[@]}"; do
 done
 
 echo -e "########################## Quantification Parameters ###########################\n"
-echo -e ">base parameters:"
-echo -e "  Rscript path: $(which Rscript)\n  datasets: ${datasets}\n  species: ${species}\n  exogenous_genes: ${exogenous_genes}"
-echo -e ">cell-filtering parameters:"
-echo -e "  cell_calling_methodNum: ${cell_calling_methodNum}"
-echo -e ">integration parameters:"
-echo -e "  HVF_source: ${HVF_source}\n  nHVF: ${nHVF}\n  anchor_dims: ${anchor_dims}\n  integrate_dims: ${integrate_dims}"
-echo -e ">clustering parameters:"
-echo -e "  maxPC: ${maxPC}\n  resolution: ${resolution}"
+echo -e "***base parameters***"
+echo -e "   Rscript path: $(which Rscript)\n  datasets: ${datasets}\n  species: ${species}\n  exogenous_genes: ${exogenous_genes}"
+echo -e "***cell-filtering parameters***"
+echo -e "   cell_calling_methodNum: ${cell_calling_methodNum}"
+echo -e "***integration parameters***"
+echo -e "   HVF_source: ${HVF_source}\n  nHVF: ${nHVF}\n  anchor_dims: ${anchor_dims}\n  integrate_dims: ${integrate_dims}"
+echo -e "***clustering parameters***"
+echo -e "   maxPC: ${maxPC}\n  resolution: ${resolution}"
 echo -e "################################################################################\n"
 
 echo -e "****************** Start Integration ******************\n"
@@ -41,9 +41,9 @@ echo -e "\nIntegrating the data....\n"
 mkdir -p $maindir/NGSmodule_SCP_analysis/Integration
 cd $maindir/NGSmodule_SCP_analysis/Integration
 
-Rscript $1 $maindir/NGSmodule_SCP_analysis/Integration $work_dir $integration_threads $datasets \
+Rscript $1 $1 $maindir/NGSmodule_SCP_analysis/Integration $work_dir $integration_threads $datasets \
   $species $exogenous_genes $cell_calling_methodNum $HVF_source $nHVF \
-  $anchor_dims $integrate_dims $maxPC $resolution &>Integration.log
+  $anchor_dims $integrate_dims $maxPC $resolution 2>&1 |tee Integration.log 
 echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"

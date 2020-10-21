@@ -17,7 +17,7 @@ maxPC <- as.numeric(args[13])
 resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
-
+# 
 # ##### test #####
 # # parameters: global settings ---------------------------------------------
 # SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
@@ -42,33 +42,17 @@ Ensembl_version <- 101
 # resolution <- 1
 
 # Library -----------------------------------------------------------------
-library(sctransform)
-library(Seurat)
-library(SeuratWrappers)
-library(intrinsicDimension)
-library(scater)
-library(Matrix)
-library(BiocParallel)
-library(future)
-library(reticulate)
-library(harmony)
-library(plyr)
-library(dplyr)
-library(RColorBrewer)
-library(scales)
-library(gtools)
-library(ggsci)
-library(ggpubr)
-library(ggplot2)
-library(ggtree)
-library(cowplot)
-library(reshape2)
-library(stringr)
-library(velocyto.R)
-library(scDblFinder)
-library(biomaRt)
-library(rvest)
-library(xml2)
+#!/usr/bin/env Rscript
+suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
+  c(
+    "sctransform", "Seurat", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
+    "future", "reticulate", "harmony", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder", 
+    "velocyto.R", "biomaRt", "rvest", "xml2"
+  ),
+  require,
+  character.only = TRUE
+))))
 set.seed(11)
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
@@ -126,6 +110,10 @@ setwd(SCPanalysis_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
 # options(future.fork.enable = TRUE)
+if (threads >= 125) {
+  cat("Threads number is too large. Re-set it to the 125.\n")
+  threads <- 125
+}
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
@@ -134,7 +122,6 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
-plotlist <- list()
 
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
@@ -250,7 +237,7 @@ sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
   cat(
     " +++", sc_set, "+++", "\n",
     ">>>", "Total cells:", ntotal, "\n",
-    ">>>", "Filter out", ndoublets + length(out), "cells (potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
+    ">>>", "Filter out", ndoublets + length(out), "cells ( potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
     ">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n"
   )
 
