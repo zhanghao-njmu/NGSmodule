@@ -152,7 +152,12 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
       head(n = nHVF)
   }
   if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, assay = "RNA", slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
     DefaultAssay(sc_merge) <- "RNA"
     hvf <- NormalizeData(object = sc_merge) %>%
@@ -283,8 +288,8 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
       FindVariableFeatures(.) %>%
       HVFInfo(.) %>%
       filter(variance.standardized > 1 &
-               (!rownames(.) %in% exogenous_genes) &
-               rownames(.) %in% gene_common) %>%
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_common) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -403,7 +408,12 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
       head(n = nHVF)
   }
   if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, assay = "RNA", slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
     DefaultAssay(sc_merge) <- "RNA"
     hvf <- NormalizeData(object = sc_merge) %>%
@@ -523,7 +533,12 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     ScaleData(features = rownames(.))
 
   if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, assay = "RNA", slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
     hvf <- HVFInfo(sc_merge) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
