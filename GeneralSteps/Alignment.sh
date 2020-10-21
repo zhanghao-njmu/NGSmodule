@@ -287,7 +287,7 @@ for sample in "${arr[@]}"; do
         echo -e "Task completed." >"$dir"/"$Aligner"/AlignmentStatus.log
       fi
 
-      check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/BAMprocessStatus.log "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "BamProcessing" "$dir"/"$Aligner"/BamProcessingStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
         bam=$(ls $dir/$Aligner/*.bam)
@@ -376,7 +376,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
-        echo -e "Task completed." >"$dir"/"$Aligner"/BAMprocessStatus.log
+        echo -e "Task completed." >"$dir"/"$Aligner"/BamProcessingStatus.log
       fi
 
       status="completed"
