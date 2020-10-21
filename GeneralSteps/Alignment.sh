@@ -119,7 +119,7 @@ for sample in "${arr[@]}"; do
         done
       fi
 
-      check_logfile "$sample" "Alignment" "$dir"/AlignmentStatus.log "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/AlignmentStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
         if [[ $Layout == "SE" ]]; then
@@ -280,14 +280,14 @@ for sample in "${arr[@]}"; do
         else
           color_echo "yellow" "ERROR! ${sample}: Cannot determine the layout of sequencing data!"
           attempt=2
-          echo "ERROR! ${sample}: Cannot determine the layout of sequencing data!" >"$dir"/AlignmentStatus.log
+          echo "ERROR! ${sample}: Cannot determine the layout of sequencing data!" >"$dir"/"$Aligner"/AlignmentStatus.log
           continue
         fi
 
-        echo -e "Task completed." >"$dir"/AlignmentStatus.log
+        echo -e "Task completed." >"$dir"/"$Aligner"/AlignmentStatus.log
       fi
 
-      check_logfile "$sample" "Alignment" "$dir"/BAMprocessStatus.log "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/BAMprocessStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
         bam=$(ls ./*.bam)
@@ -376,7 +376,7 @@ for sample in "${arr[@]}"; do
           fi
         fi
 
-        echo -e "Task completed." >"$dir"/BAMprocessStatus.log
+        echo -e "Task completed." >"$dir"/"$Aligner"/BAMprocessStatus.log
       fi
 
       status="completed"
