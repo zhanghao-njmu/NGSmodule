@@ -182,7 +182,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage --un --ambiguous \
-            --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -191,7 +191,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage --un --ambiguous \
-            --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -260,7 +260,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage --un --ambiguous \
-            --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -269,7 +269,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage --un --ambiguous \
-            --output_dir $dir/$Aligner 2>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
