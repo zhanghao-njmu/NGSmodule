@@ -291,8 +291,8 @@ for sample in "${arr[@]}"; do
       check_logfile "$sample" "BamProcessing" "$dir"/"$Aligner"/BamProcessingStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
 
-        bam=$(ls $dir/$Aligner/*.bam)
-        samtools quickcheck -v ${bam}
+        BAM=$(ls $dir/$Aligner/*.bam)
+        samtools quickcheck -v ${BAM}
         if [[ $? != 0 ]]; then
           color_echo "yellow" "Warning! $sample: BAM file checked failed."
           force="TRUE"
@@ -301,8 +301,8 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ Samtools stat: $sample +++++"
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          samtools stats -@ $threads $bam >${bam}.stats
-          samtools flagstat -@ $threads $bam >${bam}.flagstat
+          samtools stats -@ $threads $BAM >${BAM}.stats
+          samtools flagstat -@ $threads $BAM >${BAM}.flagstat
         else
           samtools index -@ $threads ${sample}.${Aligner}.bam
           samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats
@@ -334,26 +334,28 @@ for sample in "${arr[@]}"; do
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
           echo "+++++ BS-seq deduplication: $sample +++++"
           mkdir -p $dir/$Aligner/deduplicate_bismark
-          deduplicate_bismark --bam $bam --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
+          deduplicate_bismark --bam $BAM --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq deduplication failed."
             force="TRUE"
             continue
           fi
-
-          echo "+++++ BS-seq methylation extractor: $sample +++++"
-          mkdir -p $dir/$Aligner/bismark_methylation_extractor
-          bam=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
-          samtools quickcheck -v ${bam}
+          
+          dedupBAM=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
+          samtools quickcheck -v ${dedupBAM}
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
             force="TRUE"
             continue
           fi
+          samtools index -@ $threads ${dedupBAM}
+
+          echo "+++++ BS-seq methylation extractor: $sample +++++"
+          mkdir -p $dir/$Aligner/bismark_methylation_extractor
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
-          --output $dir/$Aligner/bismark_methylation_extractor $bam 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
+          --output $dir/$Aligner/bismark_methylation_extractor $dedupBAM 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq methylation extractor failed."
             force="TRUE"
