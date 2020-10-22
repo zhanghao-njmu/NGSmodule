@@ -90,10 +90,11 @@ check_logfile() {
     else
       if [[ $mode == "precheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart ${tool}."
+        return 1
       elif [[ $mode == "postcheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status."
+        color_echo "blue" "+++++ ${sample}: ${tool} no error found from the logfile +++++"
+        return 0
       fi
-      return 1
     fi
   else
     if [[ $mode == "precheck" ]]; then

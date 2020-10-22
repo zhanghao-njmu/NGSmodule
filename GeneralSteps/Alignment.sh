@@ -130,42 +130,22 @@ for sample in "${arr[@]}"; do
             bwa mem -t $threads -M $index ${fq1} | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "bowtie" ]]; then
             bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "bowtie2" ]]; then
             bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "hisat2" ]]; then
             hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
             samtools view -@ $threads -Shb accepted_hits.bam | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             rm -f accepted_hits.bam
           elif [[ "$Aligner" == "star" ]]; then
             STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} --genomeLoad LoadAndKeep --limitBAMsortRAM 10000000000 \
@@ -174,10 +154,6 @@ for sample in "${arr[@]}"; do
             --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
             --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
             --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             rm -f Aligned.sortedByCoord.out.bam
@@ -185,19 +161,11 @@ for sample in "${arr[@]}"; do
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           fi
 
@@ -208,42 +176,22 @@ for sample in "${arr[@]}"; do
             bwa mem -t $threads -M $index ${fq1} ${fq2} | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" = "bowtie" ]]; then
             bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "bowtie2" ]]; then
             bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "hisat2" ]]; then
             hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
             samtools view -@ $threads -Shb accepted_hits.bam | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             rm -f accepted_hits.bam
           elif [[ "$Aligner" == "star" ]]; then
             STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} ${fq2} --genomeLoad LoadAndKeep --limitBAMsortRAM 10000000000 \
@@ -254,28 +202,16 @@ for sample in "${arr[@]}"; do
             --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
             samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
-            if [[ $? != 0 ]]; then
-              color_echo "yellow" "Warning! ${Aligner} alignment failed."
-              continue
-            fi
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           fi
 
