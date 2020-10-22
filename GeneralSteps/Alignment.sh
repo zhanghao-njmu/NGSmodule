@@ -119,16 +119,17 @@ for sample in "${arr[@]}"; do
         done
       fi
 
-      check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/AlignmentStatus.log "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "Alignment" "$dir/$Aligner/AlignmentStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $dir/$Aligner/*
+        touch $dir/$Aligner/AlignmentStatus.log
 
         if [[ $Layout == "SE" ]]; then
           fq1=$dir/${sample}_trim.fq.gz
           if [[ "$Aligner" = "bwa" ]]; then
             bwa mem -t $threads -M $index ${fq1} | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -136,7 +137,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bowtie" ]]; then
             bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -144,7 +145,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bowtie2" ]]; then
             bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -152,7 +153,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "hisat2" ]]; then
             hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -160,7 +161,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
             samtools view -@ $threads -Shb accepted_hits.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -178,12 +179,12 @@ for sample in "${arr[@]}"; do
               continue
             fi
             samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -192,7 +193,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -206,7 +207,7 @@ for sample in "${arr[@]}"; do
           if [[ "$Aligner" == "bwa" ]]; then
             bwa mem -t $threads -M $index ${fq1} ${fq2} | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -214,7 +215,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" = "bowtie" ]]; then
             bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -222,7 +223,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bowtie2" ]]; then
             bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -230,7 +231,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "hisat2" ]]; then
             hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | \
             samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -238,7 +239,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
             samtools view -@ $threads -Shb accepted_hits.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -252,7 +253,7 @@ for sample in "${arr[@]}"; do
             --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
             --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
             samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>${sample}.${Aligner}.samtools.log
+            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -261,7 +262,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -270,7 +271,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
+            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -281,11 +282,11 @@ for sample in "${arr[@]}"; do
         else
           color_echo "yellow" "ERROR! ${sample}: Cannot determine the layout of sequencing data!"
           attempt=2
-          echo "ERROR! ${sample}: Cannot determine the layout of sequencing data!" >"$dir"/"$Aligner"/AlignmentStatus.log
+          echo "ERROR! ${sample}: Cannot determine the layout of sequencing data!" >>$dir/$Aligner/AlignmentStatus.log
           continue
         fi
 
-        echo -e "Task completed." >"$dir"/"$Aligner"/AlignmentStatus.log
+        echo -e "Task completed." >>$dir/$Aligner/AlignmentStatus.log
       fi
 
       check_logfile "$sample" "BamProcessing" "$dir"/"$Aligner"/BamProcessingStatus.log "$error_pattern" "$complete_pattern" "precheck"
@@ -312,7 +313,7 @@ for sample in "${arr[@]}"; do
 
         if [[ "$SequenceType" == "dna" ]]; then
           echo "+++++ WGS deduplication: $sample +++++"
-          sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam
+          sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam 
           picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample
           picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true
           rm -f ${sample}.${Aligner}.dedup.RG.bam
