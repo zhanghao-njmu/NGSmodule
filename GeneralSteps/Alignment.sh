@@ -317,7 +317,6 @@ for sample in "${arr[@]}"; do
 
       status="completed"
       color_echo "blue" "+++++ ${sample}: Alignment completed +++++"
-
     done
 
     if [[ "$status" == "completed" ]]; then
