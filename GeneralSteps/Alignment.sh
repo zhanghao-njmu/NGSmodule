@@ -286,11 +286,13 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
-        echo -e "Task completed." >$dir/$Aligner/AlignmentStatus.log
+        echo -e "NGSmodule finished the job [Alignment]" >>$dir/$Aligner/AlignmentStatus.log
       fi
 
-      check_logfile "$sample" "BamProcessing" "$dir"/"$Aligner"/BamProcessingStatus.log "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
+        rm -f $dir/$Aligner/AlignmentStatus.log
+        touch $dir/$Aligner/AlignmentStatus.log
 
         BAM=$(ls $dir/$Aligner/*.bam)
         samtools quickcheck -v ${BAM}
@@ -300,7 +302,7 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
-        echo "+++++ Samtools stat: $sample +++++"
+        echo "+++++ Samtools stat: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
           samtools stats -@ $threads $BAM >${BAM}.stats
           samtools flagstat -@ $threads $BAM >${BAM}.flagstat
@@ -312,10 +314,10 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ "$SequenceType" == "dna" ]]; then
-          echo "+++++ WGS deduplication: $sample +++++"
-          sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam 
-          picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample
-          picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true
+          echo "+++++ WGS deduplication: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
+          sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>$dir/$Aligner/BamProcessingStatus.log
+          picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>$dir/$Aligner/BamProcessingStatus.log
+          picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true &>>$dir/$Aligner/BamProcessingStatus.log
           rm -f ${sample}.${Aligner}.dedup.RG.bam
           samtools index -@ $threads ${sample}.${Aligner}.dedup.bam
           if [[ $? != 0 ]]; then
@@ -326,14 +328,14 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
-          echo "+++++ RNAseq Mark Duplicates: $sample +++++"
+          echo "+++++ RNAseq Mark Duplicates: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log
           mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
           samtools index -@ $threads ${sample}.${Aligner}.bam
         fi
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          echo "+++++ BS-seq deduplication: $sample +++++"
+          echo "+++++ BS-seq deduplication: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           mkdir -p $dir/$Aligner/deduplicate_bismark
           deduplicate_bismark --bam $BAM --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
           if [[ $? != 0 ]]; then
@@ -351,7 +353,7 @@ for sample in "${arr[@]}"; do
           fi
           samtools index -@ $threads ${dedupBAM}
 
-          echo "+++++ BS-seq methylation extractor: $sample +++++"
+          echo "+++++ BS-seq methylation extractor: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           mkdir -p $dir/$Aligner/bismark_methylation_extractor
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
@@ -363,7 +365,7 @@ for sample in "${arr[@]}"; do
             continue
           fi
 
-          echo "+++++ BS-seq html processing report: $sample +++++"
+          echo "+++++ BS-seq html processing report: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           mkdir -p $dir/$Aligner/bismark2report
           alignment_report=$(ls $dir/$Aligner/*_[SP]E_report.txt)
           dedup_report=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplication_report.txt)
@@ -378,7 +380,7 @@ for sample in "${arr[@]}"; do
           --nucleotide_report $nucleotide_report
         fi
 
-        echo -e "Task completed." >"$dir"/"$Aligner"/BamProcessingStatus.log
+        echo -e "NGSmodule finished the job [BamProcessing]" >>$dir/$Aligner/BamProcessingStatus.log
       fi
 
       status="completed"
