@@ -60,7 +60,7 @@ bar=0
 
 ###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern> <mode>######
 error_pattern="(error)|(fatal)|(terrible)|(corrupt)|(interrupt)|(unexpected)|(denied)|(refused)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
-complete_pattern="(FastqCheck passed)|(Analysis complete)|(fastp.json)|(Processing complete)|(Done Reports generation)|(Coverage by database)|(successfully)|(All done)|(Output created)|(NGSmodule finished the job)"
+complete_pattern="NGSmodule finished the job"
 
 check_logfile() {
   local sample=$1
@@ -71,8 +71,8 @@ check_logfile() {
   local mode=$6
 
   if [[ -f $logfile ]]; then
-    error=$(grep -iP "${error_pattern}" "${logfile}")
-    complete=$(grep -iP "${complete_pattern}" "${logfile}")
+    error=$(grep -ioP "${error_pattern}" "${logfile}" | sort | uniq)
+    complete=$(grep -ioP "${complete_pattern}" "${logfile}" | sort | uniq)
     if [[ $error ]]; then
       if [[ $mode == "precheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart ${tool}."
