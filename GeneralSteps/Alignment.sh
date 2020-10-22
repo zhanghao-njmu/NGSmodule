@@ -226,8 +226,9 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           force="TRUE"
           continue
+        else
+          echo -e "NGSmodule finished the job [Alignment]" >>$dir/$Aligner/AlignmentStatus.log
         fi
-        echo -e "NGSmodule finished the job [Alignment]" >>$dir/$Aligner/AlignmentStatus.log
       fi
 
       check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "precheck"
@@ -325,8 +326,9 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           force="TRUE"
           continue
+        else
+          echo -e "NGSmodule finished the job [BamProcessing]" >>$dir/$Aligner/BamProcessingStatus.log
         fi
-        echo -e "NGSmodule finished the job [BamProcessing]" >>$dir/$Aligner/BamProcessingStatus.log
       fi
 
       status="completed"
