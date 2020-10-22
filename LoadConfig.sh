@@ -230,10 +230,10 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_featurecounts=$threads
   fi
 
-  if ((((threads / 4)) == 0)); then
+  if ((((threads / 8)) == 0)); then
     bismark_threads=1
   else
-    bismark_threads=$((threads / 4))
+    bismark_threads=$((threads / 8))
   fi
 
   ###### fifo ######
