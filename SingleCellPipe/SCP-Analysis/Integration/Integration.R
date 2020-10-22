@@ -17,7 +17,7 @@ maxPC <- as.numeric(args[13])
 resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
-# 
+
 # ##### test #####
 # # parameters: global settings ---------------------------------------------
 # SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
@@ -42,7 +42,6 @@ Ensembl_version <- 101
 # resolution <- 1
 
 # Library -----------------------------------------------------------------
-#!/usr/bin/env Rscript
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "sctransform", "Seurat", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
@@ -125,7 +124,7 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # Preprocessing: load data ------------------------------------------------
 for (i in 1:length(samples)) {
-  cat("[", i, "]", " sample: ", samples[i], "\n", sep = "")
+  cat("++++++", samples[i], "++++++", "\n")
   cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cells <- cell_upset %>%
@@ -151,7 +150,7 @@ for (i in 1:length(samples)) {
 sc_list <- list()
 velocity_list <- list()
 for (i in 1:length(samples)) {
-  cat(samples[i], "\n")
+  cat("++++++", samples[i], "++++++", "\n")
   srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
   srt[["orig.ident"]] <- samples[i]
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(mt-)|(Mt-)")
@@ -231,15 +230,12 @@ sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
     (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08)
   out <- c(out, list(mt = which(mtout)))
   out <- table(unlist(out))
-  # print(table(out))
   out <- as.numeric(names(out)[which(out >= 2)])
 
-  cat(
-    " +++", sc_set, "+++", "\n",
-    ">>>", "Total cells:", ntotal, "\n",
-    ">>>", "Filter out", ndoublets + length(out), "cells ( potential doublets:", ndoublets, "and", "unqualified cells:", length(out), ")", "\n",
-    ">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n"
-  )
+  cat("++++++", sc_set, "++++++", "\n")
+  cat(">>>", "Total cells:", ntotal, "\n")
+  cat(">>>", "Filter out ", ndoublets + length(out), " cells (potential doublets: ", ndoublets, " and ", " unqualified cells: ", length(out), ")", "\n",sep = "")
+  cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
 
   if (length(out) > 0) {
     srt <- subset(srt, cell = colnames(srt)[-out])
@@ -253,7 +249,7 @@ if (!file.exists("sc_list_filter.rds")) {
 
 # Integration: Standard workflow ------------------------------------------
 sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
-  cat(" +++", sc_set, "+++", "\n")
+  cat("++++++", sc_set, "++++++", "\n")
   srt <- sc_list_filter[[sc_set]]
   srt <- Standard_SCP(
     sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
@@ -264,7 +260,7 @@ sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
 })
 
 srt_list_Standard <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
-  cat(paste0(dataset, collapse = "-"), "\n")
+  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
   if (length(dataset) == 0) {
     srt_integrated <- NULL
   }
@@ -293,7 +289,7 @@ if (!file.exists("srt_list_Standard.rds")) {
 
 # Integration: SCTransform workflow  --------------------------------------
 sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
-  cat(" +++", sc_set, "+++", "\n")
+  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
   srt <- sc_list_filter[[sc_set]]
   srt <- SCTransform(
     object = srt,
@@ -310,7 +306,7 @@ sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
 })
 
 srt_list_SCT <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
-  cat(paste0(dataset, collapse = "-"), "\n")
+  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
   if (length(dataset) == 0) {
     srt_integrated <- NULL
   }
@@ -339,7 +335,7 @@ if (!file.exists("srt_list_SCT.rds")) {
 
 # Integration: fastMNN workflow -------------------------------------------
 srt_list_fastMNN <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
-  cat(paste0(dataset, collapse = "-"), "\n")
+  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
   if (length(dataset) == 0) {
     srt_integrated <- NULL
   }
@@ -368,7 +364,7 @@ if (!file.exists("srt_list_fastMNN.rds")) {
 
 # Integration: Harmony workflow -------------------------------------------
 srt_list_Harmony <- lapply(setNames(datasets,sapply(datasets, function(x) paste0(x,collapse = ","))),function(dataset){
-  cat(paste0(dataset, collapse = "-"), "\n")
+  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
   if (length(dataset) == 0) {
     srt_integrated <- NULL
   }
