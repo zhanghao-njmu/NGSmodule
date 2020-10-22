@@ -184,7 +184,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
+            --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -193,7 +193,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
+            --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -262,7 +262,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
+            --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -271,7 +271,7 @@ for sample in "${arr[@]}"; do
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
-            --output_dir $dir/$Aligner &>$dir/$Aligner/AlignmentStatus.log
+            --output_dir $dir/$Aligner &>>$dir/$Aligner/AlignmentStatus.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
               continue
@@ -286,7 +286,7 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
-        echo -e "Task completed." >>$dir/$Aligner/AlignmentStatus.log
+        echo -e "Task completed." >$dir/$Aligner/AlignmentStatus.log
       fi
 
       check_logfile "$sample" "BamProcessing" "$dir"/"$Aligner"/BamProcessingStatus.log "$error_pattern" "$complete_pattern" "precheck"
