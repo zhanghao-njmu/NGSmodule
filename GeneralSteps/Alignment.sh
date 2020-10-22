@@ -301,7 +301,6 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ Samtools stat: $sample +++++"
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          bam=$(ls $dir/$Aligner/*.bam)
           samtools stats -@ $threads $bam >${bam}.stats
           samtools flagstat -@ $threads $bam >${bam}.flagstat
         else
@@ -335,8 +334,7 @@ for sample in "${arr[@]}"; do
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
           echo "+++++ BS-seq deduplication: $sample +++++"
           mkdir -p $dir/$Aligner/deduplicate_bismark
-          bam=$(ls $dir/$Aligner/*.bam)
-          deduplicate_bismark --bam $bam --output_dir $dir/$Aligner/deduplicate_bismark 2>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
+          deduplicate_bismark --bam $bam --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq deduplication failed."
             force="TRUE"
@@ -346,6 +344,12 @@ for sample in "${arr[@]}"; do
           echo "+++++ BS-seq methylation extractor: $sample +++++"
           mkdir -p $dir/$Aligner/bismark_methylation_extractor
           bam=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
+          samtools quickcheck -v ${bam}
+          if [[ $? != 0 ]]; then
+            color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
+            force="TRUE"
+            continue
+          fi
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
@@ -369,12 +373,6 @@ for sample in "${arr[@]}"; do
           --splitting_report $splitting_report \
           --mbias_report $mbias_report \
           --nucleotide_report $nucleotide_report
-          samtools quickcheck -v ${bam}
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "Warning! $sample: BS-seq html report failed."
-            force="TRUE"
-            continue
-          fi
         fi
 
         echo -e "Task completed." >"$dir"/"$Aligner"/BamProcessingStatus.log
