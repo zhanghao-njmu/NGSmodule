@@ -75,9 +75,9 @@ check_logfile() {
     complete=$(grep -ioP "${complete_pattern}" "${logfile}" | sort | uniq |paste -sd "|")
     if [[ $error ]]; then
       if [[ $mode == "precheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart ${tool}."
+        color_echo "yellow" "Warning! ${sample}: Detected problems($error) in ${tool} logfile: ${logfile}. Restart ${tool}."
       elif [[ $mode == "postcheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}."
+        color_echo "yellow" "Warning! ${sample}: Detected problems($error) in ${tool} logfile: ${logfile}."
       fi
       return 1
     elif [[ $complete ]]; then
