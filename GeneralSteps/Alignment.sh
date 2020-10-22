@@ -121,6 +121,7 @@ for sample in "${arr[@]}"; do
 
       check_logfile "$sample" "Alignment" "$dir"/"$Aligner"/AlignmentStatus.log "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
+        rm -rf $dir/$Aligner/*
 
         if [[ $Layout == "SE" ]]; then
           fq1=$dir/${sample}_trim.fq.gz
@@ -181,7 +182,7 @@ for sample in "${arr[@]}"; do
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage --un --ambiguous \
+            --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -190,7 +191,7 @@ for sample in "${arr[@]}"; do
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage --un --ambiguous \
+            --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -259,7 +260,7 @@ for sample in "${arr[@]}"; do
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage --un --ambiguous \
+            --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -268,7 +269,7 @@ for sample in "${arr[@]}"; do
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage --un --ambiguous \
+            --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>$dir/$Aligner/bismark.log
             if [[ $? != 0 ]]; then
               color_echo "yellow" "Warning! ${Aligner} alignment failed."
@@ -347,7 +348,7 @@ for sample in "${arr[@]}"; do
           bam=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
           bismark_methylation_extractor --multicore $((($threads) / 2)) --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
-          --cytosine_report --CX --genome_folder $index \
+          --cytosine_report --genome_folder $index \
           --output $dir/$Aligner/bismark_methylation_extractor $bam 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq methylation extractor failed."
