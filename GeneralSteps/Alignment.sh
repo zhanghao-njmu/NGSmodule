@@ -222,6 +222,11 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
+        check_logfile "$sample" "Alignment" "$dir/$Aligner/AlignmentStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
         echo -e "NGSmodule finished the job [Alignment]" >>$dir/$Aligner/AlignmentStatus.log
       fi
 
@@ -316,6 +321,11 @@ for sample in "${arr[@]}"; do
           --nucleotide_report $nucleotide_report
         fi
 
+        check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
         echo -e "NGSmodule finished the job [BamProcessing]" >>$dir/$Aligner/BamProcessingStatus.log
       fi
 
