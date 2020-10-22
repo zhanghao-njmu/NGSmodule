@@ -188,6 +188,7 @@ if (!file.exists("velocity_merge.rds")) {
 
 # Preprocessing: cell filtering -----------------------------------
 sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
+  cat("++++++", sc_set, "++++++", "\n")
   srt <- sc_list[[sc_set]]
   ntotal <- ncol(srt)
   sce <- as.SingleCellExperiment(srt)
@@ -232,7 +233,6 @@ sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
   out <- table(unlist(out))
   out <- as.numeric(names(out)[which(out >= 2)])
 
-  cat("++++++", sc_set, "++++++", "\n")
   cat(">>>", "Total cells:", ntotal, "\n")
   cat(">>>", "Filter out ", ndoublets + length(out), " cells (potential doublets: ", ndoublets, " and ", " unqualified cells: ", length(out), ")", "\n",sep = "")
   cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
