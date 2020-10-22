@@ -237,7 +237,7 @@ for sample in "${arr[@]}"; do
         touch $dir/$Aligner/AlignmentStatus.log
 
         BAM=$(ls $dir/$Aligner/*.bam)
-        samtools quickcheck -v ${BAM}
+        samtools quickcheck -v ${BAM} &>/dev/null
         if [[ $? != 0 ]]; then
           color_echo "yellow" "Warning! $sample: BAM file checked failed."
           force="TRUE"
@@ -262,11 +262,6 @@ for sample in "${arr[@]}"; do
           picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true &>>$dir/$Aligner/BamProcessingStatus.log
           rm -f ${sample}.${Aligner}.dedup.RG.bam
           samtools index -@ $threads ${sample}.${Aligner}.dedup.bam
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "Warning! $sample: WGS deduplication failed."
-            force="TRUE"
-            continue
-          fi
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
@@ -280,14 +275,8 @@ for sample in "${arr[@]}"; do
           echo "+++++ BS-seq deduplication: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           mkdir -p $dir/$Aligner/deduplicate_bismark
           deduplicate_bismark --bam $BAM --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "Warning! $sample: BS-seq deduplication failed."
-            force="TRUE"
-            continue
-          fi
-
           dedupBAM=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
-          samtools quickcheck -v ${dedupBAM}
+          samtools quickcheck -v ${dedupBAM} &>/dev/null
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
             force="TRUE"
@@ -301,11 +290,6 @@ for sample in "${arr[@]}"; do
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
           --output $dir/$Aligner/bismark_methylation_extractor $dedupBAM 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "Warning! $sample: BS-seq methylation extractor failed."
-            force="TRUE"
-            continue
-          fi
 
           echo "+++++ BS-seq html processing report: $sample +++++" | tee -a $dir/$Aligner/BamProcessingStatus.log
           mkdir -p $dir/$Aligner/bismark2report
