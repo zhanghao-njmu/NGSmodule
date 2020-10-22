@@ -266,7 +266,7 @@ for sample in "${arr[@]}"; do
           fi
         else
           force="TRUE"
-          color_echo "yellow" "Warning! ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
+          color_echo "yellow" "Warning! ${sample}: trim.fq.gz files not found. Force to do a complete preAlignmentQC. +++++"
         fi
 
       elif [[ $Layout == "PE" ]]; then
@@ -459,7 +459,7 @@ for sample in "${arr[@]}"; do
           fi
         else
           force="TRUE"
-          color_echo "yellow" "+++++ ${sample}: Cannot generate fq.gz files. Force to do a complete preAlignmentQC. +++++"
+          color_echo "yellow" "+++++ ${sample}: trim.fq.gz files not found. Force to do a complete preAlignmentQC. +++++"
           continue
         fi
 
