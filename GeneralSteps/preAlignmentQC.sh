@@ -101,7 +101,7 @@ for sample in "${arr[@]}"; do
             color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
             rm -f "${existlog}"
           fi
-          if [[ $force == "TRUE" ]];then
+          if [[ $force == "TRUE" ]]; then
             color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
             rm -f "${existlog}"
           fi
