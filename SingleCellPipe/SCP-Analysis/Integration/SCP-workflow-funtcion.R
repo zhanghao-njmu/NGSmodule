@@ -155,7 +155,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
     # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     gene_common <- lapply(sc_list, function(x) {
       m <- GetAssayData(x, assay = "RNA", slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
       return(gene_keep)
     }) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
@@ -411,7 +411,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     gene_common <- lapply(sc_list, function(x) {
       m <- GetAssayData(x, assay = "RNA", slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
       return(gene_keep)
     }) %>% Reduce(intersect, .)
     sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
@@ -536,7 +536,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
     gene_common <- lapply(sc_list, function(x) {
       m <- GetAssayData(x, assay = "RNA", slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m) != 0]
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
       return(gene_keep)
     }) %>% Reduce(intersect, .)
     hvf <- HVFInfo(sc_merge) %>%
