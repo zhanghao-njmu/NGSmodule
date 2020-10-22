@@ -45,7 +45,7 @@ picard &>/dev/null
 }
 bam &>/dev/null
 [ $? -eq 127 ] && {
-  echo -e "Cannot find the command bam. User can install mosdepth by 'conda install -c bioconda bamutil'.\n"
+  echo -e "Cannot find the command bam. One can install bamutil by 'conda install -c bioconda bamutil'.\n"
   exit 1
 }
 
