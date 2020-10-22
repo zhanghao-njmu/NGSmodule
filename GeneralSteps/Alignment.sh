@@ -158,12 +158,12 @@ for sample in "${arr[@]}"; do
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
+            bismark --bowtie2 --multicore $bismark_threads -p 3 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>"$dir/$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index ${fq1} --quiet \
+            bismark --hisat2 --multicore $bismark_threads -p 3 --genome $index ${fq1} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>"$dir/$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
@@ -204,12 +204,12 @@ for sample in "${arr[@]}"; do
             samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            bismark --bowtie2 --multicore $bismark_threads -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>"$dir/$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $bismark_threads -p 2 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            bismark --hisat2 --multicore $bismark_threads -p 3 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
             --non_directional --nucleotide_coverage \
             --output_dir $dir/$Aligner &>>"$dir/$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
