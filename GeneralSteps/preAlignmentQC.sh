@@ -73,7 +73,7 @@ SECONDS=0
 for sample in "${arr[@]}"; do
   read -u1000
   {
-    dir=${work_dir}/${sample}
+    dir="${work_dir}/${sample}"
     cd "${dir}"
     mkdir -p "${dir}"/PreAlignmentQC
 
