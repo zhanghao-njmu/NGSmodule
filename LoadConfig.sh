@@ -59,7 +59,7 @@ processbar() {
 bar=0
 
 ###### check_logfile <sample> <tool> <logfile> <error_pattern> <complete_pattern> <mode>######
-error_pattern="(error)|(fatal)|(terrible)|(corrupt)|(interrupt)|(unexpected)|(denied)|(refused)|(Failed to process)|(java.io.EOFException)|(no such file or directory)"
+error_pattern="(error)|(fatal)|(terrible)|(corrupt)|(interrupt)|(denied)|(refused)|(failed)|(EOFException)|(no such file or directory)"
 complete_pattern="NGSmodule finished the job"
 
 check_logfile() {
