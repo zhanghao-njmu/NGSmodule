@@ -92,7 +92,7 @@ check_logfile() {
         color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart ${tool}."
         return 1
       elif [[ $mode == "postcheck" ]]; then
-        color_echo "blue" "+++++ ${sample}: ${tool} no error found from the logfile +++++"
+        color_echo "blue" "+++++ ${sample}: ${tool} done with no problem +++++"
         return 0
       fi
     fi
