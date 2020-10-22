@@ -85,6 +85,7 @@ check_logfile() {
         color_echo "blue" "+++++ ${sample}: ${tool} skipped +++++"
       elif [[ $mode == "postcheck" ]]; then
         color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+        echo -e "NGSmodule finished the job [${tool}]" >>${logfile}
       fi
       return 0
     else
@@ -93,6 +94,7 @@ check_logfile() {
         return 1
       elif [[ $mode == "postcheck" ]]; then
         color_echo "blue" "+++++ ${sample}: ${tool} done with no problem +++++"
+        echo -e "NGSmodule finished the job [${tool}]" >>${logfile}
         return 0
       fi
     fi

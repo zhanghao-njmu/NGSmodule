@@ -226,8 +226,6 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           force="TRUE"
           continue
-        else
-          echo -e "NGSmodule finished the job [Alignment]" >>$dir/$Aligner/AlignmentStatus.log
         fi
       fi
 
@@ -310,8 +308,6 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           force="TRUE"
           continue
-        else
-          echo -e "NGSmodule finished the job [BamProcessing]" >>$dir/$Aligner/BamProcessingStatus.log
         fi
       fi
 
