@@ -232,14 +232,13 @@ sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
   out <- c(out, list(mt = which(mtout)))
   out <- table(unlist(out))
   out <- as.numeric(names(out)[which(out >= 2)])
+  if (length(out) > 0) {
+    srt <- subset(srt, cell = colnames(srt)[-out])
+  }
 
   cat(">>>", "Total cells:", ntotal, "\n")
   cat(">>>", "Filter out ", ndoublets + length(out), " cells (potential doublets: ", ndoublets, " and ", " unqualified cells: ", length(out), ")", "\n",sep = "")
   cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
-
-  if (length(out) > 0) {
-    srt <- subset(srt, cell = colnames(srt)[-out])
-  }
 
   return(srt)
 })
