@@ -346,7 +346,7 @@ for sample in "${arr[@]}"; do
           echo "+++++ BS-seq methylation extractor: $sample +++++"
           mkdir -p $dir/$Aligner/bismark_methylation_extractor
           bam=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
-          bismark_methylation_extractor --multicore $((($threads) / 2)) --gzip --comprehensive --merge_non_CpG \
+          bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
           --output $dir/$Aligner/bismark_methylation_extractor $bam 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
