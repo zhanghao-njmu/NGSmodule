@@ -343,7 +343,7 @@ for sample in "${arr[@]}"; do
             force="TRUE"
             continue
           fi
-          
+
           dedupBAM=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
           samtools quickcheck -v ${dedupBAM}
           if [[ $? != 0 ]]; then
