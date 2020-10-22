@@ -71,8 +71,8 @@ check_logfile() {
   local mode=$6
 
   if [[ -f $logfile ]]; then
-    error=$(grep -ioP "${error_pattern}" "${logfile}" | sort | uniq)
-    complete=$(grep -ioP "${complete_pattern}" "${logfile}" | sort | uniq)
+    error=$(grep -ioP "${error_pattern}" "${logfile}" | sort | uniq |paste -sd "|")
+    complete=$(grep -ioP "${complete_pattern}" "${logfile}" | sort | uniq |paste -sd "|")
     if [[ $error ]]; then
       if [[ $mode == "precheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: Detected problems in ${tool} logfile: ${logfile}. Restart ${tool}."
