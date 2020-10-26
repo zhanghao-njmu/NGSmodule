@@ -41,16 +41,10 @@ picard &>/dev/null
 }
 
 ######## Download the iGenomes #####
-igenomes_file_manifest=($(curl "https://raw.githubusercontent.com/ewels/AWS-iGenomes/master/ngi-igenomes_file_manifest.txt" |cat))
 for s in "${Species[@]}";do
-  echo "Downloading the iGenomes for Species: $s"
-  for file in "${igenomes_file_manifest[@]}";do
-    igenome=${file##s3://ngi-igenomes/igenomes/}
-    igenome=${igenome%%/*}
-    if [[ $igenome == $s  ]]; then
-      aws s3 --no-sign-request sync $file $iGenomes_dir
-    fi
-  done
+  echo -e "\033[32mDownloading the iGenomes for Species: $s\033[0m"
+  igenome="s3://ngi-igenomes/igenomes/$s"
+  aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s
 done
 
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
