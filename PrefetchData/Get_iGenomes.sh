@@ -44,7 +44,7 @@ picard &>/dev/null
 igenomes_file_manifest=($(curl https://raw.githubusercontent.com/ewels/AWS-iGenomes/master/ngi-igenomes_file_manifest.txt |cat))
 for s in "${Species[@]}";do
   echo "Downloading the iGenomes for Species: $s"
-  for file in ${igenomes_file_manifest[@]};do
+  for file in "${igenomes_file_manifest[@]}";do
     igenome=${file##s3://ngi-igenomes/igenomes/}
     igenome=${igenome%%/*}
     if [[ $igenome == $s  ]]; then
