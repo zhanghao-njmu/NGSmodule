@@ -4,6 +4,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 ############# Paramaters #############################################################
 iGenomes_dir="/data/database/iGenomes/"
 Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
+Sources=("Ensembl" "NCBI" "UCSC")
 kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
 threads=100
@@ -42,9 +43,11 @@ picard &>/dev/null
 
 ######## Download the iGenomes #####
 for s in "${Species[@]}";do
-  echo -e "\033[32mDownloading the iGenomes for Species: $s\033[0m"
-  igenome="s3://ngi-igenomes/igenomes/$s"
-  aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s
+  for i in "${Sources[@]}";do
+    echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
+    igenome="s3://ngi-igenomes/igenomes/$s/$i"
+    aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i
+  done
 done
 
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
