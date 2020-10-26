@@ -150,7 +150,7 @@ for genome in "${arr[@]}"; do
   # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
   # echo -e "\033[32mComplete bismark index building.\033[0m"
 
-  ###### rebuild bismark_hisat2 index ######
+  ###### rebuild bismark index from iGenome ######
   echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
   mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
   if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
