@@ -128,14 +128,14 @@ globalcheck_logfile() {
     done < <(find "${dir}" "$find_par")
 
     if ((${#existlogs[*]} >= 1)); then
-        for existlog in "${existlogs[@]}"; do
-            if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-                color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-                rm -f "${existlog}"
+        for log in "${existlogs[@]}"; do
+            if [[ $(grep -iP "${error_pattern}" "${log}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
+                color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${log}."
+                rm -f "${log}"
             fi
             if [[ $force == "TRUE" ]]; then
                 color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
-                rm -f "${existlog}"
+                rm -f "${log}"
             fi
         done
     fi
