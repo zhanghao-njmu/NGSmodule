@@ -52,7 +52,8 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    bismark=($(find $iGenomes_dir/$s/$i -name "BismarkIndex" -type d | grep "WholeGenomeFasta"))
+    bismark=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep "BismarkIndex/bowtie2"))
+    
     aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
 
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
