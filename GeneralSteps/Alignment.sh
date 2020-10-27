@@ -279,7 +279,6 @@ for sample in "${arr[@]}"; do
           samtools quickcheck -v ${dedupBAM} &>/dev/null
           if [[ $? != 0 ]]; then
             color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
-            force="TRUE"
             continue
           fi
           samtools index -@ $threads ${dedupBAM}
@@ -308,7 +307,6 @@ for sample in "${arr[@]}"; do
 
         check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi

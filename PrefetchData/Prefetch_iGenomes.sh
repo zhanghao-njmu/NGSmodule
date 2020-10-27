@@ -9,7 +9,6 @@ kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
 total_threads=384
 ntask_per_run="ALL"
-force_complete="FALSE"
 
 ######## check command available ##########
 samtools &>/dev/null
@@ -154,7 +153,7 @@ for genome in "${arr[@]}"; do
     GemIndex="$SequenceDir/GemIndex/"
     GenmapIndex="$SequenceDir/GenmapIndex/"
 
-    force=${force_complete}
+    force="FALSE"
     status="uncompleted"
     attempt=0
 
@@ -178,7 +177,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -193,7 +191,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -208,7 +205,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -223,7 +219,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -238,7 +233,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -263,7 +257,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
