@@ -113,7 +113,7 @@ check_logfile() {
 ###### global-check existed logs ######
 globalcheck_logfile() {
     local dir=$1
-    logfiles=("${!2}")
+    local logfiles=("${!2}")
     local force=$3
     local error_pattern=$4
     local complete_pattern=$5
