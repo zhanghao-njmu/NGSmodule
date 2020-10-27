@@ -52,7 +52,7 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/bowtie2"))
+    bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex(?=/bowtie2)"))
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
       par=$(printf -- ' --exclude "*%s*"' "${bismark_exist[@]}")
       echo "skip BismarkIndex:$par"
