@@ -181,7 +181,7 @@ for genome in "${arr[@]}"; do
     while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
       ((attempt++))
       if [[ $attempt != 1 ]]; then
-        echo -e "+++++ ${SequenceDir}: Number of attempts: $attempt +++++"
+        echo -e "+++++ ${id}: Number of attempts: $attempt +++++"
       fi
 
       ####### clear existed logs #######
