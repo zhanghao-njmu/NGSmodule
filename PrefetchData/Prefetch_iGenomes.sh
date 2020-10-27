@@ -60,16 +60,16 @@ for s in "${Species[@]}"; do
       aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
     fi
 
+    if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
+      echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
+      rm -rf $iGenomes_dir/$s/$i
+    fi
     if [[ -d $iGenomes_dir/$s/$i ]]; then
-      index_dir=($(find $iGenomes_dir/$s/$i -mindepth 3 -maxdepth 3 -name "*Index" -type d))
+      index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
       if [[ "${#index_dir[@]}" != 0 ]]; then
         for index in "${index_dir[@]}"; do
           echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
         done
-      fi
-      if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
-        echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
-        #rm -rf $iGenomes_dir/$s/$i
       fi
     fi
 
