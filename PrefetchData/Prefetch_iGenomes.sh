@@ -377,6 +377,16 @@ for genome in "${arr[@]}"; do
       color_echo "blue" "+++++ ${SequenceDir}: completed +++++"
     done
 
+    if [[ "$status" == "completed" ]]; then
+      echo "Completed: $sample" >>"$tmpfile"
+    else
+      echo "Interrupted: $sample" >>"$tmpfile"
+      color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq file."
+    fi
+
+    color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
+
+
     echo >&1000
   } &
 done
