@@ -146,8 +146,6 @@ for genome in "${arr[@]}"; do
       fi
     done
 
-    
-
     gtf="$SequenceDir/../Annotation/Genes/genes.gtf"
     BWAIndex="$SequenceDir/BWAIndex"
     BowtieIndex="$SequenceDir/BowtieIndex"
