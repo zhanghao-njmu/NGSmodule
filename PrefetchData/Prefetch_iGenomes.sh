@@ -7,7 +7,7 @@ Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
 Sources=("Ensembl" "NCBI" "UCSC")
 kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
-total_threads=100
+total_threads=384
 ntask_per_run="ALL"
 
 ######## check command available ##########
