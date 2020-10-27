@@ -132,7 +132,7 @@ SECONDS=0
 for genome in "${arr[@]}"; do
   read -u1000
   {
-    SequenceDir=${genome%%WholeGenomeFasta/genome.fa}
+    SequenceDir=${genome%%/WholeGenomeFasta/genome.fa}
     genome_size=$(ls -lL $genome | awk '{print$5}')
     id=${SequenceDir##$iGenomes_dir}
     id=${id%%Sequence}
@@ -186,80 +186,80 @@ for genome in "${arr[@]}"; do
 
       ####### clear existed logs #######
       logfiles=("IndexStatus.log" "KmerStatus.log" "WindowStatus.log")
-      globalcheck_logfile "$SequenceDir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "iGenomes"
+      globalcheck_logfile "$SequenceDir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$id"
 
       ####### genome.fa index #####
-      check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -f ${genome}.fai ${genome%%fa}dict
         samtools faidx ${genome} &>${genome%%genome.fa}IndexStatus.log
         picard CreateSequenceDictionary R=$genome &>${genome%%genome.fa}IndexStatus.log
         # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
-        check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ###### BWA index #####
-      check_logfile "iGenomes" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $BWAIndex
         mkdir -p $BWAIndex
         ln -fs $genome $BWAIndex/genome.fa
         bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
 
-        check_logfile "iGenomes" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ###### Bowtie index #####
-      check_logfile "iGenomes" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $BowtieIndex
         mkdir -p $BowtieIndex
         ln -fs $genome $BowtieIndex/genome.fa
         bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome &>$BowtieIndex/IndexStatus.log
 
-        check_logfile "iGenomes" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ###### Bowtie2 index #####
-      check_logfile "iGenomes" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $Bowtie2Index
         mkdir -p $Bowtie2Index
         ln -fs $genome $Bowtie2Index/genome.fa
         bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome &>$Bowtie2Index/IndexStatus.log
 
-        check_logfile "iGenomes" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
-      check_logfile "iGenomes" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $Hisat2Index
         mkdir -p $Hisat2Index
         ln -fs $genome $Hisat2Index/genome.fa
         hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
 
-        check_logfile "iGenomes" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ###### STAR index #####
-      check_logfile "iGenomes" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $STARIndex
         mkdir -p $STARIndex
@@ -276,7 +276,7 @@ for genome in "${arr[@]}"; do
           --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
         fi
 
-        check_logfile "iGenomes" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -292,40 +292,40 @@ for genome in "${arr[@]}"; do
       fi
 
       ###### bismark index #####
-      check_logfile "iGenomes" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $BismarkIndex/bowtie2
         mkdir -p $BismarkIndex/bowtie2
         ln -fs $genome $BismarkIndex/bowtie2/genome.fa
         bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/IndexStatus.log
 
-        check_logfile "iGenomes" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
-      check_logfile "iGenomes" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $BismarkIndex/hisat2
         mkdir -p $BismarkIndex/hisat2
         ln -fs $genome $BismarkIndex/hisat2/genome.fa
         bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/IndexStatus.log
 
-        check_logfile "iGenomes" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       #### Gem #####
-      check_logfile "iGenomes" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$id" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
         rm -rf $GemIndex
         mkdir -p $GemIndex
         gem-indexer --threads $threads -i $genome -o $GemIndex/genome &>$GemIndex/IndexStatus.log
 
-        check_logfile "iGenomes" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -333,7 +333,7 @@ for genome in "${arr[@]}"; do
 
       for kmer in "${kmers[@]}"; do
         {
-          check_logfile "iGenomes" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+          check_logfile "$id" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "precheck"
           if [[ $? == 1 ]]; then
             rm -rf $GemIndex/Mappability/${kmer}mer
             mkdir -p $GemIndex/Mappability/${kmer}mer
@@ -343,14 +343,14 @@ for genome in "${arr[@]}"; do
             wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig &>>KmerStatus.log
             rm -f genome.${kmer}mer.gem.mappability
 
-            check_logfile "iGenomes" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+            check_logfile "$id" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
             if [[ $? == 1 ]]; then
               continue
             fi
           fi
 
           for window in "${windows[@]}"; do
-            check_logfile "iGenomes" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$id" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf $GemIndex/windows/$window
               mkdir -p $GemIndex/windows/$window
@@ -358,7 +358,7 @@ for genome in "${arr[@]}"; do
               gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig &>WindowStatus.log
               mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig &>>WindowStatus.log
 
-              check_logfile "iGenomes" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+              check_logfile "$id" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
               if [[ $? == 1 ]]; then
                 continue
               fi
@@ -396,14 +396,14 @@ for genome in "${arr[@]}"; do
       # fi
 
       status="completed"
-      color_echo "blue" "+++++ ${SequenceDir}: completed +++++"
+      color_echo "blue" "+++++ ${id}: completed +++++"
     done
 
     if [[ "$status" == "completed" ]]; then
-      echo "Completed: $SequenceDir" >>"$tmpfile"
+      echo "Completed: $id" >>"$tmpfile"
     else
-      echo "Interrupted: $SequenceDir" >>"$tmpfile"
-      color_echo "red" "ERROR! ${SequenceDir} interrupted! Please check the processing log."
+      echo "Interrupted: $id" >>"$tmpfile"
+      color_echo "red" "ERROR! ${id} interrupted! Please check the processing log."
     fi
 
     color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
