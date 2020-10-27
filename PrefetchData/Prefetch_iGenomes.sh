@@ -245,8 +245,8 @@ for genome in "${arr[@]}"; do
           mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
         done
       } &
-      wait
     done
+    wait
     echo -e "\033[32mComplete Gem mappability building.\033[0m"
 
     # ##### Genmap #####
