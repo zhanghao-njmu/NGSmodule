@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 ############# Paramaters #############################################################
 iGenomes_dir="/reference/iGenomes/"
