@@ -63,7 +63,6 @@ done
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
 
 ######## Start buiding #########
-
 arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
 total_task=${#arr[@]}
 
