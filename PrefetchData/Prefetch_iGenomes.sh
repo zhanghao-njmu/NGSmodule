@@ -56,10 +56,11 @@ for s in "${Species[@]}"; do
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
       par=$(printf -- ' --exclude "*%s*"' "${bismark_exist[@]}")
       echo "skip BismarkIndex:$par"
-      $(aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa" $par)
+      cmd='aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa" $par'
     else
-      aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa"
+      cmd='aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa"'
     fi
+    eval $cmd
 
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
       echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
