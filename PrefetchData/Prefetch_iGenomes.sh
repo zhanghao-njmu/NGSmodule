@@ -64,7 +64,6 @@ done
 
 ######## Start buiding #########
 
-
 arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
 total_task=${#arr[@]}
 
