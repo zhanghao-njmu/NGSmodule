@@ -267,6 +267,7 @@ for genome in "${arr[@]}"; do
 
       ###### rebuild bismark index from iGenome ######
       if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]] && [[ -f $BismarkIndex/IndexStatus.log ]]; then
+        rm -rf $BismarkIndex/bowtie2
         mkdir -p $BismarkIndex/bowtie2
         mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
         mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
