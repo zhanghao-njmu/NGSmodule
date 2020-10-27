@@ -153,6 +153,24 @@ for genome in "${arr[@]}"; do
     GemIndex="$SequenceDir/GemIndex/"
     GenmapIndex="$SequenceDir/GenmapIndex/"
 
+    ####### clear existed logs #######
+    existlogs=()
+    while IFS='' read -r line; do
+      existlogs+=("$line")
+    done < <(find "${dir}" -name "IndexStatus.log" -o -name "KmerStatus.log" -o -name "GCStatus.log" -o -name "MappabilityStatus.log")
+    if ((${#existlogs[*]} >= 1)); then
+      for existlog in "${existlogs[@]}"; do
+        if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+          color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
+          rm -f "${existlog}"
+        fi
+        if [[ $force == "TRUE" ]]; then
+          color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
+          rm -f "${existlog}"
+        fi
+      done
+    fi
+
     ####### genome.fa index #####
     rm -f ${genome}.fai ${genome%%fa}dict
     samtools faidx ${genome} &>${genome%%genome.fa}IndexStatus.log
