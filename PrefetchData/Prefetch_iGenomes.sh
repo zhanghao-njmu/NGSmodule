@@ -2,13 +2,13 @@
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 ############# Paramaters #############################################################
-iGenomes_dir="/reference/iGenomes/"
-Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
-Sources=("Ensembl" "NCBI" "UCSC")
-kmers=(150 100 50)
-windows=(2000000 1000000 500000 100000)
-total_threads=384
-ntask_per_run="ALL"
+# iGenomes_dir="/reference/iGenomes/"
+# Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
+# Sources=("Ensembl" "NCBI" "UCSC")
+# kmers=(150 100 50)
+# windows=(2000000 1000000 500000 100000)
+# total_threads=384
+# ntask_per_run="ALL"
 
 ######## check command available ##########
 samtools &>/dev/null
