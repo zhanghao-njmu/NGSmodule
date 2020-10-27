@@ -133,10 +133,6 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
   ###### fifo ######
   fifo $ntask_per_run
 
-  ###### temp file ######
-  tmpfile=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
-  trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT
-
 else
   total_task="Waiting for creating the workdir"
   ntask_per_run="Waiting for creating the workdir"
