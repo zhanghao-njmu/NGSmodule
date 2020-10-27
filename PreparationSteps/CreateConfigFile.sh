@@ -12,7 +12,7 @@ else
 fi
 
 cat <<- EOF >$ConfigFile
-############# Global Paramaters ###########################################################################
+############# Global Paramaters #############################################################################
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw fastq.gz data.
 SequenceType="rna"                            ## rna,dna,BSdna
@@ -23,7 +23,7 @@ SampleGrepPattern=""                          ## Optional. Perl-compatible regex
 force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE .
 
 
-############# CreateWorkDir Paramaters ###################################################################
+############# CreateWorkDir Paramaters ######################################################################
 ### raw_run_file_name= RunIDPattern  + SufixPattern
 ### Example: Sample1: R19051060_2020_L001_1.fq.gz, R19051060_2020_L001_2.fq.gz; Sample2: R19051061_2020_L002.fq.gz
 ### RunIDPattern=".*"
@@ -34,7 +34,7 @@ R1_SufixPattern="_1\.((fastq)|(fq))\.gz"        # Must start with and end with a
 R2_SufixPattern="_2\.((fastq)|(fq))\.gz"        # Must start with and end with a fixed string. 
 
 
-############# preAlignmentQC Paramaters ###################################################################
+############# preAlignmentQC Paramaters #####################################################################
 ### Fastp ###
 trim_front1=2                  ## trimming how many bases in front for read1. e.g. 1-4 bp for RNAseq and 9-10 bp for WGBS.
 trim_tail1=0                   ## trimming how many bases in tail for read1.
@@ -70,11 +70,11 @@ GTF_direct=""                                    ## Optional. Specify a gtf file
 Index_direct=""                                  ## Optional. Specify the index path used for the alignment.  
 
 
-############# Quantification Paramaters ######################################################################
+############# Quantification Paramaters #####################################################################
 strandspecific=0                                   ## 0(unstranded),1(stranded),2(reversely stranded)
 
 
-############# DifferentialExpression Paramaters ##############################################################
+############# DifferentialExpression Paramaters #############################################################
 max_padj=0.05                                      ## e.g. 0.05 or 0.01 or 0.001
 min_fc=2                                           ## e.g. 2
 min_count=10                                       ## Minimum count required for at least n samples (n is the smallest group sample size).
@@ -82,13 +82,15 @@ group_compare="Hom-80S,WT-80S;Hom-Input,WT-Input;" ## Groups are seperated by co
 DGEs_multi_compare=1                               ## Whether to compare DGEs among different comparisons. 0(not to do),1(do).
 
 
-############# CNVanalysis Paramaters ##############################################################
+############# CNVanalysis Paramaters ########################################################################
 Window=1000000
 Kmer=130
 PloidyAssumed=2
 
-############# SNV Paramaters ##############################################################
+############# SNV Paramaters ################################################################################
 GATK3="java -jar -Xmx32g /path/to/GenomeAnalysisTK.jar"
+
+
 
 EOF
 

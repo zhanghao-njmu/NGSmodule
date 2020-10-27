@@ -7,10 +7,16 @@ Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
 Sources=("Ensembl" "NCBI" "UCSC")
 kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
-threads=100
+total_threads=100
+ntask_per_run="ALL"
 
 ######## check command available ##########
-faidx --version &>/dev/null
+samtools &>/dev/null
+[ $? -eq 127 ] && {
+  echo -e "Cannot find the tool samtools. User can install it with the command 'conda install -c bioconda samtools'.\n"
+  exit 1
+}
+faidx &>/dev/null
 [ $? -eq 127 ] && {
   echo -e "Cannot find the tool pyfaidx. User can install it with the command 'conda install -c bioconda pyfaidx'.\n"
   exit 1
@@ -42,174 +48,232 @@ picard &>/dev/null
 }
 
 ######## Download the iGenomes #####
-for s in "${Species[@]}";do
-  for i in "${Sources[@]}";do
+for s in "${Species[@]}"; do
+  for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
     aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i
+    if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
+      echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
+      rm -rf $iGenomes_dir/$s/$i
+    fi
   done
 done
 
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
 
 ######## Start buiding #########
+###### fifo ######
+tempfifo=$$.fifo
+trap_add "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT
+mkfifo $tempfifo
+exec 1000<>$tempfifo
+rm -f $tempfifo
+for ((i = 1; i <= ntask_per_run; i++)); do
+  echo >&1000
+done
+
 arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
-if ((threads > 120)); then
-  threads=120
+total_task=${#arr[@]}
+
+if [[ "$total_task" == 0 ]]; then
+  color_echo "red" "ERROR! No sample sub-directory found in the work_dir:$work_dir\n"
+  exit 1
+fi
+
+if [[ "$ntask_per_run" =~ ^[0-9]+$ ]]; then
+  ntask_per_run=$ntask_per_run
+elif [[ "$ntask_per_run" = "ALL" ]]; then
+  if ((total_task > total_threads)); then
+    ntask_per_run=$total_threads
+  else
+    ntask_per_run=$total_task
+  fi
+else
+  color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
+  exit 1
+fi
+
+threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
+
+if ((threads == 0)); then
+  threads=1
 else
   threads=$threads
 fi
+
+if ((threads > 120)); then
+  hisat2_threads=120
+else
+  hisat2_threads=$threads
+fi
+
+if ((((threads / ${#kmers})) == 0)); then
+  map_threads=1
+else
+  map_threads=$((threads / ${#kmers}))
+fi
+
 for genome in "${arr[@]}"; do
+  read -u1000
+  {
+    SequenceDir=${genome%%WholeGenomeFasta/genome.fa}
+    genome_size=$(ls -lL $genome | awk '{print$5}')
+    echo "SequenceDir:$SequenceDir"
+    cd $SequenceDir
 
-  SequenceDir=${genome%%WholeGenomeFasta/genome.fa}
-  genome_size=$(ls -lL $genome | awk '{print$5}')
-  echo "SequenceDir:$SequenceDir"
-  cd $SequenceDir
-
-  ####### Create WholeGenomeFasta/genome.fa softlink for other index #######
-  arr2=($(find $SequenceDir -name "genome.fa" | grep -v "WholeGenomeFasta"))
-  for genomeln in "${arr2[@]}"; do
-    if [[ -L $genomeln ]]; then
-      echo -e "\033[32mok: $genomeln\033[0m"
-      ln -fs $genome $genomeln
-    else
-      genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
-      if [[ "$genomeln_size" == "$genome_size" ]]; then
-        echo -e "\033[32mSoft link ok: $genomeln\033[0m"
+    ####### Create WholeGenomeFasta/genome.fa softlink for other index #######
+    arr2=($(find $SequenceDir -name "genome.fa" | grep -v "WholeGenomeFasta"))
+    for genomeln in "${arr2[@]}"; do
+      if [[ -L $genomeln ]]; then
+        echo -e "\033[32mok: $genomeln\033[0m"
         ln -fs $genome $genomeln
       else
-        echo -e "\033[31mSoft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size\033[0m"
+        genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
+        if [[ "$genomeln_size" == "$genome_size" ]]; then
+          echo -e "\033[32mSoft link ok: $genomeln\033[0m"
+          ln -fs $genome $genomeln
+        else
+          echo -e "\033[31mSoft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size\033[0m"
+        fi
       fi
-    fi
-  done
-
-  gtf="$SequenceDir/../Annotation/Genes/genes.gtf"
-  BWAIndex="$SequenceDir/BWAIndex"
-  BowtieIndex="$SequenceDir/BowtieIndex"
-  Bowtie2Index="$SequenceDir/Bowtie2Index"
-  STARIndex="$SequenceDir/STARIndex"
-  BismarkIndex="$SequenceDir/BismarkIndex"
-  Hisat2Index="$SequenceDir/Hisat2Index"
-  GemIndex="$SequenceDir/GemIndex/"
-  GenmapIndex="$SequenceDir/GenmapIndex/"
-
-  if [[ ! -f ${genome%%.fa}.dict ]];then
-    picard CreateSequenceDictionary R=$genome
-  fi
-
-  ####### Extract main genome fasta #####
-  # echo "====== Fetch main chromosome sequence into genome_main.fa ======"
-  # rm -f ${genome}.fai
-  # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
-
-  # ###### BWA index #####
-  # echo -e "\033[35mStart to build BWA index...\033[0m"
-  # mkdir -p $BWAIndex
-  # ln -fs $genome $BWAIndex/genome.fa
-  # cd $BWAIndex
-  # bwa index $BWAIndex/genome.fa
-  # echo -e "\033[32mComplete BWA index building.\033[0m"
-
-  # ###### Bowtie index #####
-  # echo -e "\033[35mStart to build Bowtie index...\033[0m"
-  # mkdir -p $BowtieIndex
-  # ln -fs $genome $BowtieIndex/genome.fa
-  # bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
-  # echo -e "\033[32mComplete Bowtie index building.\033[0m"
-
-  # ###### Bowtie2 index #####
-  # echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
-  # mkdir -p $Bowtie2Index
-  # ln -fs $genome $Bowtie2Index/genome.fa
-  # bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
-  # echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
-
-  ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
-  echo -e "\033[35mStart to build Hisat2 index...\033[0m"
-  mkdir -p $Hisat2Index
-  ln -fs $genome $Hisat2Index/genome.fa
-  hisat2-build --quiet -p $threads $Hisat2Index/genome.fa $Hisat2Index/genome
-  echo -e "\033[32mComplete Hisat2 index building.\033[0m"
-
-  # ###### STAR index #####
-  # echo -e "\033[35mStart to build STAR index...\033[0m"
-  # mkdir -p $STARIndex
-  # ln -fs $genome $STARIndex/genome.fa
-  # STAR --runMode genomeGenerate --runThreadN $threads \
-  # --genomeDir $STARIndex \
-  # --genomeFastaFiles $STARIndex/genome.fa \
-  # --sjdbGTFfile $gtf
-  # echo -e "\033[32mComplete STAR index building.\033[0m"
-
-  # ###### bismark index #####
-  # echo -e "\033[35mStart to build bismark index...\033[0m"
-  # mkdir -p $BismarkIndex/bowtie2
-  # mkdir -p $BismarkIndex/hisat2
-  # ln -fs $genome $BismarkIndex/bowtie2/genome.fa
-  # ln -fs $genome $BismarkIndex/hisat2/genome.fa
-  # bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2
-  # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
-  # echo -e "\033[32mComplete bismark index building.\033[0m"
-
-  ###### rebuild bismark index from iGenome ######
-  echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
-  mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
-  if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
-    mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
-    mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
-  fi
-  ln -fs $genome $BismarkIndex/hisat2/genome.fa
-  bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
-  echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
-
-  #### Gem #####
-  echo -e "\033[35mStart to build Gem index...\033[0m"
-  if [[ ! -d $GemIndex ]]; then
-    mkdir -p $GemIndex
-    gem-indexer --threads $threads -i $genome -o $GemIndex/genome
-  fi
-  echo -e "\033[32mComplete Gem index building.\033[0m"
-
-  for kmer in "${kmers[@]}"; do
-    echo "====== Make Gem mappability file  ======"
-    mkdir -p $GemIndex/Mappability/${kmer}mer
-    cd $GemIndex/Mappability/${kmer}mer
-    gem-mappability -T $threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem
-    gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem
-    wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig
-    rm -f genome.${kmer}mer.gem.mappability
-
-    echo "====== Count GC and mappability within a silding window  ======"
-    for window in "${windows[@]}"; do
-      mkdir -p $GemIndex/windows/$window
-      cd $GemIndex/windows/$window
-      gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
-      mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
     done
-  done
 
-  # ##### Genmap #####
-  # echo -e "\033[35mStart to build Genmap index...\033[0m"
-  # rm -rf $GenmapIndex
-  # genmap index -F $genome -I $GenmapIndex
-  # echo -e "\033[32mComplete Genmap index building.\033[0m"
+    gtf="$SequenceDir/../Annotation/Genes/genes.gtf"
+    BWAIndex="$SequenceDir/BWAIndex"
+    BowtieIndex="$SequenceDir/BowtieIndex"
+    Bowtie2Index="$SequenceDir/Bowtie2Index"
+    STARIndex="$SequenceDir/STARIndex"
+    BismarkIndex="$SequenceDir/BismarkIndex"
+    Hisat2Index="$SequenceDir/Hisat2Index"
+    GemIndex="$SequenceDir/GemIndex/"
+    GenmapIndex="$SequenceDir/GenmapIndex/"
 
-  # for kmer in "${kmers[@]}"; do
-  #   echo "====== Make Genmap mappability file  ======"
-  #   mkdir -p $GenmapIndex/Mappability/${kmer}mer
-  #   cd $GenmapIndex/Mappability/${kmer}mer
-  #   genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
-  #   wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
+    if [[ ! -f ${genome%%.fa}.dict ]]; then
+      picard CreateSequenceDictionary R=$genome
+    fi
 
-  #   echo "====== Count GC and mappability within a silding window  ======"
-  #   for window in "${windows[@]}"; do
-  #     mkdir -p $GenmapIndex/windows/$window
-  #     cd $GenmapIndex/windows/$window
-  #     gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
-  #     mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
-  #   done
-  # done
+    ####### Extract main genome fasta #####
+    # echo "====== Fetch main chromosome sequence into genome_main.fa ======"
+    rm -f ${genome}.fai
+    samtools faidx ${genome}
+    # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
+    # ###### BWA index #####
+    # echo -e "\033[35mStart to build BWA index...\033[0m"
+    # mkdir -p $BWAIndex
+    # ln -fs $genome $BWAIndex/genome.fa
+    # cd $BWAIndex
+    # bwa index $BWAIndex/genome.fa
+    # echo -e "\033[32mComplete BWA index building.\033[0m"
+
+    # ###### Bowtie index #####
+    # echo -e "\033[35mStart to build Bowtie index...\033[0m"
+    # mkdir -p $BowtieIndex
+    # ln -fs $genome $BowtieIndex/genome.fa
+    # bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
+    # echo -e "\033[32mComplete Bowtie index building.\033[0m"
+
+    # ###### Bowtie2 index #####
+    # echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
+    # mkdir -p $Bowtie2Index
+    # ln -fs $genome $Bowtie2Index/genome.fa
+    # bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
+    # echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
+
+    ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
+    echo -e "\033[35mStart to build Hisat2 index...\033[0m"
+    mkdir -p $Hisat2Index
+    ln -fs $genome $Hisat2Index/genome.fa
+    hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome
+    echo -e "\033[32mComplete Hisat2 index building.\033[0m"
+
+    # ###### STAR index #####
+    # echo -e "\033[35mStart to build STAR index...\033[0m"
+    # mkdir -p $STARIndex
+    # ln -fs $genome $STARIndex/genome.fa
+    # STAR --runMode genomeGenerate --runThreadN $threads \
+    # --genomeDir $STARIndex \
+    # --genomeFastaFiles $STARIndex/genome.fa \
+    # --sjdbGTFfile $gtf
+    # echo -e "\033[32mComplete STAR index building.\033[0m"
+
+    # ###### bismark index #####
+    # echo -e "\033[35mStart to build bismark index...\033[0m"
+    # mkdir -p $BismarkIndex/bowtie2
+    # mkdir -p $BismarkIndex/hisat2
+    # ln -fs $genome $BismarkIndex/bowtie2/genome.fa
+    # ln -fs $genome $BismarkIndex/hisat2/genome.fa
+    # bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2
+    # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
+    # echo -e "\033[32mComplete bismark index building.\033[0m"
+
+    ###### rebuild bismark index from iGenome ######
+    echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
+    mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
+    if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
+      mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
+      mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
+    fi
+    ln -fs $genome $BismarkIndex/hisat2/genome.fa
+    bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2
+    echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
+
+    #### Gem #####
+    echo -e "\033[35mStart to build Gem index...\033[0m"
+    if [[ ! -d $GemIndex ]]; then
+      mkdir -p $GemIndex
+      gem-indexer --threads $threads -i $genome -o $GemIndex/genome
+    fi
+    echo -e "\033[32mComplete Gem index building.\033[0m"
+
+    for kmer in "${kmers[@]}"; do
+      {
+        echo "====== Make Gem mappability file with kmer:$kmer  ======"
+        mkdir -p $GemIndex/Mappability/${kmer}mer
+        cd $GemIndex/Mappability/${kmer}mer
+        gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem
+        gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem
+        wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig
+        rm -f genome.${kmer}mer.gem.mappability
+
+        for window in "${windows[@]}"; do
+          echo "====== Count GC and mappability within a silding window:$window  ======"
+          mkdir -p $GemIndex/windows/$window
+          cd $GemIndex/windows/$window
+          gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
+          mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
+        done
+      } &
+      wait
+    done
+    echo -e "\033[32mComplete Gem mappability building.\033[0m"
+
+    # ##### Genmap #####
+    # echo -e "\033[35mStart to build Genmap index...\033[0m"
+    # rm -rf $GenmapIndex
+    # genmap index -F $genome -I $GenmapIndex
+    # echo -e "\033[32mComplete Genmap index building.\033[0m"
+
+    # for kmer in "${kmers[@]}"; do
+    #   echo "====== Make Genmap mappability file with kmer:$kmer  ======"
+    #   mkdir -p $GenmapIndex/Mappability/${kmer}mer
+    #   cd $GenmapIndex/Mappability/${kmer}mer
+    #   genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
+    #   wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
+
+    #   for window in "${windows[@]}"; do
+    #     echo "====== Count GC and mappability within a silding window:$window  ======"
+    #     mkdir -p $GenmapIndex/windows/$window
+    #     cd $GenmapIndex/windows/$window
+    #     gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
+    #     mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
+    #   done
+    # done
+    # echo -e "\033[32mComplete Genmap mappability building.\033[0m"
+
+    echo >&1000
+  } &
 done
-
+wait
 echo "Done"
