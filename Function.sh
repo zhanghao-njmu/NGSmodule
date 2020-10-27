@@ -117,6 +117,7 @@ globalcheck_logfile() {
     local force=$3
     local error_pattern=$4
     local complete_pattern=$5
+    local sample=$6
 
     echo ${logfiles[@]}
     find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
