@@ -110,7 +110,7 @@ check_logfile() {
     fi
 }
 
-###### global-check existed logs ######
+###### globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern $sample ######
 globalcheck_logfile() {
     local dir="${1}"
     local logfiles=("${!2}")
@@ -141,7 +141,8 @@ globalcheck_logfile() {
     fi
 }
 
-###### fifo ######
+
+###### fifo $ntask_per_run ######
 fifo() {
     local ntask_per_run=$1
     tempfifo=$$.fifo
