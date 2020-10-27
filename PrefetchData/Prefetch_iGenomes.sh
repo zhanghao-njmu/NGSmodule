@@ -279,7 +279,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -293,7 +292,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
@@ -307,7 +305,6 @@ for genome in "${arr[@]}"; do
 
         check_logfile "iGenomes" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
-          force="TRUE"
           continue
         fi
       fi
