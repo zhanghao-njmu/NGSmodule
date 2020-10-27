@@ -110,13 +110,13 @@ check_logfile() {
     fi
 }
 
-###### globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern $sample ######
+###### globalcheck_logfile $dir logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample" ######
 globalcheck_logfile() {
     local dir="${1}"
     local logfiles=("${!2}")
     local force="${3}"
-    local error_pattern="${!4}"
-    local complete_pattern="${!5}"
+    local error_pattern="${4}"
+    local complete_pattern="${5}"
     local id="${6}"
     
     find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
