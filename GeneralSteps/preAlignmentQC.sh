@@ -90,7 +90,7 @@ for sample in "${arr[@]}"; do
         echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
       fi
 
-      ### clear existed logs
+      ### check existed logs
       existlogs=()
       while IFS='' read -r line; do
         existlogs+=("$line")

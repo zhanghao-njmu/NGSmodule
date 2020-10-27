@@ -110,6 +110,37 @@ check_logfile() {
     fi
 }
 
+###### global-check existed logs ######
+globalcheck_logfile() {
+    local dir=$1
+    logfiles=("${!2}")
+    local force=$3
+    local error_pattern=$4
+    local complete_pattern=$5
+
+    echo ${logfiles[@]}
+    find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
+    find_par=${find_par:3}
+
+    existlogs=()
+    while IFS='' read -r line; do
+        existlogs+=("$line")
+    done < <(find "${dir}" "$find_par")
+
+    if ((${#existlogs[*]} >= 1)); then
+        for existlog in "${existlogs[@]}"; do
+            if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+                color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
+                rm -f "${existlog}"
+            fi
+            if [[ $force == "TRUE" ]]; then
+                color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
+                rm -f "${existlog}"
+            fi
+        done
+    fi
+}
+
 ###### fifo ######
 fifo() {
     local ntask_per_run=$1
