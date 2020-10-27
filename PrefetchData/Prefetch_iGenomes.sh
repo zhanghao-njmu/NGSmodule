@@ -153,73 +153,82 @@ for genome in "${arr[@]}"; do
       picard CreateSequenceDictionary R=$genome
     fi
 
-    ####### Extract main genome fasta #####
-    # echo "====== Fetch main chromosome sequence into genome_main.fa ======"
+    ####### genome.fa index #####
     rm -f ${genome}.fai
     samtools faidx ${genome}
     # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
-    # ###### BWA index #####
-    # echo -e "\033[35mStart to build BWA index...\033[0m"
-    # mkdir -p $BWAIndex
-    # ln -fs $genome $BWAIndex/genome.fa
-    # cd $BWAIndex
-    # bwa index $BWAIndex/genome.fa
-    # echo -e "\033[32mComplete BWA index building.\033[0m"
+    ###### BWA index #####
+    if [[ ! -d $BWAIndex ]] || [[ ! "$(ls -A $BWAIndex)" ]]; then
+      echo -e "\033[35mStart to build BWA index...\033[0m"
+      mkdir -p $BWAIndex
+      ln -fs $genome $BWAIndex/genome.fa
+      cd $BWAIndex
+      bwa index $BWAIndex/genome.fa
+      echo -e "\033[32mComplete BWA index building.\033[0m"
+    fi
 
-    # ###### Bowtie index #####
-    # echo -e "\033[35mStart to build Bowtie index...\033[0m"
-    # mkdir -p $BowtieIndex
-    # ln -fs $genome $BowtieIndex/genome.fa
-    # bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
-    # echo -e "\033[32mComplete Bowtie index building.\033[0m"
+    ###### Bowtie index #####
+    if [[ ! -d $BowtieIndex ]] || [[ ! "$(ls -A $BowtieIndex)" ]]; then
+      echo -e "\033[35mStart to build Bowtie index...\033[0m"
+      mkdir -p $BowtieIndex
+      ln -fs $genome $BowtieIndex/genome.fa
+      bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
+      echo -e "\033[32mComplete Bowtie index building.\033[0m"
+    fi
 
-    # ###### Bowtie2 index #####
-    # echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
-    # mkdir -p $Bowtie2Index
-    # ln -fs $genome $Bowtie2Index/genome.fa
-    # bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
-    # echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
+    ###### Bowtie2 index #####
+    if [[ ! -d $Bowtie2Index ]] || [[ ! "$(ls -A $Bowtie2Index)" ]]; then
+      echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
+      mkdir -p $Bowtie2Index
+      ln -fs $genome $Bowtie2Index/genome.fa
+      bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
+      echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
+    fi
 
     ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
-    echo -e "\033[35mStart to build Hisat2 index...\033[0m"
-    rm -rf $Hisat2Index
-    mkdir -p $Hisat2Index
-    ln -fs $genome $Hisat2Index/genome.fa
-    hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome
-    echo -e "\033[32mComplete Hisat2 index building.\033[0m"
+    if [[ ! -d $Hisat2Index ]] || [[ ! "$(ls -A $Hisat2Index)" ]]; then
+      echo -e "\033[35mStart to build Hisat2 index...\033[0m"
+      mkdir -p $Hisat2Index
+      ln -fs $genome $Hisat2Index/genome.fa
+      hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome
+      echo -e "\033[32mComplete Hisat2 index building.\033[0m"
+    fi
 
-    # ###### STAR index #####
-    # echo -e "\033[35mStart to build STAR index...\033[0m"
-    # mkdir -p $STARIndex
-    # ln -fs $genome $STARIndex/genome.fa
-    # STAR --runMode genomeGenerate --runThreadN $threads \
-    # --genomeDir $STARIndex \
-    # --genomeFastaFiles $STARIndex/genome.fa \
-    # --sjdbGTFfile $gtf
-    # echo -e "\033[32mComplete STAR index building.\033[0m"
+    ###### STAR index #####
+    if [[ ! -d $STARIndex ]] || [[ ! "$(ls -A $STARIndex)" ]]; then
+      echo -e "\033[35mStart to build STAR index...\033[0m"
+      mkdir -p $STARIndex
+      ln -fs $genome $STARIndex/genome.fa
+      STAR --runMode genomeGenerate --runThreadN $threads \
+      --genomeDir $STARIndex \
+      --genomeFastaFiles $STARIndex/genome.fa \
+      --sjdbGTFfile $gtf
+      echo -e "\033[32mComplete STAR index building.\033[0m"
+    fi
 
-    # ###### bismark index #####
-    # echo -e "\033[35mStart to build bismark index...\033[0m"
-    # mkdir -p $BismarkIndex/bowtie2
-    # mkdir -p $BismarkIndex/hisat2
-    # ln -fs $genome $BismarkIndex/bowtie2/genome.fa
-    # ln -fs $genome $BismarkIndex/hisat2/genome.fa
-    # bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2
-    # bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
-    # echo -e "\033[32mComplete bismark index building.\033[0m"
+    ###### bismark index #####
+    if [[ ! -d $BismarkIndex ]] || [[ ! "$(ls -A $BismarkIndex)" ]]; then
+      echo -e "\033[35mStart to build bismark index...\033[0m"
+      mkdir -p $BismarkIndex/bowtie2
+      mkdir -p $BismarkIndex/hisat2
+      ln -fs $genome $BismarkIndex/bowtie2/genome.fa
+      ln -fs $genome $BismarkIndex/hisat2/genome.fa
+      bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2
+      bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
+      echo -e "\033[32mComplete bismark index building.\033[0m"
+    fi
 
     ###### rebuild bismark index from iGenome ######
-    echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
-    rm -rf $BismarkIndex/bowtie2 $BismarkIndex/hisat2
-    mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
     if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
+      echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
+      mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
       mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
       mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
+      ln -fs $genome $BismarkIndex/hisat2/genome.fa
+      bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2
+      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
     fi
-    ln -fs $genome $BismarkIndex/hisat2/genome.fa
-    bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2
-    echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
 
     #### Gem #####
     echo -e "\033[35mStart to build Gem index...\033[0m"
