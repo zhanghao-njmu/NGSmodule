@@ -69,7 +69,7 @@ for s in "${Species[@]}"; do
       fi
       if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
         echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
-        rm -rf $iGenomes_dir/$s/$i
+        #rm -rf $iGenomes_dir/$s/$i
       fi
     fi
 
