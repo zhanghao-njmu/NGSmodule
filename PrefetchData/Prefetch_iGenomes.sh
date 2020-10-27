@@ -52,7 +52,7 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i
+    aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
       echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
       rm -rf $iGenomes_dir/$s/$i
