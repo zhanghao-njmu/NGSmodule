@@ -112,21 +112,20 @@ check_logfile() {
 
 ###### global-check existed logs ######
 globalcheck_logfile() {
-    local dir=$1
+    local dir="${1}"
     local logfiles=("${!2}")
-    local force=$3
-    local error_pattern=$4
-    local complete_pattern=$5
-    local sample=$6
-
-    echo ${logfiles[@]}
+    local force="${3}"
+    local error_pattern="${!4}"
+    local complete_pattern="${!5}"
+    local sample="${6}"
+    
     find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
     find_par=${find_par:3}
-
+    
     existlogs=()
     while IFS='' read -r line; do
         existlogs+=("$line")
-    done < <(find "${dir}" "$find_par")
+    done < <(find "${dir}" $find_par)
 
     if ((${#existlogs[*]} >= 1)); then
         for log in "${existlogs[@]}"; do
