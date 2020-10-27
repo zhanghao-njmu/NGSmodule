@@ -9,6 +9,7 @@ kmers=(150 100 50)
 windows=(2000000 1000000 500000 100000)
 total_threads=384
 ntask_per_run="ALL"
+force_complete="FALSE"
 
 ######## check command available ##########
 samtools &>/dev/null
@@ -153,154 +154,238 @@ for genome in "${arr[@]}"; do
     GemIndex="$SequenceDir/GemIndex/"
     GenmapIndex="$SequenceDir/GenmapIndex/"
 
-    ####### clear existed logs #######
-    logfiles=("IndexStatus.log" "KmerStatus.log" "GCStatus.log" "MappabilityStatus.log")
-    globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$SequenceDir"
+    force=${force_complete}
+    status="uncompleted"
+    attempt=0
 
-    ####### genome.fa index #####
-    rm -f ${genome}.fai ${genome%%fa}dict
-    samtools faidx ${genome} &>${genome%%genome.fa}IndexStatus.log
-    picard CreateSequenceDictionary R=$genome &>${genome%%genome.fa}IndexStatus.log
-    # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
-
-    ###### BWA index #####
-    if [[ ! -d $BWAIndex ]] || [[ ! "$(ls -A $BWAIndex)" ]]; then
-      echo -e "\033[35mStart to build BWA index...\033[0m"
-      mkdir -p $BWAIndex
-      ln -fs $genome $BWAIndex/genome.fa
-      bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
-      echo -e "\033[32mComplete BWA index building.\033[0m"
-    fi
-
-    ###### Bowtie index #####
-    if [[ ! -d $BowtieIndex ]] || [[ ! "$(ls -A $BowtieIndex)" ]]; then
-      echo -e "\033[35mStart to build Bowtie index...\033[0m"
-      mkdir -p $BowtieIndex
-      ln -fs $genome $BowtieIndex/genome.fa
-      bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome &>$BowtieIndex/IndexStatus.log
-      echo -e "\033[32mComplete Bowtie index building.\033[0m"
-    fi
-
-    ###### Bowtie2 index #####
-    if [[ ! -d $Bowtie2Index ]] || [[ ! "$(ls -A $Bowtie2Index)" ]]; then
-      echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
-      mkdir -p $Bowtie2Index
-      ln -fs $genome $Bowtie2Index/genome.fa
-      bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome &>$Bowtie2Index/IndexStatus.log
-      echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
-    fi
-
-    ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
-    if [[ ! -d $Hisat2Index ]] || [[ ! "$(ls -A $Hisat2Index)" ]]; then
-      echo -e "\033[35mStart to build Hisat2 index...\033[0m"
-      mkdir -p $Hisat2Index
-      ln -fs $genome $Hisat2Index/genome.fa
-      hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
-      echo -e "\033[32mComplete Hisat2 index building.\033[0m"
-    fi
-
-    ###### STAR index #####
-    if [[ ! -d $STARIndex ]] || [[ ! "$(ls -A $STARIndex)" ]]; then
-      echo -e "\033[35mStart to build STAR index...\033[0m"
-      mkdir -p $STARIndex
-      ln -fs $genome $STARIndex/genome.fa
-      if [[ -f $gtf ]]; then
-        STAR --runMode genomeGenerate --runThreadN $threads \
-        --genomeDir $STARIndex \
-        --genomeFastaFiles $STARIndex/genome.fa \
-        --sjdbGTFfile $gtf \
-        --sjdbOverhang 100 &>$STARIndex/IndexStatus.log
-      else
-        STAR --runMode genomeGenerate --runThreadN $threads \
-        --genomeDir $STARIndex \
-        --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
+    while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+      ((attempt++))
+      if [[ $attempt != 1 ]]; then
+        echo -e "+++++ ${SequenceDir}: Number of attempts: $attempt +++++"
       fi
-      echo -e "\033[32mComplete STAR index building.\033[0m"
-    fi
 
-    ###### rebuild bismark index from iGenome ######
-    if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
-      echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
-      mkdir -p $BismarkIndex/bowtie2
-      mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
-      mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
-      mkdir -p $BismarkIndex/hisat2
-      ln -fs $genome $BismarkIndex/hisat2/genome.fa
-      bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/IndexStatus.log
-      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
-    fi
+      ####### clear existed logs #######
+      logfiles=("IndexStatus.log" "KmerStatus.log" "WindowStatus.log")
+      globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "iGenomes"
 
-    ###### bismark index #####
-    if [[ ! -d $BismarkIndex/bowtie2 ]] || [[ ! "$(ls -A $BismarkIndex/bowtie2)" ]]; then
-      echo -e "\033[35mStart to build bismark_bowtie2 index...\033[0m"
-      mkdir -p $BismarkIndex/bowtie2
-      ln -fs $genome $BismarkIndex/bowtie2/genome.fa
-      bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/IndexStatus.log
-      echo -e "\033[32mComplete bismark_bowtie2 index building.\033[0m"
-    fi
+      ####### genome.fa index #####
+      check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -f ${genome}.fai ${genome%%fa}dict
+        samtools faidx ${genome} &>${genome%%genome.fa}IndexStatus.log
+        picard CreateSequenceDictionary R=$genome &>${genome%%genome.fa}IndexStatus.log
+        # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
-    if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
-      echo -e "\033[35mStart to build bismark_hisat2 index...\033[0m"
-      mkdir -p $BismarkIndex/hisat2
-      ln -fs $genome $BismarkIndex/hisat2/genome.fa
-      bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/IndexStatus.log
-      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
-    fi
+        check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
 
-    #### Gem #####
-    if [[ ! -d $GemIndex ]] || [[ ! "$(ls -A $GemIndex)" ]]; then
-      echo -e "\033[35mStart to build Gem index...\033[0m"
-      mkdir -p $GemIndex
-      gem-indexer --threads $threads -i $genome -o $GemIndex/genome &>$GemIndex/IndexStatus.log
-      echo -e "\033[32mComplete Gem index building.\033[0m"
+      ###### BWA index #####
+      check_logfile "iGenomes" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $BWAIndex
+        mkdir -p $BWAIndex
+        ln -fs $genome $BWAIndex/genome.fa
+        bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
+
+        check_logfile "iGenomes" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      ###### Bowtie index #####
+      check_logfile "iGenomes" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $BowtieIndex
+        mkdir -p $BowtieIndex
+        ln -fs $genome $BowtieIndex/genome.fa
+        bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome &>$BowtieIndex/IndexStatus.log
+
+        check_logfile "iGenomes" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      ###### Bowtie2 index #####
+      check_logfile "iGenomes" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $Bowtie2Index
+        mkdir -p $Bowtie2Index
+        ln -fs $genome $Bowtie2Index/genome.fa
+        bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome &>$Bowtie2Index/IndexStatus.log
+
+        check_logfile "iGenomes" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
+      check_logfile "iGenomes" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $Hisat2Index
+        mkdir -p $Hisat2Index
+        ln -fs $genome $Hisat2Index/genome.fa
+        hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
+
+        check_logfile "iGenomes" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      ###### STAR index #####
+      check_logfile "iGenomes" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $STARIndex
+        mkdir -p $STARIndex
+        ln -fs $genome $STARIndex/genome.fa
+        if [[ -f $gtf ]]; then
+          STAR --runMode genomeGenerate --runThreadN $threads \
+          --genomeDir $STARIndex \
+          --genomeFastaFiles $STARIndex/genome.fa \
+          --sjdbGTFfile $gtf \
+          --sjdbOverhang 100 &>$STARIndex/IndexStatus.log
+        else
+          STAR --runMode genomeGenerate --runThreadN $threads \
+          --genomeDir $STARIndex \
+          --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
+        fi
+
+        check_logfile "iGenomes" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      ###### rebuild bismark index from iGenome ######
+      if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]] && [[ -f $BismarkIndex/IndexStatus.log ]]; then
+        mkdir -p $BismarkIndex/bowtie2
+        mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
+        mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
+        mv $BismarkIndex/IndexStatus.log $BismarkIndex/bowtie2/
+      fi
+
+      ###### bismark index #####
+      check_logfile "iGenomes" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $BismarkIndex/bowtie2
+        mkdir -p $BismarkIndex/bowtie2
+        ln -fs $genome $BismarkIndex/bowtie2/genome.fa
+        bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/IndexStatus.log
+
+        check_logfile "iGenomes" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      check_logfile "iGenomes" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $BismarkIndex/hisat2
+        mkdir -p $BismarkIndex/hisat2
+        ln -fs $genome $BismarkIndex/hisat2/genome.fa
+        bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/IndexStatus.log
+
+        check_logfile "iGenomes" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
+
+      #### Gem #####
+      check_logfile "iGenomes" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $GemIndex
+        mkdir -p $GemIndex
+        gem-indexer --threads $threads -i $genome -o $GemIndex/genome &>$GemIndex/IndexStatus.log
+
+        check_logfile "iGenomes" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          force="TRUE"
+          continue
+        fi
+      fi
 
       for kmer in "${kmers[@]}"; do
         {
-          echo "====== Make Gem mappability file with kmer:$kmer  ======"
-          mkdir -p $GemIndex/Mappability/${kmer}mer
-          cd $GemIndex/Mappability/${kmer}mer
-          gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem &>KmerStatus.log
-          gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem &>>KmerStatus.log
-          wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig &>>KmerStatus.log
-          rm -f genome.${kmer}mer.gem.mappability
+          check_logfile "iGenomes" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+          if [[ $? == 1 ]]; then
+            rm -rf $GemIndex/Mappability/${kmer}mer
+            mkdir -p $GemIndex/Mappability/${kmer}mer
+            cd $GemIndex/Mappability/${kmer}mer
+            gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem &>KmerStatus.log
+            gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem &>>KmerStatus.log
+            wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig &>>KmerStatus.log
+            rm -f genome.${kmer}mer.gem.mappability
+
+            check_logfile "iGenomes" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+            if [[ $? == 1 ]]; then
+              continue
+            fi
+          fi
 
           for window in "${windows[@]}"; do
-            echo "====== Count GC and mappability within a silding window:$window  ======"
-            mkdir -p $GemIndex/windows/$window
-            cd $GemIndex/windows/$window
-            gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig &>GCStatus.log
-            mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig &>MappabilityStatus.log
+            check_logfile "iGenomes" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+              echo "====== Count GC and mappability within a silding window:$window  ======"
+              mkdir -p $GemIndex/windows/$window
+              cd $GemIndex/windows/$window
+              gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig &>WindowStatus.log
+              mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig &>>WindowStatus.log
+
+              check_logfile "iGenomes" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+              if [[ $? == 1 ]]; then
+                continue
+              fi
+            fi
           done
+          
         } &
       done
       wait
       echo -e "\033[32mComplete Gem mappability building.\033[0m"
-    fi
 
-    # ##### Genmap #####
-    # if [[ ! -d $GenmapIndex ]] || [[ ! "$(ls -A $GenmapIndex)" ]]; then
-    # echo -e "\033[35mStart to build Genmap index...\033[0m"
-    # rm -rf $GenmapIndex
-    # genmap index -F $genome -I $GenmapIndex
-    # echo -e "\033[32mComplete Genmap index building.\033[0m"
+      # ##### Genmap #####
+      # if [[ ! -d $GenmapIndex ]] || [[ ! "$(ls -A $GenmapIndex)" ]]; then
+      # echo -e "\033[35mStart to build Genmap index...\033[0m"
+      # rm -rf $GenmapIndex
+      # genmap index -F $genome -I $GenmapIndex
+      # echo -e "\033[32mComplete Genmap index building.\033[0m"
 
-    # for kmer in "${kmers[@]}"; do
-    #   echo "====== Make Genmap mappability file with kmer:$kmer  ======"
-    #   mkdir -p $GenmapIndex/Mappability/${kmer}mer
-    #   cd $GenmapIndex/Mappability/${kmer}mer
-    #   genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
-    #   wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
+      # for kmer in "${kmers[@]}"; do
+      #   echo "====== Make Genmap mappability file with kmer:$kmer  ======"
+      #   mkdir -p $GenmapIndex/Mappability/${kmer}mer
+      #   cd $GenmapIndex/Mappability/${kmer}mer
+      #   genmap map --index $GenmapIndex --errors 2 --length ${kmer} --threads $threads --wig --output genome.${kmer}mer.genmap
+      #   wigToBigWig genome.${kmer}mer.genmap.wig genome.${kmer}mer.genmap.chrom.sizes genome.${kmer}mer.genmap.bigwig
 
-    #   for window in "${windows[@]}"; do
-    #     echo "====== Count GC and mappability within a silding window:$window  ======"
-    #     mkdir -p $GenmapIndex/windows/$window
-    #     cd $GenmapIndex/windows/$window
-    #     gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
-    #     mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
-    #   done
-    # done
-    # echo -e "\033[32mComplete Genmap mappability building.\033[0m"
-    # fi
+      #   for window in "${windows[@]}"; do
+      #     echo "====== Count GC and mappability within a silding window:$window  ======"
+      #     mkdir -p $GenmapIndex/windows/$window
+      #     cd $GenmapIndex/windows/$window
+      #     gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
+      #     mapCounter -w $window $GenmapIndex/Mappability/${kmer}mer/genome.${kmer}mer.genmap.bigwig >genome.w${window}.${kmer}mer.genmap.wig
+      #   done
+      # done
+      # echo -e "\033[32mComplete Genmap mappability building.\033[0m"
+      # fi
+
+      status="completed"
+      color_echo "blue" "+++++ ${SequenceDir}: completed +++++"
+    done
 
     echo >&1000
   } &
