@@ -71,7 +71,7 @@ arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
 total_task=${#arr[@]}
 
 if [[ "$total_task" == 0 ]]; then
-  color_echo "red" "ERROR! No sample sub-directory found in the work_dir:$work_dir\n"
+  color_echo "red" "ERROR! No sample sub-directory found in the iGenomes_dir:$iGenomes_dir\n"
   exit 1
 fi
 
@@ -154,22 +154,8 @@ for genome in "${arr[@]}"; do
     GenmapIndex="$SequenceDir/GenmapIndex/"
 
     ####### clear existed logs #######
-    existlogs=()
-    while IFS='' read -r line; do
-      existlogs+=("$line")
-    done < <(find "${dir}" -name "IndexStatus.log" -o -name "KmerStatus.log" -o -name "GCStatus.log" -o -name "MappabilityStatus.log")
-    if ((${#existlogs[*]} >= 1)); then
-      for existlog in "${existlogs[@]}"; do
-        if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-          color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-          rm -f "${existlog}"
-        fi
-        if [[ $force == "TRUE" ]]; then
-          color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
-          rm -f "${existlog}"
-        fi
-      done
-    fi
+    logfiles=("IndexStatus.log" "KmerStatus.log" "GCStatus.log" "MappabilityStatus.log")
+    globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern "$SequenceDir"
 
     ####### genome.fa index #####
     rm -f ${genome}.fai ${genome%%fa}dict
