@@ -50,7 +50,7 @@ picard &>/dev/null
 ######## Download the iGenomes #####
 for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
-    echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
+    color_echo "green" "Downloading the iGenomes: $s/$i"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
     bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
@@ -63,8 +63,9 @@ for s in "${Species[@]}"; do
     eval $cmd
 
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
-      echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
+      color_echo "yellow" "iGenomes do not exist: $s/$i"
       rm -rf $iGenomes_dir/$s/$i
+      sleep 1
     fi
     if [[ -d $iGenomes_dir/$s/$i ]]; then
       index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
