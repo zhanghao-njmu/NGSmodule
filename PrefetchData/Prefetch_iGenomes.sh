@@ -54,11 +54,11 @@ for s in "${Species[@]}"; do
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
     bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
-      par=$(printf -- ' --exclude "*%s*"' "${bismark_exist[@]}")
+      par=$(printf -- ' --exclude '*%s*'' "${bismark_exist[@]}")
       echo "skip BismarkIndex:$par"
-      cmd='"aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa" $par"'
+      cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par"
     else
-      cmd='"aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa"'
+      cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa'"
     fi
     echo "$cmd"
     eval $cmd
