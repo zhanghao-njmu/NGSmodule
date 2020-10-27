@@ -155,7 +155,7 @@ for genome in "${arr[@]}"; do
 
     ####### clear existed logs #######
     logfiles=("IndexStatus.log" "KmerStatus.log" "GCStatus.log" "MappabilityStatus.log")
-    globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern "$SequenceDir"
+    globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$SequenceDir"
 
     ####### genome.fa index #####
     rm -f ${genome}.fai ${genome%%fa}dict
