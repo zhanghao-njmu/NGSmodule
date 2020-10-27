@@ -7,6 +7,11 @@
 shell_folder=$(dirname $(readlink -f "$0"))
 source $shell_folder/Function.sh
 
+Prefetch_iGenomes() {
+  source $1
+  source $shell_folder/PrefetchData/Prefetch_iGenomes.sh
+}
+
 CreateConfigFile() {
   source $shell_folder/PreparationSteps/CreateConfigFile.sh $1
 }
@@ -123,6 +128,7 @@ help() {
     
     # PreparationSteps:
        CreateConfigFile         Create a configuration template file for NGSmodule.
+       Prefetch_iGenomes        
        CreateSampleInfoFile     Create a sample information template file for NGSmodule.
        CreateWorkDir            Create a working directory. The configuration file and
                                 the sample information file must be provided together.
@@ -203,6 +209,15 @@ while true; do
       exit 1
     elif [[ $1 == "CreateConfigFile" ]]; then
       CreateConfigFile $ConfigFile
+      exit 0
+    elif [[ $1 == "Prefetch_iGenomes" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in Prefetch_iGenomes MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      Prefetch_iGenomes $ConfigFile
       exit 0
     elif [[ $1 == "CreateSampleInfoFile" ]]; then
       CreateSampleInfoFile
