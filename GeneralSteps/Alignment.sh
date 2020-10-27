@@ -119,7 +119,7 @@ for sample in "${arr[@]}"; do
       #   done
       # fi
       logfiles=("AlignmentStatus.log" "BAMprocessStatus.log")
-      globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern $sample
+      globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
       check_logfile "$sample" "Alignment" "$dir/$Aligner/AlignmentStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then

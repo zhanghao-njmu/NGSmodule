@@ -108,7 +108,7 @@ for sample in "${arr[@]}"; do
       #   done
       # fi
       logfiles=("fqCheck.log" "fastqc.log" "fastp.log" "fastq_screen.log" "sortmerna.log")
-      globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern $sample
+      globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
       if [[ $Layout == "SE" ]]; then
 
