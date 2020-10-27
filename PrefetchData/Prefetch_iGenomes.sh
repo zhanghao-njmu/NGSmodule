@@ -88,9 +88,6 @@ else
   exit 1
 fi
 
-###### fifo ######
-fifo $ntask_per_run
-
 threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
 
 if ((threads == 0)); then
@@ -110,6 +107,9 @@ if ((((threads / ${#kmers})) == 0)); then
 else
   map_threads=$((threads / ${#kmers}))
 fi
+
+###### fifo ######
+fifo $ntask_per_run
 
 for genome in "${arr[@]}"; do
   read -u1000
