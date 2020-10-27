@@ -52,17 +52,14 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     color_echo "green" "Downloading the iGenomes: $s/$i"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
+    par=""
     if [[ -d  $iGenomes_dir/$s/$i ]];then
       bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
-    else
-      bismark_exist=""
+      if [[ "${#bismark_exist[@]}" != 0 ]]; then
+        par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
+      fi
     fi
-    if [[ "${#bismark_exist[@]}" != 0 ]]; then
-      par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
-      cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par"
-    else
-      cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa'"
-    fi
+    cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par"
     #echo "$cmd"
     eval $cmd
 
