@@ -134,7 +134,9 @@ for genome in "${arr[@]}"; do
   {
     SequenceDir=${genome%%WholeGenomeFasta/genome.fa}
     genome_size=$(ls -lL $genome | awk '{print$5}')
-    echo "SequenceDir: $SequenceDir"
+    id=${SequenceDir##$iGenomes_dir}
+    id=${id%%Sequence}
+    echo "+++++ ID: $id +++++"
     cd $SequenceDir
 
     arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index" -type d))
