@@ -214,15 +214,20 @@ for genome in "${arr[@]}"; do
     fi
 
     ###### bismark index #####
-    if [[ ! -d $BismarkIndex ]] || [[ ! "$(ls -A $BismarkIndex)" ]]; then
-      echo -e "\033[35mStart to build bismark index...\033[0m"
+    if [[ ! -d $BismarkIndex/bowtie2 ]] || [[ ! "$(ls -A $BismarkIndex/bowtie2)" ]]; then
+      echo -e "\033[35mStart to build bismark_bowtie2 index...\033[0m"
       mkdir -p $BismarkIndex/bowtie2
-      mkdir -p $BismarkIndex/hisat2
       ln -fs $genome $BismarkIndex/bowtie2/genome.fa
-      ln -fs $genome $BismarkIndex/hisat2/genome.fa
       bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/bismark_index.log
+      echo -e "\033[32mComplete bismark_bowtie2 index building.\033[0m"
+    fi
+
+    if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
+      echo -e "\033[35mStart to build bismark_hisat2 index...\033[0m"
+      mkdir -p $BismarkIndex/hisat2
+      ln -fs $genome $BismarkIndex/hisat2/genome.fa
       bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_index.log
-      echo -e "\033[32mComplete bismark index building.\033[0m"
+      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
     fi
 
     ###### rebuild bismark index from iGenome ######
