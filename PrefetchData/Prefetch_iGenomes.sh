@@ -55,7 +55,7 @@ for s in "${Species[@]}"; do
     if [[ -d  $iGenomes_dir/$s/$i ]];then
       bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
     else
-      bismark_exist=0
+      bismark_exist=""
     fi
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
       par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
