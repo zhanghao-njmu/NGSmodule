@@ -117,7 +117,7 @@ globalcheck_logfile() {
     local force="${3}"
     local error_pattern="${!4}"
     local complete_pattern="${!5}"
-    local sample="${6}"
+    local id="${6}"
     
     find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
     find_par=${find_par:3}
@@ -130,11 +130,11 @@ globalcheck_logfile() {
     if ((${#existlogs[*]} >= 1)); then
         for log in "${existlogs[@]}"; do
             if [[ $(grep -iP "${error_pattern}" "${log}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
-                color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${log}."
+                color_echo "yellow" "Warning! ${id}: Detected problems in logfile: ${log}."
                 rm -f "${log}"
             fi
             if [[ $force == "TRUE" ]]; then
-                color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
+                color_echo "yellow" "Warning! ${id}: Force to perform a complete workflow."
                 rm -f "${log}"
             fi
         done
