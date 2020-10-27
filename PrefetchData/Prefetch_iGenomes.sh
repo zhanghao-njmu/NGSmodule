@@ -52,18 +52,20 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    bismark=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep "BismarkIndex/bowtie2"))
-    
+    bismark=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "$s/$i/*/BismarkIndex/bowtie2"))
+
     aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
 
+    index_dir=($(find $iGenomes_dir/$s/$i -mindepth 3 -maxdepth 3 -name "*Index" -type d))
+    if [[ "${#index_dir[@]}" != 0 ]]; then
+      for index in "${index_dir[@]}"; do
+        echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+      done
+    fi
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
       echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
       rm -rf $iGenomes_dir/$s/$i
     fi
-    index_dir=($(find $iGenomes_dir/$s/$i -mindepth 3 -maxdepth 3 -name "*Index" -type d))
-    for index in "${index_dir[@]}"; do
-      echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
-    done
 
   done
 done
@@ -127,25 +129,29 @@ for genome in "${arr[@]}"; do
     cd $SequenceDir
 
     arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index"))
-    for index in "${arr1[@]}"; do
-      ln -fs $genome $index/genome.fa
-    done
+    if [[ "${#arr1[@]}" != 0 ]]; then
+      for index in "${arr1[@]}"; do
+        ln -fs $genome $index/genome.fa
+      done
+    fi
 
     arr2=($(find $SequenceDir -name "genome.fa" | grep -v "WholeGenomeFasta"))
-    for genomeln in "${arr2[@]}"; do
-      if [[ -L $genomeln ]]; then
-        color_echo "green" "Soft link ok: $genomeln"
-        ln -fs $genome $genomeln
-      else
-        genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
-        if [[ "$genomeln_size" == "$genome_size" ]]; then
+    if [[ "${#arr2[@]}" != 0 ]]; then
+      for genomeln in "${arr2[@]}"; do
+        if [[ -L $genomeln ]]; then
           color_echo "green" "Soft link ok: $genomeln"
           ln -fs $genome $genomeln
         else
-          color_echo "red" "Soft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size"
+          genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
+          if [[ "$genomeln_size" == "$genome_size" ]]; then
+            color_echo "green" "Soft link ok: $genomeln"
+            ln -fs $genome $genomeln
+          else
+            color_echo "red" "Soft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size"
+          fi
         fi
-      fi
-    done
+      done
+    fi
 
     gtf="$SequenceDir/../Annotation/Genes/genes.gtf"
     BWAIndex="$SequenceDir/BWAIndex"
@@ -347,7 +353,7 @@ for genome in "${arr[@]}"; do
               fi
             fi
           done
-          
+
         } &
       done
       wait
