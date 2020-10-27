@@ -134,10 +134,10 @@ for genome in "${arr[@]}"; do
   {
     SequenceDir=${genome%%WholeGenomeFasta/genome.fa}
     genome_size=$(ls -lL $genome | awk '{print$5}')
-    echo "SequenceDir:$SequenceDir"
+    echo "SequenceDir: $SequenceDir"
     cd $SequenceDir
 
-    arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index"))
+    arr1=($(find $SequenceDir -name "*Index" -type d))
     if [[ "${#arr1[@]}" != 0 ]]; then
       for index in "${arr1[@]}"; do
         ln -fs $genome $index/genome.fa
