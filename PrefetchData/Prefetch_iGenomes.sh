@@ -63,15 +63,7 @@ done
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
 
 ######## Start buiding #########
-###### fifo ######
-tempfifo=$$.fifo
-trap_add "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT
-mkfifo $tempfifo
-exec 1000<>$tempfifo
-rm -f $tempfifo
-for ((i = 1; i <= ntask_per_run; i++)); do
-  echo >&1000
-done
+
 
 arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
 total_task=${#arr[@]}
@@ -93,6 +85,16 @@ else
   color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
   exit 1
 fi
+
+###### fifo ######
+tempfifo=$$.fifo
+trap_add "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT
+mkfifo $tempfifo
+exec 1000<>$tempfifo
+rm -f $tempfifo
+for ((i = 1; i <= ntask_per_run; i++)); do
+  echo >&1000
+done
 
 threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
 
