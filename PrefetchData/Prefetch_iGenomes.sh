@@ -219,11 +219,9 @@ for genome in "${arr[@]}"; do
       mkdir -p $BismarkIndex/bowtie2
       mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
       mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
-      if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
-        mkdir -p $BismarkIndex/hisat2
-        ln -fs $genome $BismarkIndex/hisat2/genome.fa
-        bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_genome_preparation.log
-      fi
+      mkdir -p $BismarkIndex/hisat2
+      ln -fs $genome $BismarkIndex/hisat2/genome.fa
+      bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_genome_preparation.log
       echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
     fi
 
