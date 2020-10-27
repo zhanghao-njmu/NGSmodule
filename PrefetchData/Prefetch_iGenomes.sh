@@ -183,6 +183,7 @@ for genome in "${arr[@]}"; do
 
     ###### Hisat2 index #####  Segmentation fault when thread is too large (>120?)
     echo -e "\033[35mStart to build Hisat2 index...\033[0m"
+    rm -rf $Hisat2Index
     mkdir -p $Hisat2Index
     ln -fs $genome $Hisat2Index/genome.fa
     hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome
