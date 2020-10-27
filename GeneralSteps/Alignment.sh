@@ -102,22 +102,25 @@ for sample in "${arr[@]}"; do
       fi
 
       ### check existed logs
-      existlogs=()
-      while IFS='' read -r line; do
-        existlogs+=("$line")
-      done < <(find "${dir}" -name "AlignmentStatus.log" -o -name "BAMprocessStatus.log")
-      if ((${#existlogs[*]} >= 1)); then
-        for existlog in "${existlogs[@]}"; do
-          if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-            color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-            rm -f "${existlog}"
-          fi
-          if [[ $force == "TRUE" ]]; then
-            color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
-            rm -f "${existlog}"
-          fi
-        done
-      fi
+      # existlogs=()
+      # while IFS='' read -r line; do
+      #   existlogs+=("$line")
+      # done < <(find "${dir}" -name "AlignmentStatus.log" -o -name "BAMprocessStatus.log")
+      # if ((${#existlogs[*]} >= 1)); then
+      #   for existlog in "${existlogs[@]}"; do
+      #     if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
+      #       color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
+      #       rm -f "${existlog}"
+      #     fi
+      #     if [[ $force == "TRUE" ]]; then
+      #       color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
+      #       rm -f "${existlog}"
+      #     fi
+      #   done
+      # fi
+      logfiles=("AlignmentStatus.log" "BAMprocessStatus.log")
+      globalcheck_logfile $dir logfiles[@] $force error_pattern complete_pattern $sample
+
 
       check_logfile "$sample" "Alignment" "$dir/$Aligner/AlignmentStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
