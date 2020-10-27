@@ -52,7 +52,11 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     color_echo "green" "Downloading the iGenomes: $s/$i"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
+    if [[ -d  $iGenomes_dir/$s/$i ]];then
+      bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
+    else
+      bismark_exist=0
+    fi
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
       par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
       cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par"
@@ -66,14 +70,14 @@ for s in "${Species[@]}"; do
       color_echo "yellow" "iGenomes do not exist: $s/$i"
       rm -rf $iGenomes_dir/$s/$i
     fi
-    # if [[ -d $iGenomes_dir/$s/$i ]]; then
-    #   index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
-    #   if [[ "${#index_dir[@]}" != 0 ]]; then
-    #     for index in "${index_dir[@]}"; do
-    #       echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
-    #     done
-    #   fi
-    # fi
+    if [[ -d $iGenomes_dir/$s/$i ]]; then
+      index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
+      if [[ "${#index_dir[@]}" != 0 ]]; then
+        for index in "${index_dir[@]}"; do
+          echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+        done
+      fi
+    fi
 
   done
 done
