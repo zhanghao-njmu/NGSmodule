@@ -213,6 +213,20 @@ for genome in "${arr[@]}"; do
       echo -e "\033[32mComplete STAR index building.\033[0m"
     fi
 
+    ###### rebuild bismark index from iGenome ######
+    if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
+      echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
+      mkdir -p $BismarkIndex/bowtie2
+      mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
+      mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
+      if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
+        mkdir -p $BismarkIndex/hisat2
+        ln -fs $genome $BismarkIndex/hisat2/genome.fa
+        bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_genome_preparation.log
+      fi
+      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
+    fi
+
     ###### bismark index #####
     if [[ ! -d $BismarkIndex/bowtie2 ]] || [[ ! "$(ls -A $BismarkIndex/bowtie2)" ]]; then
       echo -e "\033[35mStart to build bismark_bowtie2 index...\033[0m"
@@ -227,20 +241,6 @@ for genome in "${arr[@]}"; do
       mkdir -p $BismarkIndex/hisat2
       ln -fs $genome $BismarkIndex/hisat2/genome.fa
       bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_index.log
-      echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
-    fi
-
-    ###### rebuild bismark index from iGenome ######
-    if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
-      echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
-      mkdir -p $BismarkIndex/bowtie2
-      mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
-      mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
-      if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
-        mkdir -p $BismarkIndex/hisat2
-        ln -fs $genome $BismarkIndex/hisat2/genome.fa
-        bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_genome_preparation.log
-      fi
       echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
     fi
 
