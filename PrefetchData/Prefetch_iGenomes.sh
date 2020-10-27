@@ -111,6 +111,9 @@ fi
 ###### fifo ######
 fifo $ntask_per_run
 
+echo -e "****************** Start buiding the remaining index ******************\n"
+SECONDS=0
+
 for genome in "${arr[@]}"; do
   read -u1000
   {
@@ -371,17 +374,19 @@ for genome in "${arr[@]}"; do
     done
 
     if [[ "$status" == "completed" ]]; then
-      echo "Completed: $sample" >>"$tmpfile"
+      echo "Completed: $SequenceDir" >>"$tmpfile"
     else
-      echo "Interrupted: $sample" >>"$tmpfile"
-      color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq file."
+      echo "Interrupted: $SequenceDir" >>"$tmpfile"
+      color_echo "red" "ERROR! ${SequenceDir} interrupted! Please check the processing log."
     fi
 
     color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
-
 
     echo >&1000
   } &
 done
 wait
-echo "Done"
+
+ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
+echo -e "\n$ELAPSED"
+echo -e "****************** Alignment Done ******************\n"
