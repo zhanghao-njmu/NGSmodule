@@ -163,8 +163,7 @@ for genome in "${arr[@]}"; do
       echo -e "\033[35mStart to build BWA index...\033[0m"
       mkdir -p $BWAIndex
       ln -fs $genome $BWAIndex/genome.fa
-      cd $BWAIndex
-      bwa index $BWAIndex/genome.fa
+      bwa index $BWAIndex/genome.fa &>$BWAIndex/bwa_index.log
       echo -e "\033[32mComplete BWA index building.\033[0m"
     fi
 
@@ -173,7 +172,7 @@ for genome in "${arr[@]}"; do
       echo -e "\033[35mStart to build Bowtie index...\033[0m"
       mkdir -p $BowtieIndex
       ln -fs $genome $BowtieIndex/genome.fa
-      bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome
+      bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome &>$BowtieIndex/bowtie_index.log
       echo -e "\033[32mComplete Bowtie index building.\033[0m"
     fi
 
@@ -182,7 +181,7 @@ for genome in "${arr[@]}"; do
       echo -e "\033[35mStart to build Bowtie2 index...\033[0m"
       mkdir -p $Bowtie2Index
       ln -fs $genome $Bowtie2Index/genome.fa
-      bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome
+      bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome &>$Bowtie2Index/bowtie2_index.log
       echo -e "\033[32mComplete Bowtie2 index building.\033[0m"
     fi
 
@@ -191,7 +190,7 @@ for genome in "${arr[@]}"; do
       echo -e "\033[35mStart to build Hisat2 index...\033[0m"
       mkdir -p $Hisat2Index
       ln -fs $genome $Hisat2Index/genome.fa
-      hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome
+      hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/hisat2_index.log
       echo -e "\033[32mComplete Hisat2 index building.\033[0m"
     fi
 
@@ -200,10 +199,17 @@ for genome in "${arr[@]}"; do
       echo -e "\033[35mStart to build STAR index...\033[0m"
       mkdir -p $STARIndex
       ln -fs $genome $STARIndex/genome.fa
-      STAR --runMode genomeGenerate --runThreadN $threads \
-      --genomeDir $STARIndex \
-      --genomeFastaFiles $STARIndex/genome.fa \
-      --sjdbGTFfile $gtf
+      if [[ -f $gtf ]]; then
+        STAR --runMode genomeGenerate --runThreadN $threads \
+        --genomeDir $STARIndex \
+        --genomeFastaFiles $STARIndex/genome.fa \
+        --sjdbGTFfile $gtf \
+        --sjdbOverhang 100 &>$STARIndex/STAR_index.log
+      else
+        STAR --runMode genomeGenerate --runThreadN $threads \
+        --genomeDir $STARIndex \
+        --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/STAR_index.log
+      fi
       echo -e "\033[32mComplete STAR index building.\033[0m"
     fi
 
@@ -214,52 +220,57 @@ for genome in "${arr[@]}"; do
       mkdir -p $BismarkIndex/hisat2
       ln -fs $genome $BismarkIndex/bowtie2/genome.fa
       ln -fs $genome $BismarkIndex/hisat2/genome.fa
-      bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2
-      bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2
+      bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/bismark_index.log
+      bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_index.log
       echo -e "\033[32mComplete bismark index building.\033[0m"
     fi
 
     ###### rebuild bismark index from iGenome ######
     if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
       echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
-      mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
+      mkdir -p $BismarkIndex/bowtie2
       mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
       mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
-      ln -fs $genome $BismarkIndex/hisat2/genome.fa
-      bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2
+      if [[ ! -d $BismarkIndex/hisat2 ]] || [[ ! "$(ls -A $BismarkIndex/hisat2)" ]]; then
+        mkdir -p $BismarkIndex/hisat2
+        ln -fs $genome $BismarkIndex/hisat2/genome.fa
+        bismark_genome_preparation --genomic_composition --hisat2 --parallel $hisat2_threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/bismark_genome_preparation.log
+      fi
       echo -e "\033[32mComplete bismark_hisat2 index building.\033[0m"
     fi
 
     #### Gem #####
-    echo -e "\033[35mStart to build Gem index...\033[0m"
-    rm -rf $GemIndex
-    mkdir -p $GemIndex
-    gem-indexer --threads $threads -i $genome -o $GemIndex/genome
-    echo -e "\033[32mComplete Gem index building.\033[0m"
+    if [[ ! -d $GemIndex ]] || [[ ! "$(ls -A $GemIndex)" ]]; then
+      echo -e "\033[35mStart to build Gem index...\033[0m"
+      mkdir -p $GemIndex
+      gem-indexer --threads $threads -i $genome -o $GemIndex/genome
+      echo -e "\033[32mComplete Gem index building.\033[0m"
 
-    for kmer in "${kmers[@]}"; do
-      {
-        echo "====== Make Gem mappability file with kmer:$kmer  ======"
-        mkdir -p $GemIndex/Mappability/${kmer}mer
-        cd $GemIndex/Mappability/${kmer}mer
-        gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem
-        gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem
-        wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig
-        rm -f genome.${kmer}mer.gem.mappability
+      for kmer in "${kmers[@]}"; do
+        {
+          echo "====== Make Gem mappability file with kmer:$kmer  ======"
+          mkdir -p $GemIndex/Mappability/${kmer}mer
+          cd $GemIndex/Mappability/${kmer}mer
+          gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem
+          gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem
+          wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig
+          rm -f genome.${kmer}mer.gem.mappability
 
-        for window in "${windows[@]}"; do
-          echo "====== Count GC and mappability within a silding window:$window  ======"
-          mkdir -p $GemIndex/windows/$window
-          cd $GemIndex/windows/$window
-          gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
-          mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
-        done
-      } &
-    done
-    wait
-    echo -e "\033[32mComplete Gem mappability building.\033[0m"
+          for window in "${windows[@]}"; do
+            echo "====== Count GC and mappability within a silding window:$window  ======"
+            mkdir -p $GemIndex/windows/$window
+            cd $GemIndex/windows/$window
+            gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig
+            mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig
+          done
+        } &
+      done
+      wait
+      echo -e "\033[32mComplete Gem mappability building.\033[0m"
+    fi
 
     # ##### Genmap #####
+    # if [[ ! -d $GenmapIndex ]] || [[ ! "$(ls -A $GenmapIndex)" ]]; then
     # echo -e "\033[35mStart to build Genmap index...\033[0m"
     # rm -rf $GenmapIndex
     # genmap index -F $genome -I $GenmapIndex
@@ -281,6 +292,7 @@ for genome in "${arr[@]}"; do
     #   done
     # done
     # echo -e "\033[32mComplete Genmap mappability building.\033[0m"
+    # fi
 
     echo >&1000
   } &
