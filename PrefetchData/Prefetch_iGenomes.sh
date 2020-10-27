@@ -210,6 +210,7 @@ for genome in "${arr[@]}"; do
 
     ###### rebuild bismark index from iGenome ######
     echo -e "\033[35mBuild bismark_hisat2 index...\033[0m"
+    rm -rf $BismarkIndex/bowtie2 $BismarkIndex/hisat2
     mkdir -p $BismarkIndex/bowtie2 $BismarkIndex/hisat2
     if [[ -f $BismarkIndex/genome.fa ]] && [[ -d $BismarkIndex/Bisulfite_Genome ]]; then
       mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
@@ -221,10 +222,9 @@ for genome in "${arr[@]}"; do
 
     #### Gem #####
     echo -e "\033[35mStart to build Gem index...\033[0m"
-    if [[ ! -d $GemIndex ]]; then
-      mkdir -p $GemIndex
-      gem-indexer --threads $threads -i $genome -o $GemIndex/genome
-    fi
+    rm -rf $GemIndex
+    mkdir -p $GemIndex
+    gem-indexer --threads $threads -i $genome -o $GemIndex/genome
     echo -e "\033[32mComplete Gem index building.\033[0m"
 
     for kmer in "${kmers[@]}"; do
