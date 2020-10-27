@@ -330,7 +330,7 @@ for genome in "${arr[@]}"; do
           for window in "${windows[@]}"; do
             check_logfile "iGenomes" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-              echo "====== Count GC and mappability within a silding window:$window  ======"
+              rm -rf $GemIndex/windows/$window
               mkdir -p $GemIndex/windows/$window
               cd $GemIndex/windows/$window
               gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig &>WindowStatus.log
