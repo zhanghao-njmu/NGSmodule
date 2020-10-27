@@ -184,7 +184,7 @@ for genome in "${arr[@]}"; do
 
       ####### clear existed logs #######
       logfiles=("IndexStatus.log" "KmerStatus.log" "WindowStatus.log")
-      globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "iGenomes"
+      globalcheck_logfile "$SequenceDir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "iGenomes"
 
       ####### genome.fa index #####
       check_logfile "iGenomes" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
