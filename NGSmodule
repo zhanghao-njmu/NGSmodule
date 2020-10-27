@@ -3,18 +3,16 @@
 #  Author     : zhanghao                                  #
 ###########################################################
 
-
 #################### Functions ##################################################
 shell_folder=$(dirname $(readlink -f "$0"))
+source $shell_folder/Function.sh
 
-CreateConfigFile()
-{
+CreateConfigFile() {
   source $shell_folder/PreparationSteps/CreateConfigFile.sh $1
 }
 
-CheckConfigFile()
-{
-  if  [[ ! -f $1 ]];then
+CheckConfigFile() {
+  if [[ ! -f $1 ]]; then
     echo -e "Cannot find the ConfigFile:$ConfigFile !\n"
     exit 1
   else
@@ -22,108 +20,92 @@ CheckConfigFile()
   fi
 }
 
-CreateSampleInfoFile()
-{
+CreateSampleInfoFile() {
   source $shell_folder/PreparationSteps/CreateSampleInfoFile.sh
 }
 
-CreateWorkDir()
-{
+CreateWorkDir() {
   source $1
   source $shell_folder/LoadConfig.sh prepare
   source $shell_folder/PreparationSteps/CreateWorkDir.sh
 }
 
-preAlignmentQC()
-{
+preAlignmentQC() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/preAlignmentQC.sh
 }
 
-Alignment()
-{
+Alignment() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/Alignment.sh
 }
 
-postAlignmentQC()
-{
+postAlignmentQC() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/postAlignmentQC.sh $shell_folder/GeneralSteps/dupRadar.R
 }
 
-Quantification()
-{
+Quantification() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/Quantification.sh $shell_folder/Analysis/Quantification/Quantification_featurecounts.R $shell_folder/Analysis/Quantification/Quantification_annotation.R
 }
 
-postQuantificationQC()
-{
+postQuantificationQC() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
-BatchCorrection()
-{
+BatchCorrection() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/BatchCorrection.sh $shell_folder/Analysis/Quantification/BatchCorrection.R
 }
 
-DifferentialExpression()
-{
+DifferentialExpression() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.sh $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.R
 }
 
-CNVanalysis()
-{
+CNVanalysis() {
   source $1
-  source $shell_folder/LoadConfig.sh 
+  source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
-CreateSCPConfigFile()
-{
+CreateSCPConfigFile() {
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPConfigFile.sh $1
 }
 
-CreateSCPSampleInfoFile()
-{
+CreateSCPSampleInfoFile() {
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPSampleInfoFile.sh
 }
 
-CreateSCPWorkDir()
-{
+CreateSCPWorkDir() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh prepare
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPWorkDir.sh
 }
 
-RunCellranger()
-{
+RunCellranger() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/CellCalling.R
 }
 
-Integration()
-{
+Integration() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.R
 }
 
-help()
-{
-cat <<- EOF
+help() {
+  cat <<-EOF
 ##########################################################################################
 
   Description: A flexible, modularization, and pragmatic workflow to process the NGS data 
@@ -177,127 +159,183 @@ EOF
 
 }
 
-
-version_info()
-{
-cat <<- EOF
+version_info() {
+  cat <<-EOF
 ################################
     NGSmodule vsersion: 0.1.0   
 ################################
 EOF
 }
 
-
 #################### Parsing the parameters ##################################################
-echo  ""
-getopt -T &>/dev/null;[ $? -ne 4 ] && { echo "getopt is not enhanced version\n";exit 1; }
+echo ""
+getopt -T &>/dev/null
+[ $? -ne 4 ] && {
+  echo "getopt is not enhanced version\n"
+  exit 1
+}
 
-parameters=`getopt --options c:hv --longoptions ConfigFile,help,version -n "$0" -- "$@"`
-[ $? -ne 0 ] && { echo -e "Try '$0 --help' for more information.\n"; exit 1; }
+parameters=$(getopt --options c:hv --longoptions ConfigFile,help,version -n "$0" -- "$@")
+[ $? -ne 0 ] && {
+  echo -e "Try '$0 --help' for more information.\n"
+  exit 1
+}
 
-eval set -- "$parameters" 
-while true;do 
+eval set -- "$parameters"
+while true; do
   case $1 in
-    -c|--ConfigFile) ConfigFile=$2; shift 2;; 
-    -h|--help) help; exit 0;; 
-    -v|--version) version_info; exit 0;;
-    --)
-      shift
-      if [[ $# == 0 ]];then
-        echo -e "Please select a MODE option. Try '$0 --help' for more information.\n"
+  -c | --ConfigFile)
+    ConfigFile=$2
+    shift 2
+    ;;
+  -h | --help)
+    help
+    exit 0
+    ;;
+  -v | --version)
+    version_info
+    exit 0
+    ;;
+  --)
+    shift
+    if [[ $# == 0 ]]; then
+      echo -e "Please select a MODE option. Try '$0 --help' for more information.\n"
+      exit 1
+    elif [[ $1 == "CreateConfigFile" ]]; then
+      CreateConfigFile $ConfigFile
+      exit 0
+    elif [[ $1 == "CreateSampleInfoFile" ]]; then
+      CreateSampleInfoFile
+      exit 0
+    elif [[ $1 == "CreateWorkDir" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateWorkDir MODE!\nTry '$0 --help' for more information.\n"
         exit 1
-      elif [[ $1 == "CreateConfigFile" ]];then
-        CreateConfigFile $ConfigFile
-        exit 0
-      elif [[ $1 == "CreateSampleInfoFile" ]];then
-        CreateSampleInfoFile
-        exit 0
-      elif [[ $1 == "CreateWorkDir" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        CreateWorkDir $ConfigFile
-        exit 0      
-      elif [[ $1 == "preAlignmentQC" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in preAlignmentQC MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        preAlignmentQC $ConfigFile
-        exit 0   
-      elif [[ $1 == "Alignment" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in Alignment MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        Alignment $ConfigFile
-        exit 0   
-      elif [[ $1 == "postAlignmentQC" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in postAlignmentQC MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        postAlignmentQC $ConfigFile
-        exit 0   
-      elif [[ $1 == "Quantification" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in Quantification MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        Quantification $ConfigFile
-        exit 0   
-      elif [[ $1 == "postQuantificationQC" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in postQuantificationQC MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        postQuantificationQC $ConfigFile
-        exit 0   
-      elif [[ $1 == "BatchCorrection" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in BatchCorrection MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        BatchCorrection $ConfigFile
-        exit 0   
-      elif [[ $1 == "DifferentialExpression" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in DifferentialExpression MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        DifferentialExpression $ConfigFile
-        exit 0   
-      elif [[ $1 == "CNVanalysis" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CNVanalysis MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        CNVanalysis $ConfigFile
-        exit 0   
+      }
+      CheckConfigFile $ConfigFile
+      CreateWorkDir $ConfigFile
+      exit 0
+    elif [[ $1 == "preAlignmentQC" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in preAlignmentQC MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      preAlignmentQC $ConfigFile
+      exit 0
+    elif [[ $1 == "Alignment" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in Alignment MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      Alignment $ConfigFile
+      exit 0
+    elif [[ $1 == "postAlignmentQC" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in postAlignmentQC MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      postAlignmentQC $ConfigFile
+      exit 0
+    elif [[ $1 == "Quantification" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in Quantification MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      Quantification $ConfigFile
+      exit 0
+    elif [[ $1 == "postQuantificationQC" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in postQuantificationQC MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      postQuantificationQC $ConfigFile
+      exit 0
+    elif [[ $1 == "BatchCorrection" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in BatchCorrection MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      BatchCorrection $ConfigFile
+      exit 0
+    elif [[ $1 == "DifferentialExpression" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in DifferentialExpression MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      DifferentialExpression $ConfigFile
+      exit 0
+    elif [[ $1 == "CNVanalysis" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in CNVanalysis MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      CNVanalysis $ConfigFile
+      exit 0
 
-      ### SingleCellPipe
-      elif [[ $1 == "CreateSCPConfigFile" ]];then
-        CreateSCPConfigFile $ConfigFile
-        exit 0
-      elif [[ $1 == "CreateSCPSampleInfoFile" ]];then
-        CreateSCPSampleInfoFile
-        exit 0
-      elif [[ $1 == "CreateSCPWorkDir" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateSCPWorkDir MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        CreateSCPWorkDir $ConfigFile
-        exit 0
-      elif [[ $1 == "RunCellranger" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in RunCellranger MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        RunCellranger $ConfigFile
-        exit 0
-      elif [[ $1 == "Integration" ]];then
-        { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
-        [ $? -ne 0 ] && { echo -e "ERROR!\nOption -c|--ConfigFile needed in Integration MODE!\nTry '$0 --help' for more information.\n"; exit 1; }
-        CheckConfigFile $ConfigFile
-        Integration $ConfigFile
-        exit 0                  
+    ### SingleCellPipe
+    elif [[ $1 == "CreateSCPConfigFile" ]]; then
+      CreateSCPConfigFile $ConfigFile
+      exit 0
+    elif [[ $1 == "CreateSCPSampleInfoFile" ]]; then
+      CreateSCPSampleInfoFile
+      exit 0
+    elif [[ $1 == "CreateSCPWorkDir" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in CreateSCPWorkDir MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      CreateSCPWorkDir $ConfigFile
+      exit 0
+    elif [[ $1 == "RunCellranger" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in RunCellranger MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      RunCellranger $ConfigFile
+      exit 0
+    elif [[ $1 == "Integration" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in Integration MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      Integration $ConfigFile
+      exit 0
 
-      else
-        echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
-      fi
-      break ;;
-    -*) echo "error: no such option $1.\n"; exit 1;;
-    *) echo "error: no such option $1.\n"; exit 1;;
+    else
+      echo -e "Invalid MODE: $1 \nTry '$0 --help' for more information.\n"
+    fi
+    break
+    ;;
+  -*)
+    echo "error: no such option $1.\n"
+    exit 1
+    ;;
+  *)
+    echo "error: no such option $1.\n"
+    exit 1
+    ;;
   esac
 done
