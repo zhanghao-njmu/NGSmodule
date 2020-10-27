@@ -60,6 +60,7 @@ for s in "${Species[@]}"; do
     else
       cmd='aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "*/WholeGenomeFasta/genome.fa"'
     fi
+    echo "$cmd"
     eval $cmd
 
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
