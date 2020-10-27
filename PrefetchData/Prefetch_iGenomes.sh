@@ -65,17 +65,15 @@ for s in "${Species[@]}"; do
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
       color_echo "yellow" "iGenomes do not exist: $s/$i"
       rm -rf $iGenomes_dir/$s/$i
-      sleep 1
     fi
-    if [[ -d $iGenomes_dir/$s/$i ]]; then
-      echo "$iGenomes_dir/$s/$i exist"
-      index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
-      if [[ "${#index_dir[@]}" != 0 ]]; then
-        for index in "${index_dir[@]}"; do
-          echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
-        done
-      fi
-    fi
+    # if [[ -d $iGenomes_dir/$s/$i ]]; then
+    #   index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
+    #   if [[ "${#index_dir[@]}" != 0 ]]; then
+    #     for index in "${index_dir[@]}"; do
+    #       echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+    #     done
+    #   fi
+    # fi
 
   done
 done
