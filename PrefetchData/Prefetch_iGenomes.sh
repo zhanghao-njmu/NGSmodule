@@ -153,10 +153,6 @@ for genome in "${arr[@]}"; do
     GemIndex="$SequenceDir/GemIndex/"
     GenmapIndex="$SequenceDir/GenmapIndex/"
 
-
-     
-
-
     ####### genome.fa index #####
     rm -f ${genome}.fai ${genome%%fa}dict
     samtools faidx ${genome} &>${genome%%genome.fa}IndexStatus.log
