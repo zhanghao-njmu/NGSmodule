@@ -150,12 +150,12 @@ for genome in "${arr[@]}"; do
     if [[ "${#arr2[@]}" != 0 ]]; then
       for genomeln in "${arr2[@]}"; do
         if [[ -L $genomeln ]]; then
-          color_echo "green" "Soft link ok: $genomeln"
+          #color_echo "green" "Soft link ok: $genomeln"
           ln -fs $genome $genomeln
         else
           genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
           if [[ "$genomeln_size" == "$genome_size" ]]; then
-            color_echo "green" "Soft link ok: $genomeln"
+            #color_echo "green" "Soft link ok: $genomeln"
             ln -fs $genome $genomeln
           else
             color_echo "red" "Soft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size"
