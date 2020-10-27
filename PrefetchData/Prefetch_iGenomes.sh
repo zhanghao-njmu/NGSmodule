@@ -51,14 +51,15 @@ picard &>/dev/null
 for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     echo -e "\033[32mDownloading the iGenomes: $s/$i\033[0m"
-    igenome="s3://ngi-igenomes/igenomes/$s/$i"    
+    igenome="s3://ngi-igenomes/igenomes/$s/$i"
+    bismark=($(find $iGenomes_dir/$s/$i -name "BismarkIndex" -type d | grep "WholeGenomeFasta"))
     aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
 
     if [[ ! "$(ls -A $iGenomes_dir/$s/$i)" ]]; then
       echo -e "\033[33miGenomes do not exist: $s/$i\033[0m"
       rm -rf $iGenomes_dir/$s/$i
     fi
-    index_dir=($(find $iGenomes_dir -name "*Index" -type d))
+    index_dir=($(find $iGenomes_dir/$s/$i -mindepth 3 -maxdepth 3 -name "*Index" -type d))
     for index in "${index_dir[@]}"; do
       echo -e "NGSmodule finished the job [Index]" >$index/IndexStatus.log
     done
@@ -124,22 +125,28 @@ for genome in "${arr[@]}"; do
     echo "SequenceDir:$SequenceDir"
     cd $SequenceDir
 
-    ####### Create WholeGenomeFasta/genome.fa softlink for other index #######
+    arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index"))
+    for index in "${arr1[@]}"; do
+      ln -fs $genome $index/genome.fa
+    done
+
     arr2=($(find $SequenceDir -name "genome.fa" | grep -v "WholeGenomeFasta"))
     for genomeln in "${arr2[@]}"; do
       if [[ -L $genomeln ]]; then
-        echo -e "\033[32mok: $genomeln\033[0m"
+        color_echo "green" "Soft link ok: $genomeln"
         ln -fs $genome $genomeln
       else
         genomeln_size=$(ls -lL $genomeln | awk '{print$5}')
         if [[ "$genomeln_size" == "$genome_size" ]]; then
-          echo -e "\033[32mSoft link ok: $genomeln\033[0m"
+          color_echo "green" "Soft link ok: $genomeln"
           ln -fs $genome $genomeln
         else
-          echo -e "\033[31mSoft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size\033[0m"
+          color_echo "red" "Soft link fail: $genomeln genomeln_size:$genomeln_size genome_size:$genome_size"
         fi
       fi
     done
+
+    
 
     gtf="$SequenceDir/../Annotation/Genes/genes.gtf"
     BWAIndex="$SequenceDir/BWAIndex"
