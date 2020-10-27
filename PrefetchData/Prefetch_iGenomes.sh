@@ -55,7 +55,6 @@ for s in "${Species[@]}"; do
     bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/bowtie2"))
     if [[ "${#bismark_exist[@]}" != 0 ]]; then
       par=$(printf -- ' --exclude "*%s*"' "${bismark_exist[@]}")
-      echo "skip BismarkIndex:$par"
       aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa" $par
     else
       aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude "*/genome.fa" --include "WholeGenomeFasta/genome.fa"
