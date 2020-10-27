@@ -2,7 +2,7 @@
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 
 ############# Paramaters #############################################################
-iGenomes_dir="/data/database/iGenomes/"
+iGenomes_dir="/reference/iGenomes/"
 Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
 Sources=("Ensembl" "NCBI" "UCSC")
 kmers=(150 100 50)
@@ -11,27 +11,27 @@ threads=100
 
 ######## check command available ##########
 faidx --version &>/dev/null
-[ $? -ne 0 ] && {
+[ $? -eq 127 ] && {
   echo -e "Cannot find the tool pyfaidx. User can install it with the command 'conda install -c bioconda pyfaidx'.\n"
   exit 1
 }
-gem-mappability --help &>/dev/null
-[ $? -ne 0 ] && {
+gem-mappability &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command gem-mappability. User can install it from 'https://sourceforge.net/projects/gemlibrary'.\n"
   exit 1
 }
-genmap --version &>/dev/null
-[ $? -ne 0 ] && {
+genmap &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command genmap. User can install it with the command 'conda install -c bioconda genmap'.\n"
   exit 1
 }
 wigToBigWig &>/dev/null
-[ $? -ne 255 ] && {
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command wigToBigWig. User can install it with the command 'conda install -c bioconda ucsc-wigtobigwig'.\n"
   exit 1
 }
-mapCounter --help &>/dev/null
-[ $? -ne 0 ] && {
+mapCounter &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command mapCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
   exit 1
 }
@@ -99,6 +99,7 @@ for genome in "${arr[@]}"; do
 
   ####### Extract main genome fasta #####
   # echo "====== Fetch main chromosome sequence into genome_main.fa ======"
+  # rm -f ${genome}.fai
   # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
   # ###### BWA index #####
