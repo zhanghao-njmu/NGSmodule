@@ -135,9 +135,9 @@ else
 fi
 
 if ((threads > 120)); then
-  hisat2_threads=120
+  threads=120
 else
-  hisat2_threads=$threads
+  threads=$threads
 fi
 
 if ((((threads / ${#kmers})) == 0)); then
@@ -275,7 +275,7 @@ for genome in "${arr[@]}"; do
         rm -rf $Hisat2Index
         mkdir -p $Hisat2Index
         ln -fs $genome $Hisat2Index/genome.fa
-        hisat2-build --quiet -p $hisat2_threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
+        hisat2-build --quiet -p $threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
 
         check_logfile "$id" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
