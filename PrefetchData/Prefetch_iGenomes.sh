@@ -73,6 +73,8 @@ for s in "${Species[@]}"; do
         for index in "${index_dir[@]}"; do
           if [[ "$(ls -A $index | grep -v 'IndexStatus.log')" ]]; then
             echo "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+          else
+            rm -rf $index
           fi
         done
       fi
