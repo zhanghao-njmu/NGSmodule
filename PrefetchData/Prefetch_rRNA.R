@@ -7,7 +7,7 @@ maindir <- "/reference/SortmeRNA/"
 version <- 101
 
 species <- c("Homo_sapiens", "Mus_musculus", "Macaca_fascicularis", "Macaca_mulatta", "Drosophila_melanogaster")
-
+sequence_type<-c("rRNA", "Mt_rRNA", "Mt_tRNA")
 # fastq_screen_dir <- "/data/database/FastQ_Screen/FastQ_Screen_Genomes/"
 
 ##### Main process #####
@@ -34,7 +34,7 @@ for (s in species) {
   result <- getBM(
     mart = mart,
     filters = "biotype",
-    values = c("rRNA", "Mt_rRNA", "Mt_tRNA"),
+    values = sequence_type,
     attributes = c(
       "gene_biotype",
       "external_gene_name",
