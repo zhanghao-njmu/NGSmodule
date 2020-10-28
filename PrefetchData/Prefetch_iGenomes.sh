@@ -73,7 +73,7 @@ for s in "${Species[@]}"; do
         for index in "${index_dir[@]}"; do
           if [[ "$(ls -A $index | grep -v 'IndexStatus.log')" ]]; then
             echo "NGSmodule finished the job [Index]" >$index/IndexStatus.log
-          else
+          elif [[ ! "$index" =~ *BismarkIndex* ]]; then
             rm -rf $index
           fi
         done
@@ -191,6 +191,10 @@ for genome in "${arr[@]}"; do
       ####### clear existed logs #######
       logfiles=("IndexStatus.log" "KmerStatus.log" "WindowStatus.log")
       globalcheck_logfile "$SequenceDir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$id"
+      find "$SequenceDir" -size 0 -print | while IFS= read -r pathname; do
+        basedir=${pathname%/*}
+        rm -rf $basedir
+      done
 
       ####### genome.fa index #####
       check_logfile "$id" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
@@ -294,7 +298,7 @@ for genome in "${arr[@]}"; do
         mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
         mv $BismarkIndex/IndexStatus.log $BismarkIndex/bowtie2/
       else
-        find "$BismarkIndex" -maxdepth 1 -type f -o -type l | xargs -i rm -f {}
+        find "$BismarkIndex" -maxdepth 1 -type f -o -type l -print | xargs -i rm -f {}
       fi
 
       ###### bismark index #####
