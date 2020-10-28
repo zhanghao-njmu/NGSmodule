@@ -21,41 +21,12 @@ done
 
 echo -e "########################## Prefetch_Sequence Parameters ###########################\n"
 echo -e "  Rscript path: $(which Rscript)"
-echo -e "  featurecounts_threads: ${threads_featurecounts}\n  Strand_Specific: ${strandspecific} (0=unstranded,1=stranded,2=reversely stranded)\n"
-echo -e "  GTF_File: ${gtf}\n "
+echo -e "  Species: ${species}"
+echo -e "  Sequence_type: ${sequence_type}"
 echo -e "################################################################################\n"
 
-echo -e "****************** Start Quantification ******************\n"
+echo -e "****************** Start prefetching sequence ******************\n"
 SECONDS=0
-
-for sample in "${arr[@]}"; do
-  read -u1000
-  {
-    echo "+++++ $sample +++++"
-    dir=$work_dir/$sample
-    bam=$dir/$Aligner/${sample}.${Aligner}.bam
-    if [[ ! -f $bam ]]; then
-      echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
-      exit 1
-    fi
-
-    mkdir -p $dir/$Aligner/Quantification
-    cd $dir/$Aligner/Quantification
-    Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
-
-    echo "Completed: $sample" >>$tmpfile
-    color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
-
-    echo >&1000
-  } &
-  ((bar++))
-  processbar $bar $total_task
-done
-wait
-
-echo -e "\nIntegrating and annotating the matrix....\n"
-mkdir -p $maindir/NGSmodule_analysis/Quantification
-cd $maindir/NGSmodule_analysis/Quantification
 
 Rscript $2 $work_dir $gtf $Aligner $Species $Source &>Annotation.R.log
 echo -e "Integrated quantification matrix: $maindir/NGSmodule_analysis/Quantification/Quantification.${Aligner}.*.tab\n"
