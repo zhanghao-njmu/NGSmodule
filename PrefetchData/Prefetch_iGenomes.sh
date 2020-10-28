@@ -350,7 +350,7 @@ for genome in "${arr[@]}"; do
           fi
 
           for window in "${windows[@]}"; do
-            check_logfile "$id" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$id" "Gem_Kmer_${kmer}_Windows_${window}" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf $GemIndex/windows/$window
               mkdir -p $GemIndex/windows/$window
@@ -358,7 +358,7 @@ for genome in "${arr[@]}"; do
               gcCounter -w $window --forgiving $genome >genome.w${window}.gc.wig &>WindowStatus.log
               mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.w${window}.${kmer}mer.gem.wig &>>WindowStatus.log
 
-              check_logfile "$id" "Gem_Windows_$window" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+              check_logfile "$id" "Gem_Kmer_${kmer}_Windows_${window}" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
               if [[ $? == 1 ]]; then
                 continue
               fi
