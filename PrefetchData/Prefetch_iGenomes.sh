@@ -53,6 +53,19 @@ else
   color_echo "yellow" ">>> iGenomes_dir does not exist and will be created: $iGenomes_dir \n"
 fi
 
+echo -e "########################## Prefetch_Sequence Parameters ###########################\n"
+echo -e "  iGenomes_dir: $iGenomes_dir"
+echo -e "  total_threads: ${total_threads}"
+echo -e "  ntask_per_run: ${ntask_per_run}"
+echo -e "  Species: ${Species[*]}"
+echo -e "  Sources: ${Sources[*]}"
+echo -e "  kmers: ${kmers[*]}"
+echo -e "  windows: ${windows[*]}"
+echo -e "################################################################################\n"
+
+echo -e "****************** Start downloading iGenomes ******************\n"
+SECONDS=0
+
 ######## Download the iGenomes #####
 for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
@@ -137,8 +150,6 @@ fi
 fifo $ntask_per_run
 
 echo -e "****************** Start buiding the remaining index ******************\n"
-SECONDS=0
-
 for genome in "${arr[@]}"; do
   read -u1000
   {
