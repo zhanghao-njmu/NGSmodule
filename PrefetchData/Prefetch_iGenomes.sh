@@ -71,7 +71,7 @@ for s in "${Species[@]}"; do
       index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
       if [[ "${#index_dir[@]}" != 0 ]]; then
         for index in "${index_dir[@]}"; do
-          if [[ ! "$(ls -A $index | grep -v "IndexStatus.log")" ]]; then
+          if [[ "$(ls -A $index | grep -v "IndexStatus.log")" ]]; then
             echo "NGSmodule finished the job [Index]" >$index/IndexStatus.log
           fi
         done
