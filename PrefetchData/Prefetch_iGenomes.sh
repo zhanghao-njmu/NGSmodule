@@ -47,6 +47,12 @@ picard &>/dev/null
   exit 1
 }
 
+if [[ -d $iGenomes_dir ]];then
+  echo -e ">>> iGenomes_dir exist: $iGenomes_dir \n"
+else
+  color_echo "yellow" ">>> iGenomes_dir does not exist and will be created: $iGenomes_dir \n"
+fi
+
 ######## Download the iGenomes #####
 for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
