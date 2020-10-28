@@ -53,7 +53,7 @@ for s in "${Species[@]}"; do
     color_echo "green" "Downloading the iGenomes: $s/$i"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
     par=""
-    if [[ -d  $iGenomes_dir/$s/$i ]];then
+    if [[ -d $iGenomes_dir/$s/$i ]]; then
       bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
       if [[ "${#bismark_exist[@]}" != 0 ]]; then
         par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
@@ -71,7 +71,9 @@ for s in "${Species[@]}"; do
       index_dir=($(find $iGenomes_dir/$s/$i -name "*Index" -type d))
       if [[ "${#index_dir[@]}" != 0 ]]; then
         for index in "${index_dir[@]}"; do
-          echo "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+          if [[ ! "$(ls -A $index | grep -v "IndexStatus.log")" ]]; then
+            echo "NGSmodule finished the job [Index]" >$index/IndexStatus.log
+          fi
         done
       fi
     fi
