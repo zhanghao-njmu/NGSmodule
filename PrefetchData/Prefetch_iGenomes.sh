@@ -113,7 +113,7 @@ else
   exit 1
 fi
 
-threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
+threads=$((total_threads / ntask_per_run))
 
 if ((threads == 0)); then
   threads=1
