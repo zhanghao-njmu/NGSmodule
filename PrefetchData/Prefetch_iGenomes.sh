@@ -293,6 +293,8 @@ for genome in "${arr[@]}"; do
         mv $BismarkIndex/genome.fa $BismarkIndex/bowtie2/
         mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
         mv $BismarkIndex/IndexStatus.log $BismarkIndex/bowtie2/
+      else
+        find "$BismarkIndex" -maxdepth 1 -type f -o -type l | xargs -i rm -f {}
       fi
 
       ###### bismark index #####
