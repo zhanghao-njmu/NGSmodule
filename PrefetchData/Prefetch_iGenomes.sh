@@ -155,8 +155,8 @@ for genome in "${arr[@]}"; do
   {
     SequenceDir=${genome%%/WholeGenomeFasta/genome.fa}
     genome_size=$(ls -lL $genome | awk '{print$5}')
-    id=${SequenceDir##$iGenomes_dir/}
-    id=${id%%Sequence}
+    id=${SequenceDir##$iGenomes_dir}
+    id=${id%%Sequence/}
     echo "+++++ ID: $id +++++"
     cd $SequenceDir
 
