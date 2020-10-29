@@ -382,8 +382,8 @@ for genome in "${arr[@]}"; do
               rm -rf $GemIndex/Mappability/${kmer}mer/windows/win$window
               mkdir -p $GemIndex/Mappability/${kmer}mer/windows/win$window
               cd $GemIndex/Mappability/${kmer}mer/windows/win$window
-              gcCounter -w $window --forgiving $genome >genome.win${window}.gc.wig &>WindowStatus.log
-              mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.win${window}.${kmer}mer.gem.wig &>>WindowStatus.log
+              gcCounter -w $window --forgiving $genome >genome.win${window}.gc.wig 2>WindowStatus.log
+              mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.win${window}.${kmer}mer.gem.wig 2>>WindowStatus.log
 
               check_logfile "$id" "Gem_Kmer_${kmer}_Windows_${window}" "$GemIndex/windows/$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
               if [[ $? == 1 ]]; then
@@ -395,7 +395,6 @@ for genome in "${arr[@]}"; do
         } &
       done
       wait
-      echo -e "\033[32mComplete Gem mappability building.\033[0m"
 
       # ##### Genmap #####
       # if [[ ! -d $GenmapIndex ]] || [[ ! "$(ls -A $GenmapIndex)" ]]; then
