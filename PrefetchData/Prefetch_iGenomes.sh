@@ -53,7 +53,7 @@ else
   color_echo "yellow" ">>> iGenomes_dir does not exist and will be created: $iGenomes_dir \n"
 fi
 
-echo -e "########################## Prefetch_Sequence Parameters ###########################\n"
+echo -e "########################## Prefetch_Sequence Parameters ###########################"
 echo -e "  iGenomes_dir: $iGenomes_dir"
 echo -e "  total_threads: ${total_threads}"
 echo -e "  ntask_per_run: ${ntask_per_run}"
