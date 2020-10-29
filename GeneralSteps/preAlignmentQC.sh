@@ -230,7 +230,7 @@ for sample in "${arr[@]}"; do
 
           else
             mv "$fq1" "$dir"/"${sample}"_trim.fq
-            color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "blue" "+++++ ${sample}: SequenceType is not 'rna'. SortMeRNA skipped. +++++"
           fi
 
         elif [[ -f "${sample}"_trim.fq ]]; then
@@ -412,7 +412,7 @@ for sample in "${arr[@]}"; do
           else
             mv "$fq1" "$dir"/"${sample}"_1_trim.fq
             mv "$fq2" "$dir"/"${sample}"_2_trim.fq
-            color_echo "blue" "+++++ ${sample}: SequenceType='rna'. SortMeRNA skipped. +++++"
+            color_echo "blue" "+++++ ${sample}: SequenceType is not 'rna'. SortMeRNA skipped. +++++"
           fi
         elif [[ -f "${sample}"_1_trim.fq ]] && [[ -f "${sample}"_2_trim.fq ]]; then
           color_echo "blue" "+++++ ${sample}: ${sample}_[1,2]_trim.fq existed. +++++"
