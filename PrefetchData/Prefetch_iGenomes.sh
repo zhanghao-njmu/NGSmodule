@@ -47,7 +47,7 @@ picard &>/dev/null
   exit 1
 }
 
-if [[ -d $iGenomes_dir ]];then
+if [[ -d $iGenomes_dir ]]; then
   echo -e ">>> iGenomes_dir exist: $iGenomes_dir \n"
 else
   color_echo "yellow" ">>> iGenomes_dir does not exist and will be created: $iGenomes_dir \n"
@@ -227,19 +227,21 @@ for genome in "${arr[@]}"; do
         fi
       fi
 
-      ###### BWA index #####
-      check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
-      if [[ $? == 1 ]]; then
-        rm -rf $BWAIndex
-        mkdir -p $BWAIndex
-        ln -fs $genome $BWAIndex/genome.fa
-        bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
-
-        check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+      {
+        ###### BWA index #####
+        check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          continue
+          rm -rf $BWAIndex
+          mkdir -p $BWAIndex
+          ln -fs $genome $BWAIndex/genome.fa
+          bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
+
+          check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+          if [[ $? == 1 ]]; then
+            continue
+          fi
         fi
-      fi
+      } &
 
       ###### Bowtie index #####
       check_logfile "$id" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "precheck"
