@@ -104,7 +104,7 @@ check_logfile() {
             color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
             return 1
         elif [[ $mode == "postcheck" ]]; then
-            color_echo "yellow" "Warning! ${sample}: Cannot find the log file for the tool ${tool}."
+            color_echo "yellow" "Warning! ${sample}: Cannot find the log file for the tool ${tool}: $logfile."
             return 1
         fi
     fi
