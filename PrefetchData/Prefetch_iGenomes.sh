@@ -156,7 +156,7 @@ for genome in "${arr[@]}"; do
     SequenceDir=${genome%%/WholeGenomeFasta/genome.fa}
     genome_size=$(ls -lL $genome | awk '{print$5}')
     id=${SequenceDir##$iGenomes_dir}
-    id=$(echo "${id%%Sequence}" |sed -E 's/(^\/)|(\/$)//g')
+    id=$(echo "${id%%Sequence}" | sed -E 's/(^\/)|(\/$)//g')
     echo "+++++ ID: $id +++++"
     cd $SequenceDir
 
@@ -317,7 +317,9 @@ for genome in "${arr[@]}"; do
         mv $BismarkIndex/Bisulfite_Genome $BismarkIndex/bowtie2/
         mv $BismarkIndex/IndexStatus.log $BismarkIndex/bowtie2/
       else
-        find "$BismarkIndex" -maxdepth 1 -type f -o -type l -print | xargs -i rm -f {}
+        if [[ -d $BismarkIndex ]]; then
+          find "$BismarkIndex" -maxdepth 1 -type f -o -type l -print | xargs -i rm -f {}
+        fi
       fi
 
       ###### bismark index #####
