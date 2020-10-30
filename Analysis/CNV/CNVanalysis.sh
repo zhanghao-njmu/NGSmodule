@@ -35,13 +35,13 @@ $GATK3 --help &>/dev/null
   exit 1
 }
 
-GC_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/windows/$Window/genome.w$Window.gc.wig"
+GC_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/Mappability/${Kmer}mer/windows/win$Window/genome.win${Window}.gc.wig"
 if [[ ! -f $GC_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing GC content per bin: ${GC_bin}\n"
   exit 1
 fi
 
-Map_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/windows/$Window/genome.w$Window.${Kmer}mer.gem.wig"
+Map_bin="$iGenomes_Dir/$Species/$Source/$Build/Sequence/GemIndex/Mappability/${Kmer}mer/windows/win$Window/genome.win$Window.${Kmer}mer.gem.wig"
 if [[ ! -f $Map_bin ]]; then
   color_echo "red" "ERROR! Cannot find the wig file containing average mappability per bin: ${Map_bin}\n"
   exit 1
