@@ -74,37 +74,37 @@ check_logfile() {
         complete=$(grep -ioP "${complete_pattern}" "${logfile}" | sort | uniq | paste -sd "|")
         if [[ $error ]]; then
             if [[ $mode == "precheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: Detected problems($error) in ${tool} logfile: ${logfile}. Restart ${tool}."
+                color_echo "yellow" "Warning! ${sample}: precheck detected problems($error) in ${tool} logfile: ${logfile}. Restart ${tool}."
                 return 1
             elif [[ $mode == "postcheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: Detected problems($error) in ${tool} logfile: ${logfile}."
+                color_echo "yellow" "Warning! ${sample}: postcheck detected problems($error) in ${tool} logfile: ${logfile}."
                 return 1
             fi
         elif [[ $complete ]]; then
             if [[ $mode == "precheck" ]]; then
-                color_echo "blue" "+++++ ${sample}: ${tool} skipped +++++"
+                color_echo "blue" "+++++ ${sample}: ${tool} skipped [precheck] +++++"
                 return 0
             elif [[ $mode == "postcheck" ]]; then
-                color_echo "blue" "+++++ ${sample}: ${tool} done +++++"
+                color_echo "blue" "+++++ ${sample}: ${tool} done [postcheck] +++++"
                 echo -e "NGSmodule finished the job [${tool}]" >>"${logfile}"
                 return 0
             fi
         else
             if [[ $mode == "precheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: Unable to determine ${tool} status. Restart ${tool}."
+                color_echo "yellow" "Warning! ${sample}: precheck unable to determine ${tool} status. Restart ${tool}."
                 return 1
             elif [[ $mode == "postcheck" ]]; then
-                color_echo "blue" "+++++ ${sample}: ${tool} done with no problem +++++"
+                color_echo "blue" "+++++ ${sample}: ${tool} done with no problem [postcheck] +++++"
                 echo -e "NGSmodule finished the job [${tool}]" >>"${logfile}"
                 return 0
             fi
         fi
     else
         if [[ $mode == "precheck" ]]; then
-            color_echo "blue" "+++++ ${sample}: Start ${tool} +++++"
+            color_echo "blue" "+++++ ${sample}: Start ${tool} [precheck] +++++"
             return 1
         elif [[ $mode == "postcheck" ]]; then
-            color_echo "yellow" "Warning! ${sample}: Cannot find the log file for the tool ${tool}: $logfile."
+            color_echo "yellow" "Warning! ${sample}: postcheck cannot find the log file for the tool ${tool}: $logfile."
             return 1
         fi
     fi
