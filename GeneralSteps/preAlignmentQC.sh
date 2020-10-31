@@ -94,7 +94,7 @@ for sample in "${arr[@]}"; do
       # existlogs=()
       # while IFS='' read -r line; do
       #   existlogs+=("$line")
-      # done < <(find "${dir}" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.log")
+      # done < <(find "${dir}" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
       # if ((${#existlogs[*]} >= 1)); then
       #   for existlog in "${existlogs[@]}"; do
       #     if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
@@ -107,7 +107,7 @@ for sample in "${arr[@]}"; do
       #     fi
       #   done
       # fi
-      logfiles=("fqCheck.log" "fastqc.log" "fastp.log" "fastq_screen.log" "sortmerna.log")
+      logfiles=("fqCheck.log" "fastqc.log" "fastp.log" "fastq_screen.log" "sortmerna.process.log")
       globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
       if [[ $Layout == "SE" ]]; then
@@ -157,7 +157,7 @@ for sample in "${arr[@]}"; do
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
-          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -178,7 +178,7 @@ for sample in "${arr[@]}"; do
           -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
           -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
 
-          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -195,7 +195,7 @@ for sample in "${arr[@]}"; do
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" \
             --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
 
-            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
+            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck" $?
             if [[ $? == 1 ]]; then
               force="TRUE"
               continue
@@ -204,7 +204,7 @@ for sample in "${arr[@]}"; do
 
           #SortMeRNA
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -218,14 +218,16 @@ for sample in "${arr[@]}"; do
               --aligned aligned \
               --other other \
               -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
-              mv other.fq "$dir"/"${sample}"_trim.fq
-              rm -rf "${sample}".fq aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
-              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
-              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
+              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck" $?
               if [[ $? == 1 ]]; then
                 force="TRUE"
                 continue
               fi
+
+              mv other.fq "$dir"/"${sample}"_trim.fq
+              rm -rf "${sample}".fq aligned.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log
+
             fi
 
           else
@@ -336,7 +338,7 @@ for sample in "${arr[@]}"; do
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
-          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -357,7 +359,7 @@ for sample in "${arr[@]}"; do
           -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
           -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
 
-          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -375,7 +377,7 @@ for sample in "${arr[@]}"; do
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" "$fq2" \
             --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
 
-            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
+            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck" $?
             if [[ $? == 1 ]]; then
               force="TRUE"
               continue
@@ -384,7 +386,7 @@ for sample in "${arr[@]}"; do
 
           #SortMeRNA
           if [[ $SequenceType == "rna" ]]; then
-            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
@@ -399,14 +401,16 @@ for sample in "${arr[@]}"; do
               --aligned aligned \
               --other other \
               -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
-              reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
-              rm -rf "$fq1" "$fq2" "${sample}".fq "${sample}".fq.gz aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
-              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.log
-              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.log "$error_pattern" "$complete_pattern" "postcheck"
+              check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck" $?
               if [[ $? == 1 ]]; then
                 force="TRUE"
                 continue
               fi
+
+              reformat.sh in=other.fq out1="$dir"/"${sample}"_1_trim.fq out2="$dir"/"${sample}"_2_trim.fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_split.log
+              rm -rf "$fq1" "$fq2" "${sample}".fq "${sample}".fq.gz aligned.fq other.fq "$dir"/PreAlignmentQC/sortmerna_tmp
+              mv aligned.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log
+
             fi
 
           else
