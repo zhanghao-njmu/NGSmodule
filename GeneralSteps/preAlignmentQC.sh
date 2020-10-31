@@ -90,27 +90,18 @@ for sample in "${arr[@]}"; do
         echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
       fi
 
-      # ### check existed logs
-      # existlogs=()
-      # while IFS='' read -r line; do
-      #   existlogs+=("$line")
-      # done < <(find "${dir}" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastp.log" -o -name "fastq_screen.log" -o -name "sortmerna.process.log")
-      # if ((${#existlogs[*]} >= 1)); then
-      #   for existlog in "${existlogs[@]}"; do
-      #     if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-      #       color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-      #       rm -f "${existlog}"
-      #     fi
-      #     if [[ $force == "TRUE" ]]; then
-      #       color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
-      #       rm -f "${existlog}"
-      #     fi
-      #   done
-      # fi
+      ### check existed logs
       logfiles=("fqCheck.log" "fastqc.log" "fastp.log" "fastq_screen.log" "sortmerna.process.log")
       globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
-      if [[ ! -f "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log ]] || { [[ $SequenceType == "rna" ]] && [[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log ]]; };then
-        rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
+      if [[ -f "$dir"/PreAlignmentQC/fastp/fastp.log ]]; then
+        if [[ ! -f "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log ]]; then
+          color_echo "yellow" "+++++ ${sample}: fastq_screen is uncompleted. Will force to run Fastp. +++++"
+          rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
+        fi
+        if [[ $SequenceType == "rna" ]] && [[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log ]]; then
+          color_echo "yellow" "+++++ ${sample}: SortMeRNA is uncompleted. Will force to run Fastp. +++++"
+          rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
+        fi
       fi
 
       if [[ $Layout == "SE" ]]; then
@@ -350,7 +341,7 @@ for sample in "${arr[@]}"; do
 
         # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
-        if [[ $? == 1 ]] ; then
+        if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" --trim_front2 "$trim_front2" --trim_tail2 "$trim_tail2" \
           --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
