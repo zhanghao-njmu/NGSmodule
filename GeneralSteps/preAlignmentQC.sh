@@ -109,6 +109,9 @@ for sample in "${arr[@]}"; do
       # fi
       logfiles=("fqCheck.log" "fastqc.log" "fastp.log" "fastq_screen.log" "sortmerna.process.log")
       globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
+      if [[ ! -f "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log ]] || { [[ $SequenceType == "rna" ]] && [[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log ]]; };then
+        rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
+      fi
 
       if [[ $Layout == "SE" ]]; then
 
@@ -166,7 +169,7 @@ for sample in "${arr[@]}"; do
 
         # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
-        if [[ $? == 1 ]] || [[ ! -f "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log ]] || { [[ $SequenceType == "rna" ]] && [[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log ]]; }; then
+        if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" \
           --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
@@ -347,7 +350,7 @@ for sample in "${arr[@]}"; do
 
         # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
-        if [[ $? == 1 ]] || [[ ! -f "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log ]] || { [[ $SequenceType == "rna" ]] && [[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log ]]; }; then
+        if [[ $? == 1 ]] ; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" --trim_front2 "$trim_front2" --trim_tail2 "$trim_tail2" \
           --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
