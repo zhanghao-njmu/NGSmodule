@@ -233,8 +233,8 @@ for sample in "${arr[@]}"; do
 
       check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
-        rm -f "$dir/$Aligner/AlignmentStatus.log"
-        touch "$dir/$Aligner/AlignmentStatus.log"
+        rm -f "$dir/$Aligner/BamProcessingStatus.log"
+        touch "$dir/$Aligner/BamProcessingStatus.log"
 
         BAM=$(ls $dir/$Aligner/*.bam)
         samtools quickcheck -v ${BAM} &>/dev/null
