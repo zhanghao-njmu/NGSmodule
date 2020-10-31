@@ -70,7 +70,7 @@ check_logfile() {
     local mode=$6
     local status=$7
 
-    if [[ $status != 0 ]];then
+    if [[ $status != 0 ]] && [[ $status != "" ]] && [[ $mode == "postcheck" ]]; then
         color_echo "yellow" "Warning! ${sample}: postcheck detected the non-zero exit status($status) for the ${tool}."
         return 1
     fi
@@ -124,10 +124,10 @@ globalcheck_logfile() {
     local error_pattern="${4}"
     local complete_pattern="${5}"
     local id="${6}"
-    
+
     find_par=$(printf -- " -o -name %s" "${logfiles[@]}")
     find_par=${find_par:3}
-    
+
     existlogs=()
     while IFS='' read -r line; do
         existlogs+=("$line")
@@ -146,7 +146,6 @@ globalcheck_logfile() {
         done
     fi
 }
-
 
 ###### fifo $ntask_per_run ######
 fifo() {
