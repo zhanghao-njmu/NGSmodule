@@ -59,18 +59,18 @@ cut_mean_quality=20            ## the mean quality requirement option shared by 
 length_required=20             ## reads shorter than length_required will be discarded.
 
 ### FastqScreen ###
-FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+FastqScreen_config="/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### SortmeRNA ###
-SortmeRNA_Dir="/data/database/SortmeRNA"       ## the path of the dir containing the reference sequence.
+SortmeRNA_Dir="/reference/SortmeRNA"       ## the path of the dir containing the reference sequence.
 SortmeRNA_Type="rRNA"                          ## rRNA,Mt_tRNA,Mt_rRNA
 SortmeRNA_Species="Homo_sapiens"               ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
-SortmeRNA_DataVersion="EnsemblGenes98"         ## the version of the sequence 
+SortmeRNA_DataVersion="101"                    ## the version of the sequence 
 SortmeRNA_ref_direct=""                        ## Optional. Specify the path of the reference sequence file for SortmeRNA. 
 
 
 ############# Alignment Paramaters ##########################################################################
-iGenomes_Dir="/data/database/iGenomes"           ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
+iGenomes_Dir="/reference/iGenomes"           ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
 Species="Homo_sapiens"                           ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 Source="Ensembl"                                 ## Ensembl,NCBI,UCSC
 Build="GRCh38"                                   ## The genome build version.
