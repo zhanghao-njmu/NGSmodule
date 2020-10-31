@@ -281,7 +281,6 @@ for sample in "${arr[@]}"; do
             color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
             continue
           fi
-          samtools index -@ $threads ${dedupBAM}
 
           echo "+++++ BS-seq methylation extractor: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/$Aligner/bismark_methylation_extractor
