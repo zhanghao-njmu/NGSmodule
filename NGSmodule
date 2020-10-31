@@ -5,7 +5,7 @@
 
 #################### Functions ##################################################
 shell_folder=$(dirname $(readlink -f "$0"))
-source $shell_folder/Function.sh
+source $shell_folder/GlobalFunction.sh
 
 Prefetch_iGenomes() {
   source $1
