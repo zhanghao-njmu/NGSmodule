@@ -10,10 +10,10 @@ fi
 
 grep_pattern="(/${RunIDPattern}${SE_SufixPattern}$)|(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
 
-color_echo "green" "Please make sure your file SufixPattern matched with the following pattern:"
-color_echo "green" " SE_SufixPattern=$SE_SufixPattern"
-color_echo "green" " R1_SufixPattern=$R1_SufixPattern"
-color_echo "green" " R2_SufixPattern=$R2_SufixPattern\n"
+color_echo "green" ">>> Please make sure your file SufixPattern matched with the following pattern:\n"
+color_echo "green" "    SE_SufixPattern=$SE_SufixPattern"
+color_echo "green" "    R1_SufixPattern=$R1_SufixPattern"
+color_echo "green" "    R2_SufixPattern=$R2_SufixPattern\n"
 
 arr=($(find $rawdata_dir -type f | grep -P $grep_pattern |sort))
 if [[ ${#arr} == 0 ]]; then
