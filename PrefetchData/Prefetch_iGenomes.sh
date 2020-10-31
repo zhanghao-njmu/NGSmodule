@@ -160,6 +160,8 @@ for genome in "${arr[@]}"; do
     echo "+++++ ID: $id +++++"
     cd $SequenceDir
 
+    sed -i 's/\s.*$//g' $genome
+   
     arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index" -type d))
     if [[ "${#arr1[@]}" != 0 ]]; then
       for index in "${arr1[@]}"; do
