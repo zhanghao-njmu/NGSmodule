@@ -9,7 +9,10 @@ if [[ -d $work_dir ]]; then
 fi
 
 grep_pattern="(/${RunIDPattern}${SE_SufixPattern}$)|(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
-color_echo "green" ">>> grep_pattern= $grep_pattern"
+
+color_echo "green" " SE_SufixPattern=$SE_SufixPattern"
+color_echo "green" " R1_SufixPattern=$R1_SufixPattern"
+color_echo "green" " R2_SufixPattern=$R2_SufixPattern"
 
 arr=($(find $rawdata_dir -type f | grep -P $grep_pattern |sort))
 if [[ ${#arr} == 0 ]]; then
