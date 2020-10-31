@@ -68,6 +68,12 @@ check_logfile() {
     local error_pattern=$4
     local complete_pattern=$5
     local mode=$6
+    local status=$7
+
+    if [[ $status != 0 ]];then
+        color_echo "yellow" "Warning! ${sample}: postcheck detected the non-zero exit status($status) for the ${tool}."
+        return 1
+    fi
 
     if [[ -f $logfile ]]; then
         error=$(grep -ioP "${error_pattern}" "${logfile}" | sort | uniq | paste -sd "|")
