@@ -134,16 +134,19 @@ globalcheck_logfile() {
     done < <(find "${dir}" $find_par)
 
     if ((${#existlogs[*]} >= 1)); then
-        for log in "${existlogs[@]}"; do
-            if [[ $(grep -iP "${error_pattern}" "${log}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
-                color_echo "yellow" "Warning! ${id}: Detected uncompleted status from logfile: ${log}."
+        if [[ $force == "TRUE" ]]; then
+            color_echo "yellow" "Warning! ${id}: Force to perform a complete workflow."
+            for log in "${existlogs[@]}"; do
                 rm -f "${log}"
-            fi
-            if [[ $force == "TRUE" ]]; then
-                color_echo "yellow" "Warning! ${id}: Force to perform a complete workflow."
-                rm -f "${log}"
-            fi
-        done
+            done
+        else
+            for log in "${existlogs[@]}"; do
+                if [[ $(grep -iP "${error_pattern}" "${log}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
+                    color_echo "yellow" "Warning! ${id}: Detected uncompleted status from logfile: ${log}."
+                    rm -f "${log}"
+                fi
+            done
+        fi
     fi
 }
 
