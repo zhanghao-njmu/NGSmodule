@@ -71,14 +71,21 @@ for s in "${Species[@]}"; do
   for i in "${Sources[@]}"; do
     color_echo "green" "Downloading the iGenomes: $s/$i"
     igenome="s3://ngi-igenomes/igenomes/$s/$i"
-    par=""
+    par1=""
+    if [[ -d $iGenomes_dir/$s/$i ]]; then
+      genome_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/WholeGenomeFasta/"))
+      if [[ "${#genome_exist[@]}" != 0 ]]; then
+        par1=$(printf -- " --exclude '*%s*'" "${genome_exist[@]}")
+      fi
+    fi
+    par2=""
     if [[ -d $iGenomes_dir/$s/$i ]]; then
       bismark_exist=($(find $iGenomes_dir/$s/$i -name "IndexStatus.log" | grep -oP "(?<=$i/).*/BismarkIndex/(?=bowtie2)"))
       if [[ "${#bismark_exist[@]}" != 0 ]]; then
-        par=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
+        par2=$(printf -- " --exclude '*%s*'" "${bismark_exist[@]}")
       fi
     fi
-    cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par"
+    cmd="aws s3 --no-sign-request sync $igenome $iGenomes_dir/$s/$i --exclude '*/genome.fa' --include '*/WholeGenomeFasta/genome.fa' $par1 $par2"
     #echo "$cmd"
     eval $cmd
 
