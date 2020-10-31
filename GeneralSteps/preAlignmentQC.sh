@@ -481,7 +481,7 @@ for sample in "${arr[@]}"; do
       echo "Completed: $sample" >>"$tmpfile"
     else
       echo "Interrupted: $sample" >>"$tmpfile"
-      color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq file."
+      color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw fastq files."
     fi
 
     color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
