@@ -99,22 +99,8 @@ for sample in "${arr[@]}"; do
             fi
 
             ### clear existed logs
-            existlogs=()
-            while IFS='' read -r line; do
-                existlogs+=("$line")
-            done < <(find "$dir" -name "fqCheck.log" -o -name "fastqc.log" -o -name "fastq_screen.log" -o -name "cellranger.log" -o -name "velocyto.log" -o -name "dropEst.log" -o -name "CellCalling.log")
-            if ((${#existlogs[@]} >= 1)); then
-                for existlog in "${existlogs[@]}"; do
-                    if [[ $(grep -iP "${error_pattern}" "${existlog}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${existlog}") ]]; then
-                        color_echo "yellow" "Warning! ${sample}: Detected problems in logfile: ${existlog}."
-                        rm -f "${existlog}"
-                    fi
-                    if [[ $force == "TRUE" ]]; then
-                        color_echo "yellow" "Warning! ${sample}: Force to perform a complete workflow."
-                        rm -f "${existlog}"
-                    fi
-                done
-            fi
+            logfiles=("fqCheck.log" "fastqc.log" "fastq_screen.log" "cellranger.log" "velocyto.log" "dropEst.log" "CellCalling.log")
+            globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
             if (($(ls "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz | wc -l) == 1)); then
                 cp -fa "${dir}"/run1_"${sample}"_S1_L001_R1_001.fastq.gz "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
