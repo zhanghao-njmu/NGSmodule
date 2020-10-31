@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 ################################################################################################################
 work_dir=$maindir/NGSmodule_work/
