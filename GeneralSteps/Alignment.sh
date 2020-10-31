@@ -246,13 +246,13 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ Samtools stat: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          samtools stats -@ $threads $BAM >${BAM}.stats 2>"$dir/$Aligner/BamProcessingStatus.log"
-          samtools flagstat -@ $threads $BAM >${BAM}.flagstat 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools stats -@ $threads $BAM >${BAM}.stats 2>>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools flagstat -@ $threads $BAM >${BAM}.flagstat 2>>"$dir/$Aligner/BamProcessingStatus.log"
         else
           samtools index -@ $threads ${sample}.${Aligner}.bam 2>"$dir/$Aligner/BamProcessingStatus.log"
-          samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats 2>"$dir/$Aligner/BamProcessingStatus.log"
-          samtools idxstats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.idxstats 2>"$dir/$Aligner/BamProcessingStatus.log"
-          samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats 2>>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools idxstats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.idxstats 2>>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat 2>>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "dna" ]]; then
@@ -261,14 +261,14 @@ for sample in "${arr[@]}"; do
           picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/$Aligner/BamProcessingStatus.log"
           picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true &>>"$dir/$Aligner/BamProcessingStatus.log"
           rm -f ${sample}.${Aligner}.dedup.RG.bam
-          samtools index -@ $threads ${sample}.${Aligner}.dedup.bam
+          samtools index -@ $threads ${sample}.${Aligner}.dedup.bam 2>>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
           echo "+++++ RNAseq Mark Duplicates: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
           bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log &>>"$dir/$Aligner/BamProcessingStatus.log"
           mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
-          samtools index -@ $threads ${sample}.${Aligner}.bam 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
