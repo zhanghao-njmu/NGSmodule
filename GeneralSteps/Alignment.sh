@@ -246,13 +246,13 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ Samtools stat: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          samtools stats -@ $threads $BAM >${BAM}.stats
-          samtools flagstat -@ $threads $BAM >${BAM}.flagstat
+          samtools stats -@ $threads $BAM >${BAM}.stats 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools flagstat -@ $threads $BAM >${BAM}.flagstat 2>"$dir/$Aligner/BamProcessingStatus.log"
         else
-          samtools index -@ $threads ${sample}.${Aligner}.bam
-          samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats
-          samtools idxstats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.idxstats
-          samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat
+          samtools index -@ $threads ${sample}.${Aligner}.bam 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools idxstats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.idxstats 2>"$dir/$Aligner/BamProcessingStatus.log"
+          samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat 2>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "dna" ]]; then
@@ -266,15 +266,15 @@ for sample in "${arr[@]}"; do
 
         if [[ "$SequenceType" == "rna" ]]; then
           echo "+++++ RNAseq Mark Duplicates: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
-          bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log
+          bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log &>>"$dir/$Aligner/BamProcessingStatus.log"
           mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
-          samtools index -@ $threads ${sample}.${Aligner}.bam
+          samtools index -@ $threads ${sample}.${Aligner}.bam 2>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
           echo "+++++ BS-seq deduplication: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/$Aligner/deduplicate_bismark
-          deduplicate_bismark --bam $BAM --output_dir $dir/$Aligner/deduplicate_bismark &>$dir/$Aligner/deduplicate_bismark/deduplicate_bismark.log
+          deduplicate_bismark --bam $BAM --output_dir $dir/$Aligner/deduplicate_bismark &>>"$dir/$Aligner/BamProcessingStatus.log"
           dedupBAM=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
           samtools quickcheck -v ${dedupBAM} &>/dev/null
           if [[ $? != 0 ]]; then
@@ -287,7 +287,7 @@ for sample in "${arr[@]}"; do
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
-          --output $dir/$Aligner/bismark_methylation_extractor $dedupBAM 2>$dir/$Aligner/bismark_methylation_extractor/bismark_methylation_extractor.log
+          --output $dir/$Aligner/bismark_methylation_extractor $dedupBAM &>>"$dir/$Aligner/BamProcessingStatus.log"
 
           echo "+++++ BS-seq html processing report: $sample +++++" | tee -a "$dir/$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/$Aligner/bismark2report
@@ -301,7 +301,7 @@ for sample in "${arr[@]}"; do
           --dedup_report $dedup_report \
           --splitting_report $splitting_report \
           --mbias_report $mbias_report \
-          --nucleotide_report $nucleotide_report
+          --nucleotide_report $nucleotide_report &>>"$dir/$Aligner/BamProcessingStatus.log"
         fi
 
         check_logfile "$sample" "BamProcessing" "$dir/$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
