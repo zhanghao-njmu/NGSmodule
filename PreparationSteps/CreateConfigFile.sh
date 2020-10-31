@@ -95,7 +95,7 @@ DGEs_multi_compare=1                               ## Whether to compare DGEs am
 
 ############# CNVanalysis Paramaters ########################################################################
 Window=1000000
-Kmer=130
+Kmer=150
 PloidyAssumed=2
 
 ############# SNV Paramaters ################################################################################
