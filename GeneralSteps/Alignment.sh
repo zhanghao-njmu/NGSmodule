@@ -330,6 +330,14 @@ for sample in "${arr[@]}"; do
 done
 wait
 
+ninterrupted=$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l)
+if [[ $ninterrupted != 0 ]]; then
+  cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/Alignment.Interrupted.txt
+  echo -e "\n################################################################################"
+  color_echo "red" ">>> $ninterrupted of $total_task tasks interrupted.Please check the samples in $maindir/Alignment.Interrupted.txt"
+  echo -e "################################################################################\n"
+fi
+
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
 echo -e "****************** Alignment Done ******************\n"
