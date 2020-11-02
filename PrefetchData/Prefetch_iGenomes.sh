@@ -230,7 +230,7 @@ for genome in "${arr[@]}"; do
         picard CreateSequenceDictionary R=$genome &>${genome%%genome.fa}IndexStatus.log
         # faidx --regex "^(chr)*(([1-9][0-9]*)|([X,Y]))$" $genome >$SequenceDir/WholeGenomeFasta/genome_main.fa
 
-        check_logfile "$id" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "genome_index" "${genome%%genome.fa}IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -245,7 +245,7 @@ for genome in "${arr[@]}"; do
           ln -fs $genome $BWAIndex/genome.fa
           bwa index $BWAIndex/genome.fa &>$BWAIndex/IndexStatus.log
 
-          check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+          check_logfile "$id" "BWA_index" "$BWAIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             continue
           fi
@@ -260,7 +260,7 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $BowtieIndex/genome.fa
         bowtie-build --quiet --threads $threads $BowtieIndex/genome.fa $BowtieIndex/genome &>$BowtieIndex/IndexStatus.log
 
-        check_logfile "$id" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Bowtie_index" "$BowtieIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -274,7 +274,7 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $Bowtie2Index/genome.fa
         bowtie2-build --quiet --threads $threads $Bowtie2Index/genome.fa $Bowtie2Index/genome &>$Bowtie2Index/IndexStatus.log
 
-        check_logfile "$id" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Bowtie2_index" "$Bowtie2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -288,7 +288,7 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $Hisat2Index/genome.fa
         hisat2-build --quiet -p $threads $Hisat2Index/genome.fa $Hisat2Index/genome &>$Hisat2Index/IndexStatus.log
 
-        check_logfile "$id" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Hisat2_index" "$Hisat2Index/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -312,7 +312,7 @@ for genome in "${arr[@]}"; do
           --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
         fi
 
-        check_logfile "$id" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -339,7 +339,7 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $BismarkIndex/bowtie2/genome.fa
         bismark_genome_preparation --genomic_composition --bowtie2 --parallel $threads $BismarkIndex/bowtie2 &>$BismarkIndex/bowtie2/IndexStatus.log
 
-        check_logfile "$id" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "bismarkBowtie2_index" "$BismarkIndex/bowtie2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -352,7 +352,7 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $BismarkIndex/hisat2/genome.fa
         bismark_genome_preparation --genomic_composition --hisat2 --parallel $threads $BismarkIndex/hisat2 &>$BismarkIndex/hisat2/IndexStatus.log
 
-        check_logfile "$id" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "bismarkHisat2_index" "$BismarkIndex/hisat2/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -365,7 +365,7 @@ for genome in "${arr[@]}"; do
         mkdir -p $GemIndex
         gem-indexer --threads $threads -i $genome -o $GemIndex/genome &>$GemIndex/IndexStatus.log
 
-        check_logfile "$id" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$id" "Gem_index" "$GemIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -379,14 +379,14 @@ for genome in "${arr[@]}"; do
             mkdir -p $GemIndex/Mappability/${kmer}mer
             cd $GemIndex/Mappability/${kmer}mer
             gem-mappability -T $map_threads -I $GemIndex/genome.gem -l ${kmer} -o genome.${kmer}mer.gem &>KmerStatus.log
-            gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem &>>KmerStatus.log
-            wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig &>>KmerStatus.log
-            rm -f genome.${kmer}mer.gem.mappability
 
-            check_logfile "$id" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+            check_logfile "$id" "Gem_Kmer_$kmer" "$GemIndex/Mappability/${kmer}mer/KmerStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
             if [[ $? == 1 ]]; then
               continue 2
             fi
+            gem-2-wig -I $GemIndex/genome.gem -i genome.${kmer}mer.gem.mappability -o genome.${kmer}mer.gem &>>KmerStatus.log
+            wigToBigWig genome.${kmer}mer.gem.wig genome.${kmer}mer.gem.sizes genome.${kmer}mer.gem.bigwig &>>KmerStatus.log
+            rm -f genome.${kmer}mer.gem.mappability
           fi
 
           for window in "${windows[@]}"; do
@@ -398,7 +398,7 @@ for genome in "${arr[@]}"; do
               gcCounter -w $window --forgiving $genome >genome.win${window}.gc.wig 2>WindowStatus.log
               mapCounter -w $window $GemIndex/Mappability/${kmer}mer/genome.${kmer}mer.gem.bigwig >genome.win${window}.${kmer}mer.gem.wig 2>>WindowStatus.log
 
-              check_logfile "$id" "Gem_Kmer_${kmer}_Windows_${window}" "$GemIndex/Mappability/${kmer}mer/windows/win$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+              check_logfile "$id" "Gem_Kmer_${kmer}_Windows_${window}" "$GemIndex/Mappability/${kmer}mer/windows/win$window/WindowStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
               if [[ $? == 1 ]]; then
                 continue 3
               fi
