@@ -8,33 +8,33 @@ bwa &>/dev/null
   echo -e "Cannot find the command bwa.\n"
   exit 1
 }
-bowtie --version &>/dev/null
-[ $? -ne 0 ] && {
+bowtie &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command bowtie.\n"
   exit 1
 }
-hisat2 --version &>/dev/null
-[ $? -ne 0 ] && {
+hisat2 &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command hisat2.\n"
   exit 1
 }
-STAR --version &>/dev/null
-[ $? -ne 0 ] && {
+STAR &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command STAR.\n"
   exit 1
 }
-bismark --version &>/dev/null
-[ $? -ne 0 ] && {
+bismark &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command bismark.\n"
   exit 1
 }
-samtools --version &>/dev/null
-[ $? -ne 0 ] && {
+samtools &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command samtools.\n"
   exit 1
 }
-sambamba --version &>/dev/null
-[ $? -ne 0 ] && {
+sambamba &>/dev/null
+[ $? -eq 127 ] && {
   echo -e "Cannot find the command sambamba.\n"
   exit 1
 }
