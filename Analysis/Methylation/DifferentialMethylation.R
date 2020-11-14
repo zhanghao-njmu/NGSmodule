@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
 library(methylKit)
+library(limma)
 library(bsseq)
 library(dplyr)
 library(stringr)
@@ -10,6 +11,8 @@ NGSmodule_work <- "/data/huangmingqian/BSseq/NGSmodule_work"
 SampleInfoFile <- "/data/huangmingqian/BSseq/temp_20201029014752.Sample_info.csv"
 contrasts <- c("ESC,iMeLC;iMeLC,PGCLCd6;PGCLCd6,CellLine1;PGCLCd6,CellLine2;")
 build <- "GRCh38"
+threads <- 100
+tiles_win <- 1000
 
 contrasts_groups <- contrasts %>%
   str_split("[;,]") %>%
@@ -47,17 +50,17 @@ CpG_filtered <- filterByCoverage(CpG,
   lo.count = 3, lo.perc = NULL,
   hi.count = NULL, hi.perc = 99.9
 )
-CpG_unite <- unite(CpG_filtered, destrand = FALSE)
+CpG_unite <- unite(CpG_filtered, destrand = FALSE,mc.cores = threads)
 CpG_unite_meth <- percMethylation(CpG_unite, rowids = TRUE)
 CpG_unite_meth_logistic <- log2((CpG_unite_meth + 1) / (100 - CpG_unite_meth + 1))
 
 # region-resolution -------------------------------------------------------
-tiles <- tileMethylCounts(CpG, win.size = 1000, step.size = 1000, cov.bases = 10, mc.cores = 100)
+tiles <- tileMethylCounts(CpG, win.size = tiles_win, step.size = tiles_win, cov.bases = ceiling(tiles_win/10), mc.cores = threads)
 tiles_filtered <- filterByCoverage(tiles,
   lo.count = 10, lo.perc = NULL,
   hi.count = NULL, hi.perc = 99.9
 )
-tiles_unite <- unite(tiles_filtered, destrand = FALSE)
+tiles_unite <- unite(tiles_filtered, destrand = FALSE,mc.cores = threads)
 tiles_unite_meth <- percMethylation(tiles_unite, rowids = TRUE)
 tiles_unite_meth_logistic <- log2((tiles_unite_meth + 1) / (100 - tiles_unite_meth + 1))
 
@@ -77,7 +80,7 @@ limma_contrasts <- contrasts %>%
   gsub(x = ., pattern = ",", replacement = "-") %>%
   makeContrasts(contrasts = ., levels = design)
 
-fit <- lmFit(methlevel_logistic, design = design)
+fit <- lmFit(CpG_unite_meth_logistic, design = design)
 fit2 <- contrasts.fit(fit, limma_contrasts)
 fit2 <- eBayes(fit2)
 
