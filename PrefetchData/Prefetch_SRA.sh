@@ -7,7 +7,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 #### e.g. If one wants to download a meta file for a SRP study accession, he can use the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### SRP meta file must include the fields "study_accession" "run_accession" "experiment_accession" "sample_accession" "run_total_spots"
 #### Dependencies:
-#### sra-tools (https://github.com/ncbi/sra-tools)
+#### sra-tools >=2.10.8 (https://github.com/ncbi/sra-tools)
 #### pigz (https://zlib.net/pigz)
 
 #############################  Paramaters #############################
