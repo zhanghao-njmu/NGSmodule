@@ -20,6 +20,19 @@ force_process="FALSE"
 
 ########################################################################
 
+pigz --version &>/dev/null
+[ $? -eq 127 ] && {
+    echo -e "Cannot find the command pigz.\n"
+    exit 1
+}
+
+prefetch --version &>/dev/null
+[ $? -eq 127 ] && {
+    echo -e "Cannot find the command prefetch.\n"
+    exit 1
+}
+
+
 ###### fifo ######
 tempfifo=$$.fifo
 trap "exec 1000>&-;exec 1000<&-;exit 0" 2
