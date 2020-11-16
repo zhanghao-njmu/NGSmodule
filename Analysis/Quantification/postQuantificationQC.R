@@ -76,7 +76,7 @@ logcpm <- cpm(count_matrix, log = TRUE, prior.count = 2)
 logcpm_scale <- t(scale(t(logcpm)))
 
 anno_start <- which(str_detect(colnames(count_matrix_raw), ">>"))[1]
-anno_matrix <- count_matrix_raw[, anno_start:ncol(count_matrix_raw)]
+anno_matrix <- count_matrix_raw[rownames(count_matrix), anno_start:ncol(count_matrix_raw)]
 
 QCpath <- getwd()
 

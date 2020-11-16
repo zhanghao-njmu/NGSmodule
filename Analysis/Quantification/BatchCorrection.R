@@ -64,7 +64,7 @@ logcpm <- cpm(count_matrix, log = TRUE, prior.count = 2)
 logcpm_adj_raw <- logcpm
 
 start <- which(str_detect(colnames(count_matrix_raw), ">>"))[1]
-annotation_matrix <- count_matrix_raw[, start:ncol(count_matrix_raw)]
+annotation_matrix <- count_matrix_raw[rownames(count_matrix), start:ncol(count_matrix_raw)]
 
 
 # select covariates for Combat and removeBatchEffect ----------------------
