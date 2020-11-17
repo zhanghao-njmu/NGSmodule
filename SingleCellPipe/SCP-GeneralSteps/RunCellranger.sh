@@ -92,6 +92,8 @@ for sample in "${arr[@]}"; do
         status="uncompleted"
         attempt=0
 
+        echo "+++++ ${sample} +++++"
+        
         while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
             ((attempt++))
             if [[ $attempt != 1 ]]; then
