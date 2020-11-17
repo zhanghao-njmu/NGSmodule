@@ -29,6 +29,12 @@ freec --help &>/dev/null
   exit 1
 }
 
+bcftools --version &>/dev/null
+[ $? -ne 0 ] && {
+  color_echo "red" "Cannot find the tool bcftools. User can install it with the command 'conda install -c bioconda bcftools'.\n"
+  exit 1
+}
+
 $GATK3 --help &>/dev/null
 [ $? -ne 0 ] && {
   color_echo "red" "Cannot find the tool GATK3.\n"
