@@ -221,7 +221,7 @@ while IFS=$ifs read line; do
           fi
 
         else
-          sleep 300
+          sleep 60
         fi
       done
 
