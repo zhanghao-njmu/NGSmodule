@@ -288,7 +288,7 @@ if (!file.exists("srt_list_Standard.rds")) {
 
 # Integration: SCTransform workflow  --------------------------------------
 sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
-  cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
+  cat("++++++", paste0(sc_set, collapse = "-"), "++++++", "\n")
   srt <- sc_list_filter[[sc_set]]
   srt <- SCTransform(
     object = srt,
