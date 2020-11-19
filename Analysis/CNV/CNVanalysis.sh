@@ -97,6 +97,7 @@ for sample in "${arr[@]}"; do
         cd $dir/$Aligner/CNV/HMMcopy
         readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig 2>>HMMcopyStatus.log
         Rscript $1 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.HMMcopy &>>HMMcopyStatus.log
+        
         check_logfile "$sample" "HMMcopy" "$dir/$Aligner/CNV/HMMcopy/HMMcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
