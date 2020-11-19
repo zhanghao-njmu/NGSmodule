@@ -303,7 +303,7 @@ if (file.exists("sc_list_filter_SCT.rds")) {
 
 
 # Individual: Standard normalization ------------------------------
-dir.create("Individual-Standard", recursive = T)
+dir.create("Individual-Standard", recursive = T, showWarnings = FALSE)
 for (sample in samples) {
   cat("++++++", sample, "(Individual-Standard)", "++++++", "\n")
   if (file.exists(paste0("Individual-Standard/", sample, ".rds"))) {
@@ -318,7 +318,7 @@ for (sample in samples) {
 
 
 # Individual: SCTransform normalization ------------------------------
-dir.create("Individual-SCTransform", recursive = T)
+dir.create("Individual-SCTransform", recursive = T, showWarnings = FALSE)
 for (sample in samples) {
   cat("++++++", sample, "(Individual-SCTransform)", "++++++", "\n")
   if (file.exists(paste0("Individual-SCTransform/", sample, ".rds"))) {
@@ -334,7 +334,7 @@ for (sample in samples) {
 
 
 # Integration: Simple merge ----------------------------------------------
-dir.create("Integration-SimpleMerge", recursive = T)
+dir.create("Integration-SimpleMerge", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
   cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
   if (file.exists(paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))) {
@@ -355,7 +355,7 @@ for (dataset in datasets) {
 
 
 # Integration: Standard workflow ------------------------------------------
-dir.create("Integration-Standard", recursive = T)
+dir.create("Integration-Standard", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
   cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
   if (file.exists(paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
@@ -375,7 +375,7 @@ for (dataset in datasets) {
 
 
 # Integration: SCTransform workflow  --------------------------------------
-dir.create("Integration-SCTransform", recursive = T)
+dir.create("Integration-SCTransform", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
   cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
   if (file.exists(paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
@@ -395,7 +395,7 @@ for (dataset in datasets) {
 
 
 # Integration: fastMNN workflow -------------------------------------------
-dir.create("Integration-fastMNN", recursive = T)
+dir.create("Integration-fastMNN", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
   cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
   if (file.exists(paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
@@ -415,7 +415,7 @@ for (dataset in datasets) {
 
 
 # Integration: Harmony workflow -------------------------------------------
-dir.create("Integration-Harmony", recursive = T)
+dir.create("Integration-Harmony", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
   cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
   if (file.exists(paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
