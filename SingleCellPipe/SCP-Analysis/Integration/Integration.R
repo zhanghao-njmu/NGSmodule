@@ -311,7 +311,7 @@ for (sample in samples) {
     next
   } else {
     srt <- sc_list_filter_Standard[[sample]]
-    saveRDS(srt, "Individual-Standard/", sample, ".rds")
+    saveRDS(srt, paste0("Individual-Standard/", sample, ".rds"))
     cat(">>> Individual-Standard process for the", sample, "completed successfully.\n")
   }
 }
@@ -327,7 +327,7 @@ for (sample in samples) {
   } else {
     cat("++++++", sample, "++++++", "\n")
     srt <- sc_list_filter_SCT[[sample]]
-    saveRDS(srt, "Individual-SCTransform/", sample, ".rds")
+    saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
     cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
   }
 }
