@@ -141,7 +141,7 @@ globalcheck_logfile() {
             done
         else
             for log in "${existlogs[@]}"; do
-                if [[ $(grep -iP "${error_pattern}" "${log}") ]] || [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
+                if [[ $(grep -iP "${error_pattern}" "${log}") ]] && [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
                     color_echo "yellow" "Warning! ${id}: Detected uncompleted status from logfile: ${log}."
                     rm -f "${log}"
                 fi
