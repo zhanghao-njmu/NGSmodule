@@ -169,7 +169,7 @@ for sample in "${arr[@]}"; do
         configureStrelkaGermlineWorkflow.py \
         --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
         --referenceFasta $genome \
-        --runDir $dir/$Aligner/SNV/Strelka2
+        --runDir $dir/$Aligner/SNV/Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
         $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
         if [[ $? == 0 ]]; then
           bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
