@@ -193,6 +193,7 @@ if (length(sc_list) == 1) {
   Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
 }
 
+
 # Preprocessing: cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
   sc_list_filter <- readRDS("sc_list_filter.rds")
@@ -256,6 +257,7 @@ if (file.exists("sc_list_filter.rds")) {
   saveRDS(sc_list_filter, file = "sc_list_filter.rds")
 }
 
+
 # Preprocessing: basic srt normalization -----------------------------------
 if (file.exists("sc_list_filter_Standard.rds")) {
   sc_list_filter_Standard <- readRDS("sc_list_filter_Standard.rds")
@@ -295,15 +297,48 @@ if (file.exists("sc_list_filter_SCT.rds")) {
   saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
 }
 
-# Individual: Standard and SCT normalization ------------------------------
-dir.create("Individual", recursive = T)
+
+# Individual: Standard normalization ------------------------------
+dir.create("Individual-Standard", recursive = T)
 for (sample in samples) {
-  if (file.exists(paste0("Individual/", sample, ".rds"))) {
+  if (file.exists(paste0("Individual-Standard/", sample, ".rds"))) {
     next
   } else {
     cat("++++++", sample, "++++++", "\n")
-    srt_list <- list("Standard" = sc_list_filter_Standard[[sample]], "SCT" = sc_list_filter_SCT[[sample]])
-    saveRDS(srt_list, "Individual/", sample, ".rds")
+    srt <- sc_list_filter_Standard[[sample]]
+    saveRDS(srt, "Individual-Standard/", sample, ".rds")
+  }
+}
+
+
+# Individual: SCTransform normalization ------------------------------
+dir.create("Individual-SCTransform", recursive = T)
+for (sample in samples) {
+  if (file.exists(paste0("Individual-SCTransform/", sample, ".rds"))) {
+    next
+  } else {
+    cat("++++++", sample, "++++++", "\n")
+    srt <- sc_list_filter_SCT[[sample]]
+    saveRDS(srt, "Individual-SCTransform/", sample, ".rds")
+  }
+}
+
+
+# Integration: Simple merge ----------------------------------------------
+dir.create("Integration-SimpleMerge", recursive = T)
+for (dataset in datasets) {
+  if (file.exists(paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))) {
+    next
+  } else {
+    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    sc_merge <- Reduce(function(x, y) merge(x, y), sc_list[dataset])
+    Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = dataset)
+    srt <- Standard_SCP(
+      sc = sc_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
+    )
+    saveRDS(srt, file = paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))
   }
 }
 
@@ -393,3 +428,5 @@ for (dataset in datasets) {
 
 
 future:::ClusterRegistry("stop")
+
+
