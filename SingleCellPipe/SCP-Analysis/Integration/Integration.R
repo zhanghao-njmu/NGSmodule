@@ -127,7 +127,7 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # Preprocessing: load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
-  cat("Loading the sc_list and velocity_list from the existing file.\n")
+  cat("Loading the sc_list and velocity_list from the existing file....\n")
   sc_list <- readRDS("sc_list.rds")
   velocity_list <- readRDS("velocity_list.rds")
 } else {
@@ -197,7 +197,7 @@ if (length(sc_list) == 1) {
 
 # Preprocessing: cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
-  cat("Loading the sc_list_filter from the existing file.\n")
+  cat("Loading the sc_list_filter from the existing file....\n")
   sc_list_filter <- readRDS("sc_list_filter.rds")
 } else {
   sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
@@ -262,7 +262,7 @@ if (file.exists("sc_list_filter.rds")) {
 
 # Preprocessing: basic srt normalization -----------------------------------
 if (file.exists("sc_list_filter_Standard.rds")) {
-  cat("Loading the sc_list_filter_Standard from the existing file.\n")
+  cat("Loading the sc_list_filter_Standard from the existing file....\n")
   sc_list_filter_Standard <- readRDS("sc_list_filter_Standard.rds")
 } else {
   sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
@@ -279,7 +279,7 @@ if (file.exists("sc_list_filter_Standard.rds")) {
 }
 
 if (file.exists("sc_list_filter_SCT.rds")) {
-  cat("Loading the sc_list_filter_SCT from the existing file.\n")
+  cat("Loading the sc_list_filter_SCT from the existing file....\n")
   sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
 } else {
   sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
