@@ -174,12 +174,12 @@ for sample in "${arr[@]}"; do
         if [[ $? == 0 ]]; then
           bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
           Rscript $2 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
+
+          if [[ $? != 0 ]]; then
+            continue
+          fi
         fi
 
-        check_logfile "$sample" "Strelka2" "$dir/$Aligner/SNV/Strelka2/Strelka2Status.log" "$error_pattern" "$complete_pattern" "postcheck"
-        if [[ $? == 1 ]]; then
-          continue
-        fi
       fi
 
       status="completed"
