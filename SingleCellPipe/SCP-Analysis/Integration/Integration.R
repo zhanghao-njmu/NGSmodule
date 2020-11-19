@@ -3,7 +3,7 @@
 args <- commandArgs(TRUE)
 script_path <- as.character(args[1])
 SCPanalysis_dir <- as.character(args[2])
-NGSmodule_SCP_dir <- as.character(args[3])
+SCPwork_dir <- as.character(args[3])
 threads <- as.numeric(args[4])
 datasets_raw <- as.character(args[5])
 species <- as.character(args[6])
@@ -21,7 +21,7 @@ Ensembl_version <- 101
 # ##### test #####
 # # parameters: global settings ---------------------------------------------
 # SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
-# NGSmodule_SCP_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_work/"
+# SCPwork_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_work/"
 # threads <- 120
 # datasets_raw <- "ESC,iPSC,PGCd6,CellLine1,CellLine2"
 #
@@ -59,9 +59,12 @@ datasets <- strsplit(datasets_raw, split = ";") %>%
   lapply(., function(x) {
     strsplit(x, split = ",") %>% unlist()
   })
-samples <- datasets %>%
-  unlist() %>%
-  unique()
+datasets <- datasets[sapply(datasets, length) > 1]
+
+# samples <- datasets %>%
+#   unlist() %>%
+#   unique()
+samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -129,7 +132,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 } else {
   for (i in 1:length(samples)) {
     cat("++++++", samples[i], "++++++", "\n")
-    cell_upset <- as.data.frame(readRDS(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
+    cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
     rownames(cell_upset) <- cell_upset[, "Barcode"]
     cells <- cell_upset %>%
       filter(Method_num >= cell_calling_methodNum) %>%
@@ -142,11 +145,11 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 
     assign(
       x = paste0(samples[i], "_10X"),
-      value = Read10X(data.dir = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
+      value = Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
     )
     assign(
       x = paste0(samples[i], "_velocity"),
-      value = ReadVelocity(file = paste0(NGSmodule_SCP_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+      value = ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
     )
   }
 
@@ -253,7 +256,7 @@ if (file.exists("sc_list_filter.rds")) {
   saveRDS(sc_list_filter, file = "sc_list_filter.rds")
 }
 
-# Integration: Standard workflow ------------------------------------------
+# Preprocessing: basic srt normalization -----------------------------------
 if (file.exists("sc_list_filter_Standard.rds")) {
   sc_list_filter_Standard <- readRDS("sc_list_filter_Standard.rds")
 } else {
@@ -270,36 +273,6 @@ if (file.exists("sc_list_filter_Standard.rds")) {
   saveRDS(sc_list_filter_Standard, file = "sc_list_filter_Standard.rds")
 }
 
-if (file.exists("srt_list_Standard.rds")) {
-  srt_list_Standard <- readRDS("srt_list_Standard.rds")
-} else {
-  srt_list_Standard <- lapply(setNames(datasets, sapply(datasets, function(x) paste0(x, collapse = ","))), function(dataset) {
-    cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
-    if (length(dataset) == 0) {
-      srt_integrated <- NULL
-    }
-    if (length(dataset) == 1) {
-      srt_integrated <- Standard_SCP(
-        sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-    }
-    if (length(dataset) > 1) {
-      srt_integrated <- Standard_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-    }
-    return(srt_integrated)
-  })
-  saveRDS(object = srt_list_Standard, file = "srt_list_Standard.rds")
-}
-
-
-# Integration: SCTransform workflow  --------------------------------------
 if (file.exists("sc_list_filter_SCT.rds")) {
   sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
 } else {
@@ -322,94 +295,90 @@ if (file.exists("sc_list_filter_SCT.rds")) {
   saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
 }
 
-if (file.exists("srt_list_SCT.rds")) {
-  srt_list_SCT <- readRDS("srt_list_SCT.rds")
-} else {
-  srt_list_SCT <- lapply(setNames(datasets, sapply(datasets, function(x) paste0(x, collapse = ","))), function(dataset) {
-    cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
-    if (length(dataset) == 0) {
-      srt_integrated <- NULL
-    }
-    if (length(dataset) == 1) {
-      srt_integrated <- SCTransform_SCP(
-        sc = sc_list_filter_SCT[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-    }
-    if (length(dataset) > 1) {
-      srt_integrated <- SCTransform_integrate(
-        sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-    }
-    return(srt_integrated)
-  })
-  saveRDS(object = srt_list_SCT, file = "srt_list_SCT.rds")
+# Individual: Standard and SCT normalization ------------------------------
+dir.create("Individual", recursive = T)
+for (sample in samples) {
+  if (file.exists(paste0("Individual/", sample, ".rds"))) {
+    next
+  } else {
+    cat("++++++", sample, "++++++", "\n")
+    srt_list <- list("Standard" = sc_list_filter_Standard[[sample]], "SCT" = sc_list_filter_SCT[[sample]])
+    saveRDS(srt_list, "Individual/", sample, ".rds")
+  }
+}
+
+
+# Integration: Standard workflow ------------------------------------------
+dir.create("Integration-Standard", recursive = T)
+for (dataset in datasets) {
+  if (file.exists(paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
+    next
+  } else {
+    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    srt_integrated <- Standard_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+    saveRDS(srt_integrated, file = paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))
+  }
+}
+
+
+# Integration: SCTransform workflow  --------------------------------------
+dir.create("Integration-SCTransform", recursive = T)
+for (dataset in datasets) {
+  if (file.exists(paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
+    next
+  } else {
+    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    srt_integrated <- SCTransform_integrate(
+      sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+    saveRDS(srt_integrated, file = paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))
+  }
 }
 
 
 # Integration: fastMNN workflow -------------------------------------------
-if (file.exists("srt_list_fastMNN.rds")) {
-  srt_list_fastMNN <- readRDS("srt_list_fastMNN.rds")
-} else {
-  srt_list_fastMNN <- lapply(setNames(datasets, sapply(datasets, function(x) paste0(x, collapse = ","))), function(dataset) {
-    cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
-    if (length(dataset) == 0) {
-      srt_integrated <- NULL
-    }
-    if (length(dataset) == 1) {
-      srt_integrated <- Standard_SCP(
-        sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-    }
-    if (length(dataset) > 1) {
-      srt_integrated <- fastMNN_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-    }
-    return(srt_integrated)
-  })
-
-  saveRDS(object = srt_list_fastMNN, file = "srt_list_fastMNN.rds")
+dir.create("Integration-fastMNN", recursive = T)
+for (dataset in datasets) {
+  if (file.exists(paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
+    next
+  } else {
+    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    srt_integrated <- fastMNN_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+    saveRDS(srt_integrated, file = paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
+  }
 }
 
 
 # Integration: Harmony workflow -------------------------------------------
-if (file.exists("srt_list_Harmony.rds")) {
-  srt_list_Harmony <- readRDS("srt_list_Harmony.rds")
-} else {
-  srt_list_Harmony <- lapply(setNames(datasets, sapply(datasets, function(x) paste0(x, collapse = ","))), function(dataset) {
-    cat("++++++", paste0(dataset, collapse = "-"), "++++++", "\n")
-    if (length(dataset) == 0) {
-      srt_integrated <- NULL
-    }
-    if (length(dataset) == 1) {
-      srt_integrated <- Standard_SCP(
-        sc = sc_list_filter_Standard[[dataset]], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-    }
-    if (length(dataset) > 1) {
-      srt_integrated <- Harmony_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-    }
-    return(srt_integrated)
-  })
-  saveRDS(object = srt_list_Harmony, file = "srt_list_Harmony.rds")
+dir.create("Integration-Harmony", recursive = T)
+for (dataset in datasets) {
+  if (file.exists(paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
+    next
+  } else {
+    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    srt_integrated <- Harmony_integrate(
+      sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      HVF_source = HVF_source,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes
+    )
+    saveRDS(srt_integrated, file = paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
+  }
 }
+
 
 # for (srt_name in c("srt_list_Standard","srt_list_SCT","srt_list_fastMNN","srt_list_Harmony")) {
 #   srt_use <- get(srt_name)[[1]]
@@ -424,6 +393,3 @@ if (file.exists("srt_list_Harmony.rds")) {
 
 
 future:::ClusterRegistry("stop")
-
-
-
