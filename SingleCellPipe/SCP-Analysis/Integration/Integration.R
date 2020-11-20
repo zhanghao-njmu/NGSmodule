@@ -350,7 +350,7 @@ if (length(datasets) != 0) {
         exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
       )
       saveRDS(srt, file = paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Individual-SimpleMerge process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      cat(">>> Integration-SimpleMerge process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 
@@ -370,7 +370,7 @@ if (length(datasets) != 0) {
         exogenous_genes = exogenous_genes
       )
       saveRDS(srt_integrated, file = paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Individual-Standard process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      cat(">>> Integration-Standard process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 
@@ -390,7 +390,7 @@ if (length(datasets) != 0) {
         exogenous_genes = exogenous_genes
       )
       saveRDS(srt_integrated, file = paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Individual-SCTransform process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      cat(">>> Integration-SCTransform process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 
@@ -410,7 +410,7 @@ if (length(datasets) != 0) {
         exogenous_genes = exogenous_genes
       )
       saveRDS(srt_integrated, file = paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Individual-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 
@@ -430,7 +430,7 @@ if (length(datasets) != 0) {
         exogenous_genes = exogenous_genes
       )
       saveRDS(srt_integrated, file = paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Individual-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 } else {
