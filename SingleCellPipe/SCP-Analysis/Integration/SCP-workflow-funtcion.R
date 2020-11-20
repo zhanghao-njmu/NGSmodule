@@ -474,11 +474,11 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      object = srt_integrated, reduction = "mnn", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
       perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
@@ -600,11 +600,11 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     )
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      object = srt_integrated, reduction = "harmony", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
       perplexity = ceiling(ncol(srt_integrated) * 0.05), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
