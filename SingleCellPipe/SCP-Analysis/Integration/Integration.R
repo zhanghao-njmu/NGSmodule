@@ -357,7 +357,7 @@ for (dataset in datasets) {
 # Integration: Standard workflow ------------------------------------------
 dir.create("Integration-Standard", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
-  cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+  cat("++++++", paste0(dataset, collapse = ","), "(Integration-Standard)", "++++++", "\n")
   if (file.exists(paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
     cat(">>> Integration-Standard process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
     next
@@ -377,7 +377,7 @@ for (dataset in datasets) {
 # Integration: SCTransform workflow  --------------------------------------
 dir.create("Integration-SCTransform", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
-  cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+  cat("++++++", paste0(dataset, collapse = ","), "(Integration-SCTransform)", "++++++", "\n")
   if (file.exists(paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
     cat(">>> Integration-SCTransform process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
     next
@@ -397,7 +397,7 @@ for (dataset in datasets) {
 # Integration: fastMNN workflow -------------------------------------------
 dir.create("Integration-fastMNN", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
-  cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+  cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
   if (file.exists(paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
     cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
     next
@@ -417,7 +417,7 @@ for (dataset in datasets) {
 # Integration: Harmony workflow -------------------------------------------
 dir.create("Integration-Harmony", recursive = T, showWarnings = FALSE)
 for (dataset in datasets) {
-  cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+  cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
   if (file.exists(paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
     cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
     next
