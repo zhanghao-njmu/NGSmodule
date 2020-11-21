@@ -271,7 +271,7 @@ if (file.exists("sc_list_filter_Standard.rds")) {
     srt <- Standard_SCP(
       sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
     return(srt)
   })
@@ -285,17 +285,11 @@ if (file.exists("sc_list_filter_SCT.rds")) {
   sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", paste0(sc_set, collapse = "-"), "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
-    srt <- SCTransform(
-      object = srt,
-      variable.features.n = nHVF,
-      return.only.var.genes = TRUE,
-      assay = "RNA"
+    srt <- SCTransform_SCP(
+      sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+      exogenous_genes = exogenous_genes, assay = "RNA"
     )
-    VariableFeatures(srt) <- HVFInfo(srt) %>%
-      filter((!rownames(.) %in% exogenous_genes)) %>%
-      arrange(desc(residual_variance)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
     return(srt)
   })
   saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
@@ -450,3 +444,4 @@ if (length(datasets) != 0) {
 
 
 future:::ClusterRegistry("stop")
+
