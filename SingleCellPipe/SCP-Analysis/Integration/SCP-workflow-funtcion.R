@@ -2,6 +2,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                          exogenous_genes = NULL, FindAllMarkers = FALSE, FindPairMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
+  sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
   if (identical(
     x = GetAssayData(sc, slot = "counts"),
     y = GetAssayData(sc, slot = "data")
@@ -67,6 +68,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
   DefaultAssay(sc) <- assay
+  sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
   if (!"SCT" %in% Seurat::Assays(sc)) {
     sc <- SCTransform(
       object = sc,
