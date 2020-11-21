@@ -341,7 +341,7 @@ if (length(datasets) != 0) {
       srt <- Standard_SCP(
         sc = sc_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
+        exogenous_genes = exogenous_genes, assay = "RNA"
       )
       saveRDS(srt, file = paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))
       cat(">>> Integration-SimpleMerge process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
