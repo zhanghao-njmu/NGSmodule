@@ -37,7 +37,7 @@ echo -e "#######################################################################
 echo -e "****************** Start Integration ******************\n"
 SECONDS=0
 
-echo -e "\nIntegrating the data....\n"
+echo -e "Integrating the data....\n"
 mkdir -p $maindir/NGSmodule_SCP_analysis/Integration
 cd $maindir/NGSmodule_SCP_analysis/Integration
 
