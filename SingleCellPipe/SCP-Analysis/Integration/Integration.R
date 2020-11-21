@@ -319,7 +319,6 @@ for (sample in samples) {
     cat(">>> Individual-SCTransform process for the", sample, "has finished. Skip to the next step.\n")
     next
   } else {
-    cat("++++++", sample, "++++++", "\n")
     srt <- sc_list_filter_SCT[[sample]]
     saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
     cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
