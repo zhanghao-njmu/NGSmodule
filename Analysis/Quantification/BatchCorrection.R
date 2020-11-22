@@ -3,7 +3,7 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "dplyr", "stringr", "ggplot2", "ggsci", "ggtree", "RColorBrewer", "cowplot",
     "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork", "ggrepel", "Rtsne",
-    "plotly"
+    "plotly","plot3D","grid","ggforce"
   ),
   require,
   character.only = TRUE
@@ -38,21 +38,15 @@ if (!file.exists(SampleInfoFile)) {
 ##### Load data #####
 sample_info <- read.csv(SampleInfoFile, stringsAsFactors = F, header = T)
 sample_info <- as.data.frame(sapply(sample_info, as.character))
+sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
 sample_info <- sample_info %>%
   group_by(SampleID) %>%
   mutate(RunID = paste0(RunID, collapse = ",")) %>%
   distinct() %>%
   as.data.frame()
 rownames(sample_info) <- sample_info[, "SampleID"]
-# sample_info[, "Group"] <- factor(sample_info[, "Group"],
-#   levels = c(
-#     "GV_oocyte", "zygote", "2-cell", "4-cell", "8-cell",
-#     "morula", "early_blastocyst", "middle_blastocyst", "late_blastocyst", "ICM", "TE", "ESC"
-#   )
-# )
-sample_info[, "Group"] <- factor(sample_info[, "Group"], unique(sample_info[, "Group"]))
-sample_info <- sample_info[order(sample_info[, "Group"]), ]
-sample_info <- sample_info[!is.na(sample_info[["Group"]]), ]
+sample_info[, "Group"] <- factor(sample_info[, "Group"], levels = unique(sample_info[, "Group"]))
+sample_info[, "BatchID"] <- factor(sample_info[, "BatchID"], levels = unique(sample_info[, "BatchID"]))
 
 count_matrix_raw <- read.table(file = count_file, header = T, sep = "\t", row.names = 1, stringsAsFactors = F, check.names = F)
 count_matrix <- count_matrix_raw[, which(str_detect(colnames(count_matrix_raw), pattern = paste0(".", aligner, ".count"))), drop = FALSE]
