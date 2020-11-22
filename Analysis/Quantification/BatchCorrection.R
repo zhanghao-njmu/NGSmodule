@@ -144,6 +144,7 @@ if (nlevels(sample_info[, "BatchID"]) >= 2) {
   )
 }
 
+
 methods <- c("raw", "rawComBat", "ComBatSeq", "SVA", "removeBatchEffect")
 pl <- list()
 for (method in methods) {
@@ -188,18 +189,18 @@ for (method in methods) {
   plot_list <- list()
   ##### Dendrogram #####
   cat(">>> Hierarchical Clustering (colored by Groups)\n")
-  hc <- hclust(dist(t(logcpm_adj_scale), method = "euclidean")) ## sqrt(sum((x_i - y_i)^2)). Large expressed genes -large vars.
+  hc <- hclust(dist(t(logcpm_adj_scale), method = "euclidean"))
   p1 <- ggtree(tr = hc) + layout_dendrogram()
-  p2 <- ggplot(sample_info) +
-    geom_tile(aes(x = SampleID, y = 1, fill = Group), color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
+  p2 <- ggplot(sample_info, aes(x = SampleID, y = 1, fill = Group)) +
+    geom_tile(color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
     scale_fill_manual(values = group_color, name = "Group") +
     theme_void()
   p <- p2 %>% insert_top(p1, height = 8)
   plot_list[["Hierarchical_Clustering_colored_by_group"]] <- as.ggplot(aplotGrob(p))
 
   cat(">>> Hierarchical Clustering (colored by BatchID)\n")
-  p2 <- ggplot(sample_info) +
-    geom_tile(aes(x = SampleID, y = 1, fill = BatchID), color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
+  p2 <- ggplot(sample_info, aes(x = SampleID, y = 1, fill = BatchID)) +
+    geom_tile(color = ifelse(nrow(sample_info) <= 30, "black", "transparent")) +
     scale_fill_manual(values = batch_color, name = "Group") +
     theme_void()
   p <- p2 %>% insert_top(p1, height = 8)
