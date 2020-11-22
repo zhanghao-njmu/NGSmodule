@@ -322,7 +322,7 @@ for (method in methods) {
   ) * 0.7
   p1 <- var %>%
     top_n(40, wt = contrib) %>%
-    ggplot(aes(x = Dim.1 * rscale, y = Dim.2 * rscale, label = SYMBOL)) +
+    ggplot(aes(x = Dim.1 * rscale, y = Dim.2 * rscale, label = gene_name)) +
     geom_hline(yintercept = 0, linetype = 2, color = "grey50") +
     geom_vline(xintercept = 0, linetype = 2, color = "grey50") +
     geom_point(data = df_ind, aes(x = x, y = y, fill = Group), shape = 21, alpha = 0.4, size = 3, inherit.aes = FALSE) +
