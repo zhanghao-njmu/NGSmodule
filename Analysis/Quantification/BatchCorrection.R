@@ -147,10 +147,10 @@ if (nlevels(sample_info[, "BatchID"]) >= 2) {
 methods <- c("raw", "rawComBat", "ComBatSeq", "SVA", "removeBatchEffect")
 pl <- list()
 for (method in methods) {
-  cat("+++", method, "+++\n")
   if (!exists(paste0("logcpm_adj_", method))) {
     next
   }
+  cat("+++", method, "+++\n")
   logcpm_adj <- get(paste0("logcpm_adj_", method))
   write.table(
     x = cbind(data.frame(GeneID = rownames(logcpm_adj)), logcpm_adj),
