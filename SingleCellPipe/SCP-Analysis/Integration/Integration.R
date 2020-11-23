@@ -223,8 +223,6 @@ if (file.exists("sc_list_filter.rds")) {
     sce <- addPerCellQC(sce, percent_top = c(20))
     pct_counts_in_top_20_features <- colData(sce)$percent_top_20
 
-    pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
-
     filters <- c(
       "log10_total_counts:higher:2.5",
       "log10_total_counts:lower:5",
@@ -240,14 +238,15 @@ if (file.exists("sc_list_filter.rds")) {
         type = f[2]
       ))
     })
+    
+    pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.1) |
-      (pct_counts_Mt > 0.2)
+      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
+      (pct_counts_Mt > 20)
     if (exogenous_genes != "") {
-      pct_counts_exogenous <- unlist(PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")")))
-      exogenous_out <- isOutlier(pct_counts_exogenous, nmads = 2, type = "lower") |
-        (isOutlier(pct_counts_exogenous, nmads = 2, type = "higher")) |
-        (pct_counts_exogenous > 0.1) | (pct_counts_exogenous == 0)
+      pct_counts_exogenous <- unlist(PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")$")))
+      names(pct_counts_exogenous) <- colnames(srt)
+      exogenous_out <- (pct_counts_exogenous > 0.1) | (pct_counts_exogenous == 0)
     } else {
       exogenous_out <- FALSE
     }
@@ -255,14 +254,15 @@ if (file.exists("sc_list_filter.rds")) {
     out <- c(out, list(mt = which(mt_out), exogenous = which(exogenous_out)))
     out <- table(unlist(out))
     out <- as.numeric(names(out)[which(out >= 1)])
+
+    cat(">>>", "Total cells:", ntotal, "\n")
+    cat(">>>", "Filter out", ndoublets + length(out), "cells (potential doublets: ", ndoublets, "and unqualified cells:", length(out), ")", "\n")
+    cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
+
     if (length(out) > 0) {
       srt <- subset(srt, cell = colnames(srt)[-out])
     }
-
-    cat(">>>", "Total cells:", ntotal, "\n")
-    cat(">>>", "Filter out ", ndoublets + length(out), " cells (potential doublets: ", ndoublets, " and ", " unqualified cells: ", length(out), ")", "\n", sep = "")
-    cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
-
+    
     return(srt)
   })
 
