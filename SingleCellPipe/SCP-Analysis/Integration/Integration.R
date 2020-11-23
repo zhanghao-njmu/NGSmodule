@@ -241,10 +241,10 @@ if (file.exists("sc_list_filter.rds")) {
       ))
     })
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08) |
+      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.1) |
       (pct_counts_Mt > 0.2)
     if (exogenous_genes != "") {
-      pct_counts_exogenous <- PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")"))
+      pct_counts_exogenous <- unlist(PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")")))
       exogenous_out <- isOutlier(pct_counts_exogenous, nmads = 2.5, type = "lower") |
         (isOutlier(pct_counts_exogenous, nmads = 2.5, type = "higher") & pct_counts_exogenous > 0.1) |
         (pct_counts_exogenous > 0.2)
