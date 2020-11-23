@@ -3,7 +3,7 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "dplyr", "stringr", "ggplot2", "ggsci", "ggtree", "RColorBrewer", "cowplot",
     "aplot", "ggplotify", "edgeR", "sva", "limma", "patchwork", "ggrepel", "Rtsne",
-    "plotly","plot3D","grid","ggforce"
+    "plotly","plot3D","grid","ggforce","aplot","factoextra","ComplexHeatmap","circlize"
   ),
   require,
   character.only = TRUE
@@ -401,7 +401,7 @@ for (method in methods) {
 }
 
 
-pdf("BatchCorrected.pdf", width = 28, height = 7)
+pdf("BatchCorrected.pdf", width = 30, height = 7)
 invisible(lapply(pl, print))
 invisible(dev.off())
 
