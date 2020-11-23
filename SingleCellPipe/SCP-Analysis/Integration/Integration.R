@@ -238,8 +238,11 @@ if (file.exists("sc_list_filter.rds")) {
         type = f[2]
       ))
     })
-    
+
     pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
+    if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
+      pct_counts_Mt <- pct_counts_Mt * 100
+    }
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > 20)
@@ -262,7 +265,7 @@ if (file.exists("sc_list_filter.rds")) {
     if (length(out) > 0) {
       srt <- subset(srt, cell = colnames(srt)[-out])
     }
-    
+
     return(srt)
   })
 
