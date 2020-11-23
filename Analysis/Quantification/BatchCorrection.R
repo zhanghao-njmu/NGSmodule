@@ -344,7 +344,6 @@ for (method in methods) {
       panel.grid.major = element_line()
     )
 
-
   color_palette <- rev(colorRampPalette(brewer.pal(11, "Spectral"))(100))
   df_bottom_annotation <- HeatmapAnnotation(
     foo1 = anno_simple(
@@ -371,7 +370,7 @@ for (method in methods) {
 
   ht <- Heatmap(logcpm_adj_scale,
     column_title = "3000 high variable features",
-    col = colorRamp2(seq(-max(abs(logcpm_adj_scale)), max(abs(logcpm_adj_scale)), length = 100), color_palette),
+    col = colorRamp2(seq(-quantile(abs(logcpm_adj_scale),0.9), quantile(abs(logcpm_adj_scale),0.9), length = 100), color_palette),
     show_row_names = FALSE,
     show_column_names = ifelse(nrow(sample_info) >= 30, FALSE, TRUE),
     cluster_columns = hc,
@@ -383,8 +382,7 @@ for (method in methods) {
     heatmap_legend_param = ht_legend
   )
   grob <- grid.grabExpr(ComplexHeatmap::draw(ht, heatmap_legend_side = "top"))
-  p2 <- as_ggplot(grob)
-
+  p2 <- as.ggplot(grob)
 
   title <- ggdraw() +
     draw_label(

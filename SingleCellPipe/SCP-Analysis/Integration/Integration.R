@@ -240,11 +240,21 @@ if (file.exists("sc_list_filter.rds")) {
         type = f[2]
       ))
     })
-    mtout <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08)
-    out <- c(out, list(mt = which(mtout)))
+    mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
+      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 0.08) |
+      (pct_counts_Mt > 0.2)
+    if (exogenous_genes != "") {
+      pct_counts_exogenous <- PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")"))
+      exogenous_out <- isOutlier(pct_counts_exogenous, nmads = 2.5, type = "lower") |
+        (isOutlier(pct_counts_exogenous, nmads = 2.5, type = "higher") & pct_counts_exogenous > 0.08) |
+        (pct_counts_exogenous > 0.2)
+    } else {
+      exogenous_out <- FALSE
+    }
+
+    out <- c(out, list(mt = which(mt_out), exogenous = which(exogenous_out)))
     out <- table(unlist(out))
-    out <- as.numeric(names(out)[which(out >= 2)])
+    out <- as.numeric(names(out)[which(out >= 1)])
     if (length(out) > 0) {
       srt <- subset(srt, cell = colnames(srt)[-out])
     }
@@ -271,7 +281,7 @@ if (file.exists("sc_list_filter_Standard.rds")) {
     srt <- Standard_SCP(
       sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+      exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
     )
     return(srt)
   })
@@ -285,11 +295,17 @@ if (file.exists("sc_list_filter_SCT.rds")) {
   sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", paste0(sc_set, collapse = "-"), "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
-    srt <- SCTransform_SCP(
-      sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
+    srt <- SCTransform(
+      object = srt,
+      variable.features.n = nHVF,
+      return.only.var.genes = TRUE,
+      assay = "RNA"
     )
+    VariableFeatures(srt) <- HVFInfo(srt) %>%
+      filter((!rownames(.) %in% exogenous_genes)) %>%
+      arrange(desc(residual_variance)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
     return(srt)
   })
   saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
@@ -319,6 +335,7 @@ for (sample in samples) {
     cat(">>> Individual-SCTransform process for the", sample, "has finished. Skip to the next step.\n")
     next
   } else {
+    cat("++++++", sample, "++++++", "\n")
     srt <- sc_list_filter_SCT[[sample]]
     saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
     cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
@@ -335,12 +352,12 @@ if (length(datasets) != 0) {
       cat(">>> Integration-SimpleMerge process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
       next
     } else {
-      sc_merge <- Reduce(function(x, y) merge(x, y), sc_list[dataset])
-      Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = dataset)
+      sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
+      Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
       srt <- Standard_SCP(
-        sc = sc_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+        sc = sc_list_filter_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
+        exogenous_genes = exogenous_genes, assay = "RNA", reduction = NULL
       )
       saveRDS(srt, file = paste0("Integration-SimpleMerge/", paste0(dataset, collapse = ","), ".rds"))
       cat(">>> Integration-SimpleMerge process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
@@ -443,4 +460,3 @@ if (length(datasets) != 0) {
 
 
 future:::ClusterRegistry("stop")
-
