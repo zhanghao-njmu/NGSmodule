@@ -238,6 +238,8 @@ if (file.exists("sc_list_filter.rds")) {
         type = f[2]
       ))
     })
+    out <- table(unlist(out))
+    out <- as.numeric(names(out)[which(out >= 2)])
 
     pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
@@ -246,24 +248,18 @@ if (file.exists("sc_list_filter.rds")) {
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > 20)
-    if (exogenous_genes != "") {
-      pct_counts_exogenous <- unlist(PercentageFeatureSet(object = srt, pattern = paste0("^(", paste0(exogenous_genes, collapse = ")|("), ")$")))
-      names(pct_counts_exogenous) <- colnames(srt)
-      exogenous_out <- (pct_counts_exogenous > 0.1) | (pct_counts_exogenous == 0)
-    } else {
-      exogenous_out <- FALSE
-    }
+    which(mt_out)
 
-    out <- c(out, list(mt = which(mt_out), exogenous = which(exogenous_out)))
-    out <- table(unlist(out))
-    out <- as.numeric(names(out)[which(out >= 1)])
+    out <- unique(c(out, list(mt = which(mt_out))))
+    
+    total_out <- c(out,which(mt_out))
 
     cat(">>>", "Total cells:", ntotal, "\n")
-    cat(">>>", "Filter out", ndoublets + length(out), "cells (potential doublets: ", ndoublets, "and unqualified cells:", length(out), ")", "\n")
-    cat(">>>", "Filtered cells:", ntotal - ndoublets - length(out), "\n")
+    cat(">>>", "Filter out", ndoublets + length(total_out), "cells (potential doublets: ", ndoublets, "and unqualified cells:", length(total_out), ")", "\n")
+    cat(">>>", "Filtered cells:", ntotal - ndoublets - length(total_out), "\n")
 
-    if (length(out) > 0) {
-      srt <- subset(srt, cell = colnames(srt)[-out])
+    if (length(total_out) > 0) {
+      srt <- subset(srt, cell = colnames(srt)[-total_out])
     }
 
     return(srt)
