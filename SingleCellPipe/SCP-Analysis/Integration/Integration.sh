@@ -27,7 +27,7 @@ echo -e "########################## Quantification Parameters ##################
 echo -e "*** base parameters ***"
 echo -e "    Rscript path: $(which Rscript)\n    datasets: ${datasets}\n    species: ${species}\n    exogenous_genes: ${exogenous_genes}"
 echo -e "*** cell-filtering parameters ***"
-echo -e "    cell_calling_methodNum: ${cell_calling_methodNum}"
+echo -e "    cell_calling_methodNum: ${cell_calling_methodNum}\n    mito_threshold: ${mito_threshold}"
 echo -e "*** integration parameters ***"
 echo -e "    HVF_source: ${HVF_source}\n    nHVF: ${nHVF}\n    anchor_dims: ${anchor_dims}\n    integrate_dims: ${integrate_dims}"
 echo -e "*** clustering parameters ***"
@@ -41,9 +41,9 @@ echo -e "Integrating the data....\n"
 mkdir -p $maindir/NGSmodule_SCP_analysis/Integration
 cd $maindir/NGSmodule_SCP_analysis/Integration
 
-Rscript $1 $1 $maindir/NGSmodule_SCP_analysis/Integration $work_dir $threads $datasets \
-  $species $exogenous_genes $cell_calling_methodNum $HVF_source $nHVF \
-  $anchor_dims $integrate_dims $maxPC $resolution 2>&1 |tee Integration.log 
+Rscript $1 $1 $maindir/NGSmodule_SCP_analysis/Integration "${work_dir}" "${threads}" "${datasets}" \
+  "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${HVF_source}" "${nHVF}" \
+  "${anchor_dims}" "${integrate_dims}" "${maxPC}" "${resolution}" 2>&1 |tee Integration.log 
 echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"

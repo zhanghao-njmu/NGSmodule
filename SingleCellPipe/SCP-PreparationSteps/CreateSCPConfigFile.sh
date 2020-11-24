@@ -52,6 +52,7 @@ exogenous_genes="GFP"
 
 ### cell-filtering ###
 cell_calling_methodNum=3
+mito_threshold=0.2
 
 ### integration ###
 HVF_source="separate"

@@ -9,12 +9,13 @@ datasets_raw <- as.character(args[5])
 species <- as.character(args[6])
 exogenous_genes <- as.character(args[7])
 cell_calling_methodNum <- as.numeric(args[8])
-HVF_source <- as.character(args[9])
-nHVF <- as.numeric(args[10])
-anchor_dims <- 1:as.numeric(args[11])
-integrate_dims <- 1:as.numeric(args[12])
-maxPC <- as.numeric(args[13])
-resolution <- as.numeric(args[14])
+mito_threshold <- as.numeric(args[9])
+HVF_source <- as.character(args[10])
+nHVF <- as.numeric(args[11])
+anchor_dims <- 1:as.numeric(args[12])
+integrate_dims <- 1:as.numeric(args[13])
+maxPC <- as.numeric(args[14])
+resolution <- as.numeric(args[15])
 Ensembl_version <- 101
 
 
@@ -30,6 +31,7 @@ Ensembl_version <- 101
 #
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
+# mito_threshold <- 0.2
 #
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "global"
