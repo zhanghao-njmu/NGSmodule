@@ -132,7 +132,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   velocity_list <- readRDS("velocity_list.rds")
 } else {
   for (i in 1:length(samples)) {
-    cat("++++++", samples[i], "++++++", "\n")
+    cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
     cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
     rownames(cell_upset) <- cell_upset[, "Barcode"]
     cells <- cell_upset %>%
@@ -158,7 +158,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   sc_list <- list()
   velocity_list <- list()
   for (i in 1:length(samples)) {
-    cat("++++++", samples[i], "++++++", "\n")
+    cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
     srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
     srt[["orig.ident"]] <- samples[i]
     srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(Mt-)|(mt-)")
@@ -195,13 +195,13 @@ if (length(sc_list) == 1) {
 }
 
 
-# Preprocessing: cell filtering -----------------------------------
+# Preprocessing: CellFiltering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
   cat("Loading the sc_list_filter from the existing file....\n")
   sc_list_filter <- readRDS("sc_list_filter.rds")
 } else {
   sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "++++++", "\n")
+    cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
     srt <- sc_list[[sc_set]]
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
@@ -265,13 +265,13 @@ if (file.exists("sc_list_filter.rds")) {
 }
 
 
-# Preprocessing: basic srt normalization -----------------------------------
+# Preprocessing: Normalization -----------------------------------
 if (file.exists("sc_list_filter_Standard.rds")) {
   cat("Loading the sc_list_filter_Standard from the existing file....\n")
   sc_list_filter_Standard <- readRDS("sc_list_filter_Standard.rds")
 } else {
   sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "++++++", "\n")
+    cat("++++++", sc_set, "(Preprocessing-Standard)", "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
     srt <- Standard_SCP(
       sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
@@ -288,7 +288,7 @@ if (file.exists("sc_list_filter_SCT.rds")) {
   sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
 } else {
   sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "++++++", "\n")
+    cat("++++++", sc_set, "(Preprocessing-SCTransform)", "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
     srt <- SCTransform_SCP(
       sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
