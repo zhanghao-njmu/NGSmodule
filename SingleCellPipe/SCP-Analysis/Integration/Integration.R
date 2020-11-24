@@ -248,11 +248,11 @@ if (file.exists("sc_list_filter.rds")) {
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > 20)
-    total_out <- unique(c(out,as.numeric(which(mt_out))))
+    total_out <- unique(c(out, as.numeric(which(mt_out))))
 
     cat(">>>", "Total cells:", ntotal, "\n")
-    cat(">>>", "Filter out", ndoublets + length(total_out), "cells (potential doublets: ", ndoublets, "and unqualified cells:", length(total_out), ")", "\n")
-    cat(">>>", "Filtered cells:", ntotal - ndoublets - length(total_out), "\n")
+    cat(">>>", "Cells which are filtered out:", ndoublets + length(total_out), "(", ndoublets, "potential doublets,", length(out), "unqualified cells,", length(setdiff(as.numeric(which(mt_out)), out)), "mito-enriched cells", ")", "\n")
+    cat(">>>", "Remained cells after filtering :", ntotal - ndoublets - length(total_out), "\n")
 
     if (length(total_out) > 0) {
       srt <- subset(srt, cell = colnames(srt)[-total_out])
