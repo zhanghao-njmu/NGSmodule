@@ -247,9 +247,12 @@ if (file.exists("sc_list_filter.rds")) {
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
       pct_counts_Mt <- pct_counts_Mt * 100
     }
+    if (all(mito_threshold > 0 & mito_threshold < 1)) {
+      mito_threshold <- mito_threshold * 100
+    }
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > 20)
+      (pct_counts_Mt > mito_threshold)
     total_out <- unique(c(out, as.numeric(which(mt_out))))
 
     cat(">>>", "Total cells:", ntotal, "\n")
