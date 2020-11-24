@@ -9,13 +9,12 @@ datasets_raw <- as.character(args[5])
 species <- as.character(args[6])
 exogenous_genes <- as.character(args[7])
 cell_calling_methodNum <- as.numeric(args[8])
-mito_threshold <- as.numeric(args[9])
-HVF_source <- as.character(args[10])
-nHVF <- as.numeric(args[11])
-anchor_dims <- 1:as.numeric(args[12])
-integrate_dims <- 1:as.numeric(args[13])
-maxPC <- as.numeric(args[14])
-resolution <- as.numeric(args[15])
+HVF_source <- as.character(args[9])
+nHVF <- as.numeric(args[10])
+anchor_dims <- 1:as.numeric(args[11])
+integrate_dims <- 1:as.numeric(args[12])
+maxPC <- as.numeric(args[13])
+resolution <- as.numeric(args[14])
 Ensembl_version <- 101
 
 
@@ -31,7 +30,6 @@ Ensembl_version <- 101
 #
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
-# mito_threshold <- 0.2
 #
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "global"
@@ -247,12 +245,9 @@ if (file.exists("sc_list_filter.rds")) {
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
       pct_counts_Mt <- pct_counts_Mt * 100
     }
-    if (all(mito_threshold > 0 & mito_threshold < 1)) {
-      mito_threshold <- mito_threshold * 100
-    }
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > mito_threshold)
+      (pct_counts_Mt > 20)
     total_out <- unique(c(out, as.numeric(which(mt_out))))
 
     cat(">>>", "Total cells:", ntotal, "\n")
@@ -341,7 +336,7 @@ if (length(datasets) != 0) {
   # Integration: Simple merge ----------------------------------------------
   dir.create("Integration-SimpleMerge-Standard", recursive = T, showWarnings = FALSE)
   for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    cat("++++++", paste0(dataset, collapse = ","), "(Integration-SimpleMerge-Standard)", "++++++", "\n")
     if (file.exists(paste0("Integration-SimpleMerge-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
       cat(">>> Integration-SimpleMerge-Standard process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
       next
@@ -360,7 +355,7 @@ if (length(datasets) != 0) {
 
   dir.create("Integration-SimpleMerge-SCTransform", recursive = T, showWarnings = FALSE)
   for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "++++++", "\n")
+    cat("++++++", paste0(dataset, collapse = ","), "(Integration-SimpleMerge-SCTransform)", "++++++", "\n")
     if (file.exists(paste0("Integration-SimpleMerge-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
       cat(">>> Integration-SimpleMerge-SCTransform process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
       next
