@@ -200,6 +200,8 @@ for sample in "${arr[@]}"; do
                 cellranger count --id "${sample}" \
                 --fastqs "${dir}" \
                 --sample "${sample}" \
+                --include-introns \
+                --disable-ui \
                 --localcores "$threads" \
                 --localmem "$memory" \
                 --transcriptome "$cellranger_ref" &>"$dir"/Alignment/Cellranger/cellranger.log
