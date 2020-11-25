@@ -34,19 +34,19 @@ R1_to_R2="_R1_/_R2_"
 
 ############# Cellranger Paramaters #######################################################################
 ### FastqScreen ###
-FastqScreen_config="/data/database/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+FastqScreen_config="/archive/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### cellranger ###
-cellranger_ref="/data/database/CellRanger/refdata-gex-GRCh38-2020-A"
+cellranger_ref="/archive/reference/CellRanger/refdata-gex-GRCh38-2020-A_addGFP"
 
 ### velocyto and dropEst ###
 dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
-gene_gtf="\$cellranger_ref/genes/genes.gtf"
-rmsk_gtf="\$cellranger_ref/genes/rmsk.gtf"
+gene_gtf="$cellranger_ref/genes/genes.gtf"
+rmsk_gtf="$cellranger_ref/genes/hg38_rmsk.gtf"
 
 ############# Intergration #######################################################################
 ### base parameters ###
-datasets="ESC,iPSC,PGCd6,CellLine1,CellLine2;"
+datasets="ESC,PGCLC-d6,CellLine1,CellLine2;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
 species="Homo_sapiens"                           # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 exogenous_genes="GFP"
 
@@ -63,6 +63,7 @@ integrate_dims=30
 ### clustering ###
 maxPC=100
 resolution=1
+
 
 
 EOF
