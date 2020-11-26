@@ -43,7 +43,7 @@ cd $maindir/NGSmodule_SCP_analysis/Integration
 
 Rscript $1 $1 $maindir/NGSmodule_SCP_analysis/Integration "${work_dir}" "${threads}" "${datasets}" \
   "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${HVF_source}" "${nHVF}" \
-  "${anchor_dims}" "${integrate_dims}" "${maxPC}" "${resolution}" 2>&1 |tee Integration.log 
+  "${anchor_dims}" "${integrate_dims}" "${maxPC}" "${resolution}" "${reduction}" 2>&1 |tee Integration.log 
 echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"

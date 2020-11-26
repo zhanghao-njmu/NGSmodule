@@ -1,6 +1,6 @@
 Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                         exogenous_genes = NULL, FindAllMarkers = FALSE, FindPairMarkers = FALSE, assay = "RNA") {
+                         exogenous_genes = NULL, assay = "RNA") {
   DefaultAssay(sc) <- assay
   sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
   if (identical(
@@ -26,20 +26,11 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   sc@misc$PC_use <- PC_use
-  
+
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  sc <- BuildClusterTree(sc, reorder = T)
-  Idents(sc) <- sc[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(sc),
-      from = levels(Idents(sc)),
-      to = 1:length(levels(Idents(sc)))
-    )
-  sc@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(sc@tools$BuildClusterTree$tip.label,
-      from = sc@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(sc)))
-    )
+  sc <- BuildClusterTree(sc,slot="scale.data", reorder = T,reorder.numeric = T)
+  sc$seurat_clusters<- Idents(sc)
 
   if ("umap" %in% reduction) {
     sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -47,7 +38,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
       object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(sc) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(sc) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -67,7 +58,7 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
 
 SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                            exogenous_genes = NULL, FindAllMarkers = FALSE, assay = "RNA") {
+                            exogenous_genes = NULL, assay = "RNA") {
   DefaultAssay(sc) <- assay
   sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
   if (!"SCT" %in% Seurat::Assays(sc)) {
@@ -88,20 +79,11 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   sc@misc$PC_use <- PC_use
-  
+
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  sc <- BuildClusterTree(sc, reorder = T)
-  Idents(sc) <- sc[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(sc),
-      from = levels(Idents(sc)),
-      to = 1:length(levels(Idents(sc)))
-    )
-  sc@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(sc@tools$BuildClusterTree$tip.label,
-      from = sc@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(sc)))
-    )
+  sc <- BuildClusterTree(sc,slot="scale.data", reorder = T,reorder.numeric = T)
+  sc$seurat_clusters<- Idents(sc)
 
   if ("umap" %in% reduction) {
     sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -109,7 +91,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
       object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(sc) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(sc) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -130,7 +112,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
 Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                HVF_source = "separate",
                                cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                               exogenous_genes = NULL, FindAllMarkers = FALSE) {
+                               exogenous_genes = NULL) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -220,20 +202,11 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
-  Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(srt_integrated),
-      from = levels(Idents(srt_integrated)),
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
-  srt_integrated@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
-      from = srt_integrated@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
+  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
+  srt_integrated$seurat_clusters<- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -241,7 +214,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(srt_integrated) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -262,7 +235,7 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
 SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integrate_dims = 1:30, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                   HVF_source = "separate",
                                   cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                                  exogenous_genes = NULL, FindAllMarkers = FALSE) {
+                                  exogenous_genes = NULL) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -346,20 +319,11 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
-  Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(srt_integrated),
-      from = levels(Idents(srt_integrated)),
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
-  srt_integrated@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
-      from = srt_integrated@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
+  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
+  srt_integrated$seurat_clusters<- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -367,7 +331,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(srt_integrated) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -388,7 +352,7 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
 fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                              exogenous_genes = NULL, FindAllMarkers = FALSE) {
+                              exogenous_genes = NULL) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -465,20 +429,11 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "mnn"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
-  Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(srt_integrated),
-      from = levels(Idents(srt_integrated)),
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
-  srt_integrated@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
-      from = srt_integrated@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
+  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
+  srt_integrated$seurat_clusters<- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -486,7 +441,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "mnn", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(srt_integrated) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -507,7 +462,7 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               HVF_source = "separate",
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                              exogenous_genes = NULL, FindAllMarkers = FALSE) {
+                              exogenous_genes = NULL) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
       call. = FALSE
@@ -592,20 +547,11 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "harmony"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated, reorder = T)
-  Idents(srt_integrated) <- srt_integrated[["seurat_clusters"]] <-
-    plyr::mapvalues(Idents(srt_integrated),
-      from = levels(Idents(srt_integrated)),
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
-  srt_integrated@tools$BuildClusterTree$tip.label <-
-    plyr::mapvalues(srt_integrated@tools$BuildClusterTree$tip.label,
-      from = srt_integrated@tools$BuildClusterTree$tip.label,
-      to = 1:length(levels(Idents(srt_integrated)))
-    )
+  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
+  srt_integrated$seurat_clusters<- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -613,7 +559,7 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
       object = srt_integrated, reduction = "harmony", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(srt_integrated) * 0.01),30), max_iter = 1000, num_threads = 0, verbose = T
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
 
@@ -628,6 +574,140 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  return(srt_integrated)
+}
+
+Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                                HVF_source = "separate",
+                                cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                                exogenous_genes = NULL) {
+  if (!HVF_source %in% c("global", "separate")) {
+    stop("'HVF_source' must be one of: 'global','separate'",
+         call. = FALSE
+    )
+  }
+  
+  for (i in 1:length(sc_list)) {
+    DefaultAssay(sc_list[[i]]) <- "RNA"
+    if (identical(
+      x = GetAssayData(sc_list[[i]], slot = "counts"),
+      y = GetAssayData(sc_list[[i]], slot = "data")
+    )) {
+      sc_list[[i]] <- NormalizeData(object = sc_list[[i]])
+    }
+    if (length(VariableFeatures(sc_list[[i]])) == 0) {
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+    }
+    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+      filter(variance.standardized > 1 &
+               (!rownames(.) %in% exogenous_genes)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+  }
+  if (HVF_source == "global") {
+    # gene_common <- lapply(sc_list, rownames) %>% Reduce(intersect, .)
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, assay = "RNA", slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
+    sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+    DefaultAssay(sc_merge) <- "RNA"
+    hvf <- NormalizeData(object = sc_merge) %>%
+      FindVariableFeatures(.) %>%
+      HVFInfo(.) %>%
+      filter(variance.standardized > 1 &
+               (!rownames(.) %in% exogenous_genes) &
+               rownames(.) %in% gene_common) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+    sc_merge <- NULL
+  }
+  if (HVF_source == "separate") {
+    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
+  }
+  assaylist <- list()
+  genelist <- list()
+  for (i in 1:length(sc_list)) {
+    assaylist[[i]] <- t(as.matrix(GetAssayData(sc_list[[i]], "data")))
+    genelist[[i]] <- rownames(sc_list[[i]])
+  }
+
+  integrated.corrected.data <- scanorama$correct(
+    datasets_full = assaylist,
+    genes_list = genelist,
+    return_dimred = TRUE,
+    return_dense = TRUE,
+    union = FALSE
+  )
+
+  cor_value <- integrated.corrected.data[[2]] %>%
+    rbind.fill.matrix() %>%
+    t()
+  rownames(cor_value) <- integrated.corrected.data[[3]]
+  colnames(cor_value) <- unlist(sapply(assaylist, rownames))
+
+  dim_reduction <- integrated.corrected.data[[1]] %>% rbind.fill.matrix()
+  rownames(dim_reduction) <- unlist(sapply(assaylist, rownames))
+  colnames(dim_reduction) <- paste0("PC_", 1:100)
+
+  stdevs <- apply(dim_reduction, MARGIN = 2, FUN = sd)
+  srt_integrated <- Reduce(function(x, y) merge(x, y), sc_list)
+  srt_integrated[["integrated"]] <- CreateAssayObject(data = cor_value)
+  srt_integrated[["scanorama"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "integrated", key = "scanorama_")
+
+  DefaultAssay(object = srt_integrated) <- "RNA"
+  if (identical(
+    x = GetAssayData(srt_integrated, slot = "counts"),
+    y = GetAssayData(srt_integrated, slot = "data")
+  )) {
+    srt_integrated <- NormalizeData(object = srt_integrated)
+  }
+  if (length(VariableFeatures(srt_integrated)) == 0) {
+    VariableFeatures(srt_integrated) <- hvf
+  }
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
+  }
+  
+  DefaultAssay(object = srt_integrated) <- "integrated"
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
+  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
+                                           levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
+  )
+  
+  srt_integrated <- ScaleData(srt_integrated, features = hvf)
+  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "scanorama"), k = 20, iterations = 100)[["dim.est"]])
+  srt_integrated@misc$PC_use <- PC_use
+  
+  srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, force.recalc = T)
+  srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
+  srt_integrated$seurat_clusters<- Idents(srt_integrated)
+  
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
+    )
+  }
+  
+  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
+    srt_integrated <- CellCycleScoring(
+      object = srt_integrated,
+      s.features = cc_S_genes,
+      g2m.features = cc_G2M_genes,
+      set.ident = FALSE
+    )
+    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
+    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
+  }
+  
   return(srt_integrated)
 }
 
