@@ -586,6 +586,9 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
       call. = FALSE
     )
   }
+  
+  require(reticulate)
+  scanorama <- import("scanorama")
 
   for (i in 1:length(sc_list)) {
     DefaultAssay(sc_list[[i]]) <- "RNA"
@@ -679,6 +682,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
   )
 
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
+  # srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "scanorama"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
 
