@@ -113,7 +113,7 @@ if (species == "Homo_sapiens") {
 setwd(SCPanalysis_dir)
 options(expressions = 5e5)
 options(future.globals.maxSize = 754 * 1000 * 1024^2)
-# options(future.fork.enable = TRUE)
+options(future.fork.enable = TRUE)
 if (threads >= 125) {
   cat("Threads number is too large. Re-set it to the 125.\n")
   threads <- 125
