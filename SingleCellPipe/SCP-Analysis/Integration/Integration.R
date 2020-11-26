@@ -15,7 +15,7 @@ anchor_dims <- 1:as.numeric(args[11])
 integrate_dims <- 1:as.numeric(args[12])
 maxPC <- as.numeric(args[13])
 resolution <- as.numeric(args[14])
-reduction <- as.numeric(args[15])
+reduction <- as.character(args[15])
 Ensembl_version <- 101
 
 
