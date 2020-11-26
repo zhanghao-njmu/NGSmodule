@@ -15,6 +15,7 @@ anchor_dims <- 1:as.numeric(args[11])
 integrate_dims <- 1:as.numeric(args[12])
 maxPC <- as.numeric(args[13])
 resolution <- as.numeric(args[14])
+reduction <- as.numeric(args[15])
 Ensembl_version <- 101
 
 
@@ -65,6 +66,7 @@ datasets <- datasets[sapply(datasets, length) > 1]
 #   unlist() %>%
 #   unique()
 samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
+reduction <- strsplit(reduction, split = ",") %>% unlist()
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -274,7 +276,8 @@ if (file.exists("sc_list_filter_Standard.rds")) {
     cat("++++++", sc_set, "(Preprocessing-Standard)", "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
     srt <- Standard_SCP(
-      sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      sc = srt, nHVF = nHVF, 
+      maxPC = maxPC, resolution = resolution,reduction=reduction,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
       exogenous_genes = exogenous_genes, assay = "RNA"
     )
@@ -291,7 +294,8 @@ if (file.exists("sc_list_filter_SCT.rds")) {
     cat("++++++", sc_set, "(Preprocessing-SCTransform)", "++++++", "\n")
     srt <- sc_list_filter[[sc_set]]
     srt <- SCTransform_SCP(
-      sc = srt, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+      sc = srt, nHVF = nHVF, 
+      maxPC = maxPC, resolution = resolution,reduction=reduction,
       cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
       exogenous_genes = exogenous_genes, assay = "RNA"
     )
@@ -344,7 +348,8 @@ if (length(datasets) != 0) {
       sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
       Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
       srt <- Standard_SCP(
-        sc = sc_list_filter_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+        sc = sc_list_filter_merge, nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes, assay = "RNA",
       )
@@ -363,7 +368,8 @@ if (length(datasets) != 0) {
       sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
       Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
       srt <- SCTransform_SCP(
-        sc = sc_list_filter_merge, nHVF = nHVF, maxPC = maxPC, resolution = resolution,
+        sc = sc_list_filter_merge,nHVF = nHVF, 
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes, assay = "RNA"
       )
@@ -382,8 +388,10 @@ if (length(datasets) != 0) {
       next
     } else {
       srt_integrated <- Standard_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
+        sc_list = sc_list_filter_Standard[dataset],HVF_source = HVF_source, nHVF = nHVF, 
+        anchor_dims = anchor_dims, integrate_dims = integrate_dims, 
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
+        
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -402,8 +410,10 @@ if (length(datasets) != 0) {
       next
     } else {
       srt_integrated <- SCTransform_integrate(
-        sc_list = sc_list_filter_SCT[dataset], nHVF = nHVF, anchor_dims = anchor_dims, integrate_dims = integrate_dims, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
+        sc_list = sc_list_filter_SCT[dataset], HVF_source = HVF_source, nHVF = nHVF, 
+        anchor_dims = anchor_dims, integrate_dims = integrate_dims,
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
+       
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -422,8 +432,9 @@ if (length(datasets) != 0) {
       next
     } else {
       srt_integrated <- fastMNN_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
+        sc_list = sc_list_filter_Standard[dataset],HVF_source = HVF_source, nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
+        
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -442,8 +453,9 @@ if (length(datasets) != 0) {
       next
     } else {
       srt_integrated <- Harmony_integrate(
-        sc_list = sc_list_filter_Standard[dataset], nHVF = nHVF, maxPC = maxPC, resolution = resolution,
-        HVF_source = HVF_source,
+        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source,nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
+        
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -451,6 +463,26 @@ if (length(datasets) != 0) {
       cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
+  
+  # Integration: Scanorama workflow -------------------------------------------
+  dir.create("Integration-Scanorama", recursive = T, showWarnings = FALSE)
+  for (dataset in datasets) {
+    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
+    if (file.exists(paste0("Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
+      cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+      next
+    } else {
+      srt_integrated <- Scanorama_integrate(
+        sc_list = sc_list_filter_Standard[dataset],HVF_source = HVF_source, nHVF = nHVF, 
+        maxPC = maxPC, resolution = resolution,reduction=reduction,
+        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+        exogenous_genes = exogenous_genes
+      )
+      saveRDS(srt_integrated, file = paste0("Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
+      cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    }
+  }
+  
 } else {
   cat("Integration skipped.")
 }
