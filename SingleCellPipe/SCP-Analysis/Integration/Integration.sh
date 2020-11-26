@@ -31,7 +31,7 @@ echo -e "    cell_calling_methodNum: ${cell_calling_methodNum}\n    mito_thresho
 echo -e "*** integration parameters ***"
 echo -e "    HVF_source: ${HVF_source}\n    nHVF: ${nHVF}\n    anchor_dims: ${anchor_dims}\n    integrate_dims: ${integrate_dims}"
 echo -e "*** clustering parameters ***"
-echo -e "    maxPC: ${maxPC}\n    resolution: ${resolution}\n"
+echo -e "    maxPC: ${maxPC}\n    resolution: ${resolution}\n    reduction: ${reduction}\n"
 echo -e "################################################################################\n"
 
 echo -e "****************** Start Integration ******************\n"
