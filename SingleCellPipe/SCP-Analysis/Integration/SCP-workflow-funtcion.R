@@ -659,7 +659,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
   stdevs <- apply(dim_reduction, MARGIN = 2, FUN = sd)
   srt_integrated <- Reduce(function(x, y) merge(x, y), sc_list)
   srt_integrated[["integrated"]] <- CreateAssayObject(data = cor_value)
-  srt_integrated[["scanorama"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "integrated", key = "scanorama_")
+  srt_integrated[["scanorama"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "integrated",stdev = stdevs, key = "scanorama_")
 
   DefaultAssay(object = srt_integrated) <- "RNA"
   if (identical(
@@ -688,7 +688,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
 
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated <- BuildClusterTree(srt_integrated, assay="RNA", slot = "scale.data", reorder = T, reorder.numeric = T)
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
