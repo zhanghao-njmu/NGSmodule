@@ -29,8 +29,8 @@ Standard_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, reducti
 
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  sc <- BuildClusterTree(sc,slot="scale.data", reorder = T,reorder.numeric = T)
-  sc$seurat_clusters<- Idents(sc)
+  sc <- BuildClusterTree(sc, slot = "scale.data", reorder = T, reorder.numeric = T)
+  sc$seurat_clusters <- Idents(sc)
 
   if ("umap" %in% reduction) {
     sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -82,8 +82,8 @@ SCTransform_SCP <- function(sc, nHVF = 3000, maxPC = 100, resolution = 0.8, redu
 
   sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  sc <- BuildClusterTree(sc,slot="scale.data", reorder = T,reorder.numeric = T)
-  sc$seurat_clusters<- Idents(sc)
+  sc <- BuildClusterTree(sc, slot = "scale.data", reorder = T, reorder.numeric = T)
+  sc$seurat_clusters <- Idents(sc)
 
   if ("umap" %in% reduction) {
     sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -205,8 +205,8 @@ Standard_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, integra
 
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
-  srt_integrated$seurat_clusters<- Idents(srt_integrated)
+  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -322,8 +322,8 @@ SCTransform_integrate <- function(sc_list, nHVF = 3000, anchor_dims = 1:30, inte
 
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
-  srt_integrated$seurat_clusters<- Idents(srt_integrated)
+  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -432,8 +432,8 @@ fastMNN_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
-  srt_integrated$seurat_clusters<- Idents(srt_integrated)
+  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -550,8 +550,8 @@ Harmony_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 0.
 
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
-  srt_integrated$seurat_clusters<- Idents(srt_integrated)
+  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
@@ -583,10 +583,10 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
                                 exogenous_genes = NULL) {
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
-         call. = FALSE
+      call. = FALSE
     )
   }
-  
+
   for (i in 1:length(sc_list)) {
     DefaultAssay(sc_list[[i]]) <- "RNA"
     if (identical(
@@ -600,7 +600,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
     }
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
-               (!rownames(.) %in% exogenous_genes)) %>%
+        (!rownames(.) %in% exogenous_genes)) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -618,8 +618,8 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
       FindVariableFeatures(.) %>%
       HVFInfo(.) %>%
       filter(variance.standardized > 1 &
-               (!rownames(.) %in% exogenous_genes) &
-               rownames(.) %in% gene_common) %>%
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_common) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -671,22 +671,22 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
   if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
-  
+
   DefaultAssay(object = srt_integrated) <- "integrated"
   srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-                                           levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
+    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
-  
+
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "scanorama"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt_integrated <- BuildClusterTree(srt_integrated,slot="scale.data", reorder = T,reorder.numeric = T)
-  srt_integrated$seurat_clusters<- Idents(srt_integrated)
-  
+  srt_integrated <- BuildClusterTree(srt_integrated, slot = "scale.data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
+
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "scanorama", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
   }
@@ -696,7 +696,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
       perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 1000, num_threads = 0, verbose = T
     )
   }
-  
+
   if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
     srt_integrated <- CellCycleScoring(
       object = srt_integrated,
@@ -707,7 +707,7 @@ Scanorama_integrate <- function(sc_list, nHVF = 3000, maxPC = 100, resolution = 
     srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
-  
+
   return(srt_integrated)
 }
 
