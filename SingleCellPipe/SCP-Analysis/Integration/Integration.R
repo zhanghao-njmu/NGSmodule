@@ -9,13 +9,14 @@ datasets_raw <- as.character(args[5])
 species <- as.character(args[6])
 exogenous_genes <- as.character(args[7])
 cell_calling_methodNum <- as.numeric(args[8])
-HVF_source <- as.character(args[9])
-nHVF <- as.numeric(args[10])
-anchor_dims <- 1:as.numeric(args[11])
-integrate_dims <- 1:as.numeric(args[12])
-maxPC <- as.numeric(args[13])
-resolution <- as.numeric(args[14])
-reduction <- as.character(args[15])
+mito_threshold <- as.numeric(args[9])
+HVF_source <- as.character(args[10])
+nHVF <- as.numeric(args[11])
+anchor_dims <- 1:as.numeric(args[12])
+integrate_dims <- 1:as.numeric(args[13])
+maxPC <- as.numeric(args[14])
+resolution <- as.numeric(args[15])
+reduction <- as.character(args[16])
 Ensembl_version <- 101
 
 
@@ -249,7 +250,7 @@ if (file.exists("sc_list_filter.rds")) {
     }
     mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > 20)
+      (pct_counts_Mt > mito_threshold * 100)
     total_out <- unique(c(out, as.numeric(which(mt_out))))
 
     cat(">>>", "Total cells:", ntotal, "\n")
