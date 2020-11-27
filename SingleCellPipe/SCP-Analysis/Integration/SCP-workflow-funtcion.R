@@ -52,7 +52,8 @@ Standard_SCP <- function(sc, nHVF = 3000,
     sc[["CC.Difference"]] <- sc[["S.Score"]] - sc[["G2M.Score"]]
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
-
+  
+  DefaultAssay(sc) <- "RNA"
   return(sc)
 }
 
@@ -107,6 +108,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000,
     sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(sc) <- "RNA"
   return(sc)
 }
 
@@ -231,6 +233,7 @@ Standard_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
 
@@ -349,6 +352,7 @@ SCTransform_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
 
@@ -459,6 +463,7 @@ fastMNN_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
 
@@ -577,6 +582,7 @@ Harmony_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
 
@@ -715,6 +721,7 @@ Scanorama_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
     srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
   }
 
+  DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
 
