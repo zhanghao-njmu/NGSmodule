@@ -51,7 +51,6 @@ species="Homo_sapiens"                              # Homo_sapiens,Mus_musculus,
 exogenous_genes="GFP"
 
 ### cell-filtering ###
-cell_calling_method="Cellranger_v3,dropEst"         # Cellranger_v2,Cellranger_v3,EmptyDrops,dropEst,zUMIs
 cell_calling_methodNum=3
 mito_threshold=0.2
 
