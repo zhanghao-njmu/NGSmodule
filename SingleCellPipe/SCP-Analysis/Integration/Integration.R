@@ -355,7 +355,7 @@ if (length(datasets) != 0) {
         sc = sc_list_filter_merge, nHVF = nHVF,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA",
+        exogenous_genes = exogenous_genes, assay = "RNA"
       )
       saveRDS(srt, file = paste0("Integration-SimpleMerge-Standard/", paste0(dataset, collapse = ","), ".rds"))
       cat(">>> Integration-SimpleMerge-Standard process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
@@ -395,7 +395,6 @@ if (length(datasets) != 0) {
         sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
         anchor_dims = anchor_dims, integrate_dims = integrate_dims,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
-
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -417,7 +416,6 @@ if (length(datasets) != 0) {
         sc_list = sc_list_filter_SCT[dataset], HVF_source = HVF_source, nHVF = nHVF,
         anchor_dims = anchor_dims, integrate_dims = integrate_dims,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
-
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -438,7 +436,6 @@ if (length(datasets) != 0) {
       srt_integrated <- fastMNN_integrate(
         sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
-
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
@@ -459,7 +456,6 @@ if (length(datasets) != 0) {
       srt_integrated <- Harmony_integrate(
         sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
-
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
