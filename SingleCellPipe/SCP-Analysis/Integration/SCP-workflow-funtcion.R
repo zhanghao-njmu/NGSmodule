@@ -13,8 +13,7 @@ Standard_SCP <- function(sc, nHVF = 3000,
   if (length(VariableFeatures(sc)) == 0) {
     sc <- FindVariableFeatures(sc)
   }
-  VariableFeatures(sc) <-
-    HVFInfo(sc) %>%
+  VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
     filter(variance.standardized > 1 &
       (!rownames(.) %in% exogenous_genes)) %>%
     dplyr::arrange(desc(variance.standardized)) %>%
@@ -73,7 +72,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000,
   }
   DefaultAssay(sc) <- "SCT"
 
-  VariableFeatures(sc) <- HVFInfo(sc) %>%
+  VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
     filter((!rownames(.) %in% exogenous_genes)) %>%
     dplyr::arrange(desc(residual_variance)) %>%
     rownames(.) %>%
