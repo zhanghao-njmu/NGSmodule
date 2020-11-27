@@ -46,11 +46,12 @@ rmsk_gtf="$cellranger_ref/genes/hg38_rmsk.gtf"
 
 ############# Intergration #######################################################################
 ### base parameters ###
-datasets="ESC,PGCLC-d6,CellLine1,CellLine2;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
-species="Homo_sapiens"                           # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
+datasets="ESC,iMeLC,PGC"
+species="Homo_sapiens"                              # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 exogenous_genes="GFP"
 
 ### cell-filtering ###
+cell_calling_method="Cellranger_v3,dropEst"         # Cellranger_v2,Cellranger_v3,EmptyDrops,dropEst,zUMIs
 cell_calling_methodNum=3
 mito_threshold=0.2
 
