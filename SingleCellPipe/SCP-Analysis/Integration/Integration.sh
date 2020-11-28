@@ -9,7 +9,7 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("sctransform" "Seurat" "SeuratWrappers" "intrinsicDimension" "scater" "Matrix" "BiocParallel" "future" "reticulate" "harmony" "plyr" "dplyr" "RColorBrewer" "scales" "gtools" "ggsci" "ggpubr" "ggplot2" "ggtree" "cowplot" "reshape2" "stringr" "velocyto.R" "scDblFinder" "biomaRt")
+R_packages=("sctransform" "Seurat" "SeuratWrappers" "SeuratDisk" "intrinsicDimension" "scater" "Matrix" "BiocParallel" "future" "reticulate" "harmony" "plyr" "dplyr" "RColorBrewer" "scales" "gtools" "ggsci" "ggpubr" "ggplot2" "ggtree" "cowplot" "reshape2" "stringr" "velocyto.R" "scDblFinder" "biomaRt" "rvest" "xml2")
 for package in "${R_packages[@]}"; do
   Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   if [ $? -ne 0 ]; then

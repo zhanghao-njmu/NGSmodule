@@ -46,7 +46,7 @@ Ensembl_version <- 101
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "sctransform", "Seurat", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
+    "sctransform", "Seurat", "SeuratDisk", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
     "future", "reticulate", "harmony", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
     "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
