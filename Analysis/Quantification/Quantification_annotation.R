@@ -62,6 +62,7 @@ for (i in c("TF", "TF_cofactors")) {
 if (dim(dflist[[1]])[1] > 0 & dim(dflist[[2]])[1] > 0) {
   tf_anno <- bind_rows(dflist)
   tf_anno <- cbind(">>Annotation.AnimalTFDB3", tf_anno)
+  colnames(tf_anno)[1] <- ">>Annotation.AnimalTFDB3"
   tf_id <- switch(database, "Ensembl" = "Ensembl", "NCBI" = "Entrez.ID", "UCSC" = "Symbol")
 }
 
