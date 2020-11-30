@@ -57,7 +57,7 @@ for (i in c("TF", "TF_cofactors")) {
   no_col <- max(count.fields(temp, sep = "\t"), na.rm = T)
   dflist[[i]] <- read.table(temp, header = T, sep = "\t", stringsAsFactors = F, fill = T, quote = "")
   unlink(temp)
-  dflist[[i]][, "TF_type"] <- i
+  dflist[[i]][, i] <- i
 }
 if (dim(dflist[[1]])[1] > 0 & dim(dflist[[2]])[1] > 0) {
   tf_anno <- bind_rows(dflist)
