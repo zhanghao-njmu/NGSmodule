@@ -127,6 +127,7 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
 # source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
+save.image(file = "base_env.Rdata")
 
 # Preprocessing: load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
