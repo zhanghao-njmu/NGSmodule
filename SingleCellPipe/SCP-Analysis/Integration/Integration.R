@@ -47,7 +47,7 @@ Ensembl_version <- 101
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "sctransform", "Seurat", "SeuratDisk", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
-    "future", "reticulate", "harmony", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "future", "reticulate", "harmony", "simspec", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
     "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
   ),
@@ -464,6 +464,7 @@ if (length(datasets) != 0) {
     }
   }
 
+
   # Integration: Scanorama workflow -------------------------------------------
   dir.create("Integration-Scanorama", recursive = T, showWarnings = FALSE)
   for (dataset in datasets) {
@@ -480,6 +481,26 @@ if (length(datasets) != 0) {
       )
       saveRDS(srt_integrated, file = paste0("Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
       cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    }
+  }
+
+
+  # Integration: CSS workflow -------------------------------------------
+  dir.create("Integration-CSS", recursive = T, showWarnings = FALSE)
+  for (dataset in datasets) {
+    cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
+    if (file.exists(paste0("Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
+      cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+      next
+    } else {
+      srt_integrated <- CSS_integrate(
+        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution, reduction = reduction,
+        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+        exogenous_genes = exogenous_genes
+      )
+      saveRDS(srt_integrated, file = paste0("Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
+      cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 } else {
