@@ -784,6 +784,7 @@ CSS_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
   srt_integrated <- cluster_sim_spectrum(
     object = sc_merge,
     label_tag = "orig.ident",
+    cluster_resolution = 0.4,
     corr_method = "pearson",
     spectrum_type = "corr_kernel"
   )
