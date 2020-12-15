@@ -211,7 +211,7 @@ if (file.exists("sc_list_filter.rds")) {
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
     srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
-    srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
+    srt[["scDblFinder.class"]] <- sce[["scDblFinder.class"]]
     ndoublets <- sum(sce[["scDblFinder.class"]] == "doublet")
     sce <- subset(sce, , scDblFinder.class == "singlet")
      
