@@ -165,8 +165,8 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
     cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
     srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
     srt[["orig.ident"]] <- samples[i]
-    srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "^(MT-)|(Mt-)|(mt-)")
-    srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "^(RP[SL]\\d+)|((Rp[sl]\\d+))|(rp[sl]\\d+)")
+    srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
+    srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
     srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
     srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
     srt <- RenameCells(object = srt, add.cell.id = samples[i])
