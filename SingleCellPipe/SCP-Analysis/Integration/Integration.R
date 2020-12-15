@@ -210,8 +210,11 @@ if (file.exists("sc_list_filter.rds")) {
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
-    ndoublets <- sum(sce$scDblFinder.class == "doublet")
+    srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
+    srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
+    ndoublets <- sum(sce[["scDblFinder.class"]] == "doublet")
     sce <- subset(sce, , scDblFinder.class == "singlet")
+     
     srt <- subset(x = srt, cells = colnames(sce))
 
     log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
