@@ -62,7 +62,7 @@ integrate_dims=30
 
 ### clustering ###
 maxPC=100
-resolution=1
+resolution=0.6
 reduction="umap,tsne"
 
 
