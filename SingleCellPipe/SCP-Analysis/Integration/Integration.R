@@ -228,7 +228,7 @@ if (file.exists("sc_list_filter.rds")) {
     #   geom_point() + geom_smooth(method = "loess", col="black")
 
     sce <- addPerCellQC(sce, percent_top = c(20))
-    pct_counts_in_top_20_features <- colData(sce)$percent_top_20
+    pct_counts_in_top_20_features <- colData(sce)$percent.top_20
 
     filters <- c(
       "log10_total_counts:higher:2.5",
