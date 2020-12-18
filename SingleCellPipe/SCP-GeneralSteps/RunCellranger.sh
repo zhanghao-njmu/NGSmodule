@@ -77,7 +77,7 @@ echo -e "########################### RunCellranger Parameters ##################
 echo -e "  FastqScreen\n  FastqScreen_config: ${FastqScreen_config}\n"
 echo -e "  cellranger_ref: ${cellranger_ref}"
 echo -e "  gene_gtf: ${gene_gtf}\n  rmsk_gtf: ${rmsk_gtf}\n  dropEst_config: ${dropEst_config}\n"
-echo -e "################################################################################\n"
+echo -e "################################################################################\n\n"
 
 echo -e "****************** Start Alignment ******************\n"
 SECONDS=0
