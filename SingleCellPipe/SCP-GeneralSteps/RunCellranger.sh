@@ -43,7 +43,7 @@ Rscript &>/dev/null
 }
 force_complete_option=("TRUE" "FALSE")
 if [[ " ${force_complete_option[*]} " != *" $force_complete "* ]]; then
-    color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your ConfigFile.\n"
+    color_echo "red" "ERROR! force_complete must be TRUE or FALSE.\nPlease check theParamaters in your SCPConfigFile.\n"
     exit 1
 fi
 
@@ -57,19 +57,19 @@ for package in "${R_packages[@]}"; do
 done
 
 if [[ ! -f $FastqScreen_config ]]; then
-    color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}\n"
+    color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}\nPlease check the path in your SCPConfigFile.\n"
     exit 1
 elif [[ ! -d $cellranger_ref ]]; then
-    color_echo "red" "ERROR! Cannot find the cellranger_ref directory: $cellranger_ref\nPlease check the path.\n"
+    color_echo "red" "ERROR! Cannot find the cellranger_ref directory: $cellranger_ref\nPlease check the path in your SCPConfigFile.\n"
     exit 1
 elif [[ ! -f $gene_gtf ]]; then
-    color_echo "red" "ERROR! Cannot find the gene_gtf file: $gtf\nPlease check the path.\n"
+    color_echo "red" "ERROR! Cannot find the gene_gtf file: $gene_gtf\nPlease check the path in your SCPConfigFile.\n"
     exit 1
 elif [[ ! -f $rmsk_gtf ]]; then
-    color_echo "red" "ERROR! Cannot find the rmsk_gtf file: $rmsk_gtf\nPlease check the path.\n"
+    color_echo "red" "ERROR! Cannot find the rmsk_gtf file: $rmsk_gtf\nPlease check the path in your SCPConfigFile.\n"
     exit 1
 elif [[ ! -f $dropEst_config ]]; then
-    color_echo "red" "ERROR! Cannot find the dropEst_config file: $dropEst_config\nPlease check the path.\n"
+    color_echo "red" "ERROR! Cannot find the dropEst_config file: $dropEst_config\nPlease check the path in your SCPConfigFile.\n"
     exit 1
 fi
 
