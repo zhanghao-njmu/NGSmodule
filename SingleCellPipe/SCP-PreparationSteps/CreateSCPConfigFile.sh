@@ -41,8 +41,8 @@ cellranger_ref="/archive/reference/CellRanger/refdata-gex-GRCh38-2020-A_addGFP"
 
 ### velocyto and dropEst ###
 dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
-gene_gtf="$cellranger_ref/genes/genes.gtf"
-rmsk_gtf="$cellranger_ref/genes/hg38_rmsk.gtf"
+gene_gtf="\$cellranger_ref/genes/genes.gtf"
+rmsk_gtf="\$cellranger_ref/genes/hg38_rmsk.gtf"
 
 ############# Intergration #######################################################################
 ### base parameters ###
