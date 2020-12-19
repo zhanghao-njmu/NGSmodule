@@ -65,7 +65,7 @@ var_extract=$(awk -F "$ifs" '
 while IFS=$ifs read line; do
   srp=$(awk -F "$ifs" '{print $1}' <<<"$line")
   srr=$(awk -F "$ifs" '{print $2}' <<<"$line")
-  if [[ "$srr" =~ SRR* ]]; then
+  if [[ "$srr" =~ [SE]RR* ]]; then
     {
       while [[ ! -e $rawdata_dir/$srp/$srr/$srr.sra ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.tmp ]] || [[ -e $rawdata_dir/$srp/$srr/$srr.sra.lock ]]; do
         echo -e "+++++ $srp/$srr: Prefetching SRR +++++"
