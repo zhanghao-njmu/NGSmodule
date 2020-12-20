@@ -7,15 +7,15 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
 #### e.g. If one wants to download a meta file for a SRP study accession, he can use the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
 #### SRP meta file must include the fields "study_accession" "run_accession" "experiment_accession" "sample_accession" "run_total_spots"
 #### Dependencies:
-#### sra-tools >=2.10.8 (https://github.com/ncbi/sra-tools)
+#### sra-tools (https://github.com/ncbi/sra-tools)
 #### pigz (https://zlib.net/pigz)
 
 #############################  Paramaters #############################
-rawdata_dir="$(pwd)/rawdata/"
-SRPfile="$(pwd)/SRP_meta_file.tsv"
+rawdata_dir="/ssd/lab/ZhangHao/SRA-collection/Embryo_organs/rawdata/"
+SRPfile="/ssd/lab/ZhangHao/SRA-collection/Embryo_organs/ERP109002.tsv"
 ifs='\t'
-threads=4
-ntask_per_run=90
+threads=10
+ntask_per_run=16
 force_process="FALSE"
 
 ########################################################################
@@ -31,7 +31,6 @@ prefetch --version &>/dev/null
     echo -e "Cannot find the command prefetch.\n"
     exit 1
 }
-
 
 ###### fifo ######
 tempfifo=$$.fifo
@@ -82,7 +81,7 @@ echo >$logfile
 
 
 line_count=0
-total_count=$(cat "$SRPfile" | wc -l)
+total_count=$(($(cat "$SRPfile" | wc -l) -1 ))
 
 while IFS=$ifs read line; do
   ((line_count++))
@@ -98,7 +97,7 @@ while IFS=$ifs read line; do
     echo -e "########### $line_count/$total_count ###########"
     echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
 
-    if [[ "$srr" =~ SRR* ]]; then
+    if [[ "$srr" =~ [SE]RR* ]]; then
 
       force=${force_process}
       status="uncompleted"
@@ -221,7 +220,7 @@ while IFS=$ifs read line; do
           fi
 
         else
-          sleep 60
+          sleep 300
         fi
       done
 
