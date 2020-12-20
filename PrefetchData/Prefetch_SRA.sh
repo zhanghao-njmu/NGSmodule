@@ -94,10 +94,10 @@ while IFS=$ifs read line; do
     nreads=$(awk -F "$ifs" '{print $5}' <<<"$line")
     nreads=$(echo "$nreads" | xargs)
 
-    echo -e "########### $line_count/$total_count ###########"
-    echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
-
     if [[ "$srr" =~ [SE]RR* ]]; then
+
+      echo -e "########### $line_count/$total_count ###########"
+      echo -e "RECORD INFO: $srp/$srr/$srx/$srs/$nreads"
 
       force=${force_process}
       status="uncompleted"
