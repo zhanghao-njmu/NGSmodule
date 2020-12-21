@@ -100,7 +100,7 @@ for sample in "${arr[@]}"; do
         fi
         if [[ $SequenceType == "rna" ]] && ([[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]] || [[ ! -s "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]]); then
           color_echo "yellow" "+++++ ${sample}: SortMeRNA is uncompleted. Will force to run Fastp. +++++"
-          rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
+          rm -f "$dir"/PreAlignmentQC/fastp/fastp.log "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
         fi
       fi
 
@@ -204,7 +204,7 @@ for sample in "${arr[@]}"; do
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               sortmerna --ref "${SortmeRNA_ref}" \
-              --reads "${sample}".fq \
+              --reads "${fq1}" \
               --threads "$threads" \
               --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
               --fastx \
