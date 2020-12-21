@@ -175,7 +175,7 @@ fqCheck_SE() {
         color_echo "yellow" "$sample: fq1_tail_line format is wrong."
         return 1
     else
-        echo -e "FastqCheck passed:$fq1.\n" >>"$logfile"
+        echo -e "FastqCheck passed:\n$fq1.\n\n" >>"$logfile"
         return 0
     fi
 }
@@ -222,7 +222,7 @@ fqCheck_PE() {
         color_echo "yellow" "$sample: fq2_tail_line format is wrong."
         return 1
     else
-        echo -e "FastqCheck passed:$fq1\n$fq2.\n" >>"$logfile"
+        echo -e "FastqCheck passed:\n$fq1\n$fq2.\n\n" >>"$logfile"
         return 0
     fi
 }
