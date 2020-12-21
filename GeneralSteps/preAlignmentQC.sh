@@ -129,11 +129,23 @@ for sample in "${arr[@]}"; do
 
         check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          fq1_nlines=$(unpigz -c "$fq1" | wc -l)
+          fq1_content=$(unpigz -c "$fq1")
+          fq1_nlines=$(echo "$fq1_content" | wc -l)
+          fq1_tail_line=$(echo "$fq1_content" | tail -n4)
+          fq1_tail_line1=$(echo $fq1_tail_line | sed -n '1p')
+          fq1_tail_line2=$(echo $fq1_tail_line | sed -n '2p')
+          fq1_tail_line3=$(echo $fq1_tail_line | sed -n '3p')
+          fq1_tail_line4=$(echo $fq1_tail_line | sed -n '4p')
+          fq1_tail_line2_len=$(echo $fq1_tail_line2 | wc -c)
+          fq1_tail_line4_len=$(echo $fq1_tail_line4 | wc -c)
+
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))" >"$dir"/fqCheck.log
           if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
             echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: fq1_nlines is zero or not divisible by 4."
+            color_echo "yellow" "$sample: fq1_nlines is zero or not divisible by 4."
+          elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+            echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$dir"/fqCheck.log
+            color_echo "yellow" "$sample: fq1_tail_line format is wrong."
           else
             echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
           fi
@@ -163,14 +175,14 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" \
-          --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
-          "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
-          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
-          --length_required "$length_required" \
-          --in1 "${fq1}" \
-          --out1 "${sample}".fq \
-          -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
-          -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
+            --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
+            "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
+            --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+            --length_required "$length_required" \
+            --in1 "${fq1}" \
+            --out1 "${sample}".fq \
+            -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
+            -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
 
           check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
@@ -187,7 +199,7 @@ for sample in "${arr[@]}"; do
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" \
-            --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
+              --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
 
             check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck" $?
             if [[ $? == 1 ]]; then
@@ -204,14 +216,14 @@ for sample in "${arr[@]}"; do
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               sortmerna --ref "${SortmeRNA_ref}" \
-              --reads "${fq1}" \
-              --threads "$threads" \
-              --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
-              --fastx \
-              --num_alignments 1 \
-              --aligned aligned \
-              --other other \
-              -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+                --reads "${fq1}" \
+                --threads "$threads" \
+                --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
+                --fastx \
+                --num_alignments 1 \
+                --aligned aligned \
+                --other other \
+                -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck" $?
               if [[ $? == 1 ]]; then
                 force="TRUE"
@@ -306,15 +318,39 @@ for sample in "${arr[@]}"; do
         ##To verify that reads appear to be correctly paired
         check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          fq1_nlines=$(unpigz -c "$fq1" | wc -l)
-          fq2_nlines=$(unpigz -c "$fq2" | wc -l)
+          fq1_content=$(unpigz -c "$fq1")
+          fq1_nlines=$(echo "$fq1_content" | wc -l)
+          fq1_tail_line=$(echo "$fq1_content" | tail -n4)
+          fq1_tail_line1=$(echo $fq1_tail_line | sed -n '1p')
+          fq1_tail_line2=$(echo $fq1_tail_line | sed -n '2p')
+          fq1_tail_line3=$(echo $fq1_tail_line | sed -n '3p')
+          fq1_tail_line4=$(echo $fq1_tail_line | sed -n '4p')
+          fq1_tail_line2_len=$(echo $fq1_tail_line2 | wc -c)
+          fq1_tail_line4_len=$(echo $fq1_tail_line4 | wc -c)
+
+          fq2_content=$(unpigz -c "$fq2")
+          fq2_nlines=$(echo "$fq2_content" | wc -l)
+          fq2_tail_line=$(echo "$fq2_content" | tail -n4)
+          fq2_tail_line1=$(echo $fq2_tail_line | sed -n '1p')
+          fq2_tail_line2=$(echo $fq2_tail_line | sed -n '2p')
+          fq2_tail_line3=$(echo $fq2_tail_line | sed -n '3p')
+          fq2_tail_line4=$(echo $fq2_tail_line | sed -n '4p')
+          fq2_tail_line2_len=$(echo $fq2_tail_line2 | wc -c)
+          fq2_tail_line4_len=$(echo $fq2_tail_line4 | wc -c)
+
           echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))" >"$dir"/fqCheck.log
-          if [[ $fq1_nlines != "$fq2_nlines" ]]; then
+          if [[ $fq1_nlines != $fq2_nlines ]]; then
             echo -e "ERROR! $sample has different numbers of reads between paired fastq.\n" >>"$dir"/fqCheck.log
             color_echo "yellow" "Warning! $sample: has different numbers of reads between paired fastq."
           elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
             echo -e "ERROR! fq1_nlines or fq2_nlines count is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
             color_echo "yellow" "Warning! $sample: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
+          elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+            echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$dir"/fqCheck.log
+            color_echo "yellow" "$sample: fq1_tail_line format is wrong."
+          elif [[ ! $(echo $fq2_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq2_tail_line3 | grep -P "^+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
+            echo -e "ERROR! fq2_tail_line format is wrong:\n$fq2_tail_line\n" >>"$dir"/fqCheck.log
+            color_echo "yellow" "$sample: fq2_tail_line format is wrong."
           else
             echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
           fi
@@ -344,14 +380,14 @@ for sample in "${arr[@]}"; do
         if [[ $? == 1 ]]; then
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" --trim_front2 "$trim_front2" --trim_tail2 "$trim_tail2" \
-          --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
-          "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
-          --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
-          --length_required "$length_required" --detect_adapter_for_pe --correction \
-          --in1 "${fq1}" --in2 "${fq2}" \
-          --out1 "${sample}"_1.fq --out2 "${sample}"_2.fq \
-          -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
-          -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
+            --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
+            "$read_cutting" --cut_window_size "$cut_window_size" --cut_mean_quality "$cut_mean_quality" \
+            --low_complexity_filter --trim_poly_x --trim_poly_g --overrepresentation_analysis \
+            --length_required "$length_required" --detect_adapter_for_pe --correction \
+            --in1 "${fq1}" --in2 "${fq2}" \
+            --out1 "${sample}"_1.fq --out2 "${sample}"_2.fq \
+            -j "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.json \
+            -h "$dir"/PreAlignmentQC/fastp/"${sample}".fastp.html 2>"$dir"/PreAlignmentQC/fastp/fastp.log
 
           check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
@@ -369,7 +405,7 @@ for sample in "${arr[@]}"; do
           if [[ $? == 1 ]]; then
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" "$fq2" \
-            --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
+              --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
 
             check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck" $?
             if [[ $? == 1 ]]; then
@@ -387,14 +423,14 @@ for sample in "${arr[@]}"; do
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               reformat.sh in1="$fq1" in2="$fq2" out="$dir"/"${sample}".fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_merge.log
               sortmerna --ref "${SortmeRNA_ref}" \
-              --reads "${sample}".fq --paired_in \
-              --threads "$threads" \
-              --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
-              --fastx \
-              --num_alignments 1 \
-              --aligned aligned \
-              --other other \
-              -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
+                --reads "${sample}".fq --paired_in \
+                --threads "$threads" \
+                --workdir "$dir"/PreAlignmentQC/sortmerna_tmp \
+                --fastx \
+                --num_alignments 1 \
+                --aligned aligned \
+                --other other \
+                -v &>"$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log
               check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "postcheck" $?
               if [[ $? == 1 ]]; then
                 force="TRUE"
@@ -492,7 +528,7 @@ if [[ $ninterrupted != 0 ]]; then
   cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/preAlignmentQC.Interrupted.txt
   color_echo "red" "\n\n################################################################################"
   color_echo "red" "    $ninterrupted of $total_task tasks interrupted."
-  color_echo "red" "    Please check the samples in $maindir/preAlignmentQC.Interrupted.txt"   
+  color_echo "red" "    Please check the samples in $maindir/preAlignmentQC.Interrupted.txt"
   color_echo "red" "################################################################################\n\n"
 fi
 
