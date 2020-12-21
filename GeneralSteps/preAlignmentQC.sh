@@ -98,7 +98,7 @@ for sample in "${arr[@]}"; do
           color_echo "yellow" "+++++ ${sample}: fastq_screen is uncompleted. Will force to run Fastp. +++++"
           rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
         fi
-        if [[ $SequenceType == "rna" ]] && ([[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]] || [[ -s "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]]); then
+        if [[ $SequenceType == "rna" ]] && ([[ ! -f "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]] || [[ ! -s "$dir"/PreAlignmentQC/sortmerna/sortmerna.result.log ]]); then
           color_echo "yellow" "+++++ ${sample}: SortMeRNA is uncompleted. Will force to run Fastp. +++++"
           rm -f "$dir"/PreAlignmentQC/fastp/fastp.log
         fi
