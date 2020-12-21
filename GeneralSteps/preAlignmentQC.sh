@@ -127,30 +127,10 @@ for sample in "${arr[@]}"; do
           continue
         fi
 
-        check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
+        check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          fq1_content=$(unpigz -c "$fq1")
-          fq1_nlines=$(echo "$fq1_content" | wc -l)
-          fq1_tail_line=$(echo "$fq1_content" | tail -n4)
-          fq1_tail_line1=$(echo $fq1_tail_line | sed -n '1p')
-          fq1_tail_line2=$(echo $fq1_tail_line | sed -n '2p')
-          fq1_tail_line3=$(echo $fq1_tail_line | sed -n '3p')
-          fq1_tail_line4=$(echo $fq1_tail_line | sed -n '4p')
-          fq1_tail_line2_len=$(echo $fq1_tail_line2 | wc -c)
-          fq1_tail_line4_len=$(echo $fq1_tail_line4 | wc -c)
-
-          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))" >"$dir"/fqCheck.log
-          if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
-            echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "$sample: fq1_nlines is zero or not divisible by 4."
-          elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
-            echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "$sample: fq1_tail_line format is wrong."
-          else
-            echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
-          fi
-
-          check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          fqCheck_SE "$sample" "$fq1" "$dir"/fqCheck.log
+          check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -262,15 +242,13 @@ for sample in "${arr[@]}"; do
             force="TRUE"
             continue
           fi
-          fq1_nlines=$(unpigz -c "$dir/${sample}_trim.fq.gz" | wc -l)
-          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))" >>"$dir"/fqCheck.log
-          if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: trim_fq1_nlines is zero or not divisible by 4."
+
+          fqCheck_SE "$sample" "$dir/${sample}_trim.fq.gz" "$dir"/fqCheck.log
+          check_logfile "$sample" "FastqCheck(trimmed)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
+          if [[ $? == 1 ]]; then
             force="TRUE"
             continue
           else
-            echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
             status="completed"
             color_echo "blue" "+++++ ${sample}: preAlignmentQC completed +++++"
           fi
@@ -316,46 +294,10 @@ for sample in "${arr[@]}"; do
         fi
 
         ##To verify that reads appear to be correctly paired
-        check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
+        check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
-          fq1_content=$(unpigz -c "$fq1")
-          fq1_nlines=$(echo "$fq1_content" | wc -l)
-          fq1_tail_line=$(echo "$fq1_content" | tail -n4)
-          fq1_tail_line1=$(echo $fq1_tail_line | sed -n '1p')
-          fq1_tail_line2=$(echo $fq1_tail_line | sed -n '2p')
-          fq1_tail_line3=$(echo $fq1_tail_line | sed -n '3p')
-          fq1_tail_line4=$(echo $fq1_tail_line | sed -n '4p')
-          fq1_tail_line2_len=$(echo $fq1_tail_line2 | wc -c)
-          fq1_tail_line4_len=$(echo $fq1_tail_line4 | wc -c)
-
-          fq2_content=$(unpigz -c "$fq2")
-          fq2_nlines=$(echo "$fq2_content" | wc -l)
-          fq2_tail_line=$(echo "$fq2_content" | tail -n4)
-          fq2_tail_line1=$(echo $fq2_tail_line | sed -n '1p')
-          fq2_tail_line2=$(echo $fq2_tail_line | sed -n '2p')
-          fq2_tail_line3=$(echo $fq2_tail_line | sed -n '3p')
-          fq2_tail_line4=$(echo $fq2_tail_line | sed -n '4p')
-          fq2_tail_line2_len=$(echo $fq2_tail_line2 | wc -c)
-          fq2_tail_line4_len=$(echo $fq2_tail_line4 | wc -c)
-
-          echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))" >"$dir"/fqCheck.log
-          if [[ $fq1_nlines != $fq2_nlines ]]; then
-            echo -e "ERROR! $sample has different numbers of reads between paired fastq.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: has different numbers of reads between paired fastq."
-          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
-            echo -e "ERROR! fq1_nlines or fq2_nlines count is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
-          elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
-            echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "$sample: fq1_tail_line format is wrong."
-          elif [[ ! $(echo $fq2_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq2_tail_line3 | grep -P "^+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
-            echo -e "ERROR! fq2_tail_line format is wrong:\n$fq2_tail_line\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "$sample: fq2_tail_line format is wrong."
-          else
-            echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
-          fi
-
-          check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck"
+          fqCheck_PE "$sample" "$fq1" "$fq2" "$dir"/fqCheck.log
+          check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
             force="TRUE"
             continue
@@ -475,21 +417,13 @@ for sample in "${arr[@]}"; do
             force="TRUE"
             continue
           fi
-          fq1_nlines=$(unpigz -c "$dir/${sample}_1_trim.fq.gz" | wc -l)
-          fq2_nlines=$(unpigz -c "$dir/${sample}_2_trim.fq.gz" | wc -l)
-          echo -e "trim_fq1_nlines:$fq1_nlines   trim_fq1_nreads:$((fq1_nlines / 4))\ntrim_fq2_nlines:$fq2_nlines   trim_fq2_nreads:$((fq2_nlines / 4))" >>"$dir"/fqCheck.log
-          if [[ $fq1_nlines != "$fq2_nlines" ]]; then
-            echo -e "ERROR! $sample has different numbers of reads between paired files.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: has different numbers of reads between trimmed paired fastq."
-            force="TRUE"
-            continue
-          elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
-            echo -e "ERROR! trim_fq1_nlines or trim_fq2_nlines is zero or not divisible by 4.\n" >>"$dir"/fqCheck.log
-            color_echo "yellow" "Warning! $sample: trim_fq1_nlines or trim_fq2_nlines is zero or not divisible by 4."
+
+          fqCheck_PE "$sample" "$dir/${sample}_1_trim.fq.gz" "$dir/${sample}_2_trim.fq.gz" "$dir"/fqCheck.log
+          check_logfile "$sample" "FastqCheck(trimmed)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
+          if [[ $? == 1 ]]; then
             force="TRUE"
             continue
           else
-            echo -e "FastqCheck passed.\n" >>"$dir"/fqCheck.log
             status="completed"
             color_echo "blue" "+++++ ${sample}: preAlignmentQC completed +++++"
           fi
