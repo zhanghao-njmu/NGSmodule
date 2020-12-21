@@ -170,7 +170,7 @@ fqCheck_SE() {
         echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>$logfile
         color_echo "yellow" "$sample: fq1_nlines is zero or not divisible by 4."
         return 1
-    elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+    elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>$logfile
         color_echo "yellow" "$sample: fq1_tail_line format is wrong."
         return 1
@@ -213,11 +213,11 @@ fqCheck_PE() {
         echo -e "ERROR! fq1_nlines or fq2_nlines count is zero or not divisible by 4.\n" >>$logfile
         color_echo "yellow" "Warning! $sample: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
         return 1
-    elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+    elif [[ ! $(echo $fq1_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq1_tail_line3 | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>$logfile
         color_echo "yellow" "$sample: fq1_tail_line format is wrong."
         return 1
-    elif [[ ! $(echo $fq2_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq2_tail_line3 | grep -P "^+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
+    elif [[ ! $(echo $fq2_tail_line1 | grep -P "^@") ]] || [[ ! $(echo $fq2_tail_line3 | grep -P "^\+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq2_tail_line format is wrong:\n$fq2_tail_line\n" >>$logfile
         color_echo "yellow" "$sample: fq2_tail_line format is wrong."
         return 1
