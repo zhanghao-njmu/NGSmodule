@@ -22,14 +22,14 @@ force_process="FALSE"
 
 pigz --version &>/dev/null
 [ $? -eq 127 ] && {
-    echo -e "Cannot find the command pigz.\n"
-    exit 1
+  echo -e "Cannot find the command pigz.\n"
+  exit 1
 }
 
 prefetch --version &>/dev/null
 [ $? -eq 127 ] && {
-    echo -e "Cannot find the command prefetch.\n"
-    exit 1
+  echo -e "Cannot find the command prefetch.\n"
+  exit 1
 }
 
 ###### fifo ######
@@ -79,9 +79,8 @@ done <<<"$var_extract"
 logfile="$rawdata_dir/process.log"
 echo >$logfile
 
-
 line_count=0
-total_count=$(($(cat "$SRPfile" | wc -l) -1 ))
+total_count=$(($(cat "$SRPfile" | wc -l) - 1))
 
 while IFS=$ifs read line; do
   ((line_count++))
@@ -148,7 +147,52 @@ while IFS=$ifs read line; do
               force="TRUE"
               continue
             fi
+
+            fq1_nlines=$(unpigz -c "${srr}_1.fastq.gz" | wc -l)
+            fq1_tail_line=$(unpigz -c "${srr}_1.fastq.gz" | tail -n4)
+            fq1_tail_line1=$(echo "$fq1_tail_line" | sed -n '1p')
+            fq1_tail_line2=$(echo "$fq1_tail_line" | sed -n '2p')
+            fq1_tail_line3=$(echo "$fq1_tail_line" | sed -n '3p')
+            fq1_tail_line4=$(echo "$fq1_tail_line" | sed -n '4p')
+            fq1_tail_line2_len=$(echo "$fq1_tail_line2" | wc -c)
+            fq1_tail_line4_len=$(echo "$fq1_tail_line4" | wc -c)
+
+            fq2_nlines=$(unpigz -c "${srr}_2.fastq.gz" | wc -l)
+            fq2_tail_line=$(unpigz -c "${srr}_2.fastq.gz" | tail -n4)
+            fq2_tail_line1=$(echo "$fq2_tail_line" | sed -n '1p')
+            fq2_tail_line2=$(echo "$fq2_tail_line" | sed -n '2p')
+            fq2_tail_line3=$(echo "$fq2_tail_line" | sed -n '3p')
+            fq2_tail_line4=$(echo "$fq2_tail_line" | sed -n '4p')
+            fq2_tail_line2_len=$(echo "$fq2_tail_line2" | wc -c)
+            fq2_tail_line4_len=$(echo "$fq2_tail_line4" | wc -c)
+
+            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))" >"$rawdata_dir/$srp/$srr/fqcheck.log"
+            if [[ $fq1_nlines != $fq2_nlines ]]; then
+              echo -e "ERROR! $srp/$srr has different numbers of reads between paired fastq.\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: has different numbers of reads between paired fastq."
+              force="TRUE"
+              continue
+            elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
+              echo -e "ERROR! fq1_nlines or fq2_nlines count is zero or not divisible by 4.\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
+              force="TRUE"
+              continue
+            elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+              echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: fq1_tail_line format is wrong."
+              force="TRUE"
+              continue
+            elif [[ ! $(echo "$fq2_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq2_tail_line3" | grep -P "^\+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
+              echo -e "ERROR! fq2_tail_line format is wrong:\n$fq2_tail_line\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: fq2_tail_line format is wrong."
+              force="TRUE"
+              continue
+            else
+              status="completed"
+              echo -e "FastqCheck passed:\n${srr}_1.fastq.gz\n${srr}_2.fastq.gz.\n\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+            fi
             echo -e "+++++ $srp/$srr: Integrity check passed +++++"
+
           elif [[ -f ${srr}.fastq.gz ]]; then
             pigz -t ${srr}.fastq.gz 2>/dev/null
             if [[ $? != 0 ]]; then
@@ -156,88 +200,37 @@ while IFS=$ifs read line; do
               force="TRUE"
               continue
             fi
+
+            fq1_nlines=$(unpigz -c "${srr}.fastq.gz" | wc -l)
+            fq1_tail_line=$(unpigz -c "${srr}.fastq.gz" | tail -n4)
+            fq1_tail_line1=$(echo "$fq1_tail_line" | sed -n '1p')
+            fq1_tail_line2=$(echo "$fq1_tail_line" | sed -n '2p')
+            fq1_tail_line3=$(echo "$fq1_tail_line" | sed -n '3p')
+            fq1_tail_line4=$(echo "$fq1_tail_line" | sed -n '4p')
+            fq1_tail_line2_len=$(echo "$fq1_tail_line2" | wc -c)
+            fq1_tail_line4_len=$(echo "$fq1_tail_line4" | wc -c)
+
+            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))" >"$rawdata_dir/$srp/$srr/fqcheck.log"
+            if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
+              echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: fq1_nlines is zero or not divisible by 4."
+              force="TRUE"
+              continue
+            elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+              echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+              echo -e "[INFO] $srp/$srr: fq1_tail_line format is wrong."
+              force="TRUE"
+              continue
+            else
+              status="completed"
+              echo -e "FastqCheck passed:\n${srr}.fastq.gz.\n\n" >>"$rawdata_dir/$srp/$srr/fqcheck.log"
+            fi
             echo -e "+++++ $srp/$srr: Integrity check passed +++++"
+
           else
             echo -e "Warning! $srp/$srr: Cannot find the correct fastq.gz file name."
             force="TRUE"
             continue
-          fi
-
-          if [[ -f ${srr}_1.fastq.gz ]] && [[ -f ${srr}_2.fastq.gz ]]; then
-
-            fq1_nlines=$(unpigz -c "${srr}"_1.fastq.gz | wc -l)
-            fq2_nlines=$(unpigz -c "${srr}"_2.fastq.gz | wc -l)
-            echo -e "fq1_nlines:$fq1_nlines     fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines    fq2_nreads:$((fq2_nlines / 4))\n" >$rawdata_dir/$srp/$srr/fqcheck.log
-            if [[ $fq1_nlines == "$fq2_nlines" ]]; then
-              if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
-                if [[ $((fq1_nlines % 4)) == 0 ]]; then
-                  status="completed"
-                  echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
-                else
-                  force="TRUE"
-                  echo -e "Warning! $srp/$srr: Line count is not divisible by 4."
-                fi
-              else
-                if [[ $fq1_nlines == $((nreads * 4)) ]]; then
-                  status="completed"
-                  echo -e "+++++ $srp/$srr: Success! Processing completed. +++++"
-                else
-                  force="TRUE"
-                  echo -e "Warning! $srp/$srr has different numbers of reads with that SRP meta file recorded:\n         fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
-                fi
-              fi
-
-            else
-              force="TRUE"
-              echo -e "Warning! $srp/$srr has different numbers of reads between paired files:\n         fq1=$((fq1_nlines / 4))/ fq2=$((fq2_nlines / 4))"
-            fi
-
-          elif [[ -f ${srr}.fastq.gz ]]; then
-            fq1_nlines=$(unpigz -c "${srr}".fastq.gz | wc -l)
-              fq1_nlines=$(unpigz -c "$fq1" | wc -l)
-              fq1_tail_line=$(unpigz -c "$fq1" | tail -n4)
-              fq1_tail_line1=$(echo "$fq1_tail_line" | sed -n '1p')
-              fq1_tail_line2=$(echo "$fq1_tail_line" | sed -n '2p')
-              fq1_tail_line3=$(echo "$fq1_tail_line" | sed -n '3p')
-              fq1_tail_line4=$(echo "$fq1_tail_line" | sed -n '4p')
-              fq1_tail_line2_len=$(echo "$fq1_tail_line2" | wc -c)
-              fq1_tail_line4_len=$(echo "$fq1_tail_line4" | wc -c)
-
-            echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >$rawdata_dir/$srp/$srr/fqcheck.log
-
-            if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
-              if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
-                  echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$logfile"
-                  echo -e "$srp/$srr: fq1_nlines is zero or not divisible by 4."
-                  force="TRUE"
-              elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
-                  echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" 
-
-              else
-                  status="completed"
-                  echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
-              fi
-
-              if [[ $((fq1_nlines % 4)) == 0 ]]; then
-                status="completed"
-                echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
-              else
-                force="TRUE"
-                echo -e "Warning! $srp/$srr: Line count is not divisible by 4."
-              fi
-            else
-              if [[ $fq1_nlines == $((nreads * 4)) ]]; then
-                status="completed"
-                echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
-              else
-                force="TRUE"
-                echo -e "Warning! $srp/$srr has different numbers of lines with that SRP meta file recorded:\n         fq1=$((fq1_nlines / 4)) / Recorded=$nreads"
-              fi
-            fi
-
-          else
-            force="TRUE"
-            echo -e "Warning! Can not find any fastq.gz file! $srp/$srr has to restart the processing."
           fi
 
         else
@@ -262,12 +255,12 @@ done <<<"$var_extract"
 wait
 
 interrupt=$(grep "Interrupted:" $logfile)
-if [[ ${#interrupt} == 0 ]];then
+if [[ ${#interrupt} == 0 ]]; then
   echo -e "\033[32mAll data were prefetched and processed successfully! \033[0m"
 else
   echo -e "\033[31mThe following data were interrupted: \033[0m"
   echo -e "\033[31m${interrupt}\n\033[0m"
-  echo -e  "You may manually check these data."
+  echo -e "You may manually check these data."
 fi
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
