@@ -194,9 +194,30 @@ while IFS=$ifs read line; do
 
           elif [[ -f ${srr}.fastq.gz ]]; then
             fq1_nlines=$(unpigz -c "${srr}".fastq.gz | wc -l)
+              fq1_nlines=$(unpigz -c "$fq1" | wc -l)
+              fq1_tail_line=$(unpigz -c "$fq1" | tail -n4)
+              fq1_tail_line1=$(echo "$fq1_tail_line" | sed -n '1p')
+              fq1_tail_line2=$(echo "$fq1_tail_line" | sed -n '2p')
+              fq1_tail_line3=$(echo "$fq1_tail_line" | sed -n '3p')
+              fq1_tail_line4=$(echo "$fq1_tail_line" | sed -n '4p')
+              fq1_tail_line2_len=$(echo "$fq1_tail_line2" | wc -c)
+              fq1_tail_line4_len=$(echo "$fq1_tail_line4" | wc -c)
+
             echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\n" >$rawdata_dir/$srp/$srr/fqcheck.log
 
             if [[ ! "$nreads" =~ ^[0-9]+$ ]]; then
+              if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
+                  echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$logfile"
+                  echo -e "$srp/$srr: fq1_nlines is zero or not divisible by 4."
+                  force="TRUE"
+              elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
+                  echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" 
+
+              else
+                  status="completed"
+                  echo -e "+++++ $srp/$srr: Success! Processing completed +++++"
+              fi
+
               if [[ $((fq1_nlines % 4)) == 0 ]]; then
                 status="completed"
                 echo -e "+++++ $srp/$srr: Success! Processing completed +++++"

@@ -71,7 +71,7 @@ check_logfile() {
     local status=$7
 
     if [[ $status != 0 ]] && [[ $status != "" ]] && [[ $mode == "postcheck" ]]; then
-        color_echo "yellow" "Warning! ${sample}: postcheck detected the non-zero exit status($status) for the ${tool}."
+        color_echo "yellow" "[INFO] ${sample}: postcheck detected the non-zero exit status($status) for the ${tool}."
         return 1
     fi
 
@@ -90,15 +90,15 @@ check_logfile() {
             fi
         elif [[ $error ]]; then
             if [[ $mode == "precheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: precheck detected problems($error) in ${tool} logfile: ${logfile}. Restart ${tool}."
+                color_echo "yellow" "[INFO] ${sample}: precheck detected problems($error) in ${tool} logfile: ${logfile}. Restart ${tool}."
                 return 1
             elif [[ $mode == "postcheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: postcheck detected problems($error) in ${tool} logfile: ${logfile}."
+                color_echo "yellow" "[INFO] ${sample}: postcheck detected problems($error) in ${tool} logfile: ${logfile}."
                 return 1
             fi
         else
             if [[ $mode == "precheck" ]]; then
-                color_echo "yellow" "Warning! ${sample}: precheck unable to determine ${tool} status. Restart ${tool}."
+                color_echo "yellow" "[INFO] ${sample}: precheck unable to determine ${tool} status. Restart ${tool}."
                 return 1
             elif [[ $mode == "postcheck" ]]; then
                 color_echo "blue" "+++++ ${sample}: ${tool} done with no problem [postcheck] +++++"
@@ -111,7 +111,7 @@ check_logfile() {
             color_echo "blue" "+++++ ${sample}: Start ${tool} [precheck] +++++"
             return 1
         elif [[ $mode == "postcheck" ]]; then
-            color_echo "yellow" "Warning! ${sample}: postcheck cannot find the log file for the tool ${tool}: $logfile."
+            color_echo "yellow" "[INFO] ${sample}: postcheck cannot find the log file for the tool ${tool}: $logfile."
             return 1
         fi
     fi
@@ -136,14 +136,14 @@ globalcheck_logfile() {
 
     if ((${#existlogs[*]} >= 1)); then
         if [[ $force == "TRUE" ]]; then
-            color_echo "yellow" "Warning! ${id}: Force to perform a complete workflow."
+            color_echo "yellow" "[INFO] ${id}: Force to perform a complete workflow."
             for log in "${existlogs[@]}"; do
                 rm -f "${log}"
             done
         else
             for log in "${existlogs[@]}"; do
                 if [[ $(grep -iP "${error_pattern}" "${log}") ]] && [[ ! $(grep -iP "${complete_pattern}" "${log}") ]]; then
-                    color_echo "yellow" "Warning! ${id}: Detected uncompleted status from logfile: ${log}."
+                    color_echo "yellow" "[INFO] ${id}: Detected uncompleted status from logfile: ${log}."
                     rm -f "${log}"
                 fi
             done
@@ -168,11 +168,11 @@ fqCheck_SE() {
     echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))" >"$logfile"
     if [[ $((fq1_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]]; then
         echo -e "ERROR! fq1_nlines count is zero or not divisible by 4.\n" >>"$logfile"
-        color_echo "yellow" "$sample: fq1_nlines is zero or not divisible by 4."
+        color_echo "yellow" "[INFO] $sample: fq1_nlines is zero or not divisible by 4."
         return 1
     elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$logfile"
-        color_echo "yellow" "$sample: fq1_tail_line format is wrong."
+        color_echo "yellow" "[INFO] $sample: fq1_tail_line format is wrong."
         return 1
     else
         echo -e "FastqCheck passed:\n$fq1.\n\n" >>"$logfile"
@@ -207,19 +207,19 @@ fqCheck_PE() {
     echo -e "fq1_nlines:$fq1_nlines   fq1_nreads:$((fq1_nlines / 4))\nfq2_nlines:$fq2_nlines   fq2_nreads:$((fq2_nlines / 4))" >"$logfile"
     if [[ $fq1_nlines != $fq2_nlines ]]; then
         echo -e "ERROR! $sample has different numbers of reads between paired fastq.\n" >>"$logfile"
-        color_echo "yellow" "Warning! $sample: has different numbers of reads between paired fastq."
+        color_echo "yellow" "[INFO] $sample: has different numbers of reads between paired fastq."
         return 1
     elif [[ $((fq1_nlines % 4)) != 0 ]] || [[ $((fq2_nlines % 4)) != 0 ]] || [[ $fq1_nlines == 0 ]] || [[ $fq2_nlines == 0 ]]; then
         echo -e "ERROR! fq1_nlines or fq2_nlines count is zero or not divisible by 4.\n" >>"$logfile"
-        color_echo "yellow" "Warning! $sample: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
+        color_echo "yellow" "[INFO] $sample: fq1_nlines or fq2_nlines count is zero or not divisible by 4."
         return 1
     elif [[ ! $(echo "$fq1_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq1_tail_line3" | grep -P "^\+") ]] || [[ $fq1_tail_line2_len != $fq1_tail_line4_len ]] || [[ $fq1_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq1_tail_line format is wrong:\n$fq1_tail_line\n" >>"$logfile"
-        color_echo "yellow" "$sample: fq1_tail_line format is wrong."
+        color_echo "yellow" "[INFO] $sample: fq1_tail_line format is wrong."
         return 1
     elif [[ ! $(echo "$fq2_tail_line1" | grep -P "^@") ]] || [[ ! $(echo "$fq2_tail_line3" | grep -P "^\+") ]] || [[ $fq2_tail_line2_len != $fq2_tail_line4_len ]] || [[ $fq2_tail_line2_len == 0 ]]; then
         echo -e "ERROR! fq2_tail_line format is wrong:\n$fq2_tail_line\n" >>"$logfile"
-        color_echo "yellow" "$sample: fq2_tail_line format is wrong."
+        color_echo "yellow" "[INFO] $sample: fq2_tail_line format is wrong."
         return 1
     else
         echo -e "FastqCheck passed:\n$fq1\n$fq2.\n\n" >>"$logfile"
