@@ -242,7 +242,7 @@ while IFS=$ifs read line; do
         echo -e "Completed: $srp/$srr" >>"$logfile"
       else
         echo -e "Interrupted: $srp/$srr" >>"$logfile"
-        echo -e "\033[31mERROR! $srp/$srr interrupted. Please check the number of reads or re-download the SRA file.\033[0m"
+        echo -e "\033[31mERROR! $srp/$srr interrupted. Please check the number of reads and re-download the SRA file.\033[0m"
       fi
 
     fi
