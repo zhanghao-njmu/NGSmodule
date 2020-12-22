@@ -10,38 +10,45 @@ species <- as.character(args[6])
 exogenous_genes <- as.character(args[7])
 cell_calling_methodNum <- as.numeric(args[8])
 mito_threshold <- as.numeric(args[9])
-HVF_source <- as.character(args[10])
-nHVF <- as.numeric(args[11])
-anchor_dims <- 1:as.numeric(args[12])
-integrate_dims <- 1:as.numeric(args[13])
-maxPC <- as.numeric(args[14])
-resolution <- as.numeric(args[15])
-reduction <- as.character(args[16])
+gene_threshold <- as.numeric(args[10])
+UMI_threshold <- as.numeric(args[11])
+normalization_method <- as.character(args[13])
+HVF_source <- as.character(args[14])
+nHVF <- as.numeric(args[15])
+anchor_dims <- 1:as.numeric(args[16])
+integrate_dims <- 1:as.numeric(args[17])
+maxPC <- as.numeric(args[18])
+resolution <- as.numeric(args[19])
+reduction <- as.character(args[20])
 Ensembl_version <- 101
 
 
-# ##### test #####
-# # parameters: global settings ---------------------------------------------
-# SCPanalysis_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_analysis/Integration/"
-# SCPwork_dir <- "/data/lab/HuangMingQian/scRNA-seq/ESC-PGC-GSCLC-new/NGSmodule_SCP_work/"
-# threads <- 120
-# datasets_raw <- "ESC,iPSC,PGCd6,CellLine1,CellLine2"
-#
-# species <- "Homo_sapiens"
-# exogenous_genes <- "GFP"
-#
-# # parameters: cell filtering ----------------------------------------------
-# cell_calling_methodNum <- 3
-#
-# # parameters: integration -------------------------------------------------
-# HVF_source <- "global"
-# nHVF <- 4000
-# anchor_dims <- 1:30
-# integrate_dims <- 1:30
-#
-# # parameters: clustering --------------------------------------------------
-# maxPC <- 100
-# resolution <- 1
+##### test #####
+# parameters: global settings ---------------------------------------------
+SCPanalysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_analysis/Integration/"
+SCPwork_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/"
+threads <- 120
+datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2"
+species <- "Homo_sapiens"
+exogenous_genes <- "GFP"
+
+# parameters: cell filtering ----------------------------------------------
+cell_calling_methodNum <- 3
+mito_threshold <- 0.2
+gene_threshold <- 1000
+UMI_threshold <- 3000
+normalization_method <- "logCPM,SCT" # CPM,logCPM,SCT
+
+# parameters: integration -------------------------------------------------
+HVF_source <- "global" # global,separate
+nHVF <- 4000
+anchor_dims <- 1:30
+integrate_dims <- 1:30
+
+# parameters: clustering --------------------------------------------------
+maxPC <- 100
+resolution <- 1
+reduction <- "umap" # umap,tsne
 
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
@@ -67,7 +74,9 @@ datasets <- datasets[sapply(datasets, length) > 1]
 #   unlist() %>%
 #   unique()
 samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
+
 reduction <- strsplit(reduction, split = ",") %>% unlist()
+normalization_method <-  strsplit(normalization_method, split = ",") %>% unlist()
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -125,11 +134,11 @@ plan()
 script_dir <- gsub(x = script_path, pattern = "Integration.R", replacement = "")
 source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 
-# source("/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/analysis_zh/scRNA-SeuratWorkflow-function.R")
+# source("/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/SCP-Analysis/Integration/SCP-workflow-funtcion.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
 save.image(file = "base_env.Rdata")
 
-# Preprocessing: load data ------------------------------------------------
+# Preprocessing: Load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   cat("Loading the sc_list and velocity_list from the existing file....\n")
   sc_list <- readRDS("sc_list.rds")
@@ -158,7 +167,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
     )
   }
 
-  # Preprocessing: create Seurat object -------------------------------------
+  # Preprocessing: Create Seurat object -------------------------------------
   sc_list <- list()
   velocity_list <- list()
   for (i in 1:length(samples)) {
@@ -199,7 +208,7 @@ if (length(sc_list) == 1) {
 }
 
 
-# Preprocessing: CellFiltering -----------------------------------
+# Preprocessing: Cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
   cat("Loading the sc_list_filter from the existing file....\n")
   sc_list_filter <- readRDS("sc_list_filter.rds")
@@ -210,11 +219,11 @@ if (file.exists("sc_list_filter.rds")) {
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
+    ndoublets <- sum(sce[["scDblFinder.class"]] == "doublet")
     srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
     srt[["scDblFinder.class"]] <- sce[["scDblFinder.class"]]
-    ndoublets <- sum(sce[["scDblFinder.class"]] == "doublet")
+
     sce <- subset(sce, , scDblFinder.class == "singlet")
-     
     srt <- subset(x = srt, cells = colnames(sce))
 
     log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
@@ -248,6 +257,9 @@ if (file.exists("sc_list_filter.rds")) {
     out <- table(unlist(out))
     out <- as.numeric(names(out)[which(out >= 2)])
 
+    umi_out <- which(srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold)
+    gene_out <- which(srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold)
+
     pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
       pct_counts_Mt <- pct_counts_Mt * 100
@@ -255,13 +267,18 @@ if (file.exists("sc_list_filter.rds")) {
     if (mito_threshold > 0 & mito_threshold < 1) {
       mito_threshold <- mito_threshold * 100
     }
-    mt_out <- isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
+    mt_out <- which(isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > mito_threshold)
-    total_out <- unique(c(out, as.numeric(which(mt_out))))
+      (pct_counts_Mt > mito_threshold))
+    total_out <- unique(c(out, as.numeric(umi_out), as.numeric(gene_out), as.numeric(mt_out)))
 
     cat(">>>", "Total cells:", ntotal, "\n")
-    cat(">>>", "Cells which are filtered out:", ndoublets + length(total_out), "(", ndoublets, "potential doublets,", length(out), "unqualified cells,", length(setdiff(as.numeric(which(mt_out)), out)), "mito-enriched cells", ")", "\n")
+    cat(">>>", "Cells which are filtered out:", ndoublets + length(total_out), "\n")
+    cat("...", ndoublets, "potential doublets", "\n")
+    cat("...", length(out), "unqualified cells", "\n")
+    cat("...", length(umi_out), "low-UMI cells", "\n")
+    cat("...", length(gene_out), "low-Gene cells", "\n")
+    cat("...", length(mt_out), "high-Mito cells", "\n")
     cat(">>>", "Remained cells after filtering :", ntotal - ndoublets - length(total_out), "\n")
 
     if (length(total_out) > 0) {
@@ -276,72 +293,107 @@ if (file.exists("sc_list_filter.rds")) {
 
 
 # Preprocessing: Normalization -----------------------------------
-if (file.exists("sc_list_filter_Standard.rds")) {
-  cat("Loading the sc_list_filter_Standard from the existing file....\n")
-  sc_list_filter_Standard <- readRDS("sc_list_filter_Standard.rds")
-} else {
-  sc_list_filter_Standard <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "(Preprocessing-Standard)", "++++++", "\n")
-    srt <- sc_list_filter[[sc_set]]
-    srt <- Standard_SCP(
-      sc = srt, nHVF = nHVF,
-      maxPC = maxPC, resolution = resolution, reduction = reduction,
-      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
-    )
-    return(srt)
-  })
-  saveRDS(sc_list_filter_Standard, file = "sc_list_filter_Standard.rds")
-}
-
-if (file.exists("sc_list_filter_SCT.rds")) {
-  cat("Loading the sc_list_filter_SCT from the existing file....\n")
-  sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
-} else {
-  sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "(Preprocessing-SCTransform)", "++++++", "\n")
-    srt <- sc_list_filter[[sc_set]]
-    srt <- SCTransform_SCP(
-      sc = srt, nHVF = nHVF,
-      maxPC = maxPC, resolution = resolution, reduction = reduction,
-      cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-      exogenous_genes = exogenous_genes, assay = "RNA"
-    )
-    return(srt)
-  })
-  saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
-}
-
-
-# Individual: Standard normalization ------------------------------
-dir.create("Individual-Standard", recursive = T, showWarnings = FALSE)
-for (sample in samples) {
-  cat("++++++", sample, "(Individual-Standard)", "++++++", "\n")
-  if (file.exists(paste0("Individual-Standard/", sample, ".rds"))) {
-    cat(">>> Individual-Standard process for the", sample, "has finished. Skip to the next step.\n")
-    next
+if ("CPM" %in% normalization_method) {
+  dir.create("Individual-CPM", recursive = T, showWarnings = FALSE)
+  if (file.exists("sc_list_filter_CPM.rds")) {
+    cat("Loading the sc_list_filter_CPM from the existing file....\n")
+    sc_list_filter_CPM <- readRDS("sc_list_filter_CPM.rds")
   } else {
-    srt <- sc_list_filter_Standard[[sample]]
-    saveRDS(srt, paste0("Individual-Standard/", sample, ".rds"))
-    cat(">>> Individual-Standard process for the", sample, "completed successfully.\n")
+    sc_list_filter_CPM <- lapply(setNames(samples, samples), function(sc_set) {
+      cat("++++++", sc_set, "(Normalization-CPM)", "++++++", "\n")
+      srt <- sc_list_filter[[sc_set]]
+      srt <- Standard_SCP(
+        sc = srt, normalization_method = "CPM", nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution, reduction = reduction,
+        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+        exogenous_genes = exogenous_genes, assay = "RNA"
+      )
+      return(srt)
+    })
+    invisible(lapply(names(sc_list_filter_CPM), function(x){
+      saveRDS(sc_list_filter_CPM[[x]],paste0("Individual-CPM/", x, ".rds"))
+    }))
+    saveRDS(sc_list_filter_CPM, file = "sc_list_filter_CPM.rds")
   }
 }
 
-
-# Individual: SCTransform normalization ------------------------------
-dir.create("Individual-SCTransform", recursive = T, showWarnings = FALSE)
-for (sample in samples) {
-  cat("++++++", sample, "(Individual-SCTransform)", "++++++", "\n")
-  if (file.exists(paste0("Individual-SCTransform/", sample, ".rds"))) {
-    cat(">>> Individual-SCTransform process for the", sample, "has finished. Skip to the next step.\n")
-    next
+if ("logCPM" %in% normalization_method) {
+  dir.create("Individual-logCPM", recursive = T, showWarnings = FALSE)
+  if (file.exists("sc_list_filter_logCPM.rds")) {
+    cat("Loading the sc_list_filter_logCPM from the existing file....\n")
+    sc_list_filter_logCPM <- readRDS("sc_list_filter_logCPM.rds")
   } else {
-    cat("++++++", sample, "++++++", "\n")
-    srt <- sc_list_filter_SCT[[sample]]
-    saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
-    cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
+    sc_list_filter_logCPM <- lapply(setNames(samples, samples), function(sc_set) {
+      cat("++++++", sc_set, "(Normalization-logCPM)", "++++++", "\n")
+      srt <- sc_list_filter[[sc_set]]
+      srt <- Standard_SCP(
+        sc = srt, normalization_method = "logCPM", nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution, reduction = reduction,
+        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+        exogenous_genes = exogenous_genes, assay = "RNA"
+      )
+      return(srt)
+    })
+    invisible(lapply(names(sc_list_filter_logCPM), function(x){
+      saveRDS(sc_list_filter_logCPM[[x]],paste0("Individual-logCPM/", x, ".rds"))
+      }))
+    saveRDS(sc_list_filter_logCPM, file = "sc_list_filter_logCPM.rds")
   }
 }
+
+if ("SCT" %in% normalization_method) {
+  dir.create("Individual-SCT", recursive = T, showWarnings = FALSE)
+  if (file.exists("sc_list_filter_SCT.rds")) {
+    cat("Loading the sc_list_filter_SCT from the existing file....\n")
+    sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
+  } else {
+    sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
+      cat("++++++", sc_set, "(Normalization-SCT)", "++++++", "\n")
+      srt <- sc_list_filter[[sc_set]]
+      srt <- SCTransform_SCP(
+        sc = srt, nHVF = nHVF,
+        maxPC = maxPC, resolution = resolution, reduction = reduction,
+        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+        exogenous_genes = exogenous_genes, assay = "RNA"
+      )
+      return(srt)
+    })
+    invisible(lapply(names(sc_list_filter_SCT), function(x){
+      saveRDS(sc_list_filter_SCT[[x]],paste0("Individual-SCT/", x, ".rds"))
+    }))
+    saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
+  }
+}
+
+# # Individual: Standard normalization ------------------------------
+# dir.create("Individual-Standard", recursive = T, showWarnings = FALSE)
+# for (sample in samples) {
+#   cat("++++++", sample, "(Individual-Standard)", "++++++", "\n")
+#   if (file.exists(paste0("Individual-Standard/", sample, ".rds"))) {
+#     cat(">>> Individual-Standard process for the", sample, "has finished. Skip to the next step.\n")
+#     next
+#   } else {
+#     srt <- sc_list_filter_Standard[[sample]]
+#     saveRDS(srt, paste0("Individual-Standard/", sample, ".rds"))
+#     cat(">>> Individual-Standard process for the", sample, "completed successfully.\n")
+#   }
+# }
+# 
+# 
+# # Individual: SCTransform normalization ------------------------------
+# dir.create("Individual-SCTransform", recursive = T, showWarnings = FALSE)
+# for (sample in samples) {
+#   cat("++++++", sample, "(Individual-SCTransform)", "++++++", "\n")
+#   if (file.exists(paste0("Individual-SCTransform/", sample, ".rds"))) {
+#     cat(">>> Individual-SCTransform process for the", sample, "has finished. Skip to the next step.\n")
+#     next
+#   } else {
+#     cat("++++++", sample, "++++++", "\n")
+#     srt <- sc_list_filter_SCT[[sample]]
+#     saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
+#     cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
+#   }
+# }
 
 
 if (length(datasets) != 0) {
@@ -387,23 +439,23 @@ if (length(datasets) != 0) {
   }
 
 
-  # Integration: Standard workflow ------------------------------------------
-  dir.create("Integration-Standard", recursive = T, showWarnings = FALSE)
+  # Integration: Seurat workflow ------------------------------------------
+  dir.create("Integration-Seurat", recursive = T, showWarnings = FALSE)
   for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Standard)", "++++++", "\n")
-    if (file.exists(paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-Standard process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
+    if (file.exists(paste0("Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
+      cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
       next
     } else {
-      srt_integrated <- Standard_integrate(
+      srt_integrated <- Seurat_integrate(
         sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
         anchor_dims = anchor_dims, integrate_dims = integrate_dims,
         maxPC = maxPC, resolution = resolution, reduction = reduction,
         cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
         exogenous_genes = exogenous_genes
       )
-      saveRDS(srt_integrated, file = paste0("Integration-Standard/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-Standard process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      saveRDS(srt_integrated, file = paste0("Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
+      cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
     }
   }
 

@@ -1,4 +1,4 @@
-Standard_SCP <- function(sc, nHVF = 3000,
+Standard_SCP <- function(sc, normalization_method = normalization_method, nHVF = 3000,
                          maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                          exogenous_genes = NULL, assay = "RNA") {
@@ -8,7 +8,11 @@ Standard_SCP <- function(sc, nHVF = 3000,
     x = GetAssayData(sc, slot = "counts"),
     y = GetAssayData(sc, slot = "data")
   )) {
-    sc <- NormalizeData(object = sc)
+    normalization_method <- switch(normalization_method,
+      "logCPM" = "LogNormalize",
+      "CPM" = "RC"
+    )
+    sc <- NormalizeData(object = sc, normalization.method = normalization_method)
   }
   if (length(VariableFeatures(sc)) == 0) {
     sc <- FindVariableFeatures(sc)
@@ -78,6 +82,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000,
     dplyr::arrange(desc(residual_variance)) %>%
     rownames(.) %>%
     head(n = nHVF)
+  
   sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   sc@misc$PC_use <- PC_use
@@ -112,7 +117,7 @@ SCTransform_SCP <- function(sc, nHVF = 3000,
   return(sc)
 }
 
-Standard_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
+Seurat_integrate <- function(sc_list, HVF_source = "separate", nHVF = 3000,
                                anchor_dims = 1:30, integrate_dims = 1:30,
                                maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,

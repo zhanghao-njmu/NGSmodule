@@ -222,7 +222,7 @@ for sample in "${arr[@]}"; do
         BAM=$(ls $dir/$Aligner/*.bam)
         samtools quickcheck -v ${BAM} &>/dev/null
         if [[ $? != 0 ]]; then
-          color_echo "yellow" "Warning! $sample: BAM file checked failed."
+          color_echo "yellow" "[INFO] $sample: BAM file checked failed."
           force="TRUE"
           continue
         fi
@@ -261,7 +261,7 @@ for sample in "${arr[@]}"; do
           dedupBAM=$(ls $dir/$Aligner/deduplicate_bismark/*.deduplicated.bam)
           samtools quickcheck -v ${dedupBAM} &>/dev/null
           if [[ $? != 0 ]]; then
-            color_echo "yellow" "Warning! $sample: BS-seq deduplicated.bam check failed."
+            color_echo "yellow" "[INFO] $sample: BS-seq deduplicated.bam check failed."
             continue
           fi
 
