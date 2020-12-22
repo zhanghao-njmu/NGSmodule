@@ -64,6 +64,8 @@ if [[ -f $SampleInfoFile ]]; then
   fi
   dos2unix $SampleInfoFile &>/dev/null
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+    RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
+    SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
     Sample_dict[$RunID]=$SampleID
     Layout_dict[$SampleID]=$Layout
   done <$SampleInfoFile
