@@ -15,47 +15,46 @@ UMI_threshold <- as.numeric(args[11])
 normalization_method <- as.character(args[13])
 HVF_source <- as.character(args[14])
 nHVF <- as.numeric(args[15])
-anchor_dims <- 1:as.numeric(args[16])
-integrate_dims <- 1:as.numeric(args[17])
 maxPC <- as.numeric(args[18])
 resolution <- as.numeric(args[19])
 reduction <- as.character(args[20])
 Ensembl_version <- 101
 
 
-##### test #####
-# parameters: global settings ---------------------------------------------
-SCPanalysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_analysis/Integration/"
-SCPwork_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/"
-threads <- 120
-datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2"
-datasets_raw<-"ESC,PGCLC-d6,CellLine1,CellLine2;ESC,PGCLC-d6,CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
-species <- "Homo_sapiens"
-exogenous_genes <- "GFP"
+# ##### test #####
+# # parameters: global settings ---------------------------------------------
+# SCPanalysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_analysis/Integration/"
+# SCPwork_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/"
+# threads <- 120
+# datasets_raw <- "CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
+# # datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2;ESC,PGCLC-d6,CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
+# species <- "Homo_sapiens"
+# exogenous_genes <- "GFP"
+#
+# # parameters: cell filtering ----------------------------------------------
+# cell_calling_methodNum <- 3
+# mito_threshold <- 0.2
+# gene_threshold <- 1000
+# UMI_threshold <- 3000
+#
+#
+# # parameters: basic --------------------------------------------------
+# normalization_method <- "logCPM,SCT" # logCPM,SCT
+# nHVF <- 4000
+# maxPC <- 100
+# resolution <- 1
+# reduction <- "umap" # umap,tsne
+#
+# # parameters: integration -------------------------------------------------
+# HVF_source <- "global" # global,separate
+# integration_method <- "Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
 
-# parameters: cell filtering ----------------------------------------------
-cell_calling_methodNum <- 3
-mito_threshold <- 0.2
-gene_threshold <- 1000
-UMI_threshold <- 3000
-normalization_method <- "logCPM,SCT" # logCPM,SCT
-
-# parameters: integration -------------------------------------------------
-HVF_source <- "global" # global,separate
-nHVF <- 4000
-anchor_dims <- 1:30
-integrate_dims <- 1:30
-
-# parameters: clustering --------------------------------------------------
-maxPC <- 100
-resolution <- 1
-reduction <- "umap" # umap,tsne
 
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "sctransform", "Seurat", "SeuratDisk", "SeuratWrappers", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
-    "future", "reticulate", "harmony", "simspec", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "Seurat", "SeuratDisk", "SeuratWrappers", "sctransform", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
+    "future", "reticulate", "harmony", "liger", "simspec", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
     "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
   ),
@@ -78,6 +77,7 @@ samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 reduction <- strsplit(reduction, split = ",") %>% unlist()
 normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
+integration_method <- strsplit(integration_method, split = ",") %>% unlist()
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -330,129 +330,295 @@ if (length(datasets) != 0) {
   for (nm in normalization_method) {
 
     # Integration: Uncorrected ----------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
-        Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
-        srt <- Standard_SCP(
-          sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt, file = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    if ("Uncorrected" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
+          Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
+          srt_integrated <- Standard_SCP(
+            sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
 
 
     # Integration: Seurat workflow ------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        srt_integrated <- Seurat_integrate(
-          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF,
-          anchor_dims = anchor_dims, integrate_dims = integrate_dims,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    if ("Seurat" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- Seurat_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
 
 
     # Integration: fastMNN workflow -------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        srt_integrated <- fastMNN_integrate(
-          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    if ("fastMNN" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- fastMNN_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
-
 
     # Integration: Harmony workflow -------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        srt_integrated <- Harmony_integrate(
-          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    if ("Harmony" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- Harmony_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
+      }
+    }
+
+    # Integration: Scanorama workflow -------------------------------------------
+    if ("Scanorama" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- Scanorama_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
 
 
-    # Integration: Scanorama workflow -------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        srt_integrated <- Scanorama_integrate(
-          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    # Integration: BBKNN workflow -------------------------------------------
+    if ("BBKNN" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-BBKNN"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-BBKNN)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- BBKNN_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
 
 
     # Integration: CSS workflow -------------------------------------------
-    dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
-    for (dataset in datasets) {
-      cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
-        cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-        next
-      } else {
-        srt_integrated <- CSS_integrate(
-          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
-        cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    if ("CSS" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- CSS_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
+      }
+    }
+
+    # Integration: LIGER workflow -------------------------------------------
+    if ("LIGER" %in% integration_method) {
+      dir.create(paste0("Normalization-", nm, "/", "Integration-LIGER"), recursive = T, showWarnings = FALSE)
+      for (dataset in datasets) {
+        cat("++++++", paste0(dataset, collapse = ","), "(Integration-LIGER)", "++++++", "\n")
+        if (file.exists(paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
+          cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+          next
+        } else {
+          srt_integrated <- CSS_integrate(
+            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF,
+            maxPC = maxPC, resolution = resolution, reduction = reduction,
+            cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+            exogenous_genes = exogenous_genes
+          )
+          p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", "seurat_clusters", "cellcalling_method"), combine = FALSE)
+          p1 <- lapply(p1, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- lapply(p2, function(p) {
+            p + theme(aspect.ratio = 1)
+          })
+          p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+          ggsave(
+            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".png"),
+            units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+            scale = 1.5, limitsize = FALSE
+          )
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))
+          cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+        }
       }
     }
   }

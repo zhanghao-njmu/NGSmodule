@@ -57,7 +57,7 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
   sc$seurat_clusters <- Idents(sc)
 
   if ("umap" %in% reduction) {
-    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     sc <- RunTSNE(
@@ -81,10 +81,8 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
   return(sc)
 }
 
-
 Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
                              HVF_source = "separate", nHVF = 3000,
-                             anchor_dims = 1:30, integrate_dims = 1:30,
                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                              cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                              exogenous_genes = NULL) {
@@ -167,14 +165,14 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
       "logCPM" = "LogNormalize", "SCT" = "SCT"
     ),
     anchor.features = hvf,
-    dims = anchor_dims
+    dims = 1:30
   )
   srt_integrated <- IntegrateData(
     anchorset = srt_anchors,
     normalization.method = switch(normalization_method,
       "logCPM" = "LogNormalize", "SCT" = "SCT"
     ),
-    dims = integrate_dims,
+    dims = 1:30,
     features.to.integrate = c(
       hvf,
       Reduce(union, lapply(sc_list, VariableFeatures)),
@@ -192,7 +190,7 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
   )) {
     srt_integrated <- NormalizeData(object = srt_integrated)
   }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
@@ -213,7 +211,7 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
@@ -236,7 +234,6 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
-
 
 fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
                               HVF_source = "separate", nHVF = 3000,
@@ -334,7 +331,7 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
   if (length(VariableFeatures(srt_integrated)) == 0) {
     VariableFeatures(srt_integrated) <- hvf
   }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
@@ -353,7 +350,7 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "mnn", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
@@ -484,7 +481,7 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
   if (length(VariableFeatures(srt_integrated)) == 0) {
     VariableFeatures(srt_integrated) <- hvf
   }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
@@ -503,7 +500,7 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "harmony", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
@@ -633,7 +630,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   rownames(dim_reduction) <- unlist(sapply(assaylist, rownames))
   colnames(dim_reduction) <- paste0("PC_", 1:100)
   stdevs <- apply(dim_reduction, MARGIN = 2, FUN = sd)
-  
+
   srt_integrated <- Reduce(function(x, y) merge(x, y), sc_list)
   srt_integrated[["integrated"]] <- CreateAssayObject(data = cor_value)
   srt_integrated[["scanorama"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "integrated", stdev = stdevs, key = "scanorama_")
@@ -648,7 +645,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   if (length(VariableFeatures(srt_integrated)) == 0) {
     VariableFeatures(srt_integrated) <- hvf
   }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
 
@@ -669,7 +666,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
@@ -693,22 +690,22 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   return(srt_integrated)
 }
 
-CSS_integrate <- function(sc_list, normalization_method = "logCPM",
-                          HVF_source = "separate", nHVF = 3000,
-                          maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
-                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                          exogenous_genes = NULL) {
+BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
+                            HVF_source = "separate", nHVF = 3000,
+                            maxPC = 100, resolution = 0.8,
+                            cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                            exogenous_genes = NULL) {
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
-         call. = FALSE
+      call. = FALSE
     )
   }
   if (!HVF_source %in% c("global", "separate")) {
     stop("'HVF_source' must be one of: 'global','separate'",
-         call. = FALSE
+      call. = FALSE
     )
   }
-  
+
   for (i in 1:length(sc_list)) {
     DefaultAssay(sc_list[[i]]) <- "RNA"
     if (identical(
@@ -722,7 +719,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
     }
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
-               (!rownames(.) %in% exogenous_genes)) %>%
+        (!rownames(.) %in% exogenous_genes)) %>%
       dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -730,7 +727,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
       sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
     }
     DefaultAssay(sc_list[[i]]) <- "RNA"
-    
+
     if (normalization_method %in% c("SCT")) {
       if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
         sc_list[[i]] <- SCTransform(
@@ -749,7 +746,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
         head(n = nHVF)
     }
   }
-  
+
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
   if (HVF_source == "global") {
     gene_common <- lapply(sc_list, function(x) {
@@ -760,8 +757,8 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
     hvf <- FindVariableFeatures(sc_merge) %>%
       HVFInfo(.) %>%
       filter(variance.standardized > 1 &
-               (!rownames(.) %in% exogenous_genes) &
-               rownames(.) %in% gene_common) %>%
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_common) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -769,16 +766,150 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
   if (HVF_source == "separate") {
     hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
   }
-  
+
   VariableFeatures(sc_merge) <- hvf
   sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
-  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc_merge, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  
+
+  bbknn <- reticulate::import("bbknn", convert = FALSE)
+  pca <- reticulate::r_to_py(Embeddings(sc_merge, reduction = "pca"))
+
+  bem <- bbknn$bbknn_pca_matrix(pca, batch_list = sc_merge[["orig.ident"]])
+  bem <- reticulate::py_to_r(bem)
+  bbknn_graph <- as.matrix(bem[[2]])
+  rownames(bbknn_graph) <- colnames(bbknn_graph) <- colnames(sc_merge)
+  sc_merge@graphs$bbknn <- as.Graph(bbknn_graph)
+  sc_merge <- FindClusters(object = sc_merge, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = "bbknn")
+  srt_integrated <- sc_merge
+
+  raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
+  sc_merge <- NULL
+
+  DefaultAssay(object = srt_integrated) <- "RNA"
+  if (identical(
+    x = GetAssayData(srt_integrated, slot = "counts"),
+    y = GetAssayData(srt_integrated, slot = "data")
+  )) {
+    srt_integrated <- NormalizeData(object = srt_integrated)
+  }
+  if (length(VariableFeatures(srt_integrated)) == 0) {
+    VariableFeatures(srt_integrated) <- hvf
+  }
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
+    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
+  }
+
+  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
+  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
+    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
+  )
+
+  srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
+
+  srt_integrated <- RunUMAP(object = srt_integrated, graph = "bbknn", umap.method = "umap-learn")
+
+  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
+    srt_integrated <- CellCycleScoring(
+      object = srt_integrated,
+      s.features = cc_S_genes,
+      g2m.features = cc_G2M_genes,
+      set.ident = FALSE
+    )
+    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
+    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
+  }
+
+  DefaultAssay(srt_integrated) <- "RNA"
+  return(srt_integrated)
+}
+
+CSS_integrate <- function(sc_list, normalization_method = "logCPM",
+                          HVF_source = "separate", nHVF = 3000,
+                          maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                          exogenous_genes = NULL) {
+  if (!normalization_method %in% c("logCPM", "SCT")) {
+    stop("'normalization_method' must be one of: 'logCPM','SCT'",
+      call. = FALSE
+    )
+  }
+  if (!HVF_source %in% c("global", "separate")) {
+    stop("'HVF_source' must be one of: 'global','separate'",
+      call. = FALSE
+    )
+  }
+
+  for (i in 1:length(sc_list)) {
+    DefaultAssay(sc_list[[i]]) <- "RNA"
+    if (identical(
+      x = GetAssayData(sc_list[[i]], slot = "counts"),
+      y = GetAssayData(sc_list[[i]], slot = "data")
+    )) {
+      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
+    }
+    if (length(VariableFeatures(sc_list[[i]])) == 0) {
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+    }
+    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes)) %>%
+      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
+      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
+    }
+    DefaultAssay(sc_list[[i]]) <- "RNA"
+
+    if (normalization_method %in% c("SCT")) {
+      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
+        sc_list[[i]] <- SCTransform(
+          object = sc_list[[i]],
+          variable.features.n = nHVF,
+          return.only.var.genes = FALSE,
+          assay = "RNA"
+        )
+      } else {
+        DefaultAssay(sc_list[[i]]) <- "SCT"
+      }
+      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+        filter((!rownames(.) %in% exogenous_genes)) %>%
+        dplyr::arrange(desc(residual_variance)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
+    }
+  }
+
+  sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+  if (HVF_source == "global") {
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
+    hvf <- FindVariableFeatures(sc_merge) %>%
+      HVFInfo(.) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_common) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+  }
+  if (HVF_source == "separate") {
+    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
+  }
+
+  VariableFeatures(sc_merge) <- hvf
+  sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
+  sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
 
   srt_integrated <- cluster_sim_spectrum(
     object = sc_merge,
-    dims_use = 1:PC_use,
+    dims_use = 1:20,
+    var_genes = hvf,
     label_tag = "orig.ident",
     cluster_resolution = 0.4,
     corr_method = "pearson",
@@ -797,10 +928,10 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
   if (length(VariableFeatures(srt_integrated)) == 0) {
     VariableFeatures(srt_integrated) <- hvf
   }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) == 0) {
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
     srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
   }
-  
+
   DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
   srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
   srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
@@ -816,7 +947,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "css", dims = 1:PC_use, n.components = 2, umap.method = "uwot")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "css", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
@@ -839,6 +970,145 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
+
+LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
+                            HVF_source = "separate", nHVF = 3000,
+                            maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                            cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                            exogenous_genes = NULL) {
+  if (!normalization_method %in% c("logCPM", "SCT")) {
+    stop("'normalization_method' must be one of: 'logCPM','SCT'",
+      call. = FALSE
+    )
+  }
+  if (!HVF_source %in% c("global", "separate")) {
+    stop("'HVF_source' must be one of: 'global','separate'",
+      call. = FALSE
+    )
+  }
+
+  for (i in 1:length(sc_list)) {
+    DefaultAssay(sc_list[[i]]) <- "RNA"
+    if (identical(
+      x = GetAssayData(sc_list[[i]], slot = "counts"),
+      y = GetAssayData(sc_list[[i]], slot = "data")
+    )) {
+      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
+    }
+    if (length(VariableFeatures(sc_list[[i]])) == 0) {
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+    }
+    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes)) %>%
+      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
+      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
+    }
+    DefaultAssay(sc_list[[i]]) <- "RNA"
+
+    if (normalization_method %in% c("SCT")) {
+      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
+        sc_list[[i]] <- SCTransform(
+          object = sc_list[[i]],
+          variable.features.n = nHVF,
+          return.only.var.genes = FALSE,
+          assay = "RNA"
+        )
+      } else {
+        DefaultAssay(sc_list[[i]]) <- "SCT"
+      }
+      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+        filter((!rownames(.) %in% exogenous_genes)) %>%
+        dplyr::arrange(desc(residual_variance)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
+    }
+  }
+
+  sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+  if (HVF_source == "global") {
+    gene_common <- lapply(sc_list, function(x) {
+      m <- GetAssayData(x, slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
+      return(gene_keep)
+    }) %>% Reduce(intersect, .)
+    hvf <- FindVariableFeatures(sc_merge) %>%
+      HVFInfo(.) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_common) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+  }
+  if (HVF_source == "separate") {
+    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
+  }
+
+  VariableFeatures(sc_merge) <- hvf
+  sc_merge <- ScaleData(object = sc_merge, features = hvf, split.by = "orig.ident")
+
+  sc_merge <- RunOptimizeALS(sc_merge, k = 20, lambda = 5, split.by = "orig.ident")
+  srt_integrated <- RunQuantileNorm(sc_merge, split.by = "orig.ident")
+  raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
+  sc_merge <- NULL
+
+  DefaultAssay(object = srt_integrated) <- "RNA"
+  if (identical(
+    x = GetAssayData(srt_integrated, slot = "counts"),
+    y = GetAssayData(srt_integrated, slot = "data")
+  )) {
+    srt_integrated <- NormalizeData(object = srt_integrated)
+  }
+  if (length(VariableFeatures(srt_integrated)) == 0) {
+    VariableFeatures(srt_integrated) <- hvf
+  }
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
+    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
+  }
+
+  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
+  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
+    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
+  )
+
+  PC_use <- srt_integrated@misc$PC_use <- ncol(srt_integrated[["iNMF"]])
+
+  srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, force.recalc = T)
+  srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
+
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
+    )
+  }
+
+  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
+    srt_integrated <- CellCycleScoring(
+      object = srt_integrated,
+      s.features = cc_S_genes,
+      g2m.features = cc_G2M_genes,
+      set.ident = FALSE
+    )
+    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
+    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
+  }
+
+  DefaultAssay(srt_integrated) <- "RNA"
+  return(srt_integrated)
+}
+
+
 
 
 DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
