@@ -44,7 +44,7 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
       )
     }
     if (is.null(hvf)) {
-      VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+      VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
         filter((!rownames(.) %in% exogenous_genes)) %>%
         dplyr::arrange(desc(residual_variance)) %>%
         rownames(.) %>%
@@ -138,7 +138,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       } else {
         DefaultAssay(sc_list[[i]]) <- "SCT"
       }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]], selection.method = "sctransform") %>%
         filter((!rownames(.) %in% exogenous_genes)) %>%
         dplyr::arrange(desc(residual_variance)) %>%
         rownames(.) %>%
