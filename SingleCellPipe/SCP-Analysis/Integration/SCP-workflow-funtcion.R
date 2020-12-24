@@ -603,7 +603,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   }
 
   require(reticulate)
-  scanorama <- import("scanorama")
+  scanorama <- reticulate::import("scanorama")
 
   assaylist <- list()
   genelist <- list()

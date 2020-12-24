@@ -9,7 +9,7 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("sctransform" "Seurat" "SeuratWrappers" "SeuratDisk" "intrinsicDimension" "scater" "Matrix" "BiocParallel" "future" "reticulate" "harmony" "simspec" "plyr" "dplyr" "RColorBrewer" "scales" "gtools" "ggsci" "ggpubr" "ggplot2" "ggtree" "cowplot" "reshape2" "stringr" "velocyto.R" "scDblFinder" "biomaRt" "rvest" "xml2")
+R_packages=("Seurat" "SeuratDisk" "SeuratWrappers" "sctransform" "intrinsicDimension" "scater" "Matrix" "BiocParallel" "future" "reticulate" "harmony" "liger" "simspec" "plyr" "dplyr" "RColorBrewer" "scales" "gtools" "ggsci" "ggpubr" "ggplot2" "ggtree" "cowplot" "reshape2" "stringr" "scDblFinder" "velocyto.R" "biomaRt" "rvest" "xml2")
 for package in "${R_packages[@]}"; do
   Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
   if [ $? -ne 0 ]; then
@@ -44,7 +44,7 @@ cd $maindir/NGSmodule_SCP_analysis/Integration
 Rscript $1 $1 "$maindir/NGSmodule_SCP_analysis/Integration" "${work_dir}" "${threads}" "${datasets}" \
   "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${gene_threshold}" \
   "${UMI_threshold}" "${normalization_method}" "${nHVF}" "${maxPC}" "${resolution}" \
-  "${reduction}" "${HVF_source}" "${integration_method}" 2>&1 |tee Integration.log 
+  "${reduction}" "${HVF_source}" "${integration_method}" 2>&1 | tee Integration.log
 echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
