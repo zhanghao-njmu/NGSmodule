@@ -92,6 +92,7 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
 sc_list_Check <- function(sc_list, normalization_method = "logCPM",
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL) {
+  require(Seurat)
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
       call. = FALSE
