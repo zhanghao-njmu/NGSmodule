@@ -93,6 +93,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL) {
   require(Seurat)
+  require(sctransform)
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
       call. = FALSE
@@ -122,7 +123,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       rownames(.) %>%
       head(n = nHVF)
     if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
+      sc_list[[i]] <- Seurat::scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
     }
     DefaultAssay(sc_list[[i]]) <- "RNA"
 
