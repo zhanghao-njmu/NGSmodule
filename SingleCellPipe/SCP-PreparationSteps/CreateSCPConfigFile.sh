@@ -53,18 +53,19 @@ exogenous_genes="GFP"
 ### cell-filtering ###
 cell_calling_methodNum=3
 mito_threshold=0.2
+gene_threshold=1000
+UMI_threshold=3000
+
+### basic ###
+normalization_method="logCPM,SCT"       # logCPM,SCT
+nHVF=4000
+maxPC=100
+resolution=1
+reduction="umap"                        # umap,tsne
 
 ### integration ###
-HVF_source="separate"
-nHVF=4000
-anchor_dims=30
-integrate_dims=30
-
-### clustering ###
-maxPC=100
-resolution=0.6
-reduction="umap,tsne"
-
+HVF_source="global"                  # global,separate
+integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
 
 
 EOF
