@@ -1,4 +1,4 @@
-Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
+Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
                          maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                          cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                          exogenous_genes = NULL) {
@@ -16,15 +16,19 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
   )) {
     sc <- NormalizeData(object = sc, normalization.method = "LogNormalize")
   }
-  if (length(VariableFeatures(sc)) == 0) {
-    sc <- FindVariableFeatures(sc)
+  if (is.null(hvf)) {
+    if (length(VariableFeatures(sc)) == 0) {
+      sc <- FindVariableFeatures(sc)
+    }
+    VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+  } else {
+    VariableFeatures(sc) <- hvf
   }
-  VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
-    filter(variance.standardized > 1 &
-      (!rownames(.) %in% exogenous_genes)) %>%
-    dplyr::arrange(desc(variance.standardized)) %>%
-    rownames(.) %>%
-    head(n = nHVF)
   if (nrow(GetAssayData(sc, slot = "scale.data")) == 0) {
     sc <- ScaleData(object = sc, features = rownames(sc))
   }
@@ -39,11 +43,15 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
         assay = "RNA"
       )
     }
-    VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
-      filter((!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc(residual_variance)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
+    if (is.null(hvf)) {
+      VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+        filter((!rownames(.) %in% exogenous_genes)) %>%
+        dplyr::arrange(desc(residual_variance)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
+    } else {
+      VariableFeatures(sc) <- hvf
+    }
     DefaultAssay(sc) <- "SCT"
   }
 
@@ -81,11 +89,9 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000,
   return(sc)
 }
 
-Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
-                             HVF_source = "separate", nHVF = 3000,
-                             maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
-                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                             exogenous_genes = NULL) {
+sc_list_Check <- function(sc_list, normalization_method = "logCPM",
+                          HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                          exogenous_genes = NULL) {
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
       call. = FALSE
@@ -111,7 +117,7 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
     if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
@@ -138,26 +144,44 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
     }
   }
 
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    sc_merge <- NULL
+  if (is.null(hvf)) {
+    if (HVF_source == "global") {
+      gene_common <- lapply(sc_list, function(x) {
+        m <- GetAssayData(x, slot = "counts")
+        gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
+        return(gene_keep)
+      }) %>% Reduce(intersect, .)
+      sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+      hvf <- FindVariableFeatures(sc_merge) %>%
+        HVFInfo(.) %>%
+        filter(variance.standardized > 1 &
+          (!rownames(.) %in% exogenous_genes) &
+          rownames(.) %in% gene_common) %>%
+        dplyr::arrange(desc(variance.standardized)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
+    }
+    if (HVF_source == "separate") {
+      hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
+    }
   }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
+
+  return(list(sc_list = sc_list, hvf = hvf))
+}
+
+
+Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
+                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                             maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                             exogenous_genes = NULL) {
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   srt_anchors <- FindIntegrationAnchors(
     object.list = sc_list,
@@ -236,82 +260,17 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
-                              HVF_source = "separate", nHVF = 3000,
+                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
-
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    sc_merge <- NULL
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   srt_integrated <- RunFastMNN(
     object.list = sc_list,
@@ -375,82 +334,19 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
-                              HVF_source = "separate", nHVF = 3000,
+                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
-
   VariableFeatures(sc_merge) <- hvf
   sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
@@ -525,82 +421,17 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
-                                HVF_source = "separate", nHVF = 3000,
+                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                 maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                 cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                                 exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
-
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    sc_merge <- NULL
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   require(reticulate)
   scanorama <- reticulate::import("scanorama")
@@ -691,82 +522,19 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
-                            HVF_source = "separate", nHVF = 3000,
+                            HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8,
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
-
   VariableFeatures(sc_merge) <- hvf
   sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
@@ -826,82 +594,19 @@ BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 CSS_integrate <- function(sc_list, normalization_method = "logCPM",
-                          HVF_source = "separate", nHVF = 3000,
+                          HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                           cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                           exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
-
   VariableFeatures(sc_merge) <- hvf
   sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
@@ -972,84 +677,21 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
-                            HVF_source = "separate", nHVF = 3000,
+                            HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL) {
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-  if (!HVF_source %in% c("global", "separate")) {
-    stop("'HVF_source' must be one of: 'global','separate'",
-      call. = FALSE
-    )
-  }
-
-  for (i in 1:length(sc_list)) {
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-    if (identical(
-      x = GetAssayData(sc_list[[i]], slot = "counts"),
-      y = GetAssayData(sc_list[[i]], slot = "data")
-    )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
-    }
-    if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
-    }
-    VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc_list[[i]](variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-    if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
-    }
-    DefaultAssay(sc_list[[i]]) <- "RNA"
-
-    if (normalization_method %in% c("SCT")) {
-      if (!"SCT" %in% Seurat::Assays(sc_list[[i]])) {
-        sc_list[[i]] <- SCTransform(
-          object = sc_list[[i]],
-          variable.features.n = nHVF,
-          return.only.var.genes = FALSE,
-          assay = "RNA"
-        )
-      } else {
-        DefaultAssay(sc_list[[i]]) <- "SCT"
-      }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
-    }
-  }
+  checked <- sc_list_Check(sc_list,
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  if (HVF_source == "global") {
-    gene_common <- lapply(sc_list, function(x) {
-      m <- GetAssayData(x, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
-      return(gene_keep)
-    }) %>% Reduce(intersect, .)
-    hvf <- FindVariableFeatures(sc_merge) %>%
-      HVFInfo(.) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes) &
-        rownames(.) %in% gene_common) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-  }
-  if (HVF_source == "separate") {
-    hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
-  }
-
   VariableFeatures(sc_merge) <- hvf
-  sc_merge <- ScaleData(object = sc_merge, features = hvf, split.by = "orig.ident")
+  sc_merge <- ScaleData(object = sc_merge, features = hvf, split.by = "orig.ident", do.center = FALSE)
 
   sc_merge <- RunOptimizeALS(sc_merge, k = 20, lambda = 5, split.by = "orig.ident")
   srt_integrated <- RunQuantileNorm(sc_merge, split.by = "orig.ident")

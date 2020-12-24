@@ -331,6 +331,14 @@ if (length(datasets) != 0) {
   for (nm in normalization_method) {
     cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
 
+    checked <- sc_list_Check(
+      sc_list = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
+      exogenous_genes = exogenous_genes
+    )
+    sc_list <- checked[["sc_list"]]
+    hvf <- checked[["hvf"]]
+
     # Integration: Uncorrected ----------------------------------------------
     if ("Uncorrected" %in% integration_method) {
       dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
@@ -340,10 +348,10 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
           next
         } else {
-          sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), get(paste0("sc_list_filter_",nm))[dataset])
+          sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), get(paste0("sc_list_filter_", nm))[dataset])
           Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
           srt_integrated <- Standard_SCP(
-            sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF,
+            sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -352,7 +360,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -379,8 +387,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Seurat_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -389,7 +397,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -416,8 +424,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- fastMNN_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -426,7 +434,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -452,8 +460,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Harmony_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -462,7 +470,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -488,8 +496,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Scanorama_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -498,7 +506,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -525,8 +533,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- BBKNN_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -535,7 +543,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -562,8 +570,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- CSS_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -572,7 +580,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
@@ -598,8 +606,8 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- CSS_integrate(
-            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
-            HVF_source = HVF_source, nHVF = nHVF,
+            sc_list = sc_list, normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
             exogenous_genes = exogenous_genes
@@ -608,7 +616,7 @@ if (length(datasets) != 0) {
           p1 <- lapply(p1, function(p) {
             p + theme(aspect.ratio = 1)
           })
-          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE)
+          p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
           p2 <- lapply(p2, function(p) {
             p + theme(aspect.ratio = 1)
           })
