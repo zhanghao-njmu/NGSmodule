@@ -346,7 +346,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), get(paste0("sc_list_filter_", nm))[dataset])
           Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
@@ -382,7 +381,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- Seurat_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -418,7 +416,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- fastMNN_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -453,7 +450,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- Harmony_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -488,7 +484,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- Scanorama_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -524,7 +519,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-BBKNN)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- BBKNN_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -559,7 +553,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- CSS_integrate(
             sc_list = sc_list, normalization_method = nm,
@@ -594,7 +587,6 @@ if (length(datasets) != 0) {
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-LIGER)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          next
         } else {
           srt_integrated <- CSS_integrate(
             sc_list = sc_list, normalization_method = nm,
