@@ -329,7 +329,8 @@ for (nm in normalization_method) {
 
 if (length(datasets) != 0) {
   for (nm in normalization_method) {
-
+    cat("++++++ Use",nm,"normalized data to do integration ++++++", "\n")
+    
     # Integration: Uncorrected ----------------------------------------------
     if ("Uncorrected" %in% integration_method) {
       dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
