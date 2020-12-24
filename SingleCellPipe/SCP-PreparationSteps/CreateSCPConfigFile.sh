@@ -65,7 +65,7 @@ reduction="umap"                        # umap,tsne
 
 ### integration ###
 HVF_source="global"                  # global,separate
-integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
+integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
 
 
 EOF
