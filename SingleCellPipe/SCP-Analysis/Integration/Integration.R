@@ -328,21 +328,22 @@ for (nm in normalization_method) {
 
 
 if (length(datasets) != 0) {
-  for (nm in normalization_method) {
-    cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
+  for (dataset in datasets) {
+    for (nm in normalization_method) {
+      cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
 
-    checked <- sc_list_Check(
-      sc_list = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
-      exogenous_genes = exogenous_genes
-    )
-    sc_list <- checked[["sc_list"]]
-    hvf <- checked[["hvf"]]
+      checked <- sc_list_Check(
+        sc_list = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
+        HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
+        exogenous_genes = exogenous_genes
+      )
+      sc_list <- checked[["sc_list"]]
+      hvf <- checked[["hvf"]]
 
-    # Integration: Uncorrected ----------------------------------------------
-    if ("Uncorrected" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+      # Integration: Uncorrected ----------------------------------------------
+      if ("Uncorrected" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -374,13 +375,12 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
 
-    # Integration: Seurat workflow ------------------------------------------
-    if ("Seurat" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+      # Integration: Seurat workflow ------------------------------------------
+      if ("Seurat" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -411,13 +411,13 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
 
-    # Integration: fastMNN workflow -------------------------------------------
-    if ("fastMNN" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: fastMNN workflow -------------------------------------------
+      if ("fastMNN" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -448,12 +448,12 @@ if (length(datasets) != 0) {
           cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
-    # Integration: Harmony workflow -------------------------------------------
-    if ("Harmony" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: Harmony workflow -------------------------------------------
+      if ("Harmony" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -484,12 +484,12 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
-    # Integration: Scanorama workflow -------------------------------------------
-    if ("Scanorama" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: Scanorama workflow -------------------------------------------
+      if ("Scanorama" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -520,13 +520,13 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
 
-    # Integration: BBKNN workflow -------------------------------------------
-    if ("BBKNN" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-BBKNN"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: BBKNN workflow -------------------------------------------
+      if ("BBKNN" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-BBKNN"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-BBKNN)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -557,13 +557,13 @@ if (length(datasets) != 0) {
           cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
 
-    # Integration: CSS workflow -------------------------------------------
-    if ("CSS" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: CSS workflow -------------------------------------------
+      if ("CSS" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
@@ -594,12 +594,12 @@ if (length(datasets) != 0) {
           cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
-    }
 
-    # Integration: LIGER workflow -------------------------------------------
-    if ("LIGER" %in% integration_method) {
-      dir.create(paste0("Normalization-", nm, "/", "Integration-LIGER"), recursive = T, showWarnings = FALSE)
-      for (dataset in datasets) {
+
+      # Integration: LIGER workflow -------------------------------------------
+      if ("LIGER" %in% integration_method) {
+        dir.create(paste0("Normalization-", nm, "/", "Integration-LIGER"), recursive = T, showWarnings = FALSE)
+
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-LIGER)", "++++++", "\n")
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
