@@ -123,7 +123,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       rownames(.) %>%
       head(n = nHVF)
     if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- Seurat::scaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
+      sc_list[[i]] <- ScaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
     }
     DefaultAssay(sc_list[[i]]) <- "RNA"
 
