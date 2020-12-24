@@ -340,7 +340,7 @@ if (length(datasets) != 0) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
           next
         } else {
-          sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
+          sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), get(paste0("sc_list_filter_",nm))[dataset])
           Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
           srt_integrated <- Standard_SCP(
             sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF,
@@ -379,7 +379,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Seurat_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -416,7 +416,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- fastMNN_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -452,7 +452,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Harmony_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -488,7 +488,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- Scanorama_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -525,7 +525,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- BBKNN_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -562,7 +562,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- CSS_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
@@ -598,7 +598,7 @@ if (length(datasets) != 0) {
           next
         } else {
           srt_integrated <- CSS_integrate(
-            sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+            sc_list = get(paste0("sc_list_filter_",nm))[dataset], normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
             cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
