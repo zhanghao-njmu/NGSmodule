@@ -544,7 +544,7 @@ BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
   bbknn <- reticulate::import("bbknn", convert = FALSE)
   pca <- reticulate::r_to_py(Embeddings(sc_merge, reduction = "pca"))
 
-  bem <- bbknn$bbknn_pca_matrix(pca, batch_list = sc_merge[["orig.ident"]])
+  bem <- bbknn$bbknn_pca_matrix(pca, batch_list = sc_merge[["orig.ident", drop = TRUE]])
   bem <- reticulate::py_to_r(bem)
   bbknn_graph <- as.matrix(bem[[2]])
   rownames(bbknn_graph) <- colnames(bbknn_graph) <- colnames(sc_merge)
