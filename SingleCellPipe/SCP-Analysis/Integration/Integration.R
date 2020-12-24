@@ -29,6 +29,7 @@ SCPanalysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLin
 SCPwork_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/"
 threads <- 120
 datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2"
+datasets_raw<-"ESC,PGCLC-d6,CellLine1,CellLine2;ESC,PGCLC-d6,CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
 species <- "Homo_sapiens"
 exogenous_genes <- "GFP"
 
@@ -37,7 +38,7 @@ cell_calling_methodNum <- 3
 mito_threshold <- 0.2
 gene_threshold <- 1000
 UMI_threshold <- 3000
-normalization_method <- "logCPM,SCT" # CPM,logCPM,SCT
+normalization_method <- "logCPM,SCT" # logCPM,SCT
 
 # parameters: integration -------------------------------------------------
 HVF_source <- "global" # global,separate
@@ -76,7 +77,7 @@ datasets <- datasets[sapply(datasets, length) > 1]
 samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 reduction <- strsplit(reduction, split = ",") %>% unlist()
-normalization_method <-  strsplit(normalization_method, split = ",") %>% unlist()
+normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
 
 if (species == "Homo_sapiens") {
   cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
@@ -293,274 +294,170 @@ if (file.exists("sc_list_filter.rds")) {
 
 
 # Preprocessing: Normalization -----------------------------------
-if ("CPM" %in% normalization_method) {
-  dir.create("Individual-CPM", recursive = T, showWarnings = FALSE)
-  if (file.exists("sc_list_filter_CPM.rds")) {
-    cat("Loading the sc_list_filter_CPM from the existing file....\n")
-    sc_list_filter_CPM <- readRDS("sc_list_filter_CPM.rds")
+for (nm in normalization_method) {
+  dir.create(paste0("Normalization-", nm), recursive = T, showWarnings = FALSE)
+  if (file.exists(paste0("sc_list_filter_", nm, ".rds"))) {
+    cat("Loading the", paste0("sc_list_filter_", nm), "from the existing file....\n")
+    assign(
+      x = paste0("sc_list_filter_", nm),
+      value = readRDS(paste0("sc_list_filter_", nm, ".rds"))
+    )
   } else {
-    sc_list_filter_CPM <- lapply(setNames(samples, samples), function(sc_set) {
-      cat("++++++", sc_set, "(Normalization-CPM)", "++++++", "\n")
-      srt <- sc_list_filter[[sc_set]]
-      srt <- Standard_SCP(
-        sc = srt, normalization_method = "CPM", nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-      return(srt)
-    })
-    invisible(lapply(names(sc_list_filter_CPM), function(x){
-      saveRDS(sc_list_filter_CPM[[x]],paste0("Individual-CPM/", x, ".rds"))
+    assign(
+      x = paste0("sc_list_filter_", nm),
+      value = lapply(setNames(samples, samples), function(sc_set) {
+        cat("++++++", sc_set, paste0("Normalization-", nm), "++++++", "\n")
+        srt <- sc_list_filter[[sc_set]]
+        srt <- Standard_SCP(
+          sc = srt, normalization_method = nm, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        return(srt)
+      })
+    )
+
+    invisible(lapply(samples, function(x) {
+      saveRDS(get(paste0("sc_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
     }))
-    saveRDS(sc_list_filter_CPM, file = "sc_list_filter_CPM.rds")
+    saveRDS(get(paste0("sc_list_filter_", nm)), file = paste0("sc_list_filter_", nm, ".rds"))
   }
 }
-
-if ("logCPM" %in% normalization_method) {
-  dir.create("Individual-logCPM", recursive = T, showWarnings = FALSE)
-  if (file.exists("sc_list_filter_logCPM.rds")) {
-    cat("Loading the sc_list_filter_logCPM from the existing file....\n")
-    sc_list_filter_logCPM <- readRDS("sc_list_filter_logCPM.rds")
-  } else {
-    sc_list_filter_logCPM <- lapply(setNames(samples, samples), function(sc_set) {
-      cat("++++++", sc_set, "(Normalization-logCPM)", "++++++", "\n")
-      srt <- sc_list_filter[[sc_set]]
-      srt <- Standard_SCP(
-        sc = srt, normalization_method = "logCPM", nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-      return(srt)
-    })
-    invisible(lapply(names(sc_list_filter_logCPM), function(x){
-      saveRDS(sc_list_filter_logCPM[[x]],paste0("Individual-logCPM/", x, ".rds"))
-      }))
-    saveRDS(sc_list_filter_logCPM, file = "sc_list_filter_logCPM.rds")
-  }
-}
-
-if ("SCT" %in% normalization_method) {
-  dir.create("Individual-SCT", recursive = T, showWarnings = FALSE)
-  if (file.exists("sc_list_filter_SCT.rds")) {
-    cat("Loading the sc_list_filter_SCT from the existing file....\n")
-    sc_list_filter_SCT <- readRDS("sc_list_filter_SCT.rds")
-  } else {
-    sc_list_filter_SCT <- lapply(setNames(samples, samples), function(sc_set) {
-      cat("++++++", sc_set, "(Normalization-SCT)", "++++++", "\n")
-      srt <- sc_list_filter[[sc_set]]
-      srt <- SCTransform_SCP(
-        sc = srt, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-      return(srt)
-    })
-    invisible(lapply(names(sc_list_filter_SCT), function(x){
-      saveRDS(sc_list_filter_SCT[[x]],paste0("Individual-SCT/", x, ".rds"))
-    }))
-    saveRDS(object = sc_list_filter_SCT, file = "sc_list_filter_SCT.rds")
-  }
-}
-
-# # Individual: Standard normalization ------------------------------
-# dir.create("Individual-Standard", recursive = T, showWarnings = FALSE)
-# for (sample in samples) {
-#   cat("++++++", sample, "(Individual-Standard)", "++++++", "\n")
-#   if (file.exists(paste0("Individual-Standard/", sample, ".rds"))) {
-#     cat(">>> Individual-Standard process for the", sample, "has finished. Skip to the next step.\n")
-#     next
-#   } else {
-#     srt <- sc_list_filter_Standard[[sample]]
-#     saveRDS(srt, paste0("Individual-Standard/", sample, ".rds"))
-#     cat(">>> Individual-Standard process for the", sample, "completed successfully.\n")
-#   }
-# }
-# 
-# 
-# # Individual: SCTransform normalization ------------------------------
-# dir.create("Individual-SCTransform", recursive = T, showWarnings = FALSE)
-# for (sample in samples) {
-#   cat("++++++", sample, "(Individual-SCTransform)", "++++++", "\n")
-#   if (file.exists(paste0("Individual-SCTransform/", sample, ".rds"))) {
-#     cat(">>> Individual-SCTransform process for the", sample, "has finished. Skip to the next step.\n")
-#     next
-#   } else {
-#     cat("++++++", sample, "++++++", "\n")
-#     srt <- sc_list_filter_SCT[[sample]]
-#     saveRDS(srt, paste0("Individual-SCTransform/", sample, ".rds"))
-#     cat(">>> Individual-SCTransform process for the", sample, "completed successfully.\n")
-#   }
-# }
 
 
 if (length(datasets) != 0) {
-  # Integration: Simple merge ----------------------------------------------
-  dir.create("Integration-SimpleMerge-Standard", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-SimpleMerge-Standard)", "++++++", "\n")
-    if (file.exists(paste0("Integration-SimpleMerge-Standard/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-SimpleMerge-Standard process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
-      Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
-      srt <- Standard_SCP(
-        sc = sc_list_filter_merge, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-      saveRDS(srt, file = paste0("Integration-SimpleMerge-Standard/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-SimpleMerge-Standard process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+  for (nm in normalization_method) {
+
+    # Integration: Uncorrected ----------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
+        Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
+        srt <- Standard_SCP(
+          sc = sc_list_filter_merge, normalization_method = nm, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt, file = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
-  }
 
-  dir.create("Integration-SimpleMerge-SCTransform", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-SimpleMerge-SCTransform)", "++++++", "\n")
-    if (file.exists(paste0("Integration-SimpleMerge-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-SimpleMerge-SCTransform process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), sc_list_filter[dataset])
-      Idents(sc_list_filter_merge) <- sc_list_filter_merge[["orig.ident"]] <- factor(sc_list_filter_merge[["orig.ident", drop = TRUE]], levels = dataset)
-      srt <- SCTransform_SCP(
-        sc = sc_list_filter_merge, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes, assay = "RNA"
-      )
-      saveRDS(srt, file = paste0("Integration-SimpleMerge-SCTransform/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-SimpleMerge-SCTransform process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+
+    # Integration: Seurat workflow ------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        srt_integrated <- Seurat_integrate(
+          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF,
+          anchor_dims = anchor_dims, integrate_dims = integrate_dims,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
-  }
 
 
-  # Integration: Seurat workflow ------------------------------------------
-  dir.create("Integration-Seurat", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
-    if (file.exists(paste0("Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- Seurat_integrate(
-        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        anchor_dims = anchor_dims, integrate_dims = integrate_dims,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    # Integration: fastMNN workflow -------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        srt_integrated <- fastMNN_integrate(
+          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
-  }
 
 
-  # Integration: SCTransform workflow  --------------------------------------
-  dir.create("Integration-SCTransform", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-SCTransform)", "++++++", "\n")
-    if (file.exists(paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-SCTransform process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- SCTransform_integrate(
-        sc_list = sc_list_filter_SCT[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        anchor_dims = anchor_dims, integrate_dims = integrate_dims,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-SCTransform/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-SCTransform process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    # Integration: Harmony workflow -------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        srt_integrated <- Harmony_integrate(
+          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
-  }
 
 
-  # Integration: fastMNN workflow -------------------------------------------
-  dir.create("Integration-fastMNN", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
-    if (file.exists(paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- fastMNN_integrate(
-        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    # Integration: Scanorama workflow -------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        srt_integrated <- Scanorama_integrate(
+          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
-  }
 
 
-  # Integration: Harmony workflow -------------------------------------------
-  dir.create("Integration-Harmony", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
-    if (file.exists(paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- Harmony_integrate(
-        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
-    }
-  }
-
-
-  # Integration: Scanorama workflow -------------------------------------------
-  dir.create("Integration-Scanorama", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
-    if (file.exists(paste0("Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- Scanorama_integrate(
-        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
-    }
-  }
-
-
-  # Integration: CSS workflow -------------------------------------------
-  dir.create("Integration-CSS", recursive = T, showWarnings = FALSE)
-  for (dataset in datasets) {
-    cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
-    if (file.exists(paste0("Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
-      cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-      next
-    } else {
-      srt_integrated <- CSS_integrate(
-        sc_list = sc_list_filter_Standard[dataset], HVF_source = HVF_source, nHVF = nHVF,
-        maxPC = maxPC, resolution = resolution, reduction = reduction,
-        cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-        exogenous_genes = exogenous_genes
-      )
-      saveRDS(srt_integrated, file = paste0("Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
-      cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+    # Integration: CSS workflow -------------------------------------------
+    dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
+    for (dataset in datasets) {
+      cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
+      if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
+        cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+        next
+      } else {
+        srt_integrated <- CSS_integrate(
+          sc_list = sc_list_filter_Standard[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF,
+          maxPC = maxPC, resolution = resolution, reduction = reduction,
+          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+          exogenous_genes = exogenous_genes
+        )
+        saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
+        cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+      }
     }
   }
 } else {
-  cat("Integration skipped.")
+  cat("Less than 2 datasets. Integration skipped.")
 }
 
 # for (srt_name in c("srt_list_Standard","srt_list_SCT","srt_list_fastMNN","srt_list_Harmony")) {
