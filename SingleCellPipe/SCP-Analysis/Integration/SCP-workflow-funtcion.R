@@ -44,18 +44,28 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
       )
     }
     if (is.null(hvf)) {
-      VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
+      if (length(VariableFeatures(sc)) == 0) {
+        sc <- FindVariableFeatures(sc)
+        VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+          filter(variance.standardized > 1 &
+            (!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(variance.standardized)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      } else {
+        VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
+          filter((!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(residual_variance)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      }
     } else {
       VariableFeatures(sc) <- hvf
     }
     DefaultAssay(sc) <- "SCT"
   }
 
-  sc <- RunPCA(object = sc, npcs = maxPC, features = VariableFeatures(sc))
+  sc <- RunPCA(object = sc, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   sc@misc$PC_use <- PC_use
 
@@ -138,11 +148,21 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       } else {
         DefaultAssay(sc_list[[i]]) <- "SCT"
       }
-      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]], selection.method = "sctransform") %>%
-        filter((!rownames(.) %in% exogenous_genes)) %>%
-        dplyr::arrange(desc(residual_variance)) %>%
-        rownames(.) %>%
-        head(n = nHVF)
+      if (length(VariableFeatures(sc_list[[i]])) == 0) {
+        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+        VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+          filter(variance.standardized > 1 &
+            (!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(variance.standardized)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      } else {
+        VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]], selection.method = "sctransform") %>%
+          filter((!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(residual_variance)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      }
     }
   }
 
@@ -808,3 +828,4 @@ DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
 
   return(srt)
 }
+
