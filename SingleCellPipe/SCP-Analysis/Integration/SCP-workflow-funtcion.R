@@ -192,6 +192,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
   if (normalization_method %in% c("SCT")) {
     sc_list <- PrepSCTIntegration(object.list = sc_list, anchor.features = hvf, verbose = FALSE)
   }
+
   return(list(sc_list = sc_list, hvf = hvf))
 }
 
