@@ -174,7 +174,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
         return(gene_keep)
       }) %>% Reduce(intersect, .)
       sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-      hvf <- FindVariableFeatures(sc_merge) %>%
+      hvf <- FindVariableFeatures(sc_merge,verbose = FALSE) %>%
         HVFInfo(.) %>%
         filter(variance.standardized > 1 &
           (!rownames(.) %in% exogenous_genes) &
@@ -182,9 +182,10 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
         dplyr::arrange(desc(variance.standardized)) %>%
         rownames(.) %>%
         head(n = nHVF)
+      sc_list <- PrepSCTIntegration(object.list = sc_list, anchor.features = hvf, verbose = FALSE)
     }
     if (HVF_source == "separate") {
-      hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF)
+      hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF,verbose = FALSE)
     }
   }
 
