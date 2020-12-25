@@ -121,10 +121,10 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       x = GetAssayData(sc_list[[i]], slot = "counts"),
       y = GetAssayData(sc_list[[i]], slot = "data")
     )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize",verbose = FALSE)
+      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize", verbose = FALSE)
     }
     if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]],verbose = FALSE)
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]], verbose = FALSE)
     }
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
@@ -133,7 +133,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       rownames(.) %>%
       head(n = nHVF)
     if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- ScaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]),verbose = FALSE)
+      sc_list[[i]] <- ScaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]), verbose = FALSE)
     }
     DefaultAssay(sc_list[[i]]) <- "RNA"
 
@@ -150,7 +150,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
         DefaultAssay(sc_list[[i]]) <- "SCT"
       }
       if (length(VariableFeatures(sc_list[[i]])) == 0) {
-        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]],verbose = FALSE)
+        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]], verbose = FALSE)
         VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
           filter(variance.standardized > 1 &
             (!rownames(.) %in% exogenous_genes)) %>%
@@ -175,7 +175,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
         return(gene_keep)
       }) %>% Reduce(intersect, .)
       sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-      hvf <- FindVariableFeatures(sc_merge,verbose = FALSE) %>%
+      hvf <- FindVariableFeatures(sc_merge, verbose = FALSE) %>%
         HVFInfo(.) %>%
         filter(variance.standardized > 1 &
           (!rownames(.) %in% exogenous_genes) &
@@ -183,13 +183,15 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
         dplyr::arrange(desc(variance.standardized)) %>%
         rownames(.) %>%
         head(n = nHVF)
-      sc_list <- PrepSCTIntegration(object.list = sc_list, anchor.features = hvf, verbose = FALSE)
     }
     if (HVF_source == "separate") {
-      hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF,verbose = FALSE)
+      hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF, verbose = FALSE)
     }
   }
 
+  if (normalization_method %in% c("SCT")) {
+    sc_list <- PrepSCTIntegration(object.list = sc_list, anchor.features = hvf, verbose = FALSE)
+  }
   return(list(sc_list = sc_list, hvf = hvf))
 }
 
@@ -830,4 +832,3 @@ DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
 
   return(srt)
 }
-
