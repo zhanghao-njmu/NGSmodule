@@ -588,7 +588,7 @@ if (length(datasets) != 0) {
         if (file.exists(paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
-          srt_integrated <- CSS_integrate(
+          srt_integrated <- LIGER_integrate(
             sc_list = sc_list, normalization_method = nm,
             HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
             maxPC = maxPC, resolution = resolution, reduction = reduction,
