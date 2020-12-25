@@ -121,10 +121,10 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       x = GetAssayData(sc_list[[i]], slot = "counts"),
       y = GetAssayData(sc_list[[i]], slot = "data")
     )) {
-      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize")
+      sc_list[[i]] <- NormalizeData(object = sc_list[[i]], normalization.method = "LogNormalize",verbose = FALSE)
     }
     if (length(VariableFeatures(sc_list[[i]])) == 0) {
-      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]],verbose = FALSE)
     }
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
@@ -133,7 +133,7 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
       rownames(.) %>%
       head(n = nHVF)
     if (nrow(GetAssayData(sc_list[[i]], slot = "scale.data")) == 0) {
-      sc_list[[i]] <- ScaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]))
+      sc_list[[i]] <- ScaleData(object = sc_list[[i]], features = rownames(sc_list[[i]]),verbose = FALSE)
     }
     DefaultAssay(sc_list[[i]]) <- "RNA"
 
@@ -143,13 +143,14 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
           object = sc_list[[i]],
           variable.features.n = nHVF,
           return.only.var.genes = FALSE,
-          assay = "RNA"
+          assay = "RNA",
+          verbose = FALSE
         )
       } else {
         DefaultAssay(sc_list[[i]]) <- "SCT"
       }
       if (length(VariableFeatures(sc_list[[i]])) == 0) {
-        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]])
+        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]],verbose = FALSE)
         VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
           filter(variance.standardized > 1 &
             (!rownames(.) %in% exogenous_genes)) %>%
