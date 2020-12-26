@@ -14,6 +14,15 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
+  genelist <- lapply(sc_list, function(x) {
+    rownames(GetAssayData(x, slot = "counts", assay = "RNA"))
+  })
+  if (length(unique(genelist)) != 1) {
+    stop("'sc_list' must have identical feature names!",
+      call. = FALSE
+    )
+  }
+
   for (i in 1:length(sc_list)) {
     DefaultAssay(sc_list[[i]]) <- "RNA"
     if (identical(
@@ -538,34 +547,36 @@ LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
-                            HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                            maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
-                            cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                            exogenous_genes = NULL, ...) {
+                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                              cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                              exogenous_genes = NULL, ...) {
   checked <- Check_scList(sc_list,
-                          normalization_method = normalization_method,
-                          HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-                          exogenous_genes = exogenous_genes
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
   )
   sc_list <- checked[["sc_list"]]
   hvf <- checked[["hvf"]]
-  
+
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
   VariableFeatures(sc_merge) <- hvf
   sc_merge <- ScaleData(object = sc_merge, features = rownames(sc_merge))
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
-  
+
   sce <- as.SingleCellExperiment(sc_merge)
-  exprs_mat = SummarizedExperiment::assay(sce, 'counts')
-  result = scSEGIndex(exprs_mat = exprs_mat,BPPARAM = MulticoreParam())
-  scSEG <- head(rownames(result)[order(result$segIdx,decreasing = T)],1000)
-  
-  assay(sce, "counts") = as(counts(sce), "dgeMatrix")
-  assay(sce, "logcounts") = as(logcounts(sce), "dgeMatrix")
-  kmeansK <- sapply(sc_list,function(x){nlevels(x[["seurat_clusters",drop=TRUE]])})
-  
+  exprs_mat <- SummarizedExperiment::assay(sce, "counts")
+  result <- scSEGIndex(exprs_mat = exprs_mat, BPPARAM = MulticoreParam())
+  scSEG <- head(rownames(result)[order(result$segIdx, decreasing = T)], 1000)
+
+  assay(sce, "counts") <- as(counts(sce), "dgeMatrix")
+  assay(sce, "logcounts") <- as(logcounts(sce), "dgeMatrix")
+  kmeansK <- sapply(sc_list, function(x) {
+    nlevels(x[["seurat_clusters", drop = TRUE]])
+  })
+
   scMerge_unsupervised <- scMerge(
-    sce_combine = sce, 
+    sce_combine = sce,
     ctl = scSEG,
     kmeansK = kmeansK,
     batch_name = "orig.ident",
@@ -573,20 +584,21 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
     replicate_prop = 1,
     BSPARAM = IrlbaParam(),
     BPPARAM = MulticoreParam(),
-    igraph = FALSE)
+    igraph = FALSE
+  )
   srt_integrated <- as.Seurat(scMerge_unsupervised)
   scMerge_unsupervised <- sc_merge <- NULL
-  
-  
+
+
   srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
-  
+
   PC_use <- srt_integrated@misc$PC_use <- ncol(srt_integrated[["iNMF"]])
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
-  
+
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
@@ -596,9 +608,9 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
       perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
     )
   }
-  
+
   srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
-  
+
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
