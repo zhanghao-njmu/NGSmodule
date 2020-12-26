@@ -565,14 +565,24 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
   sc_merge <- RunPCA(object = sc_merge, npcs = maxPC, features = hvf)
 
   sce <- as.SingleCellExperiment(sc_merge)
-  exprs_mat <- SummarizedExperiment::assay(sce, "counts")
-  result <- scSEGIndex(exprs_mat = exprs_mat, BPPARAM = MulticoreParam())
-  scSEG <- head(rownames(result)[order(result$segIdx, decreasing = T)], 1000)
-
   assay(sce, "counts") <- as(counts(sce), "dgeMatrix")
   assay(sce, "logcounts") <- as(logcounts(sce), "dgeMatrix")
+
+  # exprs_mat <- SummarizedExperiment::assay(sce, "counts")
+  # result <- scSEGIndex(exprs_mat = exprs_mat, BPPARAM = MulticoreParam())
+  # scSEG <- head(rownames(result)[order(result$segIdx, decreasing = T)], 1000)
+  data("segList", package = "scMerge")
+  scSEG <- segList$human$human_scSEG
+  scSEG <- scSEG[scSEG %in% rownames(sce)]
+
   kmeansK <- sapply(sc_list, function(x) {
-    nlevels(x[["seurat_clusters", drop = TRUE]])
+    if (!"seurat_clusters" %in% colnames(x@meta.data)) {
+      x <- x %>%
+        RunPCA(npcs = maxPC, verbose = FALSE) %>%
+        FindNeighbors() %>%
+        FindClusters(resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+    }
+    i <- nlevels(x[["seurat_clusters", drop = TRUE]])
   })
 
   scMerge_unsupervised <- scMerge(
@@ -582,13 +592,14 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
     batch_name = "orig.ident",
     assay_name = "scMerge",
     replicate_prop = 1,
-    BSPARAM = IrlbaParam(),
     BPPARAM = MulticoreParam(),
-    igraph = FALSE
+    plot_igraph = FALSE
   )
-  srt_integrated <- as.Seurat(scMerge_unsupervised)
+  srt_integrated <- as.Seurat(scMerge_unsupervised, 
+                              counts = "counts",
+                              data = "scMerge",
+                              assay = "scMerge")
   scMerge_unsupervised <- sc_merge <- NULL
-
 
   srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 

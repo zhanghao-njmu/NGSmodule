@@ -55,7 +55,7 @@ Ensembl_version <- 101
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "Seurat", "SeuratDisk", "SeuratWrappers", "sctransform", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
-    "future", "reticulate", "harmony", "liger", "simspec","iSMNN", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "future", "reticulate", "harmony", "liger", "simspec","scMerge","BiocSingular","iSMNN", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
     "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
   ),
