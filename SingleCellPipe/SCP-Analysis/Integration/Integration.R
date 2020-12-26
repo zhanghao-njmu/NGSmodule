@@ -215,7 +215,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 
 # Preprocessing: Cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
-    if(all(file.exists(paste0("sc_list_filter_",normalization_method,".rds"))){
+  if(all(file.exists(paste0("sc_list_filter_",normalization_method,".rds")))){
     cat("Skip the sc_list_filter loading....\n")
   }else{
     cat("Loading the sc_list_filter from the existing file....\n")
