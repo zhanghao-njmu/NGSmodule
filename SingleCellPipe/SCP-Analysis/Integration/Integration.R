@@ -142,9 +142,8 @@ save.image(file = "base_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
-  cat("Loading the sc_list and velocity_list from the existing file....\n")
+  cat("Loading the sc_list from the existing file....\n")
   sc_list <- readRDS("sc_list.rds")
-  velocity_list <- readRDS("velocity_list.rds")
 } else {
   for (i in 1:length(samples)) {
     cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
@@ -199,15 +198,15 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   saveRDS(sc_list, file = "sc_list.rds")
   saveRDS(velocity_list, file = "velocity_list.rds")
 }
-if (length(sc_list) == 1) {
-  sc_merge <- sc_list[[1]]
-  velocity_merge <- velocity_list[[1]]
-} else {
-  sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
-  Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
-  velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
-  Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
-}
+# if (length(sc_list) == 1) {
+#   sc_merge <- sc_list[[1]]
+#   velocity_merge <- velocity_list[[1]]
+# } else {
+#   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+#   Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
+#   velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
+#   Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
+# }
 
 
 # Preprocessing: Cell filtering -----------------------------------
@@ -326,7 +325,7 @@ for (nm in normalization_method) {
   }
 }
 
-
+# Integration ----------------------------------------------
 if (length(datasets) != 0) {
   for (dataset in datasets) {
     for (nm in normalization_method) {
@@ -340,7 +339,6 @@ if (length(datasets) != 0) {
       sc_list <- checked[["sc_list"]]
       hvf <- checked[["hvf"]]
 
-      # Integration ----------------------------------------------
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER")) {
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
