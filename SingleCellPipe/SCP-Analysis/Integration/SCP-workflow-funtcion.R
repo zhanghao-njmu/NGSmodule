@@ -1,107 +1,6 @@
-Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
-                         maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
-                         cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+Check_scList <- function(sc_list, normalization_method = "logCPM",
+                         HVF_source = "separate", nHVF = 3000, hvf = NULL,
                          exogenous_genes = NULL) {
-  DefaultAssay(sc) <- "RNA"
-  sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
-  if (!normalization_method %in% c("logCPM", "SCT")) {
-    stop("'normalization_method' must be one of: 'logCPM','SCT'",
-      call. = FALSE
-    )
-  }
-
-  if (identical(
-    x = GetAssayData(sc, slot = "counts"),
-    y = GetAssayData(sc, slot = "data")
-  )) {
-    sc <- NormalizeData(object = sc, normalization.method = "LogNormalize")
-  }
-  if (is.null(hvf)) {
-    if (length(VariableFeatures(sc)) == 0) {
-      sc <- FindVariableFeatures(sc)
-    }
-    VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
-      filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
-      rownames(.) %>%
-      head(n = nHVF)
-  } else {
-    VariableFeatures(sc) <- hvf
-  }
-  if (nrow(GetAssayData(sc, slot = "scale.data")) == 0) {
-    sc <- ScaleData(object = sc, features = rownames(sc))
-  }
-  DefaultAssay(sc) <- "RNA"
-
-  if (normalization_method %in% c("SCT")) {
-    if (!"SCT" %in% Seurat::Assays(sc)) {
-      sc <- SCTransform(
-        object = sc,
-        variable.features.n = nHVF,
-        return.only.var.genes = FALSE,
-        assay = "RNA"
-      )
-    }
-    if (is.null(hvf)) {
-      if (length(VariableFeatures(sc)) == 0) {
-        sc <- FindVariableFeatures(sc)
-        VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
-          filter(variance.standardized > 1 &
-            (!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(variance.standardized)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      } else {
-        VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
-          filter((!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(residual_variance)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      }
-    } else {
-      VariableFeatures(sc) <- hvf
-    }
-    DefaultAssay(sc) <- "SCT"
-  }
-
-  sc <- RunPCA(object = sc, npcs = maxPC, features = hvf)
-  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  sc@misc$PC_use <- PC_use
-
-  sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
-  sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  sc <- BuildClusterTree(sc, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
-  sc$seurat_clusters <- Idents(sc)
-
-  if ("umap" %in% reduction) {
-    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
-  }
-  if ("tsne" %in% reduction) {
-    sc <- RunTSNE(
-      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
-      perplexity = max(ceiling(ncol(sc) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
-    )
-  }
-
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    sc <- CellCycleScoring(
-      object = sc,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    sc[["CC.Difference"]] <- sc[["S.Score"]] - sc[["G2M.Score"]]
-    sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
-
-  DefaultAssay(sc) <- "RNA"
-  return(sc)
-}
-
-sc_list_Check <- function(sc_list, normalization_method = "logCPM",
-                          HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                          exogenous_genes = NULL) {
   require(Seurat)
   require(sctransform)
   if (!normalization_method %in% c("logCPM", "SCT")) {
@@ -196,13 +95,143 @@ sc_list_Check <- function(sc_list, normalization_method = "logCPM",
   return(list(sc_list = sc_list, hvf = hvf))
 }
 
+Check_srtIntegrated <- function(srt_integrated, hvf) {
+  raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
+
+  DefaultAssay(object = srt_integrated) <- "RNA"
+  if (identical(
+    x = GetAssayData(srt_integrated, slot = "counts"),
+    y = GetAssayData(srt_integrated, slot = "data")
+  )) {
+    srt_integrated <- NormalizeData(object = srt_integrated)
+  }
+  if (length(VariableFeatures(srt_integrated)) == 0) {
+    VariableFeatures(srt_integrated) <- hvf
+  }
+  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
+    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
+  }
+
+  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
+  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
+  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
+    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
+  )
+  return(srt_integrated)
+}
+
+CC_module <- function(sc, cc_S_genes, cc_G2M_genes) {
+  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
+    sc <- CellCycleScoring(
+      object = sc,
+      s.features = cc_S_genes,
+      g2m.features = cc_G2M_genes,
+      set.ident = FALSE
+    )
+    sc[["CC.Difference"]] <- sc[["S.Score"]] - sc[["G2M.Score"]]
+    sc[["Phase"]] <- factor(sc[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
+  }
+  return(sc)
+}
+
+Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
+                         maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                         cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                         exogenous_genes = NULL) {
+  DefaultAssay(sc) <- "RNA"
+  sc@project.name <- paste0(unique(sc[["orig.ident", drop = TRUE]]), collapse = ",")
+  if (!normalization_method %in% c("logCPM", "SCT")) {
+    stop("'normalization_method' must be one of: 'logCPM','SCT'",
+      call. = FALSE
+    )
+  }
+
+  if (identical(
+    x = GetAssayData(sc, slot = "counts"),
+    y = GetAssayData(sc, slot = "data")
+  )) {
+    sc <- NormalizeData(object = sc, normalization.method = "LogNormalize")
+  }
+  if (is.null(hvf)) {
+    if (length(VariableFeatures(sc)) == 0) {
+      sc <- FindVariableFeatures(sc)
+    }
+    VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+      filter(variance.standardized > 1 &
+        (!rownames(.) %in% exogenous_genes)) %>%
+      dplyr::arrange(desc(variance.standardized)) %>%
+      rownames(.) %>%
+      head(n = nHVF)
+  } else {
+    VariableFeatures(sc) <- hvf
+  }
+  if (nrow(GetAssayData(sc, slot = "scale.data")) == 0) {
+    sc <- ScaleData(object = sc, features = rownames(sc))
+  }
+  DefaultAssay(sc) <- "RNA"
+
+  if (normalization_method %in% c("SCT")) {
+    if (!"SCT" %in% Seurat::Assays(sc)) {
+      sc <- SCTransform(
+        object = sc,
+        variable.features.n = nHVF,
+        return.only.var.genes = FALSE,
+        assay = "RNA"
+      )
+    }
+    if (is.null(hvf)) {
+      if (length(VariableFeatures(sc)) == 0) {
+        sc <- FindVariableFeatures(sc)
+        VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+          filter(variance.standardized > 1 &
+            (!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(variance.standardized)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      } else {
+        VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
+          filter((!rownames(.) %in% exogenous_genes)) %>%
+          dplyr::arrange(desc(residual_variance)) %>%
+          rownames(.) %>%
+          head(n = nHVF)
+      }
+    } else {
+      VariableFeatures(sc) <- hvf
+    }
+    DefaultAssay(sc) <- "SCT"
+  }
+
+  sc <- RunPCA(object = sc, npcs = maxPC, features = hvf)
+  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(sc, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
+  sc@misc$PC_use <- PC_use
+
+  sc <- FindNeighbors(object = sc, reduction = "pca", dims = 1:PC_use, force.recalc = T)
+  sc <- FindClusters(object = sc, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  sc <- BuildClusterTree(sc, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  sc$seurat_clusters <- Idents(sc)
+
+  if ("umap" %in% reduction) {
+    sc <- RunUMAP(object = sc, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
+  }
+  if ("tsne" %in% reduction) {
+    sc <- RunTSNE(
+      object = sc, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = max(ceiling(ncol(sc) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
+    )
+  }
+
+  sc <- CC_module(sc, cc_S_genes, cc_G2M_genes)
+
+  DefaultAssay(sc) <- "RNA"
+  return(sc)
+}
 
 Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                              cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                              exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -234,22 +263,7 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   )
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- "integrated"
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
@@ -271,16 +285,7 @@ Seurat_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -291,7 +296,7 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -307,25 +312,7 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
   )
   raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "mnn"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
@@ -345,16 +332,7 @@ fastMNN_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -365,7 +343,7 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                               exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -394,25 +372,7 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
   raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
   sc_merge <- NULL
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "harmony"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
@@ -432,16 +392,7 @@ Harmony_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -452,7 +403,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
                                 maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                                 cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                                 exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -493,25 +444,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
   srt_integrated[["integrated"]] <- CreateAssayObject(data = cor_value)
   srt_integrated[["scanorama"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "integrated", stdev = stdevs, key = "scanorama_")
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- "integrated"
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
@@ -533,16 +466,7 @@ Scanorama_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -553,7 +477,7 @@ BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
                             maxPC = 100, resolution = 0.8,
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -580,41 +504,14 @@ BBKNN_integrate <- function(sc_list, normalization_method = "logCPM",
   raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
   sc_merge <- NULL
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   srt_integrated <- RunUMAP(object = srt_integrated, graph = "bbknn", umap.method = "umap-learn")
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -625,7 +522,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
                           maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                           cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                           exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -650,25 +547,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
   raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
   sc_merge <- NULL
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   PC_use <- ncol(Embeddings(srt_integrated, reduction = "css"))
   srt_integrated@misc$PC_use <- PC_use
@@ -688,16 +567,7 @@ CSS_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
@@ -708,7 +578,7 @@ LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
                             maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
                             cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
                             exogenous_genes = NULL) {
-  checked <- sc_list_Check(sc_list,
+  checked <- Check_scList(sc_list,
     normalization_method = normalization_method,
     HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
     exogenous_genes = exogenous_genes
@@ -725,25 +595,7 @@ LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
   raw_DefaultAssay <- DefaultAssay(object = srt_integrated)
   sc_merge <- NULL
 
-  DefaultAssay(object = srt_integrated) <- "RNA"
-  if (identical(
-    x = GetAssayData(srt_integrated, slot = "counts"),
-    y = GetAssayData(srt_integrated, slot = "data")
-  )) {
-    srt_integrated <- NormalizeData(object = srt_integrated)
-  }
-  if (length(VariableFeatures(srt_integrated)) == 0) {
-    VariableFeatures(srt_integrated) <- hvf
-  }
-  if (nrow(GetAssayData(srt_integrated, slot = "scale.data")) != nrow(GetAssayData(srt_integrated, slot = "data"))) {
-    srt_integrated <- ScaleData(object = srt_integrated, features = rownames(srt_integrated))
-  }
-
-  DefaultAssay(object = srt_integrated) <- raw_DefaultAssay
-  srt_integrated@project.name <- paste0(unique(srt_integrated[["orig.ident", drop = TRUE]]), collapse = ",")
-  srt_integrated[["orig.ident"]] <- factor(srt_integrated[["orig.ident", drop = TRUE]],
-    levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
-  )
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
   PC_use <- srt_integrated@misc$PC_use <- ncol(srt_integrated[["iNMF"]])
 
@@ -762,16 +614,7 @@ LIGER_integrate <- function(sc_list, normalization_method = "logCPM",
     )
   }
 
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt_integrated <- CellCycleScoring(
-      object = srt_integrated,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt_integrated[["CC.Difference"]] <- srt_integrated[["S.Score"]] - srt_integrated[["G2M.Score"]]
-    srt_integrated[["Phase"]] <- factor(srt_integrated[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)

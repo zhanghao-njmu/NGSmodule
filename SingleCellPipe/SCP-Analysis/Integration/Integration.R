@@ -272,8 +272,8 @@ if (file.exists("sc_list_filter.rds")) {
     mt_out <- which(isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > mito_threshold))
+    
     total_out <- unique(c(out, as.numeric(umi_out), as.numeric(gene_out), as.numeric(mt_out)))
-
     cat(">>>", "Total cells:", ntotal, "\n")
     cat(">>>", "Cells which are filtered out:", ndoublets + length(total_out), "\n")
     cat("...", ndoublets, "potential doublets", "\n")
@@ -332,7 +332,7 @@ if (length(datasets) != 0) {
     for (nm in normalization_method) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
 
-      checked <- sc_list_Check(
+      checked <- Check_scList(
         sc_list = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
         HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
         exogenous_genes = exogenous_genes
@@ -342,9 +342,9 @@ if (length(datasets) != 0) {
 
       # Integration: Uncorrected ----------------------------------------------
       if ("Uncorrected" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Uncorrected"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Uncorrected)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           sc_list_filter_merge <- Reduce(function(x, y) merge(x, y), get(paste0("sc_list_filter_", nm))[dataset])
@@ -365,11 +365,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Uncorrected/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-Uncorrected process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -377,9 +377,9 @@ if (length(datasets) != 0) {
 
       # Integration: Seurat workflow ------------------------------------------
       if ("Seurat" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Seurat"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Seurat)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- Seurat_integrate(
@@ -399,11 +399,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Seurat/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-Seurat process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -412,9 +412,9 @@ if (length(datasets) != 0) {
 
       # Integration: fastMNN workflow -------------------------------------------
       if ("fastMNN" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-fastMNN"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-fastMNN)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- fastMNN_integrate(
@@ -434,11 +434,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-fastMNN/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-fastMNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -446,9 +446,9 @@ if (length(datasets) != 0) {
 
       # Integration: Harmony workflow -------------------------------------------
       if ("Harmony" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Harmony"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Harmony)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- Harmony_integrate(
@@ -468,11 +468,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Harmony/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-Harmony process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -480,9 +480,9 @@ if (length(datasets) != 0) {
 
       # Integration: Scanorama workflow -------------------------------------------
       if ("Scanorama" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Scanorama"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-Scanorama)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- Scanorama_integrate(
@@ -502,11 +502,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-Scanorama/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-Scanorama process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -515,9 +515,9 @@ if (length(datasets) != 0) {
 
       # Integration: BBKNN workflow -------------------------------------------
       if ("BBKNN" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-BBKNN"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-BBKNN"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-BBKNN)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- BBKNN_integrate(
@@ -537,11 +537,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-BBKNN/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-BBKNN process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -549,9 +549,9 @@ if (length(datasets) != 0) {
 
       # Integration: CSS workflow -------------------------------------------
       if ("CSS" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-CSS"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-CSS)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- CSS_integrate(
@@ -571,11 +571,11 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-CSS/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-CSS/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-CSS process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
@@ -583,9 +583,9 @@ if (length(datasets) != 0) {
 
       # Integration: LIGER workflow -------------------------------------------
       if ("LIGER" %in% integration_method) {
-        dir.create(paste0("Normalization-", nm, "/", "Integration-LIGER"), recursive = T, showWarnings = FALSE)
+        dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-LIGER"), recursive = T, showWarnings = FALSE)
         cat("++++++", paste0(dataset, collapse = ","), "(Integration-LIGER)", "++++++", "\n")
-        if (file.exists(paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
+        if (file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))) {
           cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
         } else {
           srt_integrated <- LIGER_integrate(
@@ -605,17 +605,17 @@ if (length(datasets) != 0) {
           })
           p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
           ggsave(
-            plot = p, filename = paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".png"),
+            plot = p, filename = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".png"),
             units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
             scale = 1.5, limitsize = FALSE
           )
-          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srt_integrated, file = paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-LIGER/", paste0(dataset, collapse = ","), ".rds"))
           cat(">>> Integration-LIGER process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
         }
       }
     }
   }
-} else {
+} else {s
   cat("Less than 2 datasets. Integration skipped.")
 }
 
