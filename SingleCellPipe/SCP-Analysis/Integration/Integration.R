@@ -142,8 +142,12 @@ save.image(file = "base_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
-  cat("Loading the sc_list from the existing file....\n")
-  sc_list <- readRDS("sc_list.rds")
+  if(file.exists("sc_list_filter.rds")){
+    cat("Skip the sc_list loading....\n")
+  }else{
+    cat("Loading the sc_list from the existing file....\n")
+    sc_list <- readRDS("sc_list.rds")
+  }
 } else {
   for (i in 1:length(samples)) {
     cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
@@ -211,8 +215,12 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 
 # Preprocessing: Cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
-  cat("Loading the sc_list_filter from the existing file....\n")
-  sc_list_filter <- readRDS("sc_list_filter.rds")
+    if(all(file.exists(paste0("sc_list_filter_",normalization_method,".rds"))){
+    cat("Skip the sc_list_filter loading....\n")
+  }else{
+    cat("Loading the sc_list_filter from the existing file....\n")
+    sc_list_filter <- readRDS("sc_list_filter.rds")
+  }
 } else {
   sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
