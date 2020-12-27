@@ -1,3 +1,47 @@
+CCgene_prefetch <- function(species){
+if (species == "Homo_sapiens") {
+  cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
+  cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
+} else {
+  species_split <- unlist(strsplit(species, split = "_"))
+  species_homolog <- paste0(tolower(substring(species_split[1], 1, 1)), species_split[2], "_homolog_associated_gene_name")
+  
+  archives <- listEnsemblArchives()
+  # web <- read_html(httr::RETRY("GET", "http://www.ensembl.org/info/website/archives/index.html?redirect=no", times = 1000, timeout(1000)))
+  # urls <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_attr("href")
+  # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>%
+  #   gsub(pattern = "(Ensembl )|(:.*)",replacement = "",x = .,perl = T)
+  # archives <- data.frame(version=version,url=urls,stringsAsFactors = F)
+  url <- archives[which(archives$version == Ensembl_version), "url"]
+  
+  mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl", host = url)
+  homolog <- listAttributes(mart)$name
+  
+  if (species_homolog %in% homolog) {
+    cc_S_genes <- getBM(
+      mart = mart,
+      attributes = c(species_homolog),
+      filters = c("external_gene_name"),
+      values = list(Seurat::cc.genes.updated.2019$s.genes)
+    )[[1]]
+    cc_G2M_genes <- getBM(
+      mart = mart,
+      attributes = c(species_homolog),
+      filters = c("external_gene_name"),
+      values = list(Seurat::cc.genes.updated.2019$g2m.genes)
+    )[[1]]
+    
+    if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
+      warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
+    }
+  } else {
+    warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
+    cc_S_genes <- cc_S_genes <- NA
+    }
+}
+  return(cc_S_genes=cc_S_genes,cc_G2M_genes=cc_G2M_genes)
+}
+
 Check_scList <- function(sc_list, normalization_method = "logCPM",
                          HVF_source = "separate", nHVF = 3000, hvf = NULL,
                          exogenous_genes = NULL, ...) {
@@ -34,9 +78,12 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
     if (length(VariableFeatures(sc_list[[i]])) == 0) {
       sc_list[[i]] <- FindVariableFeatures(sc_list[[i]], verbose = FALSE)
     }
+    m <- GetAssayData(sc_list[[i]], slot = "counts")
+    gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
     VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
       filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_keep) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
@@ -51,6 +98,7 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
           object = sc_list[[i]],
           variable.features.n = nHVF,
           return.only.var.genes = FALSE,
+          min_cells = 5,
           assay = "RNA",
           verbose = FALSE
         )
@@ -79,7 +127,7 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
     if (HVF_source == "global") {
       gene_common <- lapply(sc_list, function(x) {
         m <- GetAssayData(x, slot = "counts")
-        gene_keep <- rownames(m)[Matrix::rowSums(m > 0) >= 5]
+        gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5 * length(sc_list)]
         return(gene_keep)
       }) %>% Reduce(intersect, .)
       sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
@@ -95,6 +143,8 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
     if (HVF_source == "separate") {
       hvf <- SelectIntegrationFeatures(object.list = sc_list, nfeatures = nHVF, verbose = FALSE)
     }
+  } else {
+    hvf <- hvf[hvf %in% rownames(GetAssayData(sc_list[[1]], slot = "counts"))]
   }
 
   if (normalization_method %in% c("SCT")) {
@@ -631,66 +681,67 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
 }
 
 ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
-                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
-                              cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
-                              exogenous_genes = NULL, ...) {
+                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                               cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                               exogenous_genes = NULL, ...) {
   checked <- Check_scList(sc_list,
-                          normalization_method = normalization_method,
-                          HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-                          exogenous_genes = exogenous_genes
+    normalization_method = normalization_method,
+    HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+    exogenous_genes = exogenous_genes
   )
   sc_list <- checked[["sc_list"]]
   hvf <- checked[["hvf"]]
-  
+
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
   sce <- as.SingleCellExperiment(sc_merge)
   assay(sce, "counts") <- as(counts(sce), "dgCMatrix")
-  filter <- rowSums(assay(sce, "counts")>5)>5
-  date()
-  sce_zinbwave <- zinbwave(sce, K=50, X="~orig.ident", epsilon=1000, verbose = T, BPPARAM = MulticoreParam(),
-                  normalizedValues=TRUE, residuals = TRUE)
-  date()
-  
-  date()
-  saveRDS(sce,"~/sce.rds")
-  saveRDS(kmeansK,"~/kmeansK.rds")
-  scMerge_unsupervised <- scMerge(
-    sce_combine = sce,
-    ctl = scSEG,
-    kmeansK = kmeansK,
-    batch_name = "orig.ident",
-    assay_name = "scMerge",
-    # replicate_prop = 1,
-    BSPARAM = IrlbaParam(),
-    # BPPARAM = MulticoreParam(),
-    plot_igraph = FALSE
-  )
-  date()
-  saveRDS(scMerge_unsupervised, "~/scMerge_unsupervised.rds")
+  if (ncol(sce) < 10000) {
+    sce_zinbwave <- zinbwave(
+      Y = sce,
+      K = 50,
+      X = "~orig.ident",
+      which_genes = hvf,
+      epsilon = length(hvf),
+      normalizedValues = TRUE,
+      residuals = TRUE,
+      BPPARAM = MulticoreParam()
+    )
+  } else {
+    sce_zinbwave <- zinbsurf(
+      Y = sce,
+      K = 50,
+      X = "~orig.ident",
+      which_genes = hvf,
+      epsilon = length(hvf),
+      prop_fit = 0.3,
+      BPPARAM = MulticoreParam()
+    )
+  }
+
   assay(scMerge_unsupervised, "counts") <- as(counts(scMerge_unsupervised), "dgCMatrix")
   assay(scMerge_unsupervised, "scMerge") <- as(scMerge(scMerge_unsupervised), "dgCMatrix")
-  
+
   srt_integrated <- as.Seurat(scMerge_unsupervised,
-                              counts = "counts",
-                              data = "scMerge",
-                              assay = "scMerge"
+    counts = "counts",
+    data = "scMerge",
+    assay = "scMerge"
   )
   srt_integrated@assays$RNA <- sc_merge@assays$RNA
   scMerge_unsupervised <- sce <- NULL
-  
+
   srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
-  
+
   srt_integrated <- ScaleData(srt_integrated, features = hvf)
   srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
   PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
   srt_integrated@misc$PC_use <- PC_use
-  
+
   srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
-  
+
   if ("umap" %in% reduction) {
     srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
@@ -700,9 +751,9 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
       perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
     )
   }
-  
+
   srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
-  
+
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }
@@ -784,13 +835,17 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
     if (length(VariableFeatures(sc)) == 0) {
       sc <- FindVariableFeatures(sc)
     }
+    m <- GetAssayData(sc, slot = "counts")
+    gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
     VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
       filter(variance.standardized > 1 &
-        (!rownames(.) %in% exogenous_genes)) %>%
+        (!rownames(.) %in% exogenous_genes) &
+        rownames(.) %in% gene_keep) %>%
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   } else {
+    hvf <- hvf[hvf %in% rownames(GetAssayData(sc, slot = "counts"))]
     VariableFeatures(sc) <- hvf
   }
   if (nrow(GetAssayData(sc, slot = "scale.data")) == 0) {
@@ -804,6 +859,7 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
         object = sc,
         variable.features.n = nHVF,
         return.only.var.genes = FALSE,
+        min_cells = 5,
         assay = "RNA"
       )
     }
