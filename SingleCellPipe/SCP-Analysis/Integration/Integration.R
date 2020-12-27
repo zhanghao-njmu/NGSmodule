@@ -80,7 +80,7 @@ reduction <- strsplit(reduction, split = ",") %>% unlist()
 normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
 integration_method <- strsplit(integration_method, split = ",") %>% unlist()
 
-CCgenes<- CCgene_prefetch(species=species)
+CCgenes <- CCgene_prefetch(species = species)
 cc_S_genes <- CCgenes[["cc_S_genes"]]
 cc_G2M_genes <- CCgenes[["cc_G2M_genes"]]
 
@@ -366,3 +366,4 @@ if (length(datasets) != 0) {
 
 
 future:::ClusterRegistry("stop")
+

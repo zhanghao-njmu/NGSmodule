@@ -1,47 +1,3 @@
-CCgene_prefetch <- function(species){
-if (species == "Homo_sapiens") {
-  cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
-  cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
-} else {
-  species_split <- unlist(strsplit(species, split = "_"))
-  species_homolog <- paste0(tolower(substring(species_split[1], 1, 1)), species_split[2], "_homolog_associated_gene_name")
-  
-  archives <- listEnsemblArchives()
-  # web <- read_html(httr::RETRY("GET", "http://www.ensembl.org/info/website/archives/index.html?redirect=no", times = 1000, timeout(1000)))
-  # urls <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_attr("href")
-  # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>%
-  #   gsub(pattern = "(Ensembl )|(:.*)",replacement = "",x = .,perl = T)
-  # archives <- data.frame(version=version,url=urls,stringsAsFactors = F)
-  url <- archives[which(archives$version == Ensembl_version), "url"]
-  
-  mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl", host = url)
-  homolog <- listAttributes(mart)$name
-  
-  if (species_homolog %in% homolog) {
-    cc_S_genes <- getBM(
-      mart = mart,
-      attributes = c(species_homolog),
-      filters = c("external_gene_name"),
-      values = list(Seurat::cc.genes.updated.2019$s.genes)
-    )[[1]]
-    cc_G2M_genes <- getBM(
-      mart = mart,
-      attributes = c(species_homolog),
-      filters = c("external_gene_name"),
-      values = list(Seurat::cc.genes.updated.2019$g2m.genes)
-    )[[1]]
-    
-    if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
-      warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
-    }
-  } else {
-    warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
-    cc_S_genes <- cc_S_genes <- NA
-    }
-}
-  return(cc_S_genes=cc_S_genes,cc_G2M_genes=cc_G2M_genes)
-}
-
 Check_scList <- function(sc_list, normalization_method = "logCPM",
                          HVF_source = "separate", nHVF = 3000, hvf = NULL,
                          exogenous_genes = NULL, ...) {
@@ -177,6 +133,50 @@ Check_srtIntegrated <- function(srt_integrated, hvf, ...) {
     levels = unique(srt_integrated[["orig.ident", drop = TRUE]])
   )
   return(srt_integrated)
+}
+
+CCgene_prefetch <- function(species) {
+  if (species == "Homo_sapiens") {
+    cc_S_genes <- Seurat::cc.genes.updated.2019$s.genes
+    cc_G2M_genes <- Seurat::cc.genes.updated.2019$g2m.genes
+  } else {
+    species_split <- unlist(strsplit(species, split = "_"))
+    species_homolog <- paste0(tolower(substring(species_split[1], 1, 1)), species_split[2], "_homolog_associated_gene_name")
+
+    archives <- listEnsemblArchives()
+    # web <- read_html(httr::RETRY("GET", "http://www.ensembl.org/info/website/archives/index.html?redirect=no", times = 1000, timeout(1000)))
+    # urls <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_attr("href")
+    # version <- web %>% html_nodes("ul") %>% html_nodes("strong") %>% html_nodes("a") %>% html_text(trim = TRUE) %>%
+    #   gsub(pattern = "(Ensembl )|(:.*)",replacement = "",x = .,perl = T)
+    # archives <- data.frame(version=version,url=urls,stringsAsFactors = F)
+    url <- archives[which(archives$version == Ensembl_version), "url"]
+
+    mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl", host = url)
+    homolog <- listAttributes(mart)$name
+
+    if (species_homolog %in% homolog) {
+      cc_S_genes <- getBM(
+        mart = mart,
+        attributes = c(species_homolog),
+        filters = c("external_gene_name"),
+        values = list(Seurat::cc.genes.updated.2019$s.genes)
+      )[[1]]
+      cc_G2M_genes <- getBM(
+        mart = mart,
+        attributes = c(species_homolog),
+        filters = c("external_gene_name"),
+        values = list(Seurat::cc.genes.updated.2019$g2m.genes)
+      )[[1]]
+
+      if (length(cc_S_genes) < 3 | length(cc_G2M_genes) < 3) {
+        warning(paste0("number of cell-cycle homolog genes is too small. CellCycleScoring will not performed."))
+      }
+    } else {
+      warning(paste0("Can not find the homolog attributes for the species: ", species, " (", species_homolog, ")"))
+      cc_S_genes <- cc_S_genes <- NA
+    }
+  }
+  return(cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes)
 }
 
 CC_module <- function(sc, cc_S_genes, cc_G2M_genes, ...) {
