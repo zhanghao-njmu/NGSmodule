@@ -60,12 +60,12 @@ UMI_threshold=3000
 normalization_method="logCPM,SCT"       # logCPM,SCT
 nHVF=4000
 maxPC=100
-resolution=1
+resolution=0.8
 reduction="umap"                        # umap,tsne
 
 ### integration ###
 HVF_source="global"                  # global,separate
-integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
+integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER,scMerge,ZINBWaVE" # Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER,scMerge,ZINBWaVE
 
 
 EOF

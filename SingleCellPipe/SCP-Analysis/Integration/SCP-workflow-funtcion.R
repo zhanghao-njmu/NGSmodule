@@ -568,9 +568,6 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
   assay(sce, "counts") <- as(counts(sce), "dgeMatrix")
   assay(sce, "logcounts") <- as(logcounts(sce), "dgeMatrix")
 
-  # exprs_mat <- SummarizedExperiment::assay(sce, "counts")
-  # result <- scSEGIndex(exprs_mat = exprs_mat, BPPARAM = MulticoreParam())
-  # scSEG <- head(rownames(result)[order(result$segIdx, decreasing = T)], 1000)
   data("segList", package = "scMerge")
   scSEG <- segList$human$human_scSEG
   scSEG <- scSEG[scSEG %in% rownames(sce)]
@@ -591,37 +588,121 @@ scMerge_integrate <- function(sc_list, normalization_method = "logCPM",
     kmeansK = kmeansK,
     batch_name = "orig.ident",
     assay_name = "scMerge",
-    replicate_prop = 1,
-    BPPARAM = MulticoreParam(),
+    BSPARAM = IrlbaParam(),
+    # BPPARAM = MulticoreParam(),
     plot_igraph = FALSE
   )
-  srt_integrated <- as.Seurat(scMerge_unsupervised, 
-                              counts = "counts",
-                              data = "scMerge",
-                              assay = "scMerge")
-  scMerge_unsupervised <- sc_merge <- NULL
+  assay(scMerge_unsupervised, "counts") <- as(assay(scMerge_unsupervised, "counts"), "dgCMatrix")
+  assay(scMerge_unsupervised, "scMerge") <- as(assay(scMerge_unsupervised, "scMerge"), "dgCMatrix")
+  srt_integrated <- as.Seurat(scMerge_unsupervised,
+    counts = "counts",
+    data = "scMerge",
+    assay = "scMerge"
+  )
+  srt_integrated@assays$RNA <- sc_merge@assays$RNA
+  scMerge_unsupervised <- sce <- NULL
 
   srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
 
-  PC_use <- srt_integrated@misc$PC_use <- ncol(srt_integrated[["iNMF"]])
+  srt_integrated <- ScaleData(srt_integrated, features = hvf)
+  srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
+  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
+  srt_integrated@misc$PC_use <- PC_use
 
-  srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, force.recalc = T)
+  srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
   srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srt_integrated$seurat_clusters <- Idents(srt_integrated)
 
   if ("umap" %in% reduction) {
-    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
   }
   if ("tsne" %in% reduction) {
     srt_integrated <- RunTSNE(
-      object = srt_integrated, reduction = "iNMF", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
       perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
     )
   }
 
   srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
 
+  DefaultAssay(srt_integrated) <- "RNA"
+  return(srt_integrated)
+}
+
+ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
+                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                              cc_S_genes = Seurat::cc.genes.updated.2019$s.genes, cc_G2M_genes = Seurat::cc.genes.updated.2019$g2m.genes,
+                              exogenous_genes = NULL, ...) {
+  checked <- Check_scList(sc_list,
+                          normalization_method = normalization_method,
+                          HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+                          exogenous_genes = exogenous_genes
+  )
+  sc_list <- checked[["sc_list"]]
+  hvf <- checked[["hvf"]]
+  
+  sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+  sce <- as.SingleCellExperiment(sc_merge)
+  assay(sce, "counts") <- as(counts(sce), "dgCMatrix")
+  filter <- rowSums(assay(sce, "counts")>5)>5
+  date()
+  sce_zinbwave <- zinbwave(sce, K=50, X="~orig.ident", epsilon=1000, verbose = T, BPPARAM = MulticoreParam(),
+                  normalizedValues=TRUE, residuals = TRUE)
+  date()
+  
+  date()
+  saveRDS(sce,"~/sce.rds")
+  saveRDS(kmeansK,"~/kmeansK.rds")
+  scMerge_unsupervised <- scMerge(
+    sce_combine = sce,
+    ctl = scSEG,
+    kmeansK = kmeansK,
+    batch_name = "orig.ident",
+    assay_name = "scMerge",
+    # replicate_prop = 1,
+    BSPARAM = IrlbaParam(),
+    # BPPARAM = MulticoreParam(),
+    plot_igraph = FALSE
+  )
+  date()
+  saveRDS(scMerge_unsupervised, "~/scMerge_unsupervised.rds")
+  assay(scMerge_unsupervised, "counts") <- as(counts(scMerge_unsupervised), "dgCMatrix")
+  assay(scMerge_unsupervised, "scMerge") <- as(scMerge(scMerge_unsupervised), "dgCMatrix")
+  
+  srt_integrated <- as.Seurat(scMerge_unsupervised,
+                              counts = "counts",
+                              data = "scMerge",
+                              assay = "scMerge"
+  )
+  srt_integrated@assays$RNA <- sc_merge@assays$RNA
+  scMerge_unsupervised <- sce <- NULL
+  
+  srt_integrated <- Check_srtIntegrated(srt_integrated, hvf)
+  
+  srt_integrated <- ScaleData(srt_integrated, features = hvf)
+  srt_integrated <- RunPCA(object = srt_integrated, npcs = maxPC, features = hvf)
+  PC_use <- ceiling(maxLikGlobalDimEst(data = Embeddings(srt_integrated, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
+  srt_integrated@misc$PC_use <- PC_use
+  
+  srt_integrated <- FindNeighbors(object = srt_integrated, reduction = "pca", dims = 1:PC_use, force.recalc = T)
+  srt_integrated <- FindClusters(object = srt_integrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srt_integrated <- BuildClusterTree(srt_integrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  srt_integrated$seurat_clusters <- Idents(srt_integrated)
+  
+  if ("umap" %in% reduction) {
+    srt_integrated <- RunUMAP(object = srt_integrated, reduction = "pca", dims = 1:PC_use, n.components = 2, umap.method = "uwot-learn")
+  }
+  if ("tsne" %in% reduction) {
+    srt_integrated <- RunTSNE(
+      object = srt_integrated, reduction = "pca", dims = 1:PC_use, dim.embed = 2, tsne.method = "Rtsne",
+      perplexity = max(ceiling(ncol(srt_integrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
+    )
+  }
+  
+  srt_integrated <- CC_module(srt_integrated, cc_S_genes, cc_G2M_genes)
+  
   DefaultAssay(srt_integrated) <- "RNA"
   return(srt_integrated)
 }

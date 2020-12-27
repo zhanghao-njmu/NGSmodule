@@ -55,7 +55,7 @@ Ensembl_version <- 101
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "Seurat", "SeuratDisk", "SeuratWrappers", "sctransform", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
-    "future", "reticulate", "harmony", "liger", "simspec","scMerge","BiocSingular","iSMNN", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
+    "future", "reticulate", "harmony", "liger", "simspec", "scMerge", "BiocSingular", "iSMNN", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
     "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
   ),
@@ -142,9 +142,9 @@ save.image(file = "base_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
 if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
-  if(file.exists("sc_list_filter.rds")){
+  if (file.exists("sc_list_filter.rds")) {
     cat("Skip the sc_list loading....\n")
-  }else{
+  } else {
     cat("Loading the sc_list from the existing file....\n")
     sc_list <- readRDS("sc_list.rds")
   }
@@ -215,9 +215,9 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 
 # Preprocessing: Cell filtering -----------------------------------
 if (file.exists("sc_list_filter.rds")) {
-  if(all(file.exists(paste0("sc_list_filter_",normalization_method,".rds")))){
+  if (all(file.exists(paste0("sc_list_filter_", normalization_method, ".rds")))) {
     cat("Skip the sc_list_filter loading....\n")
-  }else{
+  } else {
     cat("Loading the sc_list_filter from the existing file....\n")
     sc_list_filter <- readRDS("sc_list_filter.rds")
   }
@@ -348,7 +348,7 @@ if (length(datasets) != 0) {
       hvf <- checked[["hvf"]]
 
       for (im in integration_method) {
-        if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER")) {
+        if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge")) {
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
           dir.create(dir_path, recursive = T, showWarnings = FALSE)
           cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
