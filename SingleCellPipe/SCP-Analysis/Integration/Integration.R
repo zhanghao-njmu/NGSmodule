@@ -280,7 +280,7 @@ for (nm in normalization_method) {
         cat("++++++", sc_set, paste0("Normalization-", nm), "++++++", "\n")
         srt <- sc_list_filter[[sc_set]]
         srt <- Standard_SCP(
-          sc = srt, normalization_method = nm, nHVF = nHVF,
+          srt = srt, normalization_method = nm, nHVF = nHVF,
           maxPC = maxPC, resolution = resolution, reduction = reduction,
           cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
           exogenous_genes = exogenous_genes
@@ -354,7 +354,7 @@ if (length(datasets) != 0) {
         }
       }
 
-      # Save integration data ---------------------------------------------------
+      # Save the integration data ---------------------------------------------
       saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
     }
   }
