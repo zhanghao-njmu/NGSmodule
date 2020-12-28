@@ -102,7 +102,10 @@ Check_srtList <- function(srtList, normalization_method,
     srtList <- PrepSCTIntegration(object.list = srtList, anchor.features = hvf, verbose = FALSE)
   }
 
-  return(list(srtList = srtList, hvf = hvf))
+  return(list(
+    srtList = srtList,
+    hvf = hvf
+  ))
 }
 
 Check_srtMerge <- function(srtMerge, normalization_method, batch,
@@ -131,7 +134,10 @@ Check_srtMerge <- function(srtMerge, normalization_method, batch,
   srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
   VariableFeatures(srtMerge) <- hvf
 
-  return(list(srtMerge = srtMerge, hvf = hvf))
+  return(list(
+    srtMerge = srtMerge,
+    hvf = hvf
+  ))
 }
 
 Check_srtIntegrated <- function(srtIntegrated, hvf, batch, ...) {
@@ -201,7 +207,10 @@ CC_GenePrefetch <- function(species) {
       cc_S_genes <- cc_S_genes <- NA
     }
   }
-  return(cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes)
+  return(list(
+    cc_S_genes = cc_S_genes,
+    cc_G2M_genes = cc_G2M_genes
+  ))
 }
 
 CC_module <- function(srt, cc_S_genes, cc_G2M_genes, ...) {
