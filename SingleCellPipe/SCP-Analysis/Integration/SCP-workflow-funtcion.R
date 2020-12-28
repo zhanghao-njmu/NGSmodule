@@ -273,6 +273,7 @@ Uncorrected_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -367,6 +368,7 @@ Seurat_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -441,6 +443,7 @@ fastMNN_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -521,6 +524,7 @@ Harmony_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -624,6 +628,7 @@ Scanorama_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -692,6 +697,7 @@ BBKNN_integrate <- function(srtList, srtMerge, added = TRUE,
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     srtMerge_raw[[paste0(reduction_prefix, "umap")]] <- srtIntegrated[[paste0(reduction_prefix, "umap")]]
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -776,6 +782,7 @@ CSS_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -856,6 +863,7 @@ LIGER_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -964,6 +972,7 @@ scMerge_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
@@ -1079,6 +1088,7 @@ ZINBWaVE_integrate <- function(srtList, srtMerge, added = TRUE,
     for (i in reduction) {
       srtMerge_raw[[paste0(reduction_prefix, i)]] <- srtIntegrated[[paste0(reduction_prefix, i)]]
     }
+    return(srtMerge_raw)
   } else {
     return(srtIntegrated)
   }
