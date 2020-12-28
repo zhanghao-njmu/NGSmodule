@@ -80,7 +80,7 @@ reduction <- strsplit(reduction, split = ",") %>% unlist()
 normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
 integration_method <- strsplit(integration_method, split = ",") %>% unlist()
 
-CCgenes <- CCgene_prefetch(species = species)
+CCgenes <- CC_GenePrefetch(species = species)
 cc_S_genes <- CCgenes[["cc_S_genes"]]
 cc_G2M_genes <- CCgenes[["cc_G2M_genes"]]
 
@@ -302,24 +302,30 @@ if (length(datasets) != 0) {
     for (nm in normalization_method) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
 
-      checked <- Check_scList(
-        sc_list = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
+      checked <- Check_srtList(
+        srtList = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
         HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
         exogenous_genes = exogenous_genes
       )
-      sc_list <- checked[["sc_list"]]
+      srtList <- checked[["srtList"]]
       hvf <- checked[["hvf"]]
+      srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
+      VariableFeatures(srt_integrated) <- hvf
 
       for (im in integration_method) {
-        if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge")) {
+        if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
           dir.create(dir_path, recursive = T, showWarnings = FALSE)
           cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
-          if (file.exists(paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))) {
+          if (
+            # file.exists(paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
+            paste0(im, "_clusters") %in% colnames(srt_integrated@meta.data)
+          ) {
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
           } else {
             srt_integrated <- Integration_SCP(
-              sc_list = sc_list, integration_method = im,
+              srtMerge = srt_integrated, added = TRUE,
+              integration_method = im, batch = "orig.ident",
               normalization_method = nm,
               HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
               maxPC = maxPC, resolution = resolution, reduction = reduction,
@@ -340,13 +346,16 @@ if (length(datasets) != 0) {
               units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
               scale = 1.5, limitsize = FALSE
             )
-            saveRDS(srt_integrated, file = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
+            # saveRDS(srt_integrated, file = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
           }
         } else {
           cat("Warning!", im, "process skipped because it is not a supported integration method.\n")
         }
       }
+
+      # Save integration data ---------------------------------------------------
+      saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
     }
   }
 } else {
@@ -366,4 +375,3 @@ if (length(datasets) != 0) {
 
 
 future:::ClusterRegistry("stop")
-
