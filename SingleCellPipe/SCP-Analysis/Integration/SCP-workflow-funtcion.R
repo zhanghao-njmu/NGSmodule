@@ -715,7 +715,7 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
       which_genes = hvf,
       epsilon = length(hvf),
       prop_fit = 0.3,
-      BPPARAM = MulticoreParam()
+      BPPARAM = MulticoreParam(workers = 8)
     )
   }
 
