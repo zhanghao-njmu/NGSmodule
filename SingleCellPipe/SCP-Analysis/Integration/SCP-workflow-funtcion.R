@@ -690,12 +690,13 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
 
   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
   sce <- as.SingleCellExperiment(sc_merge)
-  assay(sce, "counts") <- as(counts(sce), "dgCMatrix")
+  assay(sce, "counts") <- as(counts(sce), "matrix")
   if (ncol(sce) < 10000) {
     sce_zinbwave <- zinbwave(
       Y = sce,
-      K = 50,
+      K = 2,
       X = "~orig.ident",
+      which_assay = "counts",
       which_genes = hvf,
       epsilon = length(hvf),
       normalizedValues = TRUE,
@@ -707,11 +708,11 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
       tryCatch(expr = {
         sce_zinbwave <- zinbsurf(
           Y = sce,
-          K = 20,
+          K = 2,
           X = "~orig.ident",
+          which_assay = "counts",
           which_genes = hvf,
           epsilon = length(hvf),
-          maxiter.optimize = 100,
           prop_fit = 0.2,
           BPPARAM = MulticoreParam(workers = 8)
         )
