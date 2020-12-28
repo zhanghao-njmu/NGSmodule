@@ -61,21 +61,16 @@ Check_scList <- function(sc_list, normalization_method = "logCPM",
       } else {
         DefaultAssay(sc_list[[i]]) <- "SCT"
       }
-      if (length(VariableFeatures(sc_list[[i]])) == 0) {
-        sc_list[[i]] <- FindVariableFeatures(sc_list[[i]], verbose = FALSE)
-        VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
-          filter(variance.standardized > 1 &
-            (!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(variance.standardized)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      } else {
-        VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]], selection.method = "sctransform") %>%
-          filter((!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(residual_variance)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      }
+      sc_list[[i]] <- FindVariableFeatures(sc_list[[i]], verbose = FALSE)
+      m <- GetAssayData(sc_list[[i]], slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+      VariableFeatures(sc_list[[i]]) <- HVFInfo(sc_list[[i]]) %>%
+        filter(variance.standardized > 1 &
+          (!rownames(.) %in% exogenous_genes) &
+          rownames(.) %in% gene_keep) %>%
+        dplyr::arrange(desc(variance.standardized)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
     }
   }
 
@@ -710,7 +705,7 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
   } else {
     sce_zinbwave <- zinbsurf(
       Y = sce,
-      K = 50,
+      K = 2,
       X = "~orig.ident",
       which_genes = hvf,
       epsilon = length(hvf),
@@ -864,22 +859,18 @@ Standard_SCP <- function(sc, normalization_method = "logCPM", nHVF = 3000, hvf =
       )
     }
     if (is.null(hvf)) {
-      if (length(VariableFeatures(sc)) == 0) {
-        sc <- FindVariableFeatures(sc)
-        VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
-          filter(variance.standardized > 1 &
-            (!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(variance.standardized)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      } else {
-        VariableFeatures(sc) <- hvf <- HVFInfo(sc, selection.method = "sctransform") %>%
-          filter((!rownames(.) %in% exogenous_genes)) %>%
-          dplyr::arrange(desc(residual_variance)) %>%
-          rownames(.) %>%
-          head(n = nHVF)
-      }
+      sc <- FindVariableFeatures(sc)
+      m <- GetAssayData(sc, slot = "counts")
+      gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+      VariableFeatures(sc) <- hvf <- HVFInfo(sc) %>%
+        filter(variance.standardized > 1 &
+          (!rownames(.) %in% exogenous_genes) &
+          rownames(.) %in% gene_keep) %>%
+        dplyr::arrange(desc(variance.standardized)) %>%
+        rownames(.) %>%
+        head(n = nHVF)
     } else {
+      hvf <- hvf[hvf %in% rownames(GetAssayData(sc, slot = "counts"))]
       VariableFeatures(sc) <- hvf
     }
     DefaultAssay(sc) <- "SCT"
