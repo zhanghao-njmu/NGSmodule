@@ -63,6 +63,11 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   character.only = TRUE
 ))))
 set.seed(11)
+script_dir <- gsub(x = script_path, pattern = "Integration.R", replacement = "")
+source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
+
+# source("/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/SCP-Analysis/Integration/SCP-workflow-funtcion.R")
+# source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
 
 datasets <- strsplit(datasets_raw, split = ";") %>%
   unlist() %>%
@@ -96,11 +101,6 @@ if (threads >= 125) {
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
-script_dir <- gsub(x = script_path, pattern = "Integration.R", replacement = "")
-source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
-
-# source("/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/SCP-Analysis/Integration/SCP-workflow-funtcion.R")
-# source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
 save.image(file = "base_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
