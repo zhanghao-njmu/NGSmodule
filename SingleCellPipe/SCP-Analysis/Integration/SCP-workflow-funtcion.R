@@ -703,15 +703,25 @@ ZINBWaVE_integrate <- function(sc_list, normalization_method = "logCPM",
       BPPARAM = MulticoreParam()
     )
   } else {
-    sce_zinbwave <- zinbsurf(
-      Y = sce,
-      K = 2,
-      X = "~orig.ident",
-      which_genes = hvf,
-      epsilon = length(hvf),
-      prop_fit = 0.3,
-      BPPARAM = MulticoreParam(workers = 8)
-    )
+    while (state != 0) {
+      tryCatch(expr = {
+        sce_zinbwave <- zinbsurf(
+          Y = sce,
+          K = 20,
+          X = "~orig.ident",
+          which_genes = hvf,
+          epsilon = length(hvf),
+          maxiter.optimize = 100,
+          prop_fit = 0.2,
+          BPPARAM = MulticoreParam(workers = 8)
+        )
+        state <- 1
+      }, error = function(error) {
+        message(error)
+        cat("Will resample the cells for zinbsurf ......\n")
+        state <- 0
+      })
+    }
   }
 
   assay(scMerge_unsupervised, "counts") <- as(counts(scMerge_unsupervised), "dgCMatrix")
