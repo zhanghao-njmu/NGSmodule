@@ -6,13 +6,14 @@ sample <- as.character(args[2])
 threads <- as.character(args[3])
 
 # parameters: global settings ---------------------------------------------
-# cellranger_dir <- "/data/lab/LiLaiHua/scRNA-seq/Gonadal_ridge/NGSmodule_SCP_work/d7/Alignment/Cellranger/"
-# sample <- "d7"
+# cellranger_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/ESC/Alignment/Cellranger/"
+# sample <- "ESC"
 # threads <- 80
+# CellLabel<-"GFP"
 
 # parameters: emptyDrops --------------------------------------------------
 empty_thresh <- 100
-iters <- 2e+5
+iters <- 1e+4
 fdr <- 1e-3
 
 # parameters: dropEst -----------------------------------------------------
@@ -53,6 +54,11 @@ colnames(filtered) <- colData(filtered)[["Barcode"]]
 rownames(filtered) <- rowData(filtered)[["Symbol"]] %>% make.unique(sep = "@")
 filtered <- filtered[, colSums(counts(filtered)) > 0]
 
+colData(raw)$Cellranger_v2 <- defaultDrops(counts(raw))
+colData(raw)$Cellranger_v3 <- colData(raw)$Barcode %in% colData(filtered)$Barcode
+
+empty_thresh <- as.numeric(sort(colSums(counts(raw)),decreasing = TRUE)[sum(colData(raw)$Cellranger_v3)*5])
+
 # Method: emptyDrops ------------------------------------------------------
 bc_ranks <- barcodeRanks(counts(raw), lower = empty_thresh)
 colData(raw)$UMIcounts <- bc_ranks$total
@@ -60,9 +66,6 @@ colData(raw)$BarcodeRank <- bc_ranks$rank
 colData(raw)$Fitted <- bc_ranks$fitted
 colData(raw)$knee <- colData(raw)$UMIcounts > metadata(bc_ranks)$knee
 colData(raw)$inflection <- colData(raw)$UMIcounts > metadata(bc_ranks)$inflection
-
-colData(raw)$Cellranger_v2 <- defaultDrops(counts(raw)) & colData(raw)$UMIcounts > empty_thresh
-colData(raw)$Cellranger_v3 <- colData(raw)$Barcode %in% colData(filtered)$Barcode & colData(raw)$UMIcounts > empty_thresh
 
 # colData(raw) %>%
 #   as.data.frame() %>%
@@ -76,10 +79,15 @@ p <- colData(raw) %>%
   ggplot(
     aes(x = BarcodeRank, y = UMIcounts)
   ) +
+  # geom_point(
+  #   aes(color = log10(UMIcounts)),
+  #   alpha = 0.5, shape = 16
+  # ) +
   geom_point(
-    aes(color = log10(UMIcounts)),
-    alpha = 0.5, shape = 16
+    aes(color = GFP),
+    alpha = 1
   ) +
+  scale_color_manual(values = setNames(c("red","transparent"),c(TRUE,FALSE)))+
   geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
   geom_hline(
     yintercept = metadata(bc_ranks)$knee,
@@ -140,21 +148,21 @@ p <- colData(raw) %>%
 plotlist[["emptyDrops-BarcodeRankFitted"]] <- p
 
 
-mito_gene <- grep(x = rownames(raw), pattern = "^(MT-)|(mt-)|(^Mt-)", perl = T)
-ribo_gene <- grep(x = rownames(raw), pattern = "^(RP[SL]\\d+)|(rp[sl]\\d+)|((Rp[sl]\\d+))", perl = T)
+mito_gene <- grep(x = rownames(raw), pattern = "(^MT-)|(^Mt-)|(^mt-)", perl = T)
+ribo_gene <- grep(x = rownames(raw), pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)", perl = T)
 residual <- 1000
-while (residual != 0) {
+# while (residual != 0) {
   cat("niters:", iters, "\n")
   emp_drops <- emptyDrops(counts(raw)[-c(mito_gene, ribo_gene), ],
-    lower = empty_thresh, test.ambient = TRUE, retain = Inf,
-    niters = iters, BPPARAM = bpparam
+    lower = empty_thresh, niters = iters,
+    test.ambient = TRUE, retain = Inf, BPPARAM = bpparam
   )
   is_cell <- emp_drops$FDR < fdr
   is_cell[is.na(is_cell)] <- FALSE
   print(table(Limited = emp_drops$Limited, Significant = is_cell))
   residual <- table(Limited = emp_drops$Limited, Significant = is_cell)[2, 1]
   iters <- iters * 2
-}
+# }
 
 colData(raw)$EmpDropsLogProb <- emp_drops$LogProb
 colData(raw)$EmpDropsPValue <- emp_drops$PValue
@@ -453,7 +461,7 @@ p <- colData(raw) %>%
     values = setNames(color[c(9, 2)], c(TRUE, FALSE))
   ) +
   annotation_logticks() +
-  labs(title = "Barcode Rank Plot",subtitle = paste("cells:",sum(colData(raw)$dropEst)) , x = "Barcode rank", y = "UMI counts") +
+  labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropEst)), x = "Barcode rank", y = "UMI counts") +
   theme_classic() +
   theme(
     aspect.ratio = 1,
@@ -492,8 +500,8 @@ bccount <- colData(raw) %>%
 if (length(unique(as.integer(quantile(bccount[, "BarcodeRank"])))) != 5) {
   bccount[nrow(bccount), "BarcodeRank"] <- bccount[nrow(bccount), "BarcodeRank"] + 1
 }
-ntop <- uik(x = bccount[, "BarcodeRank"], y = bccount[,"UMIcounts_cumsum"] / 1000)
-cutoff_counts <- bccount[ntop,"UMIcounts"]
+ntop <- uik(x = bccount[, "BarcodeRank"], y = bccount[, "UMIcounts_cumsum"] / 1000)
+cutoff_counts <- bccount[ntop, "UMIcounts"]
 colData(raw)$zUMIs <- colData(raw)$UMIcounts > cutoff_counts
 
 p <- bccount %>%
@@ -521,7 +529,8 @@ p <- bccount %>%
   mutate(zUMIs = UMIcounts > cutoff_counts) %>%
   ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
   geom_point(aes(color = zUMIs),
-             alpha = 0.5, shape = 16) +
+    alpha = 0.5, shape = 16
+  ) +
   geom_vline(xintercept = ntop, color = "red3") +
   scale_color_manual(
     name = "is cell",
@@ -570,13 +579,13 @@ p <- colData(raw) %>%
   ) +
   geom_vline(xintercept = ntop, color = "red3") +
   annotate("text",
-           x = ntop,y = Inf,
-           label = paste0(
-             "zUMIs threshold:",
-             " UMI=", cutoff_counts,
-             " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
-           ),
-           colour = "red3", size = 3, hjust = 1, vjust = 1.5, angle = 90
+    x = ntop, y = Inf,
+    label = paste0(
+      "zUMIs threshold:",
+      " UMI=", cutoff_counts,
+      " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
+    ),
+    colour = "red3", size = 3, hjust = 1, vjust = 1.5, angle = 90
   ) +
   geom_hline(
     yintercept = metadata(bc_ranks)$knee,
@@ -605,7 +614,7 @@ p <- colData(raw) %>%
     values = setNames(color[c(9, 2)], c(TRUE, FALSE))
   ) +
   annotation_logticks() +
-  labs(title = "Barcode Rank Plot",subtitle = paste("cells:",sum(colData(raw)$zUMIs)) , x = "Barcode rank", y = "UMI counts") +
+  labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$zUMIs)), x = "Barcode rank", y = "UMI counts") +
   theme_classic() +
   theme(
     aspect.ratio = 1,
@@ -642,10 +651,11 @@ cell_rank <- colData(raw) %>%
   as.data.frame() %>%
   dplyr::select(
     Barcode, BarcodeRank, UMIcounts, Fitted,
-    Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst,zUMIs) %>%
+    Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs
+  ) %>%
   arrange(BarcodeRank) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst","zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -697,9 +707,9 @@ plotlist[["MethodCompare-BarcodeRank"]] <- p
 
 cell_count <- colData(raw) %>%
   as.data.frame() %>%
-  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst,zUMIs) %>%
+  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst","zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -726,9 +736,9 @@ plotlist[["MethodCompare-Barplot"]] <- p
 
 cell_upset <- colData(raw) %>%
   as.data.frame() %>%
-  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst,zUMIs) %>%
+  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst","zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -745,7 +755,7 @@ p <- ggplot(cell_upset, aes(x = Method_list)) +
   geom_bar(aes(fill = ..count..), color = "black", width = 0.5) +
   geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, hjust = 0, angle = 45) +
   labs(title = "Cell intersection among differnent methods", x = "", y = "Cell number") +
-  scale_x_upset(sets = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst","zUMIs")) +
+  scale_x_upset(sets = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs")) +
   scale_y_continuous(limits = c(0, 1.2 * y_max)) +
   scale_fill_material(name = "Count", palette = "blue-grey") +
   theme_combmatrix(
@@ -788,7 +798,7 @@ saveRDS(raw, file = "raw.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
 
 pdf(paste0(sample, ".CellCalling.pdf"), width = 11, height = 8)
-invisible(lapply(paste0(sample, c(".emptyDrops.png", ".dropEst.png",".zUMIs.png", ".MethodCompare.png")), function(x) {
+invisible(lapply(paste0(sample, c(".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".MethodCompare.png")), function(x) {
   grid.arrange(rasterGrob(readPNG(x, native = FALSE),
     interpolate = FALSE
   ))

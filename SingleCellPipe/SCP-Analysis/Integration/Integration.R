@@ -31,21 +31,21 @@ Ensembl_version <- 101
 # # datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2;ESC,PGCLC-d6,CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
 # species <- "Homo_sapiens"
 # exogenous_genes <- "GFP"
-#
+# 
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
 # mito_threshold <- 0.2
 # gene_threshold <- 1000
 # UMI_threshold <- 3000
-#
-#
+# 
+# 
 # # parameters: basic --------------------------------------------------
 # normalization_method <- "logCPM,SCT" # logCPM,SCT
 # nHVF <- 4000
 # maxPC <- 100
-# resolution <- 1
+# resolution <- 0.8
 # reduction <- "umap" # umap,tsne
-#
+# 
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "global" # global,separate
 # integration_method <- "Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
@@ -104,12 +104,12 @@ plan()
 save.image(file = "base_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
-if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
-  if (file.exists("sc_list_filter.rds")) {
-    cat("Skip the sc_list loading....\n")
+if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
+  if (file.exists("srt_list_filter.rds")) {
+    cat("Skip the srt_list loading....\n")
   } else {
-    cat("Loading the sc_list from the file....\n")
-    sc_list <- readRDS("sc_list.rds")
+    cat("Loading the srt_list from the file....\n")
+    srt_list <- readRDS("srt_list.rds")
   }
 } else {
   for (i in 1:length(samples)) {
@@ -136,7 +136,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   }
 
   # Preprocessing: Create Seurat object -------------------------------------
-  sc_list <- list()
+  srt_list <- list()
   velocity_list <- list()
   for (i in 1:length(samples)) {
     cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
@@ -147,7 +147,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
     srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
     srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
     srt <- RenameCells(object = srt, add.cell.id = samples[i])
-    sc_list[[samples[i]]] <- srt
+    srt_list[[samples[i]]] <- srt
 
     velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
     velocity <- RenameCells(
@@ -162,14 +162,14 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
     assign(x = paste0(samples[i], "_10X"), value = NULL)
     assign(x = paste0(samples[i], "_velocity"), value = NULL)
   }
-  saveRDS(sc_list, file = "sc_list.rds")
+  saveRDS(srt_list, file = "srt_list.rds")
   saveRDS(velocity_list, file = "velocity_list.rds")
 }
-# if (length(sc_list) == 1) {
-#   sc_merge <- sc_list[[1]]
+# if (length(srt_list) == 1) {
+#   sc_merge <- srt_list[[1]]
 #   velocity_merge <- velocity_list[[1]]
 # } else {
-#   sc_merge <- Reduce(function(x, y) merge(x, y), sc_list)
+#   sc_merge <- Reduce(function(x, y) merge(x, y), srt_list)
 #   Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
 #   velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
 #   Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
@@ -177,17 +177,17 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
 
 
 # Preprocessing: Cell filtering -----------------------------------
-if (file.exists("sc_list_filter.rds")) {
-  if (all(file.exists(paste0("sc_list_filter_", normalization_method, ".rds")))) {
-    cat("Skip the sc_list_filter loading....\n")
+if (file.exists("srt_list_filter.rds")) {
+  if (all(file.exists(paste0("srt_list_filter_", normalization_method, ".rds")))) {
+    cat("Skip the srt_list_filter loading....\n")
   } else {
-    cat("Loading the sc_list_filter from the file....\n")
-    sc_list_filter <- readRDS("sc_list_filter.rds")
+    cat("Loading the srt_list_filter from the file....\n")
+    srt_list_filter <- readRDS("srt_list_filter.rds")
   }
 } else {
-  sc_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
+  srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
-    srt <- sc_list[[sc_set]]
+    srt <- srt_list[[sc_set]]
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
@@ -204,9 +204,10 @@ if (file.exists("sc_list_filter.rds")) {
     mod <- loess(log10_total_features ~ log10_total_counts)
     pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
     featcount_dist <- log10_total_features - pred
-    # ggplot(data.frame(x=log10_total_counts,y=log10_total_features,diff=diff),
-    #        aes(x=x, y=y, colour=diff)) +
-    #   geom_point() + geom_smooth(method = "loess", col="black")
+    p <- ggplot(data.frame(x=log10_total_counts,y=log10_total_features,diff=diff),
+           aes(x=x, y=y, colour=diff)) +
+      geom_point() + geom_smooth(method = "loess", col="black")
+    ggsave(p)
 
     sce <- addPerCellQC(sce, percent_top = c(20))
     pct_counts_in_top_20_features <- colData(sce)$percent.top_20
@@ -260,25 +261,25 @@ if (file.exists("sc_list_filter.rds")) {
     return(srt)
   })
 
-  saveRDS(sc_list_filter, file = "sc_list_filter.rds")
+  saveRDS(srt_list_filter, file = "srt_list_filter.rds")
 }
 
 
 # Preprocessing: Normalization -----------------------------------
 for (nm in normalization_method) {
   dir.create(paste0("Normalization-", nm), recursive = T, showWarnings = FALSE)
-  if (file.exists(paste0("sc_list_filter_", nm, ".rds"))) {
-    cat("Loading the", paste0("sc_list_filter_", nm), "from the file....\n")
+  if (file.exists(paste0("srt_list_filter_", nm, ".rds"))) {
+    cat("Loading the", paste0("srt_list_filter_", nm), "from the file....\n")
     assign(
-      x = paste0("sc_list_filter_", nm),
-      value = readRDS(paste0("sc_list_filter_", nm, ".rds"))
+      x = paste0("srt_list_filter_", nm),
+      value = readRDS(paste0("srt_list_filter_", nm, ".rds"))
     )
   } else {
     assign(
-      x = paste0("sc_list_filter_", nm),
+      x = paste0("srt_list_filter_", nm),
       value = lapply(setNames(samples, samples), function(sc_set) {
         cat("++++++", sc_set, paste0("Normalization-", nm), "++++++", "\n")
-        srt <- sc_list_filter[[sc_set]]
+        srt <- srt_list_filter[[sc_set]]
         srt <- Standard_SCP(
           srt = srt, normalization_method = nm, nHVF = nHVF,
           maxPC = maxPC, resolution = resolution, reduction = reduction,
@@ -290,9 +291,9 @@ for (nm in normalization_method) {
     )
 
     invisible(lapply(samples, function(x) {
-      saveRDS(get(paste0("sc_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
+      saveRDS(get(paste0("srt_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
     }))
-    saveRDS(get(paste0("sc_list_filter_", nm)), file = paste0("sc_list_filter_", nm, ".rds"))
+    saveRDS(get(paste0("srt_list_filter_", nm)), file = paste0("srt_list_filter_", nm, ".rds"))
   }
 }
 
@@ -303,7 +304,7 @@ if (length(datasets) != 0) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
 
       checked <- Check_srtList(
-        srtList = get(paste0("sc_list_filter_", nm))[dataset], normalization_method = nm,
+        srtList = get(paste0("srt_list_filter_", nm))[dataset], normalization_method = nm,
         HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
         exogenous_genes = exogenous_genes
       )

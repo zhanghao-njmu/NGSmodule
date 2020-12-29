@@ -44,6 +44,10 @@ dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml
 gene_gtf="\$cellranger_ref/genes/genes.gtf"
 rmsk_gtf="\$cellranger_ref/genes/hg38_rmsk.gtf"
 
+### Cell-Calling ###
+emptyDrops="AUTO" # an integer number or 'AUTO'
+CellLabel="GFP" # a gene name or 'NULL'
+
 ############# Intergration #######################################################################
 ### base parameters ###
 datasets="ESC,iMeLC,PGC"
