@@ -45,14 +45,14 @@ gene_gtf="\$cellranger_ref/genes/genes.gtf"
 rmsk_gtf="\$cellranger_ref/genes/hg38_rmsk.gtf"
 
 ### Cell-Calling ###
-emptyDrops="AUTO" # an integer number or 'AUTO'
-CellLabel="GFP" # a gene name or 'NULL'
+EmptyThreshold="AUTO"                               # an integer number or 'AUTO'
+CellLabel="NULL"                                    # a gene name or 'NULL'
 
 ############# Intergration #######################################################################
 ### base parameters ###
-datasets="ESC,iMeLC,PGC"
+datasets="ESC,iMeLC,PGC;Testis1,Testis2;"
 species="Homo_sapiens"                              # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
-exogenous_genes="GFP"
+exogenous_genes="NULL"                              # a gene name, e.g. 'GFP' or 'NULL'
 
 ### cell-filtering ###
 cell_calling_methodNum=3
@@ -62,7 +62,7 @@ UMI_threshold=3000
 
 ### basic ###
 normalization_method="logCPM,SCT"       # logCPM,SCT
-nHVF=4000
+nHVF=3000
 maxPC=100
 resolution=0.8
 reduction="umap"                        # umap,tsne
