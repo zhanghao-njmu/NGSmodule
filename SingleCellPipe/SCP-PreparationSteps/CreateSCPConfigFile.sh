@@ -50,6 +50,7 @@ CellLabel="NULL"                                    # a gene name or 'NULL'
 
 ############# Intergration #######################################################################
 ### base parameters ###
+Rscript_threads=120
 datasets="ESC,iMeLC,PGC;Testis1,Testis2;"
 species="Homo_sapiens"                              # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 exogenous_genes="NULL"                              # a gene name, e.g. 'GFP' or 'NULL'
