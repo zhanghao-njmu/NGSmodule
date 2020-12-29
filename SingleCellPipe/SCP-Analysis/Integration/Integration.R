@@ -324,7 +324,7 @@ if (length(datasets) != 0) {
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
           } else {
             srt_integrated <- Integration_SCP(
-              srtMerge = srt_integrated, added = TRUE,
+              srtMerge = srt_integrated, append = TRUE,
               integration_method = im, batch = "orig.ident",
               normalization_method = nm,
               HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
