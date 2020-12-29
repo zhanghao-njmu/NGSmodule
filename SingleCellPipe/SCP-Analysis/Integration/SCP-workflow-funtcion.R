@@ -227,7 +227,7 @@ CC_module <- function(srt, cc_S_genes, cc_G2M_genes, ...) {
   return(srt)
 }
 
-Uncorrected_integrate <- function(srtList, srtMerge, added = TRUE,
+Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                                   normalization_method = "logCPM", batch = "orig.ident",
                                   HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                   maxPC = 100, resolution = 0.8,
@@ -279,7 +279,7 @@ Uncorrected_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-Seurat_integrate <- function(srtList, srtMerge, added = TRUE,
+Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                              normalization_method = "logCPM", batch = "orig.ident",
                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                              maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "Seurat_",
@@ -374,7 +374,7 @@ Seurat_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-fastMNN_integrate <- function(srtList, srtMerge, added = TRUE,
+fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "fastMNN_",
@@ -449,7 +449,7 @@ fastMNN_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-Harmony_integrate <- function(srtList, srtMerge, added = TRUE,
+Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "Harmony_",
@@ -530,7 +530,7 @@ Harmony_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-Scanorama_integrate <- function(srtList, srtMerge, added = TRUE,
+Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                                 normalization_method = "logCPM", batch = "orig.ident",
                                 HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                 maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "Scanorama_",
@@ -634,7 +634,7 @@ Scanorama_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-BBKNN_integrate <- function(srtList, srtMerge, added = TRUE,
+BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                             normalization_method = "logCPM", batch = "orig.ident",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8, reduction_prefix = "BBKNN_",
@@ -703,7 +703,7 @@ BBKNN_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-CSS_integrate <- function(srtList, srtMerge, added = TRUE,
+CSS_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                           normalization_method = "logCPM", batch = "orig.ident",
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "CSS_",
@@ -788,7 +788,7 @@ CSS_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-LIGER_integrate <- function(srtList, srtMerge, added = TRUE,
+LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                             normalization_method = "logCPM", batch = "orig.ident",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "LIGER_",
@@ -869,7 +869,7 @@ LIGER_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-scMerge_integrate <- function(srtList, srtMerge, added = TRUE,
+scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "scMerge_",
@@ -978,7 +978,7 @@ scMerge_integrate <- function(srtList, srtMerge, added = TRUE,
   }
 }
 
-ZINBWaVE_integrate <- function(srtList, srtMerge, added = TRUE,
+ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                                normalization_method = "logCPM", batch = "orig.ident",
                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"), reduction_prefix = "ZINBWaVE_",
@@ -1242,7 +1242,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   return(srt)
 }
 
-Integration_SCP <- function(srtList, srtMerge, added = TRUE,
+Integration_SCP <- function(srtList = NULL, srtMerge = NULL, added = TRUE,
                             integration_method = "Seurat", batch = "orig.ident",
                             normalization_method = "logCPM",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
@@ -1264,3 +1264,6 @@ Integration_SCP <- function(srtList, srtMerge, added = TRUE,
     )
   }
 }
+
+
+
