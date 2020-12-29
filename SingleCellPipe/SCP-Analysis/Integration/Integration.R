@@ -311,9 +311,11 @@ if (length(datasets) != 0) {
       hvf <- checked[["hvf"]]
       srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
       VariableFeatures(srt_integrated) <- hvf
-
+      saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
+      
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
+          srt_integrated <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
           dir.create(dir_path, recursive = T, showWarnings = FALSE)
           cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
