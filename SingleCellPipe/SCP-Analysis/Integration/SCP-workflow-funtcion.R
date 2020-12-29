@@ -35,7 +35,7 @@ Check_srtList <- function(srtList, normalization_method,
       srtList[[i]] <- FindVariableFeatures(srtList[[i]], verbose = FALSE)
     }
     m <- GetAssayData(srtList[[i]], slot = "counts")
-    gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+    gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
     VariableFeatures(srtList[[i]]) <- HVFInfo(srtList[[i]]) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
@@ -65,7 +65,7 @@ Check_srtList <- function(srtList, normalization_method,
         srtList[[i]] <- FindVariableFeatures(srtList[[i]], verbose = FALSE)
       }
       m <- GetAssayData(srtList[[i]], slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+      gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
       VariableFeatures(srtList[[i]]) <- HVFInfo(srtList[[i]]) %>%
         filter(variance.standardized > 1 &
           (!rownames(.) %in% exogenous_genes) &
@@ -80,7 +80,7 @@ Check_srtList <- function(srtList, normalization_method,
     if (HVF_source == "global") {
       gene_common <- lapply(srtList, function(x) {
         m <- GetAssayData(x, slot = "counts")
-        gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5 * length(srtList)]
+        gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5 * length(srtList)]
         return(gene_keep)
       }) %>% Reduce(intersect, .)
       srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
@@ -1184,7 +1184,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
       srt <- FindVariableFeatures(srt)
     }
     m <- GetAssayData(srt, slot = "counts")
-    gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+    gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
     VariableFeatures(srt) <- hvf <- HVFInfo(srt) %>%
       filter(variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
@@ -1217,7 +1217,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
         srt <- FindVariableFeatures(srt)
       }
       m <- GetAssayData(srt, slot = "counts")
-      gene_keep <- rownames(m)[Matrix::rowSums(m > 5) > 5]
+      gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
       VariableFeatures(srt) <- hvf <- HVFInfo(srt) %>%
         filter(variance.standardized > 1 &
           (!rownames(.) %in% exogenous_genes) &
@@ -1278,4 +1278,3 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     )
   }
 }
-
