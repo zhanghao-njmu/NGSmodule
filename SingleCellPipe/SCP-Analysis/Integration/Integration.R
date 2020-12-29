@@ -108,7 +108,7 @@ if (file.exists("sc_list.rds") & file.exists("velocity_list.rds")) {
   if (file.exists("sc_list_filter.rds")) {
     cat("Skip the sc_list loading....\n")
   } else {
-    cat("Loading the sc_list from the existing file....\n")
+    cat("Loading the sc_list from the file....\n")
     sc_list <- readRDS("sc_list.rds")
   }
 } else {
@@ -181,7 +181,7 @@ if (file.exists("sc_list_filter.rds")) {
   if (all(file.exists(paste0("sc_list_filter_", normalization_method, ".rds")))) {
     cat("Skip the sc_list_filter loading....\n")
   } else {
-    cat("Loading the sc_list_filter from the existing file....\n")
+    cat("Loading the sc_list_filter from the file....\n")
     sc_list_filter <- readRDS("sc_list_filter.rds")
   }
 } else {
@@ -268,7 +268,7 @@ if (file.exists("sc_list_filter.rds")) {
 for (nm in normalization_method) {
   dir.create(paste0("Normalization-", nm), recursive = T, showWarnings = FALSE)
   if (file.exists(paste0("sc_list_filter_", nm, ".rds"))) {
-    cat("Loading the", paste0("sc_list_filter_", nm), "from the existing file....\n")
+    cat("Loading the", paste0("sc_list_filter_", nm), "from the file....\n")
     assign(
       x = paste0("sc_list_filter_", nm),
       value = readRDS(paste0("sc_list_filter_", nm, ".rds"))
