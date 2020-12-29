@@ -312,7 +312,7 @@ if (length(datasets) != 0) {
       srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
       VariableFeatures(srt_integrated) <- hvf
       saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
-      
+
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
           srt_integrated <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
@@ -334,7 +334,7 @@ if (length(datasets) != 0) {
               cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
               exogenous_genes = exogenous_genes
             )
-            p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", paste0(im,"_clusters"), "cellcalling_method"), combine = FALSE)
+            p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE)
             p1 <- lapply(p1, function(p) {
               p + theme(aspect.ratio = 1)
             })
