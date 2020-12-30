@@ -1260,7 +1260,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                             integration_method = "Seurat", batch = "orig.ident",
                             normalization_method = "logCPM",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                            maxPC = 100, resolution = 0.8, reduction = c("tsne", "umap"),
+                            maxPC = 100, resolution = 0.8, reduction = "umap",
                             cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {

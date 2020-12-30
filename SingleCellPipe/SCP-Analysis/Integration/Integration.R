@@ -31,21 +31,21 @@ Ensembl_version <- 101
 # # datasets_raw <- "ESC,PGCLC-d6,CellLine1,CellLine2;ESC,PGCLC-d6,CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;CellLine1,CellLine2,Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50;Testis-d10,Testis-d20,Testis-d30,Testis-d40,Testis-d50"
 # species <- "Homo_sapiens"
 # exogenous_genes <- "GFP"
-# 
+#
 # # parameters: cell filtering ----------------------------------------------
 # cell_calling_methodNum <- 3
 # mito_threshold <- 0.2
 # gene_threshold <- 1000
 # UMI_threshold <- 3000
-# 
-# 
+#
+#
 # # parameters: basic --------------------------------------------------
 # normalization_method <- "logCPM,SCT" # logCPM,SCT
 # nHVF <- 4000
 # maxPC <- 100
 # resolution <- 0.8
 # reduction <- "umap" # umap,tsne
-# 
+#
 # # parameters: integration -------------------------------------------------
 # HVF_source <- "global" # global,separate
 # integration_method <- "Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
@@ -56,7 +56,7 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "Seurat", "SeuratDisk", "SeuratWrappers", "sctransform", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
     "future", "reticulate", "harmony", "liger", "simspec", "scMerge", "BiocSingular", "zinbwave", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
-    "ggsci", "ggpubr", "ggplot2", "ggtree", "cowplot", "reshape2", "stringr", "scDblFinder",
+    "ggsci", "ggpubr", "ggplot2", "ggplotify", "aplot", "cowplot", "reshape2", "stringr", "scDblFinder",
     "velocyto.R", "biomaRt", "rvest", "xml2"
   ),
   require,
@@ -165,16 +165,6 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
   saveRDS(srt_list, file = "srt_list.rds")
   saveRDS(velocity_list, file = "velocity_list.rds")
 }
-# if (length(srt_list) == 1) {
-#   sc_merge <- srt_list[[1]]
-#   velocity_merge <- velocity_list[[1]]
-# } else {
-#   sc_merge <- Reduce(function(x, y) merge(x, y), srt_list)
-#   Idents(sc_merge) <- sc_merge[["orig.ident"]] <- factor(sc_merge[["orig.ident", drop = TRUE]], levels = samples)
-#   velocity_merge <- Reduce(function(x, y) merge(x, y), velocity_list)
-#   Idents(velocity_merge) <- velocity_merge[["orig.ident"]] <- factor(velocity_merge[["orig.ident", drop = TRUE]], levels = samples)
-# }
-
 
 # Preprocessing: Cell filtering -----------------------------------
 if (file.exists("srt_list_filter.rds")) {
@@ -191,26 +181,67 @@ if (file.exists("srt_list_filter.rds")) {
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
-    ndoublets <- sum(sce[["scDblFinder.class"]] == "doublet")
-    srt[["scDblFinder.score"]] <- sce[["scDblFinder.score"]]
-    srt[["scDblFinder.class"]] <- sce[["scDblFinder.class"]]
+    db_out <- which(sce[["scDblFinder.class"]] == "doublet")
+    srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
+    srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+    
+    # sce <- subset(sce, , scDblFinder.class == "singlet")
+    # srt <- subset(x = srt, cells = colnames(sce))
 
-    sce <- subset(sce, , scDblFinder.class == "singlet")
-    srt <- subset(x = srt, cells = colnames(sce))
+    sce <- addPerCellQC(sce, percent_top = c(20))
+    srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
 
     log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
     log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
+    srt[["log10_nCount_RNA"]] <- log10_total_counts
+    srt[["log10_nFeature_RNA"]] <- log10_total_features
 
     mod <- loess(log10_total_features ~ log10_total_counts)
     pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
     featcount_dist <- log10_total_features - pred
-    p <- ggplot(data.frame(x=log10_total_counts,y=log10_total_features,diff=diff),
-           aes(x=x, y=y, colour=diff)) +
-      geom_point() + geom_smooth(method = "loess", col="black")
-    ggsave(p)
+    srt[["featcount_dist"]] <- featcount_dist
 
-    sce <- addPerCellQC(sce, percent_top = c(20))
-    pct_counts_in_top_20_features <- colData(sce)$percent.top_20
+    metaCol <- c(
+      "percent.mt", "percent.ribo", "cellcalling_methodNum",
+      "log10_nCount_RNA", "log10_nFeature_RNA", "percent.top_20"
+    )
+    p1 <- srt@meta.data %>%
+      group_by(cellcalling_methodNum) %>%
+      summarise(
+        cellcalling_methodNum = cellcalling_methodNum,
+        count = n()
+      ) %>%
+      distinct() %>%
+      ggplot(aes(x = cellcalling_methodNum, y = count)) +
+      geom_col(aes(fill = count), color = "black") +
+      scale_fill_material(palette = "blue-grey") +
+      geom_text(aes(label = count), vjust = -1) +
+      scale_y_continuous(expand = expansion(0.08)) +
+      theme_classic() +
+      theme(aspect.ratio = 0.8, panel.grid.major = element_line())
+
+    df <- data.frame(x = log10_total_counts, y = log10_total_features, featcount_dist = featcount_dist)
+    p1 <- ggplot(df, aes(x = x, y = y)) +
+      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = 1), contour = FALSE, show.legend = F) +
+      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = ifelse(..density..^0.25 < 0.4, 0, 1)), contour = FALSE, show.legend = F) +
+      geom_point(aes(colour = featcount_dist)) +
+      geom_smooth(method = "loess", color = "black") +
+      scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(256)) +
+      scale_color_material(palette = "blue-grey", reverse = T, guide = FALSE) +
+      labs(x = "log10_nCount_RNA", y = "log10_nFeature_RNA") +
+      theme_classic()
+    p2 <- ggplot(df, aes(x = x)) +
+      geom_density(fill = "steelblue") +
+      theme_void()
+    p3 <- ggplot(df, aes(y = y)) +
+      geom_density(fill = "firebrick") +
+      theme_void()
+    p <- p1 %>%
+      insert_top(p2, height = .3) %>%
+      insert_right(p3, width = .1)
+    p <- as.ggplot(aplotGrob(p)) +
+      labs(title = "nCount vs nFeature") +
+      theme(aspect.ratio = 1)
 
     filters <- c(
       "log10_total_counts:higher:2.5",
@@ -220,15 +251,15 @@ if (file.exists("srt_list_filter.rds")) {
       "pct_counts_in_top_20_features:both:5",
       "featcount_dist:both:5"
     )
-    out <- lapply(strsplit(filters, ":"), function(f) {
+    qc_out <- lapply(strsplit(filters, ":"), function(f) {
       which(isOutlier(get(f[1]),
         log = FALSE,
         nmads = as.numeric(f[3]),
         type = f[2]
       ))
     })
-    out <- table(unlist(out))
-    out <- as.numeric(names(out)[which(out >= 2)])
+    qc_out <- table(unlist(qc_out))
+    qc_out <- as.numeric(names(qc_out)[which(qc_out >= 2)])
 
     umi_out <- which(srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold)
     gene_out <- which(srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold)
@@ -244,23 +275,68 @@ if (file.exists("srt_list_filter.rds")) {
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > mito_threshold))
 
-    total_out <- unique(c(out, as.numeric(umi_out), as.numeric(gene_out), as.numeric(mt_out)))
+    total_out <- unique(db_out,qc_out, umi_out, gene_out, mt_out)
     cat(">>>", "Total cells:", ntotal, "\n")
-    cat(">>>", "Cells which are filtered out:", ndoublets + length(total_out), "\n")
-    cat("...", ndoublets, "potential doublets", "\n")
-    cat("...", length(out), "unqualified cells", "\n")
+    cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
+    cat("...", length(db_out), "potential doublets", "\n")
+    cat("...", length(qc_out), "unqualified cells", "\n")
     cat("...", length(umi_out), "low-UMI cells", "\n")
     cat("...", length(gene_out), "low-Gene cells", "\n")
     cat("...", length(mt_out), "high-Mito cells", "\n")
-    cat(">>>", "Remained cells after filtering :", ntotal - ndoublets - length(total_out), "\n")
+    cat(">>>", "Remained cells after filtering :", ntotal - length(total_out), "\n")
 
+    df <- data.frame(cell = rownames(srt@meta.data))
+    df[db_out,"db_out"] <- "db_out"
+    df[qc_out,"qc_out"] <- "qc_out"
+    df[umi_out,"umi_out"] <- "umi_out"
+    df[gene_out,"gene_out"] <- "gene_out"
+    df[mt_out,"mt_out"] <- "mt_out"
+    index_upset <- reshape2::melt(df,
+      measure.vars = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out"),
+      variable.name = "index",
+      value.name = "value"
+    ) %>%
+      dplyr::filter(!is.na(value)) %>%
+      group_by(cell) %>%
+      summarize(
+        index_list = list(value),
+        index_comb = paste(value, collapse = ","),
+        index_num = n()
+      )
+    y_max <- max(table(pull(index_upset, "index_comb")))
+    
+    p <- index_upset %>%
+      group_by(index_comb) %>%
+      mutate(count = n()) %>%
+      ungroup() %>%
+      filter(count %in% head(sort(unique(count), decreasing = T), 10)) %>%
+      ggplot(aes(x = index_list)) +
+      geom_bar(aes(fill = ..count..), color = "black", width = 0.5) +
+      geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, hjust = 0, angle = 45) +
+      labs(title = "Cell intersection among differnent methods", x = "", y = "Cell number") +
+      scale_x_upset(sets = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out")) +
+      scale_y_continuous(limits = c(0, 1.2 * y_max)) +
+      scale_fill_material(name = "Count", palette = "blue-grey") +
+      theme_combmatrix(
+        combmatrix.label.text = element_text(size = 10, color = "black"),
+        combmatrix.label.extra_spacing = 6
+      ) +
+      theme_classic() +
+      theme(
+        aspect.ratio = 0.6,
+        legend.position = "none"
+      )
+    
+    
     if (length(total_out) > 0) {
-      srt <- subset(srt, cell = colnames(srt)[-total_out])
+      srt_filter <- subset(srt, cell = colnames(srt)[-total_out])
+    }else{
+      srt_filter <- srt
     }
 
     return(srt)
   })
-
+  saveRDS(srt_list, file = "srt_list.rds")
   saveRDS(srt_list_filter, file = "srt_list_filter.rds")
 }
 

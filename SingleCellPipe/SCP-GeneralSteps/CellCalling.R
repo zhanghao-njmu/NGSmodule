@@ -15,7 +15,7 @@ CellLabel <- as.character(args[5])
 # CellLabel <- "GFP"
 
 # parameters: emptyDrops --------------------------------------------------
-iters <- 3e+5
+iters <- 4e+5
 fdr <- 1e-3
 
 # parameters: dropEst -----------------------------------------------------

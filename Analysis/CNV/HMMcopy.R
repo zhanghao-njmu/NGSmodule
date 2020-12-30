@@ -24,7 +24,8 @@ library(aplot)
 uncorrected <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
 corrected <- correctReadcount(uncorrected)
 corrected[, "chr"] <- gsub(x = corrected[, chr], pattern = "chr", replacement = "", perl = T)
-chr_order <- c(1:30, "X", "Y", "MT")
+corrected <- filter(corrected,!str_detect(chr,pattern = "(M)|(MT)|(Mt)|(mt)"))
+chr_order <- c(1:30, "X", "Y")
 chr_uniq <- unique(corrected[, chr])
 chr_levels <- c(
   chr_order[chr_order %in% chr_uniq],
