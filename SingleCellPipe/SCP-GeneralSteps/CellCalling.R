@@ -62,11 +62,16 @@ colData(raw)$Cellranger_v3 <- colData(raw)$Barcode %in% colData(filtered)$Barcod
 if (EmptyThreshold != "AUTO") {
   EmptyThreshold <- as.numeric(EmptyThreshold)
 } else {
-  EmptyThreshold <- as.numeric(sort(colSums(counts(raw)), decreasing = TRUE)[sum(colData(raw)$Cellranger_v2) * 10])
-  # EmptyThreshold <- as.numeric(sort(colSums(counts(raw)), decreasing = TRUE)[sum(defaultDrops(counts(raw),lower.prop = 0.001))])
-  }
-if (CellLabel == "NULL" | !CellLabel %in% rownames(raw)) {
-  CellLabel <- NULL
+  EmptyThreshold <- max(sort(colSums(counts(raw)), decreasing = TRUE)[sum(colData(raw)$Cellranger_v2) * 5], 100)
+  # EmptyThreshold <- max(sort(colSums(counts(raw)), decreasing = TRUE)[sum(defaultDrops(counts(raw),lower.prop = 0.005))],100)
+}
+
+if (CellLabel != "NULL" & !CellLabel %in% rownames(raw)) {
+  warning(paste0("CellLabel:", CellLabel, " is not in the features for the sample ", sample, "\nCellLabel will set to 'NULL'."))
+  CellLabel <- "NULL"
+}
+if (CellLabel == "NULL") {
+  CellLabel <- "NULL"
   colData(raw)$CellLabel <- FALSE
 } else {
   colData(raw)$CellLabel <- counts(raw)[CellLabel, ] > 0
@@ -87,81 +92,150 @@ colData(raw)$inflection <- colData(raw)$UMIcounts > metadata(bc_ranks)$inflectio
 #   mutate(cumsum = cumsum(UMIcounts)) %>%
 #   ggplot(aes(x = BarcodeRank, y = cumsum)) +
 #   geom_point()
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_point(
+      aes(color = log10(UMIcounts)),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_material(palette = "blue-grey", guide = FALSE) +
+    geom_point(
+      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = 1, y = metadata(bc_ranks)$knee,
+      label = paste0(
+        "Knee:",
+        " UMI=", round(metadata(bc_ranks)$knee),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+      ),
+      colour = "dodgerblue", size = 3, hjust = 0, vjust = -0.5
+    ) +
+    annotate("text",
+      x = 1, y = metadata(bc_ranks)$inflection,
+      label = paste0(
+        "Inflection:",
+        " UMI=", round(metadata(bc_ranks)$inflection),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+      ),
+      colour = "forestgreen", size = 3, hjust = 0, vjust = -0.5
+    ) +
+    annotate("text",
+      x = 1, y = EmptyThreshold,
+      label = paste0(
+        "Empty threshold:",
+        " UMI=", EmptyThreshold,
+        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+      ),
+      colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_point(
+      aes(color = log10(UMIcounts)),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_material(palette = "blue-grey", guide = FALSE) +
+    geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = 1, y = metadata(bc_ranks)$knee,
+      label = paste0(
+        "Knee:",
+        " UMI=", round(metadata(bc_ranks)$knee),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+      ),
+      colour = "dodgerblue", size = 3, hjust = 0, vjust = -0.5
+    ) +
+    annotate("text",
+      x = 1, y = metadata(bc_ranks)$inflection,
+      label = paste0(
+        "Inflection:",
+        " UMI=", round(metadata(bc_ranks)$inflection),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+      ),
+      colour = "forestgreen", size = 3, hjust = 0, vjust = -0.5
+    ) +
+    annotate("text",
+      x = 1, y = EmptyThreshold,
+      label = paste0(
+        "Empty threshold:",
+        " UMI=", EmptyThreshold,
+        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+      ),
+      colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
 
-p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
-  as.data.frame() %>%
-  ggplot(
-    aes(x = BarcodeRank, y = UMIcounts)
-  ) +
-  geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
-  geom_point(
-    aes(color = log10(UMIcounts)),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_material(palette = "blue-grey", guide = FALSE) +
-  geom_point(
-    aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  annotate("text",
-    x = 1, y = metadata(bc_ranks)$knee,
-    label = paste0(
-      "Knee:",
-      " UMI=", round(metadata(bc_ranks)$knee),
-      " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
-    ),
-    colour = "dodgerblue", size = 3, hjust = 0, vjust = -0.5
-  ) +
-  annotate("text",
-    x = 1, y = metadata(bc_ranks)$inflection,
-    label = paste0(
-      "Inflection:",
-      " UMI=", round(metadata(bc_ranks)$inflection),
-      " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
-    ),
-    colour = "forestgreen", size = 3, hjust = 0, vjust = -0.5
-  ) +
-  annotate("text",
-    x = 1, y = EmptyThreshold,
-    label = paste0(
-      "Empty threshold:",
-      " UMI=", EmptyThreshold,
-      " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
-    ),
-    colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
 plotlist[["emptyDrops-BarcodeRankFitted"]] <- p
 
 
@@ -208,134 +282,252 @@ p <- colData(raw) %>%
   )
 plotlist[["emptyDrops-emptyPValue"]] <- p
 
-p <- colData(raw) %>%
-  as.data.frame() %>%
-  arrange(desc(EmptyDrops)) %>%
-  ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
-  geom_point(aes(color = EmptyDrops),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = UMIcounts, y = -EmpDropsLogProb * 5, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_vline(
-    xintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_vline(
-    xintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_vline(
-    xintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  annotate("text",
-    y = 1, x = metadata(bc_ranks)$knee,
-    label = paste0(
-      "Knee:",
-      " UMI=", round(metadata(bc_ranks)$knee),
-      " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
-    ),
-    colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
-  ) +
-  annotate("text",
-    y = 1, x = metadata(bc_ranks)$inflection,
-    label = paste0(
-      "Inflection:",
-      " UMI=", round(metadata(bc_ranks)$inflection),
-      " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
-    ),
-    colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
-  ) +
-  annotate("text",
-    y = 1, x = EmptyThreshold,
-    label = paste0(
-      "Empty threshold:",
-      " UMI=", EmptyThreshold,
-      " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
-    ),
-    colour = "darkorchid", size = 3, vjust = -0.5, hjust = 0, angle = 90
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(
-    x = "UMI counts", y = "-log10(Probability)",
-    title = "The negative log-probability of being empty-dropets",
-    subtitle = "droplets detected as cells should show up with \nlarge negative log-probabilities"
-  ) +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    arrange(desc(EmptyDrops)) %>%
+    ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
+    geom_point(aes(color = EmptyDrops),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = UMIcounts, y = -EmpDropsLogProb * 5, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(
+      xintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    annotate("text",
+      y = 1, x = metadata(bc_ranks)$knee,
+      label = paste0(
+        "Knee:",
+        " UMI=", round(metadata(bc_ranks)$knee),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+      ),
+      colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      y = 1, x = metadata(bc_ranks)$inflection,
+      label = paste0(
+        "Inflection:",
+        " UMI=", round(metadata(bc_ranks)$inflection),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+      ),
+      colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      y = 1, x = EmptyThreshold,
+      label = paste0(
+        "Empty threshold:",
+        " UMI=", EmptyThreshold,
+        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+      ),
+      colour = "darkorchid", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(
+      x = "UMI counts", y = "-log10(Probability)",
+      title = "The negative log-probability of being empty-dropets",
+      subtitle = "droplets detected as cells should show up with \nlarge negative log-probabilities"
+    ) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    arrange(desc(EmptyDrops)) %>%
+    ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
+    geom_point(aes(color = EmptyDrops),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(
+      xintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    annotate("text",
+      y = 1, x = metadata(bc_ranks)$knee,
+      label = paste0(
+        "Knee:",
+        " UMI=", round(metadata(bc_ranks)$knee),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+      ),
+      colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      y = 1, x = metadata(bc_ranks)$inflection,
+      label = paste0(
+        "Inflection:",
+        " UMI=", round(metadata(bc_ranks)$inflection),
+        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+      ),
+      colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      y = 1, x = EmptyThreshold,
+      label = paste0(
+        "Empty threshold:",
+        " UMI=", EmptyThreshold,
+        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+      ),
+      colour = "darkorchid", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(
+      x = "UMI counts", y = "-log10(Probability)",
+      title = "The negative log-probability of being empty-dropets",
+      subtitle = "droplets detected as cells should show up with \nlarge negative log-probabilities"
+    ) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
 plotlist[["emptyDrops-Probability_vs_counts"]] <- p
 
-p <- colData(raw) %>%
-  as.data.frame() %>%
-  ggplot(
-    aes(x = BarcodeRank, y = UMIcounts)
-  ) +
-  geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
-  geom_point(
-    aes(color = EmptyDrops),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$EmptyDrops)), x = "Barcode rank", y = "UMI counts") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_point(
+      aes(color = EmptyDrops),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$EmptyDrops)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_point(
+      aes(color = EmptyDrops),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$EmptyDrops)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
+
 plotlist[["emptyDrops-BarcodeRank"]] <- p
 
 p <- plot_grid(
@@ -384,138 +576,259 @@ qualified <- intersect(
 colData(raw)$Score <- scores[colData(raw)$Barcode]
 colData(raw)$dropEst <- colData(raw)$Barcode %in% qualified & colData(raw)$UMIcounts > EmptyThreshold
 
-p <- colData(raw) %>%
-  as.data.frame() %>%
-  ggplot() +
-  geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = BarcodeRank, y = Score - 0.1, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_hline(yintercept = dropest_quality, linetype = "dashed") +
-  annotate("text",
-    x = 1, y = dropest_quality,
-    label = paste("Score >=", dropest_quality),
-    colour = "black", size = 3, hjust = 0, vjust = 1.5
-  ) +
-  geom_vline(
-    xintercept = cell_num$min,
-    colour = "red3", linetype = "dashed"
-  ) +
-  geom_vline(
-    xintercept = cell_num$max,
-    colour = "royalblue4", linetype = "dashed"
-  ) +
-  annotate("text",
-    x = cell_num$min, y = 0,
-    label = paste0(
-      "High-Quality",
-      " Rank=", cell_num$min
-    ),
-    colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
-  ) +
-  annotate("text",
-    x = cell_num$max, y = 0,
-    label = paste0(
-      "Low-Quality",
-      " Rank=", cell_num$max
-    ),
-    colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  labs(title = "Cell Score", x = "Barcode rank", y = "Quality score") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot() +
+    geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = BarcodeRank, y = Score - 0.1, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_hline(yintercept = dropest_quality, linetype = "dashed") +
+    annotate("text",
+      x = 1, y = dropest_quality,
+      label = paste("Score >=", dropest_quality),
+      colour = "black", size = 3, hjust = 0, vjust = 1.5
+    ) +
+    geom_vline(
+      xintercept = cell_num$min,
+      colour = "red3", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = cell_num$max,
+      colour = "royalblue4", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = cell_num$min, y = 0,
+      label = paste0(
+        "High-Quality",
+        " Rank=", cell_num$min
+      ),
+      colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
+    ) +
+    annotate("text",
+      x = cell_num$max, y = 0,
+      label = paste0(
+        "Low-Quality",
+        " Rank=", cell_num$max
+      ),
+      colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    labs(title = "Cell Score", x = "Barcode rank", y = "Quality score") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot() +
+    geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_hline(yintercept = dropest_quality, linetype = "dashed") +
+    annotate("text",
+      x = 1, y = dropest_quality,
+      label = paste("Score >=", dropest_quality),
+      colour = "black", size = 3, hjust = 0, vjust = 1.5
+    ) +
+    geom_vline(
+      xintercept = cell_num$min,
+      colour = "red3", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = cell_num$max,
+      colour = "royalblue4", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = cell_num$min, y = 0,
+      label = paste0(
+        "High-Quality",
+        " Rank=", cell_num$min
+      ),
+      colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
+    ) +
+    annotate("text",
+      x = cell_num$max, y = 0,
+      label = paste0(
+        "Low-Quality",
+        " Rank=", cell_num$max
+      ),
+      colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    labs(title = "Cell Score", x = "Barcode rank", y = "Quality score") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
 plotlist[["dropEst-CellScore"]] <- p
 
-p <- colData(raw) %>%
-  as.data.frame() %>%
-  ggplot(
-    aes(x = BarcodeRank, y = UMIcounts)
-  ) +
-  geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
-  geom_point(
-    aes(color = dropEst),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_vline(
-    xintercept = cell_num$min,
-    colour = "red3", linetype = "dashed"
-  ) +
-  geom_vline(
-    xintercept = cell_num$max,
-    colour = "royalblue4", linetype = "dashed"
-  ) +
-  annotate("text",
-    x = cell_num$min, y = 1,
-    label = paste0(
-      "High-Quality:",
-      " Rank=", cell_num$min
-    ),
-    colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
-  ) +
-  annotate("text",
-    x = cell_num$max, y = 1,
-    label = paste0(
-      "Low-Quality:",
-      " Rank=", cell_num$max
-    ),
-    colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropEst)), x = "Barcode rank", y = "UMI counts") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_point(
+      aes(color = dropEst),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(
+      xintercept = cell_num$min,
+      colour = "red3", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = cell_num$max,
+      colour = "royalblue4", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = cell_num$min, y = 1,
+      label = paste0(
+        "High-Quality:",
+        " Rank=", cell_num$min
+      ),
+      colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
+    ) +
+    annotate("text",
+      x = cell_num$max, y = 1,
+      label = paste0(
+        "Low-Quality:",
+        " Rank=", cell_num$max
+      ),
+      colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropEst)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_point(
+      aes(color = dropEst),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(
+      xintercept = cell_num$min,
+      colour = "red3", linetype = "dashed"
+    ) +
+    geom_vline(
+      xintercept = cell_num$max,
+      colour = "royalblue4", linetype = "dashed"
+    ) +
+    annotate("text",
+      x = cell_num$min, y = 1,
+      label = paste0(
+        "High-Quality:",
+        " Rank=", cell_num$min
+      ),
+      colour = "red3", size = 3, hjust = 0, vjust = -0.5, angle = 90
+    ) +
+    annotate("text",
+      x = cell_num$max, y = 1,
+      label = paste0(
+        "Low-Quality:",
+        " Rank=", cell_num$max
+      ),
+      colour = "royalblue4", size = 3, hjust = 0, vjust = 1.5, angle = 90
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropEst)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
 plotlist[["dropEst-BarcodeRank"]] <- p
 
 p <- plot_grid(
@@ -574,31 +887,52 @@ p <- bccount %>%
   )
 plotlist[["zUMIs-UMIbar"]] <- p
 
-p <- bccount %>%
-  filter(UMIcounts > EmptyThreshold) %>%
-  mutate(zUMIs = UMIcounts > cutoff_counts) %>%
-  ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
-  geom_segment(aes(xend = BarcodeRank, yend = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1), color = "grey90", alpha = 0.01) +
-  geom_point(aes(color = zUMIs),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = BarcodeRank, y = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.01), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_vline(xintercept = ntop, color = "red3") +
-  labs(title = "Cumulative distribution plot", x = "Barcode rank", y = "Cumulative UMI counts") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- bccount %>%
+    filter(UMIcounts > EmptyThreshold) %>%
+    mutate(zUMIs = UMIcounts > cutoff_counts) %>%
+    ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
+    geom_segment(aes(xend = BarcodeRank, yend = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1), color = "grey90", alpha = 0.01) +
+    geom_point(aes(color = zUMIs),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = BarcodeRank, y = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.01), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(xintercept = ntop, color = "red3") +
+    labs(title = "Cumulative distribution plot", x = "Barcode rank", y = "Cumulative UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- bccount %>%
+    filter(UMIcounts > EmptyThreshold) %>%
+    mutate(zUMIs = UMIcounts > cutoff_counts) %>%
+    ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
+    geom_point(aes(color = zUMIs),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(xintercept = ntop, color = "red3") +
+    labs(title = "Cumulative distribution plot", x = "Barcode rank", y = "Cumulative UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
+
 plotlist[["zUMIs-CumsumPlot"]] <- p
 
 p <- colData(raw) %>%
@@ -626,65 +960,119 @@ p <- colData(raw) %>%
   )
 plotlist[["zUMIs-UMIdensity"]] <- p
 
-p <- colData(raw) %>%
-  as.data.frame() %>%
-  ggplot(
-    aes(x = BarcodeRank, y = UMIcounts)
-  ) +
-  geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
-  geom_point(
-    aes(color = zUMIs),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    name = "is cell",
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE))
-  ) +
-  geom_point(
-    aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
-  guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-  geom_vline(xintercept = ntop, color = "red3") +
-  annotate("text",
-    x = ntop, y = 1,
-    label = paste0(
-      "zUMIs threshold:",
-      " UMI=", cutoff_counts,
-      " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
-    ),
-    colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$zUMIs)), x = "Barcode rank", y = "UMI counts") +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1,
-  )
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_point(
+      aes(color = zUMIs),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(xintercept = ntop, color = "red3") +
+    annotate("text",
+      x = ntop, y = 1,
+      label = paste0(
+        "zUMIs threshold:",
+        " UMI=", cutoff_counts,
+        " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$zUMIs)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(
+      aes(x = BarcodeRank, y = UMIcounts)
+    ) +
+    geom_point(
+      aes(color = zUMIs),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(xintercept = ntop, color = "red3") +
+    annotate("text",
+      x = ntop, y = 1,
+      label = paste0(
+        "zUMIs threshold:",
+        " UMI=", cutoff_counts,
+        " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", subtitle = paste("cells:", sum(colData(raw)$zUMIs)), x = "Barcode rank", y = "UMI counts") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
 plotlist[["zUMIs-BarcodeRank"]] <- p
 
 p <- plot_grid(
@@ -731,51 +1119,92 @@ cell_rank[, "Method"] <- factor(pull(cell_rank, "Method"),
   levels = unique(pull(cell_rank, "Method"))
 )
 
-p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
-  geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
-  geom_point(
-    aes(color = is_cell),
-    alpha = 0.5, shape = 16
-  ) +
-  scale_color_manual(
-    values = setNames(color[c(9, 2)], c(TRUE, FALSE)),
-    guide = FALSE
-  ) +
-  geom_point(
-    aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
-    color = "transparent",
-    shape = 21
-  ) +
-  scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE)), guide = FALSE) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$knee,
-    colour = "dodgerblue", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = metadata(bc_ranks)$inflection,
-    colour = "forestgreen", linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = EmptyThreshold,
-    colour = "darkorchid", linetype = "dashed"
-  ) +
-  scale_y_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  scale_x_continuous(
-    trans = log10_trans(),
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  annotation_logticks() +
-  labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
-  facet_wrap(. ~ Method, nrow = 1) +
-  theme_classic() +
-  theme(
-    aspect.ratio = 1
-  )
+if (CellLabel != "NULL") {
+  p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
+    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_point(
+      aes(color = is_cell),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE)),
+      guide = FALSE
+    ) +
+    geom_point(
+      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE)), guide = FALSE) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
+    facet_wrap(. ~ Method, nrow = 1) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1
+    )
+} else {
+  p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
+    geom_point(
+      aes(color = is_cell),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE)),
+      guide = FALSE
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$knee,
+      colour = "dodgerblue", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = metadata(bc_ranks)$inflection,
+      colour = "forestgreen", linetype = "dashed"
+    ) +
+    geom_hline(
+      yintercept = EmptyThreshold,
+      colour = "darkorchid", linetype = "dashed"
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Barcode Rank Plot", x = "Barcode rank", y = "UMI counts") +
+    facet_wrap(. ~ Method, nrow = 1) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1
+    )
+}
 plotlist[["MethodCompare-BarcodeRank"]] <- p
 
 cell_count <- colData(raw) %>%
