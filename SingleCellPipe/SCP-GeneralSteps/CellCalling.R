@@ -62,8 +62,9 @@ colData(raw)$Cellranger_v3 <- colData(raw)$Barcode %in% colData(filtered)$Barcod
 if (EmptyThreshold != "AUTO") {
   EmptyThreshold <- as.numeric(EmptyThreshold)
 } else {
-  EmptyThreshold <- as.numeric(sort(colSums(counts(raw)), decreasing = TRUE)[sum(colData(raw)$Cellranger_v3) * 5])
-}
+  EmptyThreshold <- as.numeric(sort(colSums(counts(raw)), decreasing = TRUE)[sum(colData(raw)$Cellranger_v2) * 10])
+  # EmptyThreshold <- as.numeric(sort(colSums(counts(raw)), decreasing = TRUE)[sum(defaultDrops(counts(raw),lower.prop = 0.001))])
+  }
 if (CellLabel == "NULL" | !CellLabel %in% rownames(raw)) {
   CellLabel <- NULL
   colData(raw)$CellLabel <- FALSE

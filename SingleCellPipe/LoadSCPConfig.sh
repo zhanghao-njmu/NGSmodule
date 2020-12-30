@@ -54,25 +54,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
     memory=$(((total_memory + ntask_per_run) / ntask_per_run - 1))
 
-    if ((threads > 120)); then
-        integration_threads=120
-    else
-        integration_threads=$threads
-    fi
-
     ###### fifo ######
-    tempfifo=$$.fifo
-    trap_add "exec 1000>&-;exec 1000<&-;rm -f $tempfifo" SIGINT SIGTERM EXIT
-    mkfifo $tempfifo
-    exec 1000<>$tempfifo
-    rm -f $tempfifo
-    for ((i = 1; i <= ntask_per_run; i++)); do
-        echo >&1000
-    done
-
-    ###### temp file ######
-    tmpfile=$(mktemp /tmp/NGSmodule_SCP.XXXXXXXXXXXXXX) || exit 1
-    trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT
+    fifo $ntask_per_run
 
 else
     total_task="Waiting for creating the workdir"

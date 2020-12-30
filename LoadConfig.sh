@@ -10,7 +10,7 @@ fi
 
 types=("rna" "dna" "BSdna")
 if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
-  color_echo "red" "ERROR! SequenceType is wrong.\nPlease check theParamaters in your ConfigFile.\n"
+  color_echo "red" "ERROR! SequenceType is wrong.\nPlease check the paramaters in your ConfigFile.\n"
   exit 1
 fi
 
@@ -118,12 +118,6 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_fastp=16
   else
     threads_fastp=$threads
-  fi
-
-  if ((threads > 64)); then
-    threads_featurecounts=64
-  else
-    threads_featurecounts=$threads
   fi
 
   if ((threads > 64)); then
