@@ -16,6 +16,7 @@ sample <- as.character(args[5])
 
 library(HMMcopy)
 library(dplyr)
+library(stringr)
 library(scales)
 library(ggplot2)
 library(ggsci)
@@ -24,8 +25,8 @@ library(aplot)
 uncorrected <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
 corrected <- correctReadcount(uncorrected)
 corrected[, "chr"] <- gsub(x = corrected[, chr], pattern = "chr", replacement = "", perl = T)
-corrected <- dplyr::filter(corrected,!str_detect(chr,pattern = "(M)|(MT)|(Mt)|(mt)"))
 chr_order <- c(1:30, "X", "Y")
+corrected <- dplyr::filter(corrected, chr %in% chr_order)
 chr_uniq <- unique(corrected[, chr])
 chr_levels <- c(
   chr_order[chr_order %in% chr_uniq],
@@ -36,10 +37,11 @@ corrected[, "chr"] <- factor(
   levels = chr_levels
 )
 
-segments <- HMMsegment(corrected, maxiter = 1e4)
+segments <- HMMsegment(corrected, maxiter = 10000)
 corrected <- as.data.frame(corrected)
 corrected[, "sample"] <- sample
 corrected[, "CN_predict"] <- 2^corrected[, "copy"] * ploid
+corrected[corrected[, "CN_predict"] > 4 * ploid & !is.na(corrected[, "CN_predict"]), "CN_predict"] <- 4 * ploid
 corrected[, "state"] <- segments$state
 
 color <- pal_material("blue-grey")(10)[c(3, 9, 1, 4)]
@@ -63,6 +65,7 @@ segs <- merge(segments[["segs"]], chr_info, all.x = TRUE, by = "chr")
 segs[, "cum_start"] <- segs[, "start"] + segs[, "offset"]
 segs[, "cum_end"] <- segs[, "end"] + segs[, "offset"]
 segs[, "CN_predict"] <- 2^segs[, "median"] * ploid # 2 ^ segs[,"median"] * 2 assumed to be diploid
+segs[segs[, "CN_predict"] > 4 * ploid & !is.na(segs[, "CN_predict"]), "CN_predict"] <- 4 * ploid
 segs <- arrange(segs, cum_start)
 segs[, "previous_CN_predict"] <- lag(segs[, "CN_predict"], default = segs[, "CN_predict"][1])
 
@@ -79,7 +82,7 @@ p1 <- ggplot() +
   # ) +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
-    data = subset(corrected, CN_predict < 8),
+    data = corrected,
     aes(x = cum_pos, y = CN_predict, color = chr_color),
     shape = 20, alpha = 1
   ) +
@@ -93,7 +96,7 @@ p1 <- ggplot() +
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
-  scale_y_continuous(breaks = seq(0, 8, 1)) +
+  scale_y_continuous(breaks = seq(0, 8, 1),limits = c(0,4 * ploid)) +
   scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
   labs(title = sample, y = "Copy Number\n(assumed to be diploid)") +
   theme_classic() +
@@ -106,12 +109,12 @@ p1 <- ggplot() +
     axis.ticks = element_blank()
   )
 
-p2 <- ggplot(data = subset(corrected, CN_predict < 8)) +
+p2 <- ggplot(corrected) +
   geom_histogram(
     aes(y = CN_predict),
     bins = 50, color = "black", fill = color[4]
   ) +
-  scale_y_continuous(breaks = seq(0, 8, 1)) +
+  scale_y_continuous(breaks = seq(0, 8, 1),limits = c(0,4 * ploid)) +
   theme_classic() +
   theme(
     axis.title = element_blank(),
@@ -124,12 +127,13 @@ p2 <- ggplot(data = subset(corrected, CN_predict < 8)) +
 p3 <- ggplot() +
   geom_vline(xintercept = pull(chr_info, "offset"), linetype = 1, color = "grey80", size = 0.5) +
   geom_point(
-    data = subset(corrected, CN_predict < 8 & reads.x < quantile(reads.x, 0.999)),
+    data = subset(corrected, reads.x < mean(reads.x)*4),
     aes(x = cum_pos, y = reads.x, color = chr_color),
     shape = 20, alpha = 1
   ) +
   scale_color_identity() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
+  scale_y_continuous(limits = c(0,4*mean(corrected[["reads.x"]]))) +
   scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
   labs(title = sample, y = "Number of reads per bin") +
   theme_classic() +
@@ -142,11 +146,12 @@ p3 <- ggplot() +
     axis.ticks = element_blank()
   )
 
-p4 <- ggplot(data = subset(corrected, CN_predict < 8 & reads.x < quantile(reads.x, 0.999))) +
+p4 <- ggplot(data = subset(corrected, reads.x < mean(reads.x)*4)) +
   geom_histogram(
     aes(y = reads.x),
     bins = 50, color = "black", fill = color[4]
   ) +
+  scale_y_continuous(limits = c(0,4*mean(corrected[["reads.x"]]))) +
   theme_classic() +
   theme(
     axis.title = element_blank(),

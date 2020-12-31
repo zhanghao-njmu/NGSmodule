@@ -175,8 +175,8 @@ if (file.exists("srt_list_filter.rds")) {
     srt_list_filter <- readRDS("srt_list_filter.rds")
   }
 } else {
-  srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
-    cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
+  srt_list <- lapply(setNames(samples, samples), function(sc_set) {
+    cat("++++++", sc_set, "(Preprocessing-QC)", "++++++", "\n")
     srt <- srt_list[[sc_set]]
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
@@ -231,10 +231,10 @@ if (file.exists("srt_list_filter.rds")) {
       labs(x = "log10_nCount_RNA", y = "log10_nFeature_RNA") +
       theme_classic()
     p2 <- ggplot(df, aes(x = x)) +
-      geom_density(fill = "steelblue") +
+      geom_histogram(fill = "steelblue") +
       theme_void()
     p3 <- ggplot(df, aes(y = y)) +
-      geom_density(fill = "firebrick") +
+      geom_histogram(fill = "firebrick") +
       theme_void()
     p <- p1 %>%
       insert_top(p2, height = .3) %>%
@@ -276,6 +276,9 @@ if (file.exists("srt_list_filter.rds")) {
       (pct_counts_Mt > mito_threshold))
 
     total_out <- unique(db_out,qc_out, umi_out, gene_out, mt_out)
+    CellFilterng <- rep(x = FALSE,ncol(srt))
+    CellFilterng[total_out] <- TRUE
+    srt[["CellFilterng"]] <- CellFilterng
     cat(">>>", "Total cells:", ntotal, "\n")
     cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
     cat("...", length(db_out), "potential doublets", "\n")
@@ -326,17 +329,17 @@ if (file.exists("srt_list_filter.rds")) {
         aspect.ratio = 0.6,
         legend.position = "none"
       )
-    
-    
-    if (length(total_out) > 0) {
-      srt_filter <- subset(srt, cell = colnames(srt)[-total_out])
-    }else{
-      srt_filter <- srt
-    }
 
     return(srt)
   })
   saveRDS(srt_list, file = "srt_list.rds")
+  
+  srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
+    cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
+    srt <- srt_list[[sc_set]]
+    srt_filter <- subset(srt,CellFilterng==FALSE)
+    return(srt_list_filter)
+  })
   saveRDS(srt_list_filter, file = "srt_list_filter.rds")
 }
 
