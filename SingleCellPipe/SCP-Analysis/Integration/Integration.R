@@ -175,7 +175,7 @@ if (file.exists("srt_list_filter.rds")) {
     srt_list_filter <- readRDS("srt_list_filter.rds")
   }
 } else {
-  srt_list <- lapply(setNames(samples, samples), function(sc_set) {
+  srt_list_QC <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", sc_set, "(Preprocessing-QC)", "++++++", "\n")
     srt <- srt_list[[sc_set]]
     ntotal <- ncol(srt)
@@ -184,9 +184,15 @@ if (file.exists("srt_list_filter.rds")) {
     db_out <- which(sce[["scDblFinder.class"]] == "doublet")
     srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
     srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
-    
-    # sce <- subset(sce, , scDblFinder.class == "singlet")
-    # srt <- subset(x = srt, cells = colnames(sce))
+    # p1 <- ggplot(srt@meta.data, aes(x = scDblFinder_score, y = "orig.ident")) +
+    #   geom_point(position = position_jitter()) +
+    #   geom_boxplot(outlier.shape = NA) +
+    #   stat_summary(fun = median, geom = "point", size = 2, shape = 21, color = "black", fill = "white")
+    # p2 <- ggplot(srt@meta.data) +
+    #   geom_histogram(aes(x = scDblFinder_score)) +
+    #   theme_void()
+    # p1 %>% insert_top(p2)
+
 
     sce <- addPerCellQC(sce, percent_top = c(20))
     srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
@@ -205,43 +211,43 @@ if (file.exists("srt_list_filter.rds")) {
       "percent.mt", "percent.ribo", "cellcalling_methodNum",
       "log10_nCount_RNA", "log10_nFeature_RNA", "percent.top_20"
     )
-    p1 <- srt@meta.data %>%
-      group_by(cellcalling_methodNum) %>%
-      summarise(
-        cellcalling_methodNum = cellcalling_methodNum,
-        count = n()
-      ) %>%
-      distinct() %>%
-      ggplot(aes(x = cellcalling_methodNum, y = count)) +
-      geom_col(aes(fill = count), color = "black") +
-      scale_fill_material(palette = "blue-grey") +
-      geom_text(aes(label = count), vjust = -1) +
-      scale_y_continuous(expand = expansion(0.08)) +
-      theme_classic() +
-      theme(aspect.ratio = 0.8, panel.grid.major = element_line())
-
-    df <- data.frame(x = log10_total_counts, y = log10_total_features, featcount_dist = featcount_dist)
-    p1 <- ggplot(df, aes(x = x, y = y)) +
-      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = 1), contour = FALSE, show.legend = F) +
-      stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = ifelse(..density..^0.25 < 0.4, 0, 1)), contour = FALSE, show.legend = F) +
-      geom_point(aes(colour = featcount_dist)) +
-      geom_smooth(method = "loess", color = "black") +
-      scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(256)) +
-      scale_color_material(palette = "blue-grey", reverse = T, guide = FALSE) +
-      labs(x = "log10_nCount_RNA", y = "log10_nFeature_RNA") +
-      theme_classic()
-    p2 <- ggplot(df, aes(x = x)) +
-      geom_histogram(fill = "steelblue") +
-      theme_void()
-    p3 <- ggplot(df, aes(y = y)) +
-      geom_histogram(fill = "firebrick") +
-      theme_void()
-    p <- p1 %>%
-      insert_top(p2, height = .3) %>%
-      insert_right(p3, width = .1)
-    p <- as.ggplot(aplotGrob(p)) +
-      labs(title = "nCount vs nFeature") +
-      theme(aspect.ratio = 1)
+    # p1 <- srt@meta.data %>%
+    #   group_by(cellcalling_methodNum) %>%
+    #   summarise(
+    #     cellcalling_methodNum = cellcalling_methodNum,
+    #     count = n()
+    #   ) %>%
+    #   distinct() %>%
+    #   ggplot(aes(x = cellcalling_methodNum, y = count)) +
+    #   geom_col(aes(fill = count), color = "black") +
+    #   scale_fill_material(palette = "blue-grey") +
+    #   geom_text(aes(label = count), vjust = -1) +
+    #   scale_y_continuous(expand = expansion(0.08)) +
+    #   theme_classic() +
+    #   theme(aspect.ratio = 0.8, panel.grid.major = element_line())
+    #
+    # df <- data.frame(x = log10_total_counts, y = log10_total_features, featcount_dist = featcount_dist)
+    # p1 <- ggplot(df, aes(x = x, y = y)) +
+    #   stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = 1), contour = FALSE, show.legend = F) +
+    #   stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = ifelse(..density..^0.25 < 0.4, 0, 1)), contour = FALSE, show.legend = F) +
+    #   geom_point(aes(colour = featcount_dist)) +
+    #   geom_smooth(method = "loess", color = "black") +
+    #   scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(256)) +
+    #   scale_color_material(palette = "blue-grey", reverse = T, guide = FALSE) +
+    #   labs(x = "log10_nCount_RNA", y = "log10_nFeature_RNA") +
+    #   theme_classic()
+    # p2 <- ggplot(df, aes(x = x)) +
+    #   geom_histogram(fill = "steelblue") +
+    #   theme_void()
+    # p3 <- ggplot(df, aes(y = y)) +
+    #   geom_histogram(fill = "firebrick") +
+    #   theme_void()
+    # p <- p1 %>%
+    #   insert_top(p2, height = .3) %>%
+    #   insert_right(p3, width = .1)
+    # p <- as.ggplot(aplotGrob(p)) +
+    #   labs(title = "nCount vs nFeature") +
+    #   theme(aspect.ratio = 1)
 
     filters <- c(
       "log10_total_counts:higher:2.5",
@@ -275,8 +281,8 @@ if (file.exists("srt_list_filter.rds")) {
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
       (pct_counts_Mt > mito_threshold))
 
-    total_out <- unique(db_out,qc_out, umi_out, gene_out, mt_out)
-    CellFilterng <- rep(x = FALSE,ncol(srt))
+    total_out <- unique(as.numeric(db_out, qc_out, umi_out, gene_out, mt_out))
+    CellFilterng <- rep(x = FALSE, ncol(srt))
     CellFilterng[total_out] <- TRUE
     srt[["CellFilterng"]] <- CellFilterng
     cat(">>>", "Total cells:", ntotal, "\n")
@@ -288,57 +294,57 @@ if (file.exists("srt_list_filter.rds")) {
     cat("...", length(mt_out), "high-Mito cells", "\n")
     cat(">>>", "Remained cells after filtering :", ntotal - length(total_out), "\n")
 
-    df <- data.frame(cell = rownames(srt@meta.data))
-    df[db_out,"db_out"] <- "db_out"
-    df[qc_out,"qc_out"] <- "qc_out"
-    df[umi_out,"umi_out"] <- "umi_out"
-    df[gene_out,"gene_out"] <- "gene_out"
-    df[mt_out,"mt_out"] <- "mt_out"
-    index_upset <- reshape2::melt(df,
-      measure.vars = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out"),
-      variable.name = "index",
-      value.name = "value"
-    ) %>%
-      dplyr::filter(!is.na(value)) %>%
-      group_by(cell) %>%
-      summarize(
-        index_list = list(value),
-        index_comb = paste(value, collapse = ","),
-        index_num = n()
-      )
-    y_max <- max(table(pull(index_upset, "index_comb")))
-    
-    p <- index_upset %>%
-      group_by(index_comb) %>%
-      mutate(count = n()) %>%
-      ungroup() %>%
-      filter(count %in% head(sort(unique(count), decreasing = T), 10)) %>%
-      ggplot(aes(x = index_list)) +
-      geom_bar(aes(fill = ..count..), color = "black", width = 0.5) +
-      geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, hjust = 0, angle = 45) +
-      labs(title = "Cell intersection among differnent methods", x = "", y = "Cell number") +
-      scale_x_upset(sets = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out")) +
-      scale_y_continuous(limits = c(0, 1.2 * y_max)) +
-      scale_fill_material(name = "Count", palette = "blue-grey") +
-      theme_combmatrix(
-        combmatrix.label.text = element_text(size = 10, color = "black"),
-        combmatrix.label.extra_spacing = 6
-      ) +
-      theme_classic() +
-      theme(
-        aspect.ratio = 0.6,
-        legend.position = "none"
-      )
+    # df <- data.frame(cell = rownames(srt@meta.data))
+    # df[db_out,"db_out"] <- "db_out"
+    # df[qc_out,"qc_out"] <- "qc_out"
+    # df[umi_out,"umi_out"] <- "umi_out"
+    # df[gene_out,"gene_out"] <- "gene_out"
+    # df[mt_out,"mt_out"] <- "mt_out"
+    # index_upset <- reshape2::melt(df,
+    #   measure.vars = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out"),
+    #   variable.name = "index",
+    #   value.name = "value"
+    # ) %>%
+    #   dplyr::filter(!is.na(value)) %>%
+    #   group_by(cell) %>%
+    #   summarize(
+    #     index_list = list(value),
+    #     index_comb = paste(value, collapse = ","),
+    #     index_num = n()
+    #   )
+    # y_max <- max(table(pull(index_upset, "index_comb")))
+    #
+    # p <- index_upset %>%
+    #   group_by(index_comb) %>%
+    #   mutate(count = n()) %>%
+    #   ungroup() %>%
+    #   filter(count %in% head(sort(unique(count), decreasing = T), 10)) %>%
+    #   ggplot(aes(x = index_list)) +
+    #   geom_bar(aes(fill = ..count..), color = "black", width = 0.5) +
+    #   geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, hjust = 0, angle = 45) +
+    #   labs(title = "Cell intersection among differnent methods", x = "", y = "Cell number") +
+    #   scale_x_upset(sets = c("db_out", "qc_out", "umi_out", "gene_out", "mt_out")) +
+    #   scale_y_continuous(limits = c(0, 1.2 * y_max)) +
+    #   scale_fill_material(name = "Count", palette = "blue-grey") +
+    #   theme_combmatrix(
+    #     combmatrix.label.text = element_text(size = 10, color = "black"),
+    #     combmatrix.label.extra_spacing = 6
+    #   ) +
+    #   theme_classic() +
+    #   theme(
+    #     aspect.ratio = 0.6,
+    #     legend.position = "none"
+    #  )
 
     return(srt)
   })
-  saveRDS(srt_list, file = "srt_list.rds")
-  
+  saveRDS(srt_list_QC, file = "srt_list_QC.rds")
+
   srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
-    srt <- srt_list[[sc_set]]
-    srt_filter <- subset(srt,CellFilterng==FALSE)
-    return(srt_list_filter)
+    srt <- srt_list_QC[[sc_set]]
+    srt_filter <- subset(srt, CellFilterng == FALSE)
+    return(srt_filter)
   })
   saveRDS(srt_list_filter, file = "srt_list_filter.rds")
 }

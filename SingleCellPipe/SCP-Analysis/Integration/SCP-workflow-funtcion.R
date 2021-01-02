@@ -335,7 +335,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
       ))
     )
   )
-  RenameAssays(object = srtIntegrated, integrated = "Seurat")
+  srtIntegrated <- RenameAssays(object = srtIntegrated, integrated = "Seurat")
   DefaultAssay(srtIntegrated) <- "Seurat"
 
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
