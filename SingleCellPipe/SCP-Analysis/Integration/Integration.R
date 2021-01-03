@@ -387,17 +387,26 @@ if (length(datasets) != 0) {
   for (dataset in datasets) {
     for (nm in normalization_method) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
-
-      checked <- Check_srtList(
-        srtList = get(paste0("srt_list_filter_", nm))[dataset], normalization_method = nm,
-        HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
-        exogenous_genes = exogenous_genes
-      )
-      srtList <- checked[["srtList"]]
-      hvf <- checked[["hvf"]]
-      srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
-      VariableFeatures(srt_integrated) <- hvf
-      saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
+      if (file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds")) &
+        file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))) {
+        srt_integrated <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
+        srtList <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
+        hvf <- VariableFeatures(srt_integrated)
+      } else {
+        checked <- Check_srtList(
+          srtList = get(paste0("srt_list_filter_", nm))[dataset], normalization_method = nm,
+          HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
+          exogenous_genes = exogenous_genes
+        )
+        srtList <- checked[["srtList"]]
+        hvf <- checked[["hvf"]]
+        srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
+        VariableFeatures(srt_integrated) <- hvf
+        saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
+        saveRDS(srtList, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
+      }
+      
+      im <- im[!paste0(im, "_clusters") %in% colnames(srt_integrated@meta.data)]
 
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
@@ -412,7 +421,7 @@ if (length(datasets) != 0) {
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
           } else {
             srt_integrated <- Integration_SCP(
-              srtMerge = srt_integrated, append = TRUE,
+              srtList = srtList, srtMerge = srt_integrated, append = TRUE,
               integration_method = im, batch = "orig.ident",
               normalization_method = nm,
               HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -424,7 +433,11 @@ if (length(datasets) != 0) {
             p1 <- lapply(p1, function(p) {
               p + theme(aspect.ratio = 1)
             })
-            p2 <- FeaturePlot(object = srt_integrated, features = c(exogenous_genes, "percent.mt", "percent.ribo", "nCount_RNA", "nFeature_RNA", "scDblFinder.score", "cellcalling_methodNum"), combine = FALSE, order = TRUE)
+            p2 <- FeaturePlot(object = srt_integrated,
+                              features = c(exogenous_genes, "percent.mt", "percent.ribo",
+                                           "nCount_RNA", "nFeature_RNA", 
+                                           "scDblFinder.score", "cellcalling_methodNum"), 
+                              combine = FALSE, order = TRUE)
             p2 <- lapply(p2, function(p) {
               p + theme(aspect.ratio = 1)
             })
@@ -434,6 +447,8 @@ if (length(datasets) != 0) {
               units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
               scale = 1.5, limitsize = FALSE
             )
+            # Save the integration data ---------------------------------------------
+            saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
             # saveRDS(srt_integrated, file = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
           }
@@ -441,9 +456,6 @@ if (length(datasets) != 0) {
           cat("Warning!", im, "process skipped because it is not a supported integration method.\n")
         }
       }
-
-      # Save the integration data ---------------------------------------------
-      saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
     }
   }
 } else {

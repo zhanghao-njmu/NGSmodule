@@ -1,18 +1,16 @@
 #!/usr/bin/env Rscript
-
-
-# rfile <- "/data/lab/LiLaiHua/10-examples/NGSmodule_work/SCG_C1/bwa/CNV/HMMcopy/SCG_C1.bwa.w1000000.wig"
-# gfile <- "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0_Add_rhesus_chY/Sequence/GemIndex/windows/1000000/genome.w1000000.gc.wig"
-# mfile <- "/data/database/iGenomes/Macaca_fascicularis/UCSC/Macaca_fascicularis_5.0_Add_rhesus_chY/Sequence/GemIndex/windows/1000000/genome.w1000000.150mer.gem.wig"
-# ploid <- 2
-# sample <- "test"
-
 args <- commandArgs(TRUE)
 rfile <- as.character(args[1])
 gfile <- as.character(args[2])
 mfile <- as.character(args[3])
 ploid <- as.numeric(args[4])
 sample <- as.character(args[5])
+
+# rfile <- "/ssd/lab/CuiYiQiang/WGS/mus_1N/NGSmodule_work/SC_112/bowtie2/CNV/HMMcopy/SC_112.bowtie2.w1000000.wig"
+# gfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.gc.wig"
+# mfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.150mer.gem.wig"
+# ploid <- 2
+# sample <- "SC_112.bowtie2.HMMcopy"
 
 library(HMMcopy)
 library(dplyr)

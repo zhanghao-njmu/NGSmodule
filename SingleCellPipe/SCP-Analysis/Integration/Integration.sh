@@ -49,4 +49,4 @@ echo -e "Integration completed.\n"
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
-echo -e "****************** Quantification Done ******************\n"
+echo -e "****************** Integration Done ******************\n"

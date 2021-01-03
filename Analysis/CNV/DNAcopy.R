@@ -1,18 +1,39 @@
+#!/usr/bin/env Rscript
 args <- commandArgs(TRUE)
 rfile <- as.character(args[1])
 gfile <- as.character(args[2])
+mfile <- as.character(args[3])
 ploid <- as.numeric(args[4])
 sample <- as.character(args[5])
 
-library(rtracklayer)
-readcount<- import.wig(rfile)
-gc<- import.wig(gfile)
+# rfile <- "/ssd/lab/CuiYiQiang/WGS/mus_1N/NGSmodule_work/SC_112/bowtie2/CNV/HMMcopy/SC_112.bowtie2.w1000000.wig"
+# gfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.gc.wig"
+# mfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.150mer.gem.wig"
+# ploid <- 2
+# sample <- "SC_112.bowtie2.HMMcopy"
+
+library(HMMcopy)
+library(DNAcopy)
+library(dplyr)
+library(stringr)
+library(scales)
+library(ggplot2)
+library(ggsci)
+library(aplot)
+
+uncorrected <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
+corrected <- correctReadcount(uncorrected)
+
+data(coriell)
+ob <- coriell$Coriell.05296
+coriell$Chromosome,coriell$Position,
+
 
 
 
 rawratios <- read.table(input, header = TRUE)
 ratios <- rawratios[order(rawratios$chrmarker), ]
-library(DNAcopy)
+
 cols <- names(ratios)
 for (i in 3)
 {

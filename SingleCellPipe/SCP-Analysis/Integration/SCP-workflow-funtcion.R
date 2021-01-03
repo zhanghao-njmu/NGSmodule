@@ -1,8 +1,15 @@
 Check_srtList <- function(srtList, normalization_method,
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL, ...) {
+  cat("Checking srtList... ...\n")
   require(Seurat)
   require(sctransform)
+
+  if (class(srtList) != "list" | any(sapply(srtList, class) != "Seurat")) {
+    stop("'srtList' is not a list of Seurat object.",
+      call. = FALSE
+    )
+  }
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
       call. = FALSE
@@ -103,6 +110,7 @@ Check_srtList <- function(srtList, normalization_method,
   if (normalization_method %in% c("SCT")) {
     srtList <- PrepSCTIntegration(object.list = srtList, anchor.features = hvf, verbose = FALSE)
   }
+  cat("Finished checking.\n")
 
   return(list(
     srtList = srtList,
@@ -113,6 +121,13 @@ Check_srtList <- function(srtList, normalization_method,
 Check_srtMerge <- function(srtMerge, normalization_method, batch,
                            HVF_source = "separate", nHVF = 3000, hvf = NULL,
                            exogenous_genes = NULL, ...) {
+  cat("Spliting srtMerge into srtList... ...\n")
+
+  if (class(srtMerge) != "Seurat") {
+    stop("'srtMerge' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
   if (length(batch) != 1) {
     stop("batch must be a vector to specify the batch column in srtMerge object!",
       call. = FALSE
@@ -239,16 +254,14 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
-  } else {
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
+  }
+  if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -258,6 +271,15 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   srtIntegrated <- Standard_SCP(
@@ -291,9 +313,14 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    srtList <- SplitObject(object = srtMerge, split.by = batch)
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
+  }
+  if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -302,7 +329,8 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     srtList <- checked[["srtList"]]
     hvf <- checked[["hvf"]]
   }
-  if (!is.null(srtList)) {
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    srtList <- SplitObject(object = srtMerge, split.by = batch)
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -387,9 +415,14 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    srtList <- SplitObject(object = srtMerge, split.by = batch)
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
+  }
+  if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -398,7 +431,8 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     srtList <- checked[["srtList"]]
     hvf <- checked[["hvf"]]
   }
-  if (!is.null(srtList)) {
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    srtList <- SplitObject(object = srtMerge, split.by = batch)
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -463,15 +497,12 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -483,6 +514,15 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
@@ -545,9 +585,14 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    srtList <- SplitObject(object = srtMerge, split.by = batch)
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
+  }
+  if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -556,7 +601,8 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     srtList <- checked[["srtList"]]
     hvf <- checked[["hvf"]]
   }
-  if (!is.null(srtList)) {
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    srtList <- SplitObject(object = srtMerge, split.by = batch)
     checked <- Check_srtList(srtList,
       normalization_method = normalization_method,
       HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
@@ -650,15 +696,12 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -670,6 +713,15 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
@@ -720,15 +772,12 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -740,6 +789,15 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
@@ -806,15 +864,12 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -826,6 +881,15 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = hvf, split.by = batch, do.center = FALSE)
@@ -888,15 +952,12 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -908,6 +969,15 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   sce <- as.SingleCellExperiment(srtMerge)
@@ -998,15 +1068,12 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (!is.null(srtMerge)) {
-    srtMerge_raw <- srtMerge
-    checked <- Check_srtMerge(srtMerge,
-      normalization_method = normalization_method, batch = batch,
-      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-      exogenous_genes = NULL
-    )
-    srtMerge <- checked[["srtMerge"]]
-    hvf <- checked[["hvf"]]
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
   }
   if (!is.null(srtList)) {
     checked <- Check_srtList(srtList,
@@ -1018,6 +1085,15 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     hvf <- checked[["hvf"]]
     srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
     VariableFeatures(srtMerge) <- hvf
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    checked <- Check_srtMerge(srtMerge,
+      normalization_method = normalization_method, batch = batch,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = NULL
+    )
+    srtMerge <- checked[["srtMerge"]]
+    hvf <- checked[["hvf"]]
   }
 
   sce <- as.SingleCellExperiment(srtMerge)
@@ -1165,13 +1241,18 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
                          reduction = c("tsne", "umap"), reduction_prefix = "",
                          cc_S_genes = NULL, cc_G2M_genes = NULL,
                          exogenous_genes = NULL, ...) {
-  DefaultAssay(srt) <- "RNA"
-
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
   if (!normalization_method %in% c("logCPM", "SCT")) {
     stop("'normalization_method' must be one of: 'logCPM','SCT'",
       call. = FALSE
     )
   }
+
+  DefaultAssay(srt) <- "RNA"
 
   if (identical(
     x = GetAssayData(srt, slot = "counts"),
@@ -1269,7 +1350,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
     srtIntegrated <- base::do.call(
       what = paste0(integration_method, "_integrate"),
-      args = as.list(match.call())
+      args = c(as.list(match.call()), reduction_prefix = paste0(integration_method, "_"))
     )
     return(srtIntegrated)
   } else {
