@@ -181,9 +181,9 @@ if (file.exists("srt_list_filter.rds")) {
     ntotal <- ncol(srt)
     sce <- as.SingleCellExperiment(srt)
     sce <- scDblFinder(sce, verbose = FALSE)
-    db_out <- which(sce[["scDblFinder.class"]] == "doublet")
     srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
     srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+    db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
     # p1 <- ggplot(srt@meta.data, aes(x = scDblFinder_score, y = "orig.ident")) +
     #   geom_point(position = position_jitter()) +
     #   geom_boxplot(outlier.shape = NA) +
@@ -192,7 +192,6 @@ if (file.exists("srt_list_filter.rds")) {
     #   geom_histogram(aes(x = scDblFinder_score)) +
     #   theme_void()
     # p1 %>% insert_top(p2)
-
 
     sce <- addPerCellQC(sce, percent_top = c(20))
     srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
@@ -258,17 +257,17 @@ if (file.exists("srt_list_filter.rds")) {
       "featcount_dist:both:5"
     )
     qc_out <- lapply(strsplit(filters, ":"), function(f) {
-      which(isOutlier(get(f[1]),
+      colnames(srt)[isOutlier(get(f[1]),
         log = FALSE,
         nmads = as.numeric(f[3]),
         type = f[2]
-      ))
+      )]
     })
     qc_out <- table(unlist(qc_out))
-    qc_out <- as.numeric(names(qc_out)[which(qc_out >= 2)])
+    qc_out <- names(qc_out)[qc_out >= 2]
 
-    umi_out <- which(srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold)
-    gene_out <- which(srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold)
+    umi_out <- colnames(srt)[srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold]
+    gene_out <- colnames(srt)[srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold]
 
     pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
@@ -277,14 +276,14 @@ if (file.exists("srt_list_filter.rds")) {
     if (mito_threshold > 0 & mito_threshold < 1) {
       mito_threshold <- mito_threshold * 100
     }
-    mt_out <- which(isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
+    mt_out <- colnames(srt)[isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
       (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > mito_threshold))
+      (pct_counts_Mt > mito_threshold)]
 
-    total_out <- unique(as.numeric(db_out, qc_out, umi_out, gene_out, mt_out))
-    CellFilterng <- rep(x = FALSE, ncol(srt))
-    CellFilterng[total_out] <- TRUE
-    srt[["CellFilterng"]] <- CellFilterng
+    total_out <- unique(c(db_out, qc_out, umi_out, gene_out, mt_out))
+    srt[["CellFilterng"]] <- rep(x = FALSE, ncol(srt))
+    srt[["CellFilterng"]][total_out,] <- TRUE
+
     cat(">>>", "Total cells:", ntotal, "\n")
     cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
     cat("...", length(db_out), "potential doublets", "\n")
@@ -405,12 +404,10 @@ if (length(datasets) != 0) {
         saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
         saveRDS(srtList, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
       }
-      
-      im <- im[!paste0(im, "_clusters") %in% colnames(srt_integrated@meta.data)]
 
+      integration_method <- integration_method[!paste0(integration_method, "_clusters") %in% colnames(srt_integrated@meta.data)]
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
-          srt_integrated <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
           dir.create(dir_path, recursive = T, showWarnings = FALSE)
           cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
@@ -429,15 +426,23 @@ if (length(datasets) != 0) {
               cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
               exogenous_genes = exogenous_genes
             )
-            p1 <- DimPlot(srt_integrated, group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE)
+            p1 <- DimPlot(srt_integrated,
+              reduction = paste0(im, "_", reduction),
+              group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE
+            )
             p1 <- lapply(p1, function(p) {
               p + theme(aspect.ratio = 1)
             })
-            p2 <- FeaturePlot(object = srt_integrated,
-                              features = c(exogenous_genes, "percent.mt", "percent.ribo",
-                                           "nCount_RNA", "nFeature_RNA", 
-                                           "scDblFinder.score", "cellcalling_methodNum"), 
-                              combine = FALSE, order = TRUE)
+            p2 <- FeaturePlot(
+              object = srt_integrated,
+              reduction = paste0(im, "_", reduction),
+              features = c(
+                exogenous_genes, "percent.mt", "percent.ribo",
+                "nCount_RNA", "nFeature_RNA",
+                "scDblFinder_score", "cellcalling_methodNum"
+              ),
+              combine = FALSE, order = TRUE
+            )
             p2 <- lapply(p2, function(p) {
               p + theme(aspect.ratio = 1)
             })

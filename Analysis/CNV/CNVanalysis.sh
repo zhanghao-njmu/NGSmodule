@@ -106,6 +106,23 @@ for sample in "${arr[@]}"; do
         fi
       fi
 
+      ##### DNAcopy #####
+      check_logfile "$sample" "DNAcopy" "$dir/$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      if [[ $? == 1 ]]; then
+        rm -rf $dir/$Aligner/CNV/DNAcopy
+        mkdir -p $dir/$Aligner/CNV/DNAcopy
+        cd $dir/$Aligner/CNV/DNAcopy
+        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig 2>>DNAcopyStatus.log
+        cmd="Rscript $2 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.DNAcopy"
+        echo $cmd >>DNAcopyStatus.log
+        eval $cmd &>>DNAcopyStatus.log
+
+        check_logfile "$sample" "DNAcopy" "$dir/$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        if [[ $? == 1 ]]; then
+          continue
+        fi
+      fi
+
       #####
       ##### BaseqCNV #####
       #mkdir -p $dir/baseqCNV
@@ -153,7 +170,7 @@ for sample in "${arr[@]}"; do
         eval "$GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz" &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
         if [[ $? == 0 ]]; then
           bcftools view $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
-          Rscript $2 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.GATK3 &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
+          Rscript $3 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.GATK3 &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
         fi
 
         check_logfile "$sample" "GATK3" "$dir/$Aligner/SNV/GATK3/GATK3Status.log" "$error_pattern" "$complete_pattern" "postcheck"
@@ -176,7 +193,7 @@ for sample in "${arr[@]}"; do
         $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
         if [[ $? == 0 ]]; then
           bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
-          Rscript $2 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
+          Rscript $3 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
 
           if [[ $? != 0 ]]; then
             continue

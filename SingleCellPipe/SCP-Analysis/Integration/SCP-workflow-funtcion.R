@@ -379,7 +379,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -462,7 +462,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "fastMNN", dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "fastMNN", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -550,7 +550,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "Harmony", dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "Harmony", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -613,6 +613,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   }
 
   require(reticulate)
+  require(plyr)
   scanorama <- reticulate::import("scanorama")
 
   assaylist <- list()
@@ -642,8 +643,8 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   stdevs <- apply(dim_reduction, MARGIN = 2, FUN = sd)
 
   srtIntegrated <- Reduce(function(x, y) merge(x, y), srtList)
-  srtIntegrated@assay$Scanorama <- CreateAssayObject(data = cor_value)
-  srtIntegrated@reductions$Scanorama <- CreateDimReducObject(embeddings = dim_reduction, assay = "Scanorama", stdev = stdevs, key = "Scanorama_")
+  srtIntegrated[["Scanorama"]] <- CreateAssayObject(data = cor_value)
+  srtIntegrated[["Scanorama_reduction"]] <- CreateDimReducObject(embeddings = dim_reduction, assay = "Scanorama", stdev = stdevs, key = "Scanorama_")
   DefaultAssay(srtIntegrated) <- "Scanorama"
 
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
@@ -659,7 +660,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -673,7 +674,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   DefaultAssay(srtIntegrated) <- "RNA"
   if (!is.null(srtMerge) & isTRUE(append)) {
     srtMerge_raw@assays$Scanorama <- srtIntegrated@assays$Scanorama
-    srtMerge_raw@reductions$Scanorama <- srtIntegrated@reductions$Scanorama
+    srtMerge_raw@reductions$Scanorama_reduction <- srtIntegrated@reductions$Scanorama_reduction
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -829,7 +830,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "CSS", dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "CSS", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -917,7 +918,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "LIGER", dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "LIGER", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -1032,7 +1033,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -1155,7 +1156,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -1322,7 +1323,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
   if ("umap" %in% reduction) {
-    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot-learn", reduction.name = paste0(reduction_prefix, "umap"))
+    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srt <- RunTSNE(
@@ -1359,3 +1360,4 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     )
   }
 }
+

@@ -23,16 +23,11 @@ library(aplot)
 uncorrected <- wigsToRangedData(readfile = rfile, gcfile = gfile, mapfile = mfile)
 corrected <- correctReadcount(uncorrected)
 corrected[, "chr"] <- gsub(x = corrected[, chr], pattern = "chr", replacement = "", perl = T)
-chr_order <- c(1:30, "X", "Y")
+chr_order <- intersect(c(1:30, "X", "Y"),corrected[["chr"]])
 corrected <- dplyr::filter(corrected, chr %in% chr_order)
-chr_uniq <- unique(corrected[, chr])
-chr_levels <- c(
-  chr_order[chr_order %in% chr_uniq],
-  chr_uniq[!chr_uniq %in% chr_order]
-)
 corrected[, "chr"] <- factor(
   x = corrected[, chr],
-  levels = chr_levels
+  levels = chr_order
 )
 
 segments <- HMMsegment(corrected, maxiter = 10000)
