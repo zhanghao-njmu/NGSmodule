@@ -1,3 +1,118 @@
+db_scDblFinder <- function(srt, ...) {
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
+  db_rate <- ncol(srt) / 1000 * 0.01
+  require(scDblFinder)
+  sce <- as.SingleCellExperiment(srt, assay = "RNA")
+  sce <- scDblFinder(sce, dbr = db_rate, verbose = FALSE)
+  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
+  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+  db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
+  return(list(srt = srt, db_out = db_out))
+}
+
+db_scds <- function(srt, method = "hybrid", ...) {
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
+  db_rate <- ncol(srt) / 1000 * 0.01
+  require(scds)
+  sce <- as.SingleCellExperiment(srt, assay = "RNA")
+  sce <- cxds_bcds_hybrid(sce)
+  srt[["cxds_score"]] <- sce[["cxds_score"]]
+  srt[["bcds_score"]] <- sce[["bcds_score"]]
+  srt[["hybrid_score"]] <- sce[["hybrid_score"]]
+  ntop <- ceiling(db_rate * ncol(sce))
+  db_out <- names(sort(srt[[paste0(method, "_score"), drop = T]], decreasing = T)[1:ntop])
+  srt[[paste0(method, "_class")]] <- "singlet"
+  srt[[paste0(method, "_class")]][db_out, ] <- "doublet"
+  return(list(srt = srt, db_out = db_out))
+}
+
+db_Scrublet <- function(srt, ...) {
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
+  db_rate <- ncol(srt) / 1000 * 0.01
+  require(reticulate)
+  scr <- reticulate::import("scrublet")
+  raw_counts <- r_to_py(t(as.matrix(GetAssayData(object = srt, assay = "RNA", slot = "counts"))))
+  scrub <- scr$Scrublet(raw_counts, expected_doublet_rate = db_rate)
+  res <- scrub$scrub_doublets()
+  doublet_scores <- res[[1]]
+  predicted_doublets <- res[[2]]
+
+  srt[["Scrublet_score"]] <- doublet_scores
+  srt[["Scrublet_class"]] <- sapply(predicted_doublets, function(i) {
+    switch(as.character(i),
+      "FALSE" = "singlet", "TRUE" = "doublet"
+    )
+  })
+  db_out <- colnames(srt)[srt[["Scrublet_class"]] == "doublet"]
+  return(list(srt = srt, db_out = db_out))
+}
+
+db_DoubletDetection <- function(srt, ...) {
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
+  db_rate <- ncol(srt) / 1000 * 0.01
+  require(reticulate)
+  raw_counts <- r_to_py(t(as.matrix(GetAssayData(object = srt, assay = "RNA", slot = "counts"))))
+  doubletdetection <- reticulate::import("doubletdetection")
+  clf <- doubletdetection$BoostClassifier()
+  labels <- clf$fit(raw_counts)$predict()
+  scores <- clf$doublet_score()
+
+  srt[["DoubletDetection_score"]] <- scores
+  srt[["DoubletDetection_class"]] <- sapply(labels, function(i) {
+    switch(as.character(i),
+      "0" = "singlet", "1" = "doublet"
+    )
+  })
+  db_out <- colnames(srt)[srt[["DoubletDetection_class"]] == "doublet"]
+  return(list(srt = srt, db_out = db_out))
+}
+
+DoubletIdentification <- function(srt, db_method = "scDblFinder") {
+  if (class(srt) != "Seurat") {
+    stop("'srt' is not a Seurat object.",
+      call. = FALSE
+    )
+  }
+  if (db_method %in% c("scDblFinder", "Scrublet", "DoubletDetection", "scds_cxds", "scds_bcds", "scds_hybrid")) {
+    methods <- unlist(strsplit(db_method, "_"))
+    method1 <- methods[1]
+    method2 <- methods[2]
+    args <- c(mget(names(formals()), sys.frame(sys.nframe())), method = method2)
+    res <- tryCatch(expr = {
+      base::do.call(
+        what = paste0("db_", method1),
+        args = args
+      )
+    }, error = function(e) {
+      message(e)
+      return(NA)
+    })
+    return(res)
+  } else {
+    stop(paste(db_method, "is not a suppoted doublet identification method!"),
+      call. = FALSE
+    )
+  }
+}
+
+
+# aplotGrob function from aplot
 aplotGrob <- function(x) {
   mp <- x$plotlist[[1]]
   if (length(x$plotlist) == 1) {
@@ -33,8 +148,4 @@ aplotGrob <- function(x) {
     guides = "collect"
   )
   patchworkGrob(res)
-}
-
-theme_no_margin <- function(...) {
-  ggplot2::theme(plot.margin = ggplot2::margin(), ...)
 }

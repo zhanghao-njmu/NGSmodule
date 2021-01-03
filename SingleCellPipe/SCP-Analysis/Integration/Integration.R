@@ -405,7 +405,6 @@ if (length(datasets) != 0) {
         saveRDS(srtList, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
       }
 
-      integration_method <- integration_method[!paste0(integration_method, "_clusters") %in% colnames(srt_integrated@meta.data)]
       for (im in integration_method) {
         if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
           dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)

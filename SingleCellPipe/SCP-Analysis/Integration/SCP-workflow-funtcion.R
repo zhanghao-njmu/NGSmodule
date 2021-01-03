@@ -248,7 +248,7 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE
                                   normalization_method = "logCPM", batch = "orig.ident",
                                   HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                   maxPC = 100, resolution = 0.8,
-                                  reduction = c("tsne", "umap"), reduction_prefix = "Uncorrected_",
+                                  reduction = "umap", reduction_prefix = "Uncorrected_",
                                   cc_S_genes = NULL, cc_G2M_genes = NULL,
                                   exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -290,7 +290,7 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE
   )
   srtIntegrated@project.name <- paste0(unique(srtIntegrated[[batch, drop = TRUE]]), collapse = ",")
 
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -307,7 +307,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                              normalization_method = "logCPM", batch = "orig.ident",
                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                              maxPC = 100, resolution = 0.8,
-                             reduction = c("tsne", "umap"), reduction_prefix = "Seurat_",
+                             reduction = "umap", reduction_prefix = "Seurat_",
                              cc_S_genes = NULL, cc_G2M_genes = NULL,
                              exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -379,7 +379,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -391,7 +391,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@assays$Seurat <- srtIntegrated@assays$Seurat
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -409,7 +409,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
-                              reduction = c("tsne", "umap"), reduction_prefix = "fastMNN_",
+                              reduction = "umap", reduction_prefix = "fastMNN_",
                               cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -462,7 +462,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "fastMNN", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "fastMNN", dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -474,7 +474,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@reductions$fastMNN <- srtIntegrated@reductions$fastMNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -491,7 +491,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
-                              reduction = c("tsne", "umap"), reduction_prefix = "Harmony_",
+                              reduction = "umap", reduction_prefix = "Harmony_",
                               cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -550,7 +550,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "Harmony", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "Harmony", dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -562,7 +562,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@reductions$Harmony <- srtIntegrated@reductions$Harmony
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -579,7 +579,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                                 normalization_method = "logCPM", batch = "orig.ident",
                                 HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                 maxPC = 100, resolution = 0.8,
-                                reduction = c("tsne", "umap"), reduction_prefix = "Scanorama_",
+                                reduction = "umap", reduction_prefix = "Scanorama_",
                                 cc_S_genes = NULL, cc_G2M_genes = NULL,
                                 exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -660,7 +660,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -672,7 +672,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@assays$Scanorama <- srtIntegrated@assays$Scanorama
     srtMerge_raw@reductions$Scanorama_reduction <- srtIntegrated@reductions$Scanorama_reduction
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
@@ -752,7 +752,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@graphs$BBKNN <- srtIntegrated@graphs$BBKNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -767,7 +767,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                           normalization_method = "logCPM", batch = "orig.ident",
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           maxPC = 100, resolution = 0.8,
-                          reduction = c("tsne", "umap"), reduction_prefix = "CSS_",
+                          reduction = "umap", reduction_prefix = "CSS_",
                           cc_S_genes = NULL, cc_G2M_genes = NULL,
                           exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -830,7 +830,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "CSS", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "CSS", dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -842,7 +842,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@reductions$CSS <- srtIntegrated@reductions$CSS
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -859,7 +859,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                             normalization_method = "logCPM", batch = "orig.ident",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8,
-                            reduction = c("tsne", "umap"), reduction_prefix = "LIGER_",
+                            reduction = "umap", reduction_prefix = "LIGER_",
                             cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -918,7 +918,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "LIGER", dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = "LIGER", dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -930,7 +930,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@reductions$LIGER <- srtIntegrated@reductions$LIGER
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -947,7 +947,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
-                              reduction = c("tsne", "umap"), reduction_prefix = "scMerge_",
+                              reduction = "umap", reduction_prefix = "scMerge_",
                               cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1033,7 +1033,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -1045,7 +1045,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@assays$scMerge <- srtIntegrated@assays$scMerge
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -1063,7 +1063,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
                                normalization_method = "logCPM", batch = "orig.ident",
                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                maxPC = 100, resolution = 0.8,
-                               reduction = c("tsne", "umap"), reduction_prefix = "ZINBWaVE_",
+                               reduction = "umap", reduction_prefix = "ZINBWaVE_",
                                cc_S_genes = NULL, cc_G2M_genes = NULL,
                                exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1156,7 +1156,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
-    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srtIntegrated <- RunUMAP(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srtIntegrated <- RunTSNE(
@@ -1168,7 +1168,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
   srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
-  if (!is.null(srtMerge) & isTRUE(append)) {
+  if (!is.null(srtMerge_raw) & isTRUE(append)) {
     srtMerge_raw@assays$ZINBWaVE <- srtIntegrated@assays$ZINBWaVE
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -1239,7 +1239,7 @@ DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
 
 Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
                          maxPC = 100, resolution = 0.8,
-                         reduction = c("tsne", "umap"), reduction_prefix = "",
+                         reduction = "umap", reduction_prefix = "",
                          cc_S_genes = NULL, cc_G2M_genes = NULL,
                          exogenous_genes = NULL, ...) {
   if (class(srt) != "Seurat") {
@@ -1323,7 +1323,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
   if ("umap" %in% reduction) {
-    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot",  reduction.name = paste0(reduction_prefix, "umap"))
+    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"))
   }
   if ("tsne" %in% reduction) {
     srt <- RunTSNE(
@@ -1338,8 +1338,8 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   return(srt)
 }
 
-Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
-                            integration_method = "Seurat", batch = "orig.ident",
+Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
+                            integration_method = "Uncorrected", batch = "orig.ident",
                             normalization_method = "logCPM",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8, reduction = "umap",
@@ -1349,15 +1349,20 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = TRUE,
     stop("srtList and srtMerge were all empty.")
   }
   if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
-    srtIntegrated <- base::do.call(
-      what = paste0(integration_method, "_integrate"),
-      args = c(as.list(match.call()), reduction_prefix = paste0(integration_method, "_"))
-    )
+    args <- c(mget(names(formals()), sys.frame(sys.nframe())), reduction_prefix = paste0(integration_method, "_"))
+    srtIntegrated <- tryCatch(expr = {
+      base::do.call(
+        what = paste0(integration_method, "_integrate"),
+        args = args
+      )
+    }, error = function(e) {
+      message(e)
+      return(NA)
+    })
     return(srtIntegrated)
   } else {
-    stop(paste("Error!", integration_method, "is not a suppoted integration method!"),
+    stop(paste(integration_method, "is not a suppoted integration method!"),
       call. = FALSE
     )
   }
 }
-
