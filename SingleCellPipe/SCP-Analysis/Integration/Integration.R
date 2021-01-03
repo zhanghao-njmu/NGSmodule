@@ -282,7 +282,7 @@ if (file.exists("srt_list_filter.rds")) {
 
     total_out <- unique(c(db_out, qc_out, umi_out, gene_out, mt_out))
     srt[["CellFilterng"]] <- rep(x = FALSE, ncol(srt))
-    srt[["CellFilterng"]][total_out,] <- TRUE
+    srt[["CellFilterng"]][total_out, ] <- TRUE
 
     cat(">>>", "Total cells:", ntotal, "\n")
     cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
@@ -388,8 +388,8 @@ if (length(datasets) != 0) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
       if (file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds")) &
         file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))) {
-        srt_integrated <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
-        srtList <- readRDS(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
+        srt_integrated <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
+        srtList <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))
         hvf <- VariableFeatures(srt_integrated)
       } else {
         checked <- Check_srtList(
@@ -401,8 +401,8 @@ if (length(datasets) != 0) {
         hvf <- checked[["hvf"]]
         srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
         VariableFeatures(srt_integrated) <- hvf
-        saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
-        saveRDS(srtList, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))
+        saveRDS(srt_integrated, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
+        saveRDS(srtList, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))
       }
 
       for (im in integration_method) {
@@ -452,7 +452,7 @@ if (length(datasets) != 0) {
               scale = 1.5, limitsize = FALSE
             )
             # Save the integration data ---------------------------------------------
-            saveRDS(srt_integrated, paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds"))
+            saveRDS(srt_integrated, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
             # saveRDS(srt_integrated, file = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
             cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
           }
