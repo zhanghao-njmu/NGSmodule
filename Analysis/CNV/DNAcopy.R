@@ -166,7 +166,7 @@ p4 <- ggplot(data = subset(corrected, reads.x < mean(reads.x)*4)) +
 plot <- aplot::plot_list(gglist = list(p1, p2, p3, p4), nrow = 2, ncol = 2, widths = rep(c(0.9, 0.1), 2))
 
 ##### output report #####
-pdf(paste0(sample, ".plot.pdf"), width = nrow(chr_info) / 2 * 1.1 + 1, height = 3)
+pdf(paste0(sample, ".plot.pdf"), width = 13, height = 4)
 invisible(print(plot))
 invisible(dev.off())
 

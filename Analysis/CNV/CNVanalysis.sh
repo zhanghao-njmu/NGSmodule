@@ -86,7 +86,7 @@ for sample in "${arr[@]}"; do
         echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
       fi
 
-      logfiles=("HMMcopyStatus.log" "GATK3Status.log" "Strelka2Status.log")
+      logfiles=("HMMcopyStatus.log" "DNAcopyStatus.log" "GATK3Status.log" "Strelka2Status.log")
       globalcheck_logfile "$dir/$Aligner" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
       ##### HMMcopy #####
