@@ -93,15 +93,19 @@ DoubletIdentification <- function(srt, db_method = "scDblFinder") {
     methods <- unlist(strsplit(db_method, "_"))
     method1 <- methods[1]
     method2 <- methods[2]
-    args <- c(mget(names(formals()), sys.frame(sys.nframe())), method = method2)
-    res <- tryCatch(expr = {
-      base::do.call(
+    args1 <- c(mget(names(formals()), sys.frame(sys.nframe())), method = method2)
+    args2 <- c(as.list(match.call()), method = method2)
+    for (n in names(args2)) {
+      args1[[n]] <- args2[[n]]
+    }
+    tryCatch(expr = {
+      res <- base::do.call(
         what = paste0("db_", method1),
-        args = args
+        args = args1
       )
     }, error = function(e) {
       message(e)
-      return(NA)
+      res <- NA
     })
     return(res)
   } else {
