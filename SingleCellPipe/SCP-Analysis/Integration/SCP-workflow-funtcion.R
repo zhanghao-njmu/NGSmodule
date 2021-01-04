@@ -21,16 +21,25 @@ Check_srtList <- function(srtList, normalization_method,
     )
   }
 
-  genelist <- lapply(srtList, function(x) {
-    rownames(GetAssayData(x, slot = "counts", assay = "RNA"))
-  })
-  if (length(unique(genelist)) != 1) {
-    stop("'srtList' must have identical feature names!",
-      call. = FALSE
-    )
-  }
+  # genelist <- lapply(srtList, function(x) {
+  #   sort(rownames(GetAssayData(x, slot = "counts", assay = "RNA")))
+  # })
+  # if (length(unique(genelist)) != 1) {
+  #   warning("'srtList' have different feature names! Will subset the common features for analysis!",
+  #     call. = FALSE
+  #   )
+  #   cf <- lapply(srtList, rownames) %>% Reduce(intersect, .)
+  #   for (i in 1:length(srtList)) {
+  #     srtList[[i]] <- subset(srtList[[i]], features = cf)
+  #   }
+  # }
 
   for (i in 1:length(srtList)) {
+    if (!"RNA" %in% Seurat::Assays(srtList[[i]])) {
+      stop(paste("srtList", i, "does not contain 'RNA' assay."),
+        call. = FALSE
+      )
+    }
     DefaultAssay(srtList[[i]]) <- "RNA"
     if (identical(
       x = GetAssayData(srtList[[i]], slot = "counts"),
@@ -50,9 +59,6 @@ Check_srtList <- function(srtList, normalization_method,
       dplyr::arrange(desc(variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
-    # if (nrow(GetAssayData(srtList[[i]], slot = "scale.data")) != nrow(GetAssayData(srtList[[i]], slot = "data"))) {
-    #   srtList[[i]] <- ScaleData(object = srtList[[i]], features = rownames(srtList[[i]]), verbose = FALSE)
-    # }
     DefaultAssay(srtList[[i]]) <- "RNA"
 
     if (normalization_method %in% c("SCT")) {
@@ -104,7 +110,10 @@ Check_srtList <- function(srtList, normalization_method,
       hvf <- SelectIntegrationFeatures(object.list = srtList, nfeatures = nHVF, verbose = FALSE)
     }
   } else {
-    hvf <- hvf[hvf %in% rownames(GetAssayData(srtList[[1]], slot = "counts"))]
+    cf <- lapply(srtList, function(x) {
+      rownames(GetAssayData(x, slot = "counts"))
+    }) %>% Reduce(intersect, .)
+    hvf <- hvf[hvf %in% cf]
   }
 
   if (normalization_method %in% c("SCT")) {
@@ -254,6 +263,18 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALS
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
+  }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
       stop("srtMerge must be provided when 'append = TRUE'.")
@@ -312,6 +333,18 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                              exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
@@ -415,6 +448,18 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
+  }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
       stop("srtMerge must be provided when 'append = TRUE'.")
@@ -496,6 +541,18 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
@@ -584,6 +641,18 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                 exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
@@ -697,6 +766,18 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
+  }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
       stop("srtMerge must be provided when 'append = TRUE'.")
@@ -772,6 +853,18 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                           exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
@@ -865,6 +958,18 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
+  }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
       stop("srtMerge must be provided when 'append = TRUE'.")
@@ -952,6 +1057,18 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
@@ -1068,6 +1185,18 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
   }
   if (isTRUE(append)) {
     if (is.null(srtMerge)) {
