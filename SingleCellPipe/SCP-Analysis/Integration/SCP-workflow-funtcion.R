@@ -1,7 +1,7 @@
 Check_srtList <- function(srtList, normalization_method,
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL, ...) {
-  cat("Checking srtList... ...\n")
+  cat(paste0("[",Sys.time(),"]"," Checking srtList... ...\n"))
   require(Seurat)
   require(sctransform)
 
@@ -119,7 +119,7 @@ Check_srtList <- function(srtList, normalization_method,
   if (normalization_method %in% c("SCT")) {
     srtList <- PrepSCTIntegration(object.list = srtList, anchor.features = hvf, verbose = FALSE)
   }
-  cat("Finished checking.\n")
+  cat(paste0("[",Sys.time(),"]"," Finished checking.\n"))
 
   return(list(
     srtList = srtList,
@@ -1490,7 +1490,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       )
     }, error = function(e) {
       message(e)
-      message("Stop the integration...")
+      message(cat(paste0("[",Sys.time(),"]"," Stop the integration...\n")))
       srtIntegrated <- NA
     })
 
