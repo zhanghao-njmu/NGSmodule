@@ -69,6 +69,8 @@ source(paste0(script_dir, "/SCP-workflow-funtcion.R"))
 # source("/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/SCP-Analysis/Integration/SCP-workflow-funtcion.R")
 # source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
 
+samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
+
 datasets <- strsplit(datasets_raw, split = ";") %>%
   unlist() %>%
   lapply(., function(x) {
@@ -76,11 +78,11 @@ datasets <- strsplit(datasets_raw, split = ";") %>%
   })
 datasets <- datasets[sapply(datasets, length) > 1]
 
-samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
-
 reduction <- strsplit(reduction, split = ",") %>% unlist()
 normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
+HVF_source <- strsplit(HVF_source, split = ",") %>% unlist()
 integration_method <- strsplit(integration_method, split = ",") %>% unlist()
+
 
 CCgenes <- CC_GenePrefetch(species = species)
 cc_S_genes <- CCgenes[["cc_S_genes"]]
@@ -382,81 +384,83 @@ for (nm in normalization_method) {
 if (length(datasets) != 0) {
   for (dataset in datasets) {
     for (nm in normalization_method) {
-      cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
-      dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/"), recursive = T, showWarnings = FALSE)
-      if (file.exists(paste0("Normalization-", nm, "/",HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds")) &
-        file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))) {
-        cat("Loading the existed integration data... ...")
-        srt_integrated <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
-        srtList <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))
-        hvf <- VariableFeatures(srt_integrated)
-      } else {
-        checked <- Check_srtList(
-          srtList = get(paste0("srt_list_filter_", nm))[dataset], normalization_method = nm,
-          HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
-          exogenous_genes = exogenous_genes
-        )
-        srtList <- checked[["srtList"]]
-        hvf <- checked[["hvf"]]
-        srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
-        VariableFeatures(srt_integrated) <- hvf
-        saveRDS(srt_integrated, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
-        saveRDS(srtList, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))
-      }
+      for (hvfs in HVF_source) {
+        dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/")
+        cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
+        dir.create(dir_path, recursive = T, showWarnings = FALSE)
 
-      for (im in integration_method) {
-        if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
-          dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/", "Integration-", im)
-          dir.create(dir_path, recursive = T, showWarnings = FALSE)
-          cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
-          if (
-            # file.exists(paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
-            paste0(im, "_clusters") %in% colnames(srt_integrated@meta.data)
-          ) {
-            cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
-          } else {
-            srt_integrated <- Integration_SCP(
-              srtList = srtList, srtMerge = srt_integrated, append = TRUE,
-              integration_method = im, batch = "orig.ident",
-              normalization_method = nm,
-              HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
-              maxPC = maxPC, resolution = resolution, reduction = reduction,
-              cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-              exogenous_genes = exogenous_genes
-            )
-            p1 <- DimPlot(srt_integrated,
-              reduction = paste0(im, "_", reduction),
-              group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE
-            )
-            p1 <- lapply(p1, function(p) {
-              p + theme(aspect.ratio = 1)
-            })
-            p2 <- FeaturePlot(
-              object = srt_integrated,
-              reduction = paste0(im, "_", reduction),
-              features = c(
-                exogenous_genes, "percent.mt", "percent.ribo",
-                "nCount_RNA", "nFeature_RNA",
-                "scDblFinder_score", "cellcalling_methodNum"
-              ),
-              combine = FALSE, order = TRUE
-            )
-            p2 <- lapply(p2, function(p) {
-              p + theme(aspect.ratio = 1)
-            })
-            p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
-            ggsave(
-              plot = p, filename = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".png"),
-              units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
-              scale = 1.5, limitsize = FALSE
-            )
-            # Save the integration data ---------------------------------------------
-            saveRDS(srt_integrated, paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
-            # saveRDS(srt_integrated, file = paste0(dir_path, "/", paste0(dataset, collapse = ","), ".rds"))
-            cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
-          }
+        if (file.exists(paste0(dir_path, paste0(dataset, collapse = ","), ".rds")) &
+          file.exists(paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))) {
+          cat("Loading the existed integration data... ...")
+          srt_integrated <- readRDS(paste0(dir_path, paste0(dataset, collapse = ","), ".rds"))
+          srtList <- readRDS(paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))
+          hvf <- VariableFeatures(srt_integrated)
         } else {
-          cat("Warning!", im, "process skipped because it is not a supported integration method.\n")
+          checked <- Check_srtList(
+            srtList = get(paste0("srt_list_filter_", nm))[dataset], normalization_method = nm,
+            HVF_source = HVF_source, nHVF = nHVF, hvf = NULL,
+            exogenous_genes = exogenous_genes
+          )
+          srtList <- checked[["srtList"]]
+          hvf <- checked[["hvf"]]
+          srt_integrated <- Reduce(function(x, y) merge(x, y), srtList)
+          VariableFeatures(srt_integrated) <- hvf
+          saveRDS(srt_integrated, paste0(dir_path, paste0(dataset, collapse = ","), ".rds"))
+          saveRDS(srtList, paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))
+        }
+
+        for (im in integration_method) {
+          if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
+            dir_im_path <- paste0(dir_path, "Integration-", im)
+            dir.create(dir_im_path, recursive = T, showWarnings = FALSE)
+            cat("++++++", paste0(dataset, collapse = ","), paste0("(Integration-", im, ")"), "++++++", "\n")
+            if (
+              paste0(im, "_clusters") %in% colnames(srt_integrated@meta.data)
+            ) {
+              cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "has finished. Skip to the next step.\n")
+            } else {
+              srt_integrated <- Integration_SCP(
+                srtList = srtList, srtMerge = srt_integrated, append = TRUE,
+                integration_method = im, batch = "orig.ident",
+                normalization_method = nm,
+                HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+                maxPC = maxPC, resolution = resolution, reduction = reduction,
+                cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
+                exogenous_genes = exogenous_genes
+              )
+              p1 <- DimPlot(srt_integrated,
+                reduction = paste0(im, "_", reduction),
+                group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE
+              )
+              p1 <- lapply(p1, function(p) {
+                p + theme(aspect.ratio = 1)
+              })
+              p2 <- FeaturePlot(
+                object = srt_integrated,
+                reduction = paste0(im, "_", reduction),
+                features = c(
+                  exogenous_genes, "percent.mt", "percent.ribo",
+                  "nCount_RNA", "nFeature_RNA",
+                  "scDblFinder_score", "cellcalling_methodNum"
+                ),
+                combine = FALSE, order = TRUE
+              )
+              p2 <- lapply(p2, function(p) {
+                p + theme(aspect.ratio = 1)
+              })
+              p <- cowplot::plot_grid(plotlist = c(p1, p2), align = "hv", axis = "tblr", ncol = 2, byrow = T)
+              ggsave(
+                plot = p, filename = paste0(dir_im_path, "/", paste0(dataset, collapse = ","), ".png"),
+                units = "mm", width = 300, height = 70 * ceiling(length(c(p1, p2)) / 2),
+                scale = 1.5, limitsize = FALSE
+              )
+              # Save the integration data ---------------------------------------------
+              saveRDS(srt_integrated, paste0(dir_path, paste0(dataset, collapse = ","), ".rds"))
+              cat(">>> Integration:", im, "process for the", paste0(dataset, collapse = ","), "completed successfully.\n")
+            }
+          } else {
+            cat("Warning!", im, "process skipped because it is not a supported integration method.\n")
+          }
         }
       }
     }
