@@ -728,7 +728,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
   srtMerge <- RunPCA(object = srtMerge, npcs = maxPC, features = hvf)
   dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
-  srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
+  srtMerge@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   bbknn <- reticulate::import("bbknn", convert = FALSE)
   pca <- reticulate::r_to_py(Embeddings(srtMerge, reduction = "pca")[, dims])
@@ -743,7 +743,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
-  srtMerge <- FindClusters(object = srtMerge, graph.name = "BBKNN", resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated <- FindClusters(object = srtIntegrated, graph.name = "BBKNN", resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 

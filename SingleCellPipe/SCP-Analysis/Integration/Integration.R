@@ -76,9 +76,6 @@ datasets <- strsplit(datasets_raw, split = ";") %>%
   })
 datasets <- datasets[sapply(datasets, length) > 1]
 
-# samples <- datasets %>%
-#   unlist() %>%
-#   unique()
 samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 reduction <- strsplit(reduction, split = ",") %>% unlist()
@@ -386,8 +383,10 @@ if (length(datasets) != 0) {
   for (dataset in datasets) {
     for (nm in normalization_method) {
       cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
-      if (file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".rds")) &
-        file.exists(paste0("Normalization-", nm, "/", paste0(dataset, collapse = ","), ".srtList.rds"))) {
+      dir.create(paste0("Normalization-", nm, "/", HVF_source, "_HVF/"), recursive = T, showWarnings = FALSE)
+      if (file.exists(paste0("Normalization-", nm, "/",HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds")) &
+        file.exists(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))) {
+        cat("Loading the existed integration data... ...")
         srt_integrated <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".rds"))
         srtList <- readRDS(paste0("Normalization-", nm, "/", HVF_source, "_HVF/", paste0(dataset, collapse = ","), ".srtList.rds"))
         hvf <- VariableFeatures(srt_integrated)

@@ -7,7 +7,7 @@ db_scDblFinder <- function(srt, ...) {
   db_rate <- ncol(srt) / 1000 * 0.01
   require(scDblFinder)
   sce <- as.SingleCellExperiment(srt, assay = "RNA")
-  sce <- scDblFinder(sce, dbr = db_rate, verbose = FALSE)
+  sce <- scDblFinder(sce, dbr = db_rate)
   srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
   srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
   db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
