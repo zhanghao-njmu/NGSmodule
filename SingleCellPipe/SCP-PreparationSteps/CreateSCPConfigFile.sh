@@ -69,7 +69,7 @@ resolution=0.8
 reduction="umap"                        # umap,tsne
 
 ### integration ###
-HVF_source="global"                  # global,separate
+HVF_source="separate"                  # global,separate
 integration_method="Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER,scMerge,ZINBWaVE" # Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER,scMerge,ZINBWaVE
 
 
