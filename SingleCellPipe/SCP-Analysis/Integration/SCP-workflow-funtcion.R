@@ -1490,6 +1490,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       )
     }, error = function(e) {
       message(e)
+      message("Stop the integration...")
       srtIntegrated <- NA
     })
 
