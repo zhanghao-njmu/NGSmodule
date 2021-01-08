@@ -125,19 +125,6 @@ for sample in "${arr[@]}"; do
             fq1=${dir}/${sample}_S1_L001_R1_001.fastq.gz
             fq2=${dir}/${sample}_S1_L001_R2_001.fastq.gz
 
-            pigz -t $(realpath ${fq1}) 2>/dev/null
-            if [[ $? != 0 ]]; then
-                color_echo "yellow" "Warning! ${fq1} is not a completed .gz file."
-                force="TRUE"
-                continue
-            fi
-            pigz -t $(realpath ${fq2}) 2>/dev/null
-            if [[ $? != 0 ]]; then
-                color_echo "yellow" "Warning! ${fq2} is not a completed .gz file."
-                force="TRUE"
-                continue
-            fi
-
             ##To verify that reads appear to be correctly paired
             check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then

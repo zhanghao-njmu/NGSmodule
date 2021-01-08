@@ -156,6 +156,14 @@ fqCheck_SE() {
     local fq1="${2}"
     local logfile="${3}"
 
+    pigz -t $(realpath ${fq1}) 2>/dev/null
+    if [[ $? != 0 ]]; then
+        echo -e "ERROR! fq1:${fq1} is not a completed .gz file.\n" >>"$logfile"
+        color_echo "yellow" "[INFO] $sample: fq1 is not a completed .gz file."
+        return 1
+
+    fi
+    
     fq1_nlines=$(unpigz -c "$fq1" | wc -l)
     fq1_tail_line=$(unpigz -c "$fq1" | tail -n4)
     fq1_tail_line1=$(echo "$fq1_tail_line" | sed -n '1p')
@@ -185,6 +193,20 @@ fqCheck_PE() {
     local fq1="${2}"
     local fq2="${3}"
     local logfile="${4}"
+
+    pigz -t $(realpath ${fq1}) 2>/dev/null
+    if [[ $? != 0 ]]; then
+        echo -e "ERROR! fq1:${fq1} is not a completed .gz file.\n" >>"$logfile"
+        color_echo "yellow" "[INFO] $sample: fq1 is not a completed .gz file."
+        return 1
+
+    fi
+    pigz -t $(realpath ${fq2}) 2>/dev/null
+    if [[ $? != 0 ]]; then
+        echo -e "ERROR! fq2:${fq2} is not a completed .gz file.\n" >>"$logfile"
+        color_echo "yellow" "[INFO] $sample: fq2 is not a completed .gz file."
+        return 1
+    fi
 
     fq1_nlines=$(unpigz -c "$fq1" | wc -l)
     fq1_tail_line=$(unpigz -c "$fq1" | tail -n4)

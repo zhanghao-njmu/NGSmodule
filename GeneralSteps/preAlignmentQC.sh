@@ -120,13 +120,6 @@ for sample in "${arr[@]}"; do
 
         fq1=${dir}/${sample}.fq.gz
 
-        pigz -t $(realpath ${fq1}) 2>/dev/null
-        if [[ $? != 0 ]]; then
-          color_echo "yellow" "[INFO] ${fq1} is not a completed .gz file."
-          force="TRUE"
-          continue
-        fi
-
         check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
           fqCheck_SE "$sample" "$fq1" "$dir"/fqCheck.log
@@ -236,13 +229,6 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_trim.fq.gz ]]; then
-          pigz -t "$dir"/"${sample}"_trim.fq.gz 2>/dev/null
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "[INFO] ${sample}_trim.fq.gz is not a completed .gz file."
-            force="TRUE"
-            continue
-          fi
-
           fqCheck_SE "$sample" "$dir/${sample}_trim.fq.gz" "$dir"/fqCheck.log
           check_logfile "$sample" "FastqCheck(trimmed)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
@@ -279,19 +265,6 @@ for sample in "${arr[@]}"; do
 
         fq1=${dir}/${sample}_1.fq.gz
         fq2=${dir}/${sample}_2.fq.gz
-
-        pigz -t $(realpath ${fq1}) 2>/dev/null
-        if [[ $? != 0 ]]; then
-          color_echo "yellow" "[INFO] ${fq1} is not a completed .gz file."
-          force="TRUE"
-          continue
-        fi
-        pigz -t $(realpath ${fq2}) 2>/dev/null
-        if [[ $? != 0 ]]; then
-          color_echo "yellow" "[INFO] ${fq2} is not a completed .gz file."
-          force="TRUE"
-          continue
-        fi
 
         ##To verify that reads appear to be correctly paired
         check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
@@ -405,19 +378,6 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ -f $dir/${sample}_1_trim.fq.gz ]] && [[ -f $dir/${sample}_2_trim.fq.gz ]]; then
-          pigz -t "$dir"/"${sample}"_1_trim.fq.gz 2>/dev/null
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "[INFO] ${sample}_1_trim.fq.gz is not a completed .gz file."
-            force="TRUE"
-            continue
-          fi
-          pigz -t "$dir"/"${sample}"_2_trim.fq.gz 2>/dev/null
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "[INFO] ${sample}_2_trim.fq.gz is not a completed .gz file."
-            force="TRUE"
-            continue
-          fi
-
           fqCheck_PE "$sample" "$dir/${sample}_1_trim.fq.gz" "$dir/${sample}_2_trim.fq.gz" "$dir"/fqCheck.log
           check_logfile "$sample" "FastqCheck(trimmed)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
           if [[ $? == 1 ]]; then
