@@ -208,7 +208,10 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment/Cellranger/"$sample"/velocyto
                 mkdir -p "$dir"/Alignment/Cellranger/"$sample"/velocyto
                 cd "$dir"/Alignment/Cellranger/"$sample"/velocyto
-                velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
+                #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
+                cp -f "$dir"/Alignment/Cellranger/"$sample"/outs/raw_feature_bc_matrix/barcodes.tsv.gz "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+                gunzip -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+                velocyto run -b "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv -o "$dir"/Alignment/Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
 
                 check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
