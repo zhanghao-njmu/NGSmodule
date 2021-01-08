@@ -10,7 +10,7 @@ sample <- as.character(args[5])
 # gfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.gc.wig"
 # mfile <- "/archive/reference/iGenomes/Mus_musculus/UCSC/mm10/Sequence/GemIndex/Mappability/150mer/windows/win1000000/genome.win1000000.150mer.gem.wig"
 # ploid <- 2
-# sample <- "SC_112.bowtie2.HMMcopy"
+# sample <- "SC_112.bowtie2.DNAcopy"
 
 library(HMMcopy)
 library(DNAcopy)
@@ -40,7 +40,7 @@ segment.smoothed.CNA.object <- segment(smoothed.CNA.object, alpha = 0.001, undo.
 
 corrected <- as.data.frame(corrected)
 corrected[, "sample"] <- sample
-corrected[, "DNAcopy"] <- segment.smoothed.CNA.object$data[[sample]]
+corrected[, "DNAcopy"] <- segment.smoothed.CNA.object$data[[3]]
 corrected[, "CN_predict"] <- 2^corrected[, "DNAcopy"] * ploid
 corrected[corrected[, "CN_predict"] > 4 * ploid & !is.na(corrected[, "CN_predict"]), "CN_predict"] <- 4 * ploid
 
@@ -100,7 +100,7 @@ p1 <- ggplot() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
   scale_y_continuous(breaks = seq(0, 8, 1),limits = c(0,4 * ploid)) +
   scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
-  labs(title = sample, y = "Copy Number\n(assumed to be diploid)") +
+  labs(title = sample, y = paste0("Copy Number\n(assume ploid = ",ploid,")")) +
   theme_classic() +
   theme(
     plot.title = element_text(hjust = 0.5),

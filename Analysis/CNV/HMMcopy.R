@@ -91,7 +91,7 @@ p1 <- ggplot() +
   scale_fill_manual(values = setNames(color[c(3, 4)], color[c(1, 2)]), guide = FALSE) +
   scale_y_continuous(breaks = seq(0, 8, 1),limits = c(0,4 * ploid)) +
   scale_x_continuous(breaks = pull(chr_info, "chr_cum_median"), labels = pull(chr_info, "chr")) +
-  labs(title = sample, y = "Copy Number\n(assumed to be diploid)") +
+  labs(title = sample, y = paste0("Copy Number\n(assume ploid = ",ploid,")")) +
   theme_classic() +
   theme(
     plot.title = element_text(hjust = 0.5),

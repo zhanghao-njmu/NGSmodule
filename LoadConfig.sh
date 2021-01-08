@@ -58,10 +58,19 @@ declare -A Sample_dict
 declare -A Layout_dict
 if [[ -f $SampleInfoFile ]]; then
   echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
-  if [[ ! $(find $SampleInfoFile | grep ".csv") ]]; then
+  sed -i '/^$/d' $SampleInfoFile
+
+  if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
     color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
     exit 1
   fi
+
+  validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
+  if [[ $validation == "FALSE" ]]; then
+    color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
+    exit 1
+  fi
+
   dos2unix $SampleInfoFile &>/dev/null
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"

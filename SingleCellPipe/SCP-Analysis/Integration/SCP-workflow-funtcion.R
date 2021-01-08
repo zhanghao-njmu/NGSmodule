@@ -1,7 +1,7 @@
 Check_srtList <- function(srtList, normalization_method,
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL, ...) {
-  cat(paste0("[",Sys.time(),"]"," Checking srtList... ...\n"))
+  cat(paste0("[", Sys.time(), "]", " Checking srtList... ...\n"))
   require(Seurat)
   require(sctransform)
 
@@ -119,7 +119,7 @@ Check_srtList <- function(srtList, normalization_method,
   if (normalization_method %in% c("SCT")) {
     srtList <- PrepSCTIntegration(object.list = srtList, anchor.features = hvf, verbose = FALSE)
   }
-  cat(paste0("[",Sys.time(),"]"," Finished checking.\n"))
+  cat(paste0("[", Sys.time(), "]", " Finished checking.\n"))
 
   return(list(
     srtList = srtList,
@@ -312,6 +312,7 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALS
   srtIntegrated@project.name <- paste0(unique(srtIntegrated[[batch, drop = TRUE]]), collapse = ",")
 
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -425,6 +426,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@assays$Seurat <- srtIntegrated@assays$Seurat
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -520,6 +522,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$fastMNN <- srtIntegrated@reductions$fastMNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -620,6 +623,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$Harmony <- srtIntegrated@reductions$Harmony
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -639,6 +643,8 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                 reduction = "umap", reduction_prefix = "Scanorama_",
                                 cc_S_genes = NULL, cc_G2M_genes = NULL,
                                 exogenous_genes = NULL, ...) {
+  require(reticulate)
+  require(plyr)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -681,8 +687,6 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     hvf <- checked[["hvf"]]
   }
 
-  require(reticulate)
-  require(plyr)
   scanorama <- reticulate::import("scanorama")
 
   assaylist <- list()
@@ -742,6 +746,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@assays$Scanorama <- srtIntegrated@assays$Scanorama
     srtMerge_raw@reductions$Scanorama_reduction <- srtIntegrated@reductions$Scanorama_reduction
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
@@ -763,6 +768,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             reduction_prefix = "BBKNN_",
                             cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
+  require(reticulate)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -834,6 +840,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@graphs$BBKNN <- srtIntegrated@graphs$BBKNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -936,6 +943,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$CSS <- srtIntegrated@reductions$CSS
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -955,6 +963,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             reduction = "umap", reduction_prefix = "LIGER_",
                             cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
+  require(liger)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1036,6 +1045,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$LIGER <- srtIntegrated@reductions$LIGER
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
@@ -1055,6 +1065,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               reduction = "umap", reduction_prefix = "scMerge_",
                               cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
+  require(scMerge)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1163,6 +1174,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@assays$scMerge <- srtIntegrated@assays$scMerge
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -1183,6 +1195,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                reduction = "umap", reduction_prefix = "ZINBWaVE_",
                                cc_S_genes = NULL, cc_G2M_genes = NULL,
                                exogenous_genes = NULL, ...) {
+  require(zinbwave)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1241,6 +1254,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       BPPARAM = MulticoreParam()
     )
   } else {
+    state <- 1
     while (state != 0) {
       tryCatch(expr = {
         sce_zinbwave <- zinbsurf(
@@ -1253,11 +1267,14 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
           prop_fit = 0.2,
           BPPARAM = MulticoreParam(workers = 8)
         )
-        state <- 1
+        state <- 0
       }, error = function(error) {
         message(error)
         cat("Resampling the cells for zinbsurf ......\n")
-        state <- 0
+        state <- state + 1
+        if (state > 5) {
+          stop("Resampling too many times. Stop the integration.\n")
+        }
       })
     }
   }
@@ -1298,6 +1315,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@assays$ZINBWaVE <- srtIntegrated@assays$ZINBWaVE
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
@@ -1490,11 +1508,15 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       )
     }, error = function(e) {
       message(e)
-      message(cat(paste0("[",Sys.time(),"]"," Stop the integration...\n")))
-      srtIntegrated <- NA
+      message(cat("\n", paste0("[", Sys.time(), "]", " Stop the integration...\n")))
     })
-
-    return(srtIntegrated)
+    if (exists("srtIntegrated")) {
+      return(srtIntegrated)
+    }
+    if (!is.null(srtMerge)) {
+      return(srtMerge)
+    }
+    return(NULL)
   } else {
     stop(paste(integration_method, "is not a suppoted integration method!"),
       call. = FALSE

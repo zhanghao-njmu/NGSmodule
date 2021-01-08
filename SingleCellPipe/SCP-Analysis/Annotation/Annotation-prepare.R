@@ -4,7 +4,7 @@ temp <- tempfile()
 state <- 1
 while (state != 0) {
   state <- tryCatch(expr = {
-    download.file("https://raw.githubusercontent.com/ZJUFanLab/scCATCH/master/R/sysdata.rda", temp, method = "auto")
+    download.file("https://raw.githubusercontent.com/ZJUFanLab/scCATCH/master/R/sysdata.rda", "~/Downloads/test.rda", method = "auto")
     stat <- 0
   }, error = function(error) {
     message(error)
@@ -16,7 +16,7 @@ CellMatch <- CellMatch[!CellMatch$geneSymbol %in% c("", NA), ]
 CellMatch <- CellMatch %>%
   mutate(third = NA, second = NA, first = NA, shortname = cellName) %>%
   as.data.frame()
-# saveRDS(CellMatch,file = "CellMatch.rds")
+saveRDS(CellMatch,file = "CellMatch.rds")
 unlink(temp)
 
 
@@ -40,11 +40,13 @@ CellMarker <- read.table(file = temp, sep = "\t", header = T, fill = TRUE) %>%
   unnest(c(geneSymbol)) %>%
   as.data.frame()
 CellMarker <- CellMarker[!CellMarker$geneSymbol %in% c("", NA), ]
-# saveRDS(CellMarker,file = "CellMarker.rds")
+saveRDS(CellMarker,file = "CellMarker.rds")
 unlink(temp)
 
 
 # PanglaoDB
+Ensembl_version <- 102
+library(biomaRt)
 temp <- tempfile()
 state <- 1
 while (state != 0) {
@@ -104,5 +106,5 @@ PanglaoDB <- PanglaoDB %>%
   distinct() %>%
   as.data.frame()
 PanglaoDB <- PanglaoDB[!PanglaoDB$geneSymbol %in% c("", NA), ]
-# saveRDS(PanglaoDB,file = "PanglaoDB.rds")
+saveRDS(PanglaoDB,file = "PanglaoDB.rds")
 unlink(temp)
