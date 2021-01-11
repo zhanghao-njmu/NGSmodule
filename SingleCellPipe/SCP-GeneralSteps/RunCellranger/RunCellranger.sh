@@ -81,6 +81,7 @@ echo -e "#######################################################################
 
 echo -e "****************** Start RunCellranger ******************\n"
 SECONDS=0
+SCP_path=$1
 
 for sample in "${arr[@]}"; do
     read -u1000
@@ -238,7 +239,8 @@ for sample in "${arr[@]}"; do
             if [[ $? == 1 ]]; then
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
-                Rscript "$1" "$dir"/Alignment-Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log
+                script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellCalling.R
+                Rscript "$script" "$dir"/Alignment-Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log
 
                 check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

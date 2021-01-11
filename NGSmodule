@@ -100,19 +100,19 @@ CreateSCPWorkDir() {
 RunCellranger() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/CellCalling.R
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/RunCellranger.sh $shell_folder/SingleCellPipe
 }
 
 RunSeurat() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh  $shell_folder/SingleCellPipe $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.R
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh  $shell_folder/SingleCellPipe 
 }
 
 Integration() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh  $shell_folder/SingleCellPipe $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.R
+  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh  $shell_folder/SingleCellPipe
 }
 
 help() {
