@@ -26,9 +26,10 @@ source(paste0(SCP_path, "/SCP-workflow-funtcion.R"))
 samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 
-# Preprocessing: Load data ------------------------------------------------
-srt_list <- list()
+# Preprocessing: Create Seurat object ------------------------------------------------
 cellcalling_list <- list()
+srt_list <- list()
+velocity_list <- list()
 for (i in 1:length(samples)) {
   cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
   cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
@@ -36,16 +37,8 @@ for (i in 1:length(samples)) {
   cell_upset[["sample"]] <- samples[i]
   cellcalling_list[[samples[i]]] <- cell_upset
   
-  srt <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[,cell_upset[["Barcode"]]]
-  srt_list[[i]] <- srt
-}
-
-# Preprocessing: Create Seurat object -------------------------------------
-
-for (i in 1:length(samples)) {
-  cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
-  srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
-  srt[["orig.ident"]] <- samples[i]
+  srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[,cell_upset[["Barcode"]]]
+  srt <- CreateSeuratObject(counts = srt_matrix, project = samples[i])
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
   srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
   srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
@@ -53,7 +46,8 @@ for (i in 1:length(samples)) {
   srt <- RenameCells(object = srt, add.cell.id = samples[i])
   srt_list[[samples[i]]] <- srt
   
-  velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
+  velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+  velocity <- as.Seurat(x = velocity, project = samples[i])
   velocity <- RenameCells(
     object = velocity,
     new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "", perl = TRUE) %>%
@@ -62,28 +56,36 @@ for (i in 1:length(samples)) {
   )
   velocity[["orig.ident"]] <- samples[i]
   velocity_list[[samples[i]]] <- velocity
-  
-  assign(x = paste0(samples[i], "_10X"), value = NULL)
-  assign(x = paste0(samples[i], "_velocity"), value = NULL)
 }
 
-# Preprocessing: Create Seurat object -------------------------------------
-cat("++++++", sample, "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
-srt <- CreateSeuratObject(counts = get(paste0("10X_", sample)), project = sample)
-srt[["orig.ident"]] <- sample
-srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
-srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
-srt[["cellcalling_method"]] <- get(paste0("Cellcalling_", sample))[Cells(srt), "Method_comb"]
-srt[["cellcalling_methodNum"]] <- get(paste0("Cellcalling_", sample))[Cells(srt), "Method_num"]
-srt <- RenameCells(object = srt, add.cell.id = sample)
 
-# Preprocessing: Cell filtering -----------------------------------
-ntotal <- ncol(srt)
-sce <- as.SingleCellExperiment(srt)
-sce <- scDblFinder(sce, verbose = FALSE)
-srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
-srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
-db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
+# Preprocessing: Cell QC -----------------------------------
+for (i in srt_list) {
+  srt <- srt_list[[i]]
+  ntotal <- ncol(srt)
+  sce <- as.SingleCellExperiment(srt)
+  sce <- scDblFinder(sce, verbose = FALSE)
+  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
+  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+  db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
+  
+  sce <- addPerCellQC(sce, percent_top = c(20))
+  srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
+  log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
+  log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
+  srt[["log10_nCount_RNA"]] <- log10_total_counts
+  srt[["log10_nFeature_RNA"]] <- log10_total_features
+  
+  mod <- loess(log10_total_features ~ log10_total_counts)
+  pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
+  featcount_dist <- log10_total_features - pred
+  srt[["featcount_dist"]] <- featcount_dist
+
+  srt_list[[i]] <- srt
+}
+
+
+
 # p1 <- ggplot(srt@meta.data, aes(x = scDblFinder_score, y = "orig.ident")) +
 #   geom_point(position = position_jitter()) +
 #   geom_boxplot(outlier.shape = NA) +
@@ -92,23 +94,7 @@ db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
 #   geom_histogram(aes(x = scDblFinder_score))
 # p1 %>% insert_top(p2)
 
-sce <- addPerCellQC(sce, percent_top = c(20))
-srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
 
-log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
-log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
-srt[["log10_nCount_RNA"]] <- log10_total_counts
-srt[["log10_nFeature_RNA"]] <- log10_total_features
-
-mod <- loess(log10_total_features ~ log10_total_counts)
-pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
-featcount_dist <- log10_total_features - pred
-srt[["featcount_dist"]] <- featcount_dist
-
-metaCol <- c(
-  "percent.mt", "percent.ribo", "cellcalling_methodNum",
-  "log10_nCount_RNA", "log10_nFeature_RNA", "percent.top_20"
-)
 # p1 <- srt@meta.data %>%
 #   group_by(cellcalling_methodNum) %>%
 #   summarise(
@@ -146,51 +132,6 @@ metaCol <- c(
 # p <- as.ggplot(aplotGrob(p)) +
 #   labs(title = "nCount vs nFeature") +
 #   theme(aspect.ratio = 1)
-
-filters <- c(
-  "log10_total_counts:higher:2.5",
-  "log10_total_counts:lower:5",
-  "log10_total_features:higher:2.5",
-  "log10_total_features:lower:5",
-  "pct_counts_in_top_20_features:both:5",
-  "featcount_dist:both:5"
-)
-qc_out <- lapply(strsplit(filters, ":"), function(f) {
-  colnames(srt)[isOutlier(get(f[1]),
-                          log = FALSE,
-                          nmads = as.numeric(f[3]),
-                          type = f[2]
-  )]
-})
-qc_out <- table(unlist(qc_out))
-qc_out <- names(qc_out)[qc_out >= 2]
-
-umi_out <- colnames(srt)[srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold]
-gene_out <- colnames(srt)[srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold]
-
-pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
-if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
-  pct_counts_Mt <- pct_counts_Mt * 100
-}
-if (mito_threshold > 0 & mito_threshold < 1) {
-  mito_threshold <- mito_threshold * 100
-}
-mt_out <- colnames(srt)[isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-                          (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-                          (pct_counts_Mt > mito_threshold)]
-
-total_out <- unique(c(db_out, qc_out, umi_out, gene_out, mt_out))
-srt[["CellFilterng"]] <- rep(x = FALSE, ncol(srt))
-srt[["CellFilterng"]][total_out, ] <- TRUE
-
-cat(">>>", "Total cells:", ntotal, "\n")
-cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
-cat("...", length(db_out), "potential doublets", "\n")
-cat("...", length(qc_out), "unqualified cells", "\n")
-cat("...", length(umi_out), "low-UMI cells", "\n")
-cat("...", length(gene_out), "low-Gene cells", "\n")
-cat("...", length(mt_out), "high-Mito cells", "\n")
-cat(">>>", "Remained cells after filtering :", ntotal - length(total_out), "\n")
 
 # df <- data.frame(cell = rownames(srt@meta.data))
 # df[db_out,"db_out"] <- "db_out"
@@ -233,46 +174,3 @@ cat(">>>", "Remained cells after filtering :", ntotal - length(total_out), "\n")
 #     aspect.ratio = 0.6,
 #     legend.position = "none"
 #  )
-
-srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
-  cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
-  srt <- srt_list_QC[[sc_set]]
-  srt_filter <- subset(srt, CellFilterng == FALSE)
-  return(srt_filter)
-})
-
-
-
-# Standard_SCP -----------------------------------
-for (nm in normalization_method) {
-  dir.create(paste0("Normalization-", nm), recursive = T, showWarnings = FALSE)
-  if (file.exists(paste0("srt_list_filter_", nm, ".rds"))) {
-    cat("Loading the", paste0("srt_list_filter_", nm), "from the file....\n")
-    assign(
-      x = paste0("srt_list_filter_", nm),
-      value = readRDS(paste0("srt_list_filter_", nm, ".rds"))
-    )
-  } else {
-    assign(
-      x = paste0("srt_list_filter_", nm),
-      value = lapply(setNames(samples, samples), function(sc_set) {
-        cat("++++++", sc_set, paste0("Standard_SCP-", nm), "++++++", "\n")
-        srt <- srt_list_filter[[sc_set]]
-        srt <- Standard_SCP(
-          srt = srt, normalization_method = nm, nHVF = nHVF,
-          maxPC = maxPC, resolution = resolution, reduction = reduction,
-          cc_S_genes = cc_S_genes, cc_G2M_genes = cc_G2M_genes,
-          exogenous_genes = exogenous_genes
-        )
-        return(srt)
-      })
-    )
-    
-    invisible(lapply(samples, function(x) {
-      saveRDS(get(paste0("srt_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
-    }))
-    saveRDS(get(paste0("srt_list_filter_", nm)), file = paste0("srt_list_filter_", nm, ".rds"))
-  }
-}
-
-future:::ClusterRegistry("stop")

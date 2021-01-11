@@ -1303,7 +1303,7 @@ ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 
 # Output the report -------------------------------------------------------
 saveRDS(raw, file = "raw.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
-write.table(x = rownames(cell_upset),file = "barcodes.tsv",row.names = FALSE,col.names = FALSE)
+write.table(x = cell_upset[["Barcode"]],file = "barcodes.tsv",row.names = FALSE,col.names = FALSE)
 
 pdf(paste0(sample, ".CellCalling.pdf"), width = 11, height = 8)
 invisible(lapply(paste0(sample, c(".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".MethodCompare.png")), function(x) {
