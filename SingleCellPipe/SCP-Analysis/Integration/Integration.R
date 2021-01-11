@@ -113,7 +113,7 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
 } else {
   for (i in 1:length(samples)) {
     cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
-    cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
+    cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
     rownames(cell_upset) <- cell_upset[, "Barcode"]
     cells <- cell_upset %>%
       filter(Method_num >= cell_calling_methodNum) %>%
@@ -126,11 +126,11 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
     
     assign(
       x = paste0(samples[i], "_10X"),
-      value = Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
+      value = Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
     )
     assign(
       x = paste0(samples[i], "_velocity"),
-      value = ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+      value = ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
     )
   }
   

@@ -2,46 +2,13 @@
 
 args <- commandArgs(TRUE)
 SCP_path <- as.character(args[1])
-sample <- as.character(args[2])
-Rscript_threads <- as.numeric(args[3])
-species <- as.character(args[4])
-exogenous_genes <- as.character(args[5])
-cell_calling_methodNum <- as.numeric(args[6])
-mito_threshold <- as.numeric(args[7])
-gene_threshold <- as.numeric(args[8])
-UMI_threshold <- as.numeric(args[9])
-normalization_method <- as.character(args[10])
-nHVF <- as.numeric(args[11])
-maxPC <- as.numeric(args[12])
-resolution <- as.numeric(args[13])
-reduction <- as.character(args[14])
-Ensembl_version <- 101
-
-
+SCPwork_dir <- as.character(args[2])
 # ##### test #####
-# setwd("/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/Testis-d10/Alignment-Cellranger/Seurat")
+# setwd("/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_analysis/CellQC")
 # # parameters: global settings ---------------------------------------------
 # SCP_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/"
-# sample <- "Testis-d10"
-# Rscript_threads <- 120
-# species <- "Homo_sapiens"
-# exogenous_genes <- "GFP"
-#
-# # parameters: cell filtering ----------------------------------------------
-# cell_calling_methodNum <- 3
-# mito_threshold <- 0.2
-# gene_threshold <- 1000
-# UMI_threshold <- 3000
-#
-#
-# # parameters: basic --------------------------------------------------
-# normalization_method <- "logCPM,SCT" # logCPM,SCT
-# nHVF <- 4000
-# maxPC <- 100
-# resolution <- 0.8
-# reduction <- "umap" # umap,tsne
-
-
+# SCPwork_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/"
+ 
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
@@ -56,44 +23,49 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
 set.seed(11)
 
 source(paste0(SCP_path, "/SCP-workflow-funtcion.R"))
-source(paste0(SCP_path, "/SCP-GeneralSteps/RunSeurat/RunSeurat-function.R"))
+samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
-reduction <- strsplit(reduction, split = ",") %>% unlist()
-normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
-
-CCgenes <- CC_GenePrefetch(species = species)
-cc_S_genes <- CCgenes[["cc_S_genes"]]
-cc_G2M_genes <- CCgenes[["cc_G2M_genes"]]
-
-########################### Start the workflow ############################
-options(expressions = 5e5)
-options(future.globals.maxSize = 754 * 1000 * 1024^2)
-options(future.fork.enable = TRUE)
-if (Rscript_threads >= 125) {
-  cat("Rscript_threads number is too large. Re-set it to the 125.\n")
-  Rscript_threads <- 125
-}
-plan(multiprocess, workers = Rscript_threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
-plan()
-
-save.image(file = "RunSeurat_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
-cat("++++++", sample, "(Preprocessing-LoadingData)", "++++++", "\n")
-cell_upset <- as.data.frame(readRDS(file = paste0("../", sample, "/CellCalling/cell_upset.rds")))
-rownames(cell_upset) <- cell_upset[, "Barcode"]
-cells <- cell_upset %>%
-  filter(Method_num >= cell_calling_methodNum) %>%
-  pull("Barcode")
-cat(length(cells), "cells with calling methods >=", cell_calling_methodNum, "\n", sep = " ")
-assign(
-  x = paste0("Cellcalling_", sample),
-  value = cell_upset
-)
-assign(
-  x = paste0("10X_", sample),
-  value = Read10X(data.dir = paste0("../", sample, "/outs/raw_feature_bc_matrix/"))[, cells]
-)
+srt_list <- list()
+cellcalling_list <- list()
+for (i in 1:length(samples)) {
+  cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
+  cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
+  rownames(cell_upset) <- cell_upset[, "Barcode"]
+  cell_upset[["sample"]] <- samples[i]
+  cellcalling_list[[samples[i]]] <- cell_upset
+  
+  srt <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[,cell_upset[["Barcode"]]]
+  srt_list[[i]] <- srt
+}
+
+# Preprocessing: Create Seurat object -------------------------------------
+
+for (i in 1:length(samples)) {
+  cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
+  srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
+  srt[["orig.ident"]] <- samples[i]
+  srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
+  srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
+  srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
+  srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
+  srt <- RenameCells(object = srt, add.cell.id = samples[i])
+  srt_list[[samples[i]]] <- srt
+  
+  velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
+  velocity <- RenameCells(
+    object = velocity,
+    new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "", perl = TRUE) %>%
+      gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
+      paste0(samples[i], "_", .)
+  )
+  velocity[["orig.ident"]] <- samples[i]
+  velocity_list[[samples[i]]] <- velocity
+  
+  assign(x = paste0(samples[i], "_10X"), value = NULL)
+  assign(x = paste0(samples[i], "_velocity"), value = NULL)
+}
 
 # Preprocessing: Create Seurat object -------------------------------------
 cat("++++++", sample, "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
@@ -185,9 +157,9 @@ filters <- c(
 )
 qc_out <- lapply(strsplit(filters, ":"), function(f) {
   colnames(srt)[isOutlier(get(f[1]),
-    log = FALSE,
-    nmads = as.numeric(f[3]),
-    type = f[2]
+                          log = FALSE,
+                          nmads = as.numeric(f[3]),
+                          type = f[2]
   )]
 })
 qc_out <- table(unlist(qc_out))
@@ -204,8 +176,8 @@ if (mito_threshold > 0 & mito_threshold < 1) {
   mito_threshold <- mito_threshold * 100
 }
 mt_out <- colnames(srt)[isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-  (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-  (pct_counts_Mt > mito_threshold)]
+                          (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
+                          (pct_counts_Mt > mito_threshold)]
 
 total_out <- unique(c(db_out, qc_out, umi_out, gene_out, mt_out))
 srt[["CellFilterng"]] <- rep(x = FALSE, ncol(srt))
@@ -295,7 +267,7 @@ for (nm in normalization_method) {
         return(srt)
       })
     )
-
+    
     invisible(lapply(samples, function(x) {
       saveRDS(get(paste0("srt_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
     }))

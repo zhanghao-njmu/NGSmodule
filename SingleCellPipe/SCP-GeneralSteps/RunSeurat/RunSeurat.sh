@@ -47,7 +47,7 @@ SCP_path=$1
 for sample in "${arr[@]}"; do
     read -u1000
     {
-        dir=$work_dir/$sample/Alignment-Cellranger/$sample/Seurat
+        dir=$work_dir/$sample/Alignment-Cellranger/Seurat
         mkdir -p "$dir"
         cd "$dir"
 
@@ -70,10 +70,10 @@ for sample in "${arr[@]}"; do
             check_logfile "$sample" "RunSeurat" "$dir"/RunSeuratStatus.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
                 script=$SCP_path/SCP-GeneralSteps/RunSeurat/RunSeurat.R
-                Rscript $script $1 $2 "$maindir/NGSmodule_SCP_analysis/Integration" "${work_dir}" "${Rscript_threads}" "${datasets}" \
-                    "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${gene_threshold}" \
+                Rscript $script $SCP_path $sample "${Rscript_threads}" "${species}" \
+                    "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${gene_threshold}" \
                     "${UMI_threshold}" "${normalization_method}" "${nHVF}" "${maxPC}" "${resolution}" \
-                    "${reduction}" "${HVF_source}" "${integration_method}" &>RunSeuratStatus.log
+                    "${reduction}" &>RunSeuratStatus.log
 
                 check_logfile "$sample" "RunSeurat" "$dir"/RunSeuratStatus.log "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
