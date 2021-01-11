@@ -106,13 +106,13 @@ RunCellranger() {
 RunSeurat() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.R
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh  $shell_folder/SingleCellPipe $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.R
 }
 
 Integration() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.R
+  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh  $shell_folder/SingleCellPipe $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.R
 }
 
 help() {

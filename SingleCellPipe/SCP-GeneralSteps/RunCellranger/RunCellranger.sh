@@ -79,7 +79,7 @@ echo -e "  cellranger_ref: ${cellranger_ref}"
 echo -e "  gene_gtf: ${gene_gtf}\n  rmsk_gtf: ${rmsk_gtf}\n  dropEst_config: ${dropEst_config}\n"
 echo -e "################################################################################\n\n"
 
-echo -e "****************** Start Alignment ******************\n"
+echo -e "****************** Start RunCellranger ******************\n"
 SECONDS=0
 
 for sample in "${arr[@]}"; do
@@ -164,11 +164,11 @@ for sample in "${arr[@]}"; do
             fi
 
             # cellranger
-            check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "cellranger" "$dir"/Alignment-Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment/Cellranger
-                mkdir -p "$dir"/Alignment/Cellranger
-                cd "$dir"/Alignment/Cellranger
+                rm -rf "$dir"/Alignment-Cellranger
+                mkdir -p "$dir"/Alignment-Cellranger
+                cd "$dir"/Alignment-Cellranger
                 # sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
                 # sample_run=$(printf ",%s" "${sample_run[@]}")
                 # sample_run=${sample_run:1}
@@ -181,66 +181,66 @@ for sample in "${arr[@]}"; do
                     --disable-ui \
                     --localcores "$threads" \
                     --localmem "$memory" \
-                    --transcriptome "$cellranger_ref" &>"$dir"/Alignment/Cellranger/cellranger.log
+                    --transcriptome "$cellranger_ref" &>"$dir"/Alignment-Cellranger/cellranger.log
 
-                check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "cellranger" "$dir"/Alignment-Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
                 fi
             fi
 
             # velocyto
-            # check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
+            # check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
             # if [[ $? == 1 ]]; then
-            #     rm -rf "$dir"/Alignment/Cellranger/"$sample"/velocyto
-            #     mkdir -p "$dir"/Alignment/Cellranger/"$sample"/velocyto
-            #     cd "$dir"/Alignment/Cellranger/"$sample"/velocyto
-            #     #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
-            #     cp -f "$dir"/Alignment/Cellranger/"$sample"/outs/raw_feature_bc_matrix/barcodes.tsv.gz "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
-            #     gunzip -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
-            #     velocyto run -b "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv -o "$dir"/Alignment/Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
-            #     rm -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv
+            #     rm -rf "$dir"/Alignment-Cellranger/"$sample"/velocyto
+            #     mkdir -p "$dir"/Alignment-Cellranger/"$sample"/velocyto
+            #     cd "$dir"/Alignment-Cellranger/"$sample"/velocyto
+            #     #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+            #     cp -f "$dir"/Alignment-Cellranger/"$sample"/outs/raw_feature_bc_matrix/barcodes.tsv.gz "$dir"/Alignment-Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+            #     gunzip -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+            #     velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/velocyto/barcodes.tsv -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+            #     rm -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/barcodes.tsv
 
-            #     check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
+            #     check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
             #     if [[ $? == 1 ]]; then
             #         continue
             #     fi
             # fi
 
             # dropEst
-            check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "dropEst" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                dropest -V -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log
+                rm -rf "$dir"/Alignment-Cellranger/"$sample"/dropEst
+                mkdir -p "$dir"/Alignment-Cellranger/"$sample"/dropEst
+                cd "$dir"/Alignment-Cellranger/"$sample"/dropEst
+                dropest -V -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment-Cellranger/"$sample"/dropEst/dropEst.log
 
-                check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "dropEst" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
                 fi
             fi
 
-            check_logfile "$sample" "dropReport" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "dropReport" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                dropReport.Rsc "$dir"/Alignment/Cellranger/"$sample"/dropEst/cell.counts.rds &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log
+                mkdir -p "$dir"/Alignment-Cellranger/"$sample"/dropEst
+                cd "$dir"/Alignment-Cellranger/"$sample"/dropEst
+                dropReport.Rsc "$dir"/Alignment-Cellranger/"$sample"/dropEst/cell.counts.rds &>"$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log
 
-                check_logfile "$sample" "dropReport" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "dropReport" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
                 fi
             fi
 
             # Cell-calling
-            check_logfile "$sample" "CellCalling" "$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/CellCalling
-                cd "$dir"/Alignment/Cellranger/"$sample"/CellCalling
-                Rscript "$1" "$dir"/Alignment/Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log
+                mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
+                cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
+                Rscript "$1" "$dir"/Alignment-Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log
 
-                check_logfile "$sample" "CellCalling" "$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
                 fi

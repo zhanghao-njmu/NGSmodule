@@ -2,23 +2,19 @@
 
 args <- commandArgs(TRUE)
 SCP_path <- as.character(args[1])
-SCPanalysis_dir <- as.character(args[2])
-SCPwork_dir <- as.character(args[3])
-threads <- as.numeric(args[4])
-datasets_raw <- as.character(args[5])
-species <- as.character(args[6])
-exogenous_genes <- as.character(args[7])
-cell_calling_methodNum <- as.numeric(args[8])
-mito_threshold <- as.numeric(args[9])
-gene_threshold <- as.numeric(args[10])
-UMI_threshold <- as.numeric(args[11])
-normalization_method <- as.character(args[12])
-nHVF <- as.numeric(args[13])
-maxPC <- as.numeric(args[14])
-resolution <- as.numeric(args[15])
-reduction <- as.character(args[16])
-HVF_source <- as.character(args[17])
-integration_method <- as.character(args[18])
+sample <- as.character(args[2])
+threads <- as.numeric(args[3])
+species <- as.character(args[4])
+exogenous_genes <- as.character(args[5])
+cell_calling_methodNum <- as.numeric(args[6])
+mito_threshold <- as.numeric(args[7])
+gene_threshold <- as.numeric(args[8])
+UMI_threshold <- as.numeric(args[9])
+normalization_method <- as.character(args[10])
+nHVF <- as.numeric(args[11])
+maxPC <- as.numeric(args[12])
+resolution <- as.numeric(args[13])
+reduction <- as.character(args[14])
 Ensembl_version <- 101
 
 
@@ -45,10 +41,6 @@ Ensembl_version <- 101
 # maxPC <- 100
 # resolution <- 0.8
 # reduction <- "umap" # umap,tsne
-#
-# # parameters: integration -------------------------------------------------
-# HVF_source <- "global" # global,separate
-# integration_method <- "Uncorrected,Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER" # Seurat,fastMNN,Harmony,Scanorama,BBKNN,CSS,LIGER
 
 
 # Library -----------------------------------------------------------------
@@ -65,24 +57,10 @@ suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
 set.seed(11)
 
 source(paste0(SCP_path,"/SCP-workflow-funtcion.R"))
-
-# source("/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/SCP-Analysis/Integration/SCP-workflow-funtcion.R")
-# source("/home/zhanghao/Documents/pipeline/Single_cell/customize_Seurat_FeaturePlot.R")
-
-samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
-
-datasets <- strsplit(datasets_raw, split = ";") %>%
-  unlist() %>%
-  lapply(., function(x) {
-    strsplit(x, split = ",") %>% unlist()
-  })
-datasets <- datasets[sapply(datasets, length) > 1]
+source(paste0(SCP_path,"/SCP-GeneralSteps/RunSeurat/RunSeurat-function.R"))
 
 reduction <- strsplit(reduction, split = ",") %>% unlist()
 normalization_method <- strsplit(normalization_method, split = ",") %>% unlist()
-HVF_source <- strsplit(HVF_source, split = ",") %>% unlist()
-integration_method <- strsplit(integration_method, split = ",") %>% unlist()
-
 
 CCgenes <- CC_GenePrefetch(species = species)
 cc_S_genes <- CCgenes[["cc_S_genes"]]
@@ -100,7 +78,7 @@ if (threads >= 125) {
 plan(multiprocess, workers = threads, gc = TRUE) # stop with the command 'future:::ClusterRegistry("stop")'
 plan()
 
-save.image(file = "base_env.Rdata")
+save.image(file = "RunSeurat_env.Rdata")
 
 # Preprocessing: Load data ------------------------------------------------
 if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {

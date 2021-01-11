@@ -31,37 +31,26 @@ for package in "${R_packages[@]}"; do
     }
 done
 
-if [[ ! -f $FastqScreen_config ]]; then
-    color_echo "red" "ERROR! Cannot find the FastqScreen_config file: ${FastqScreen_config}\nPlease check the path in your SCPConfigFile.\n"
-    exit 1
-elif [[ ! -d $cellranger_ref ]]; then
-    color_echo "red" "ERROR! Cannot find the cellranger_ref directory: $cellranger_ref\nPlease check the path in your SCPConfigFile.\n"
-    exit 1
-elif [[ ! -f $gene_gtf ]]; then
-    color_echo "red" "ERROR! Cannot find the gene_gtf file: $gene_gtf\nPlease check the path in your SCPConfigFile.\n"
-    exit 1
-elif [[ ! -f $rmsk_gtf ]]; then
-    color_echo "red" "ERROR! Cannot find the rmsk_gtf file: $rmsk_gtf\nPlease check the path in your SCPConfigFile.\n"
-    exit 1
-elif [[ ! -f $dropEst_config ]]; then
-    color_echo "red" "ERROR! Cannot find the dropEst_config file: $dropEst_config\nPlease check the path in your SCPConfigFile.\n"
-    exit 1
-fi
+echo -e "########################### RunSeurat Parameters ##############################\n"
+echo -e "*** base parameters ***"
+echo -e "    Rscript_path: $(which Rscript)\n     Rscript_threads: ${Rscript_threads}\n    species: ${species}\n    exogenous_genes: ${exogenous_genes}"
+echo -e "*** cell-filtering parameters ***"
+echo -e "    cell_calling_methodNum: ${cell_calling_methodNum}\n    mito_threshold: ${mito_threshold}\n    gene_threshold: ${gene_threshold}\n    UMI_threshold: ${UMI_threshold}"
+echo -e "*** Seurat parameters ***"
+echo -e "    normalization_method: ${normalization_method}\n    nHVF: ${nHVF}\n    maxPC: ${maxPC}\n    resolution: ${resolution}\n    reduction: ${reduction}"
+echo -e "################################################################################\n"
 
-echo -e "########################### RunCellranger Parameters ###########################\n"
-echo -e "  FastqScreen\n  FastqScreen_config: ${FastqScreen_config}\n"
-echo -e "  cellranger_ref: ${cellranger_ref}"
-echo -e "  gene_gtf: ${gene_gtf}\n  rmsk_gtf: ${rmsk_gtf}\n  dropEst_config: ${dropEst_config}\n"
-echo -e "################################################################################\n\n"
-
-echo -e "****************** Start Alignment ******************\n"
+echo -e "****************** Start RunSeurat ******************\n"
 SECONDS=0
 
 for sample in "${arr[@]}"; do
     read -u1000
     {
-        dir=$work_dir/$sample
+        dir=$work_dir/$sample/Alignment/Cellranger/$sample/Seurat
         cd "$dir"
+        
+        
+
 
         force=${force_complete}
         status="uncompleted"
@@ -76,35 +65,17 @@ for sample in "${arr[@]}"; do
             fi
 
             ### clear existed logs
-            logfiles=("fqCheck.log" "fastqc.log" "fastq_screen.log" "cellranger.log" "velocyto.log" "dropEst.log" "CellCalling.log")
+            logfiles=("RunSeuratStatus.log" )
             globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
-
-            if (($(ls "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz | wc -l) == 1)); then
-                cp -fa "${dir}"/run1_"${sample}"_S1_L001_R1_001.fastq.gz "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
-                cp -fa "${dir}"/run1_"${sample}"_S1_L001_R2_001.fastq.gz "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
-                echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_S1_L001_R1_001.fastq.gz ======\n${dir}/run1_${sample}_S1_L001_R1_001.fastq.gz\n====== ${sample}_S1_L001_R2_001.fastq.gz ======\n${dir}/run1_${sample}_S1_L001_R2_001.fastq.gz" >"$dir"/fqPrepare.log
-            else
-                runs1=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz)
-                runs2=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R2_001.fastq.gz)
-                if [[ ! -f ${dir}/${sample}_S1_L001_R1_001.fastq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
-                    rm -f "$dir"/fqPrepare.log
-                    echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
-                fi
-                if [[ ! -f ${dir}/${sample}_S1_L001_R2_001.fastq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
-                    rm -f "$dir"/fqPrepare.log
-                    echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
-                fi
-                echo -e "Fastq files for ${sample} is ready.\n====== ${sample}_S1_L001_R1_001.fastq.gz ======\n${runs1[*]}\n====== ${sample}_S1_L001_R2_001.fastq.gz ======\n${runs2[*]}" >"$dir"/fqPrepare.log
-            fi
 
             fq1=${dir}/${sample}_S1_L001_R1_001.fastq.gz
             fq2=${dir}/${sample}_S1_L001_R2_001.fastq.gz
 
             ##To verify that reads appear to be correctly paired
-            check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "RunSeurat" "$dir"/RunSeurat "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
                 fqCheck_PE "$sample" "$fq1" "$fq2" "$dir"/fqCheck.log
-                check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
+                check_logfile "$sample" "RunSeurat" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     force="TRUE"
                     continue

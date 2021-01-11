@@ -76,9 +76,56 @@ srt_logCPM[["unspliced"]] <- ldat[["unspliced"]]
 
 
 
-
-
-
+ for (i in 1:length(samples)) {
+    cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
+    cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
+    rownames(cell_upset) <- cell_upset[, "Barcode"]
+    cells <- cell_upset %>%
+      filter(Method_num >= cell_calling_methodNum) %>%
+      pull("Barcode")
+    cat(length(cells), "cells with calling methods >=", cell_calling_methodNum, "\n", sep = " ")
+    assign(
+      x = paste0(samples[i], "_cellcalling"),
+      value = cell_upset
+    )
+    
+    assign(
+      x = paste0(samples[i], "_10X"),
+      value = Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
+    )
+    assign(
+      x = paste0(samples[i], "_velocity"),
+      value = ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+    )
+  }
+  
+  # Preprocessing: Create Seurat object -------------------------------------
+  srt_list <- list()
+  velocity_list <- list()
+  for (i in 1:length(samples)) {
+    cat("++++++", samples[i], "(Preprocessing-CreateSeuratObject)", "++++++", "\n")
+    srt <- CreateSeuratObject(counts = get(paste0(samples[i], "_10X")), project = samples[i])
+    srt[["orig.ident"]] <- samples[i]
+    srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
+    srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
+    srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
+    srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
+    srt <- RenameCells(object = srt, add.cell.id = samples[i])
+    srt_list[[samples[i]]] <- srt
+    
+    velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
+    velocity <- RenameCells(
+      object = velocity,
+      new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "", perl = TRUE) %>%
+        gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
+        paste0(samples[i], "_", .)
+    )
+    velocity[["orig.ident"]] <- samples[i]
+    velocity_list[[samples[i]]] <- velocity
+    
+    assign(x = paste0(samples[i], "_10X"), value = NULL)
+    assign(x = paste0(samples[i], "_velocity"), value = NULL)
+  }
 
 
 

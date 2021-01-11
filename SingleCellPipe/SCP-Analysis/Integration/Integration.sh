@@ -23,7 +23,7 @@ for package in "${R_packages[@]}"; do
   fi
 done
 
-echo -e "########################## Quantification Parameters ###########################\n"
+echo -e "########################## Integration Parameters ###########################\n"
 echo -e "*** base parameters ***"
 echo -e "    Rscript path: $(which Rscript)\n    datasets: ${datasets}\n    species: ${species}\n    exogenous_genes: ${exogenous_genes}"
 echo -e "*** cell-filtering parameters ***"
@@ -41,7 +41,7 @@ echo -e "Preparing the data....\n"
 mkdir -p $maindir/NGSmodule_SCP_analysis/Integration
 cd $maindir/NGSmodule_SCP_analysis/Integration
 
-Rscript $1 $1 "$maindir/NGSmodule_SCP_analysis/Integration" "${work_dir}" "${Rscript_threads}" "${datasets}" \
+Rscript $2 $1 $2 "$maindir/NGSmodule_SCP_analysis/Integration" "${work_dir}" "${Rscript_threads}" "${datasets}" \
   "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${gene_threshold}" \
   "${UMI_threshold}" "${normalization_method}" "${nHVF}" "${maxPC}" "${resolution}" \
   "${reduction}" "${HVF_source}" "${integration_method}" 2>&1 | tee Integration.log
