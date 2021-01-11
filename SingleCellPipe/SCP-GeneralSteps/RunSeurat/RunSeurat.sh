@@ -46,11 +46,9 @@ SECONDS=0
 for sample in "${arr[@]}"; do
     read -u1000
     {
-        dir=$work_dir/$sample/Alignment/Cellranger/$sample/Seurat
+        dir=$work_dir/$sample/Alignment-Cellranger/$sample/Seurat
+        mkdir -p "$dir"
         cd "$dir"
-        
-        
-
 
         force=${force_complete}
         status="uncompleted"
@@ -65,72 +63,19 @@ for sample in "${arr[@]}"; do
             fi
 
             ### clear existed logs
-            logfiles=("RunSeuratStatus.log" )
+            logfiles=("RunSeuratStatus.log")
             globalcheck_logfile "$dir" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
-            fq1=${dir}/${sample}_S1_L001_R1_001.fastq.gz
-            fq2=${dir}/${sample}_S1_L001_R2_001.fastq.gz
-
-            ##To verify that reads appear to be correctly paired
-            check_logfile "$sample" "RunSeurat" "$dir"/RunSeurat "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "RunSeurat" "$dir"/RunSeuratStatus.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                fqCheck_PE "$sample" "$fq1" "$fq2" "$dir"/fqCheck.log
-                check_logfile "$sample" "RunSeurat" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
+                Rscript $2 $1 $2 "$maindir/NGSmodule_SCP_analysis/Integration" "${work_dir}" "${Rscript_threads}" "${datasets}" \
+                    "${species}" "${exogenous_genes}" "${cell_calling_methodNum}" "${mito_threshold}" "${gene_threshold}" \
+                    "${UMI_threshold}" "${normalization_method}" "${nHVF}" "${maxPC}" "${resolution}" \
+                    "${reduction}" "${HVF_source}" "${integration_method}" &>RunSeuratStatus.log 
+                    
+                check_logfile "$sample" "RunSeurat" "$dir"/RunSeuratStatus.log "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     force="TRUE"
-                    continue
-                fi
-            fi
-
-            # FastQC
-            check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/PreAlignmentQC/fastqc
-                fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
-
-                check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    force="TRUE"
-                    continue
-                fi
-            fi
-
-            #FastQ_Screen
-            check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/PreAlignmentQC/fastq_screen
-                fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq2" \
-                    --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
-
-                check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    force="TRUE"
-                    continue
-                fi
-            fi
-
-            # cellranger
-            check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment/Cellranger
-                mkdir -p "$dir"/Alignment/Cellranger
-                cd "$dir"/Alignment/Cellranger
-                # sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
-                # sample_run=$(printf ",%s" "${sample_run[@]}")
-                # sample_run=${sample_run:1}
-                # echo -e "$sample: $sample_run"
-
-                cellranger count --id "${sample}" \
-                    --fastqs "${dir}" \
-                    --sample "${sample}" \
-                    --include-introns \
-                    --disable-ui \
-                    --localcores "$threads" \
-                    --localmem "$memory" \
-                    --transcriptome "$cellranger_ref" &>"$dir"/Alignment/Cellranger/cellranger.log
-
-                check_logfile "$sample" "cellranger" "$dir"/Alignment/Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
                     continue
                 fi
             fi
@@ -153,45 +98,6 @@ for sample in "${arr[@]}"; do
             #     fi
             # fi
 
-            # dropEst
-            check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                dropest -V -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log
-
-                check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
-
-            check_logfile "$sample" "dropReport" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                dropReport.Rsc "$dir"/Alignment/Cellranger/"$sample"/dropEst/cell.counts.rds &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log
-
-                check_logfile "$sample" "dropReport" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
-
-            # Cell-calling
-            check_logfile "$sample" "CellCalling" "$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/CellCalling
-                cd "$dir"/Alignment/Cellranger/"$sample"/CellCalling
-                Rscript "$1" "$dir"/Alignment/Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log
-
-                check_logfile "$sample" "CellCalling" "$dir"/Alignment/Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
-
             status="completed"
         done
 
@@ -213,4 +119,4 @@ wait
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
-echo -e "****************** Alignment Done ******************\n"
+echo -e "****************** RunSeurat Done ******************\n"

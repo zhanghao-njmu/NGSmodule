@@ -267,4 +267,4 @@ wait
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
-echo -e "****************** Alignment Done ******************\n"
+echo -e "****************** RunCellranger Done ******************\n"
