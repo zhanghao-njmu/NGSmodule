@@ -43,14 +43,14 @@ for sample in "${arr[@]}"; do
   {
     echo "+++++ $sample +++++"
     dir=$work_dir/$sample
-    bam=$dir/$Aligner/${sample}.${Aligner}.bam
+    bam=$dir/Alignment-$Aligner/${sample}.${Aligner}.bam
     if [[ ! -f $bam ]]; then
       echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
       exit 1
     fi
 
-    mkdir -p $dir/$Aligner/Quantification
-    cd $dir/$Aligner/Quantification
+    mkdir -p $dir/Alignment-$Aligner/Quantification
+    cd $dir/Alignment-$Aligner/Quantification
     Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
 
     echo "Completed: $sample" >>$tmpfile
