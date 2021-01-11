@@ -6,34 +6,9 @@ pigz --version &>/dev/null
     color_echo "red" "Cannot find the command pigz.\n"
     exit 1
 }
-fastqc --version &>/dev/null
-[ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the command fastqc.\n"
-    exit 1
-}
-fastq_screen --version &>/dev/null
-[ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the command fastq_screen.\n"
-    exit 1
-}
-cellranger &>/dev/null
-[ $? -eq 127 ] && {
-    echo -e "Cannot find the command cellranger.\n"
-    exit 1
-}
 velocyto &>/dev/null
 [ $? -eq 127 ] && {
     echo -e "Cannot find the command velocyto.\n"
-    exit 1
-}
-dropest &>/dev/null
-[ $? -eq 127 ] && {
-    echo -e "Cannot find the command dropest.\n"
-    exit 1
-}
-dropReport.Rsc &>/dev/null
-[ $? -eq 127 ] && {
-    echo -e "Cannot find the command dropReport.Rsc.\n"
     exit 1
 }
 Rscript &>/dev/null
@@ -126,7 +101,7 @@ for sample in "${arr[@]}"; do
             fq2=${dir}/${sample}_S1_L001_R2_001.fastq.gz
 
             ##To verify that reads appear to be correctly paired
-            check_logfile "$sample" "FastqCheck" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
+            check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
                 fqCheck_PE "$sample" "$fq1" "$fq2" "$dir"/fqCheck.log
                 check_logfile "$sample" "FastqCheck(raw)" "$dir"/fqCheck.log "$error_pattern" "$complete_pattern" "postcheck" $?
@@ -190,22 +165,22 @@ for sample in "${arr[@]}"; do
             fi
 
             # velocyto
-            check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment/Cellranger/"$sample"/velocyto
-                mkdir -p "$dir"/Alignment/Cellranger/"$sample"/velocyto
-                cd "$dir"/Alignment/Cellranger/"$sample"/velocyto
-                #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
-                cp -f "$dir"/Alignment/Cellranger/"$sample"/outs/raw_feature_bc_matrix/barcodes.tsv.gz "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
-                gunzip -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
-                velocyto run -b "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv -o "$dir"/Alignment/Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
-                rm -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv
+            # check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
+            # if [[ $? == 1 ]]; then
+            #     rm -rf "$dir"/Alignment/Cellranger/"$sample"/velocyto
+            #     mkdir -p "$dir"/Alignment/Cellranger/"$sample"/velocyto
+            #     cd "$dir"/Alignment/Cellranger/"$sample"/velocyto
+            #     #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
+            #     cp -f "$dir"/Alignment/Cellranger/"$sample"/outs/raw_feature_bc_matrix/barcodes.tsv.gz "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+            #     gunzip -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv.gz
+            #     velocyto run -b "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv -o "$dir"/Alignment/Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log
+            #     rm -f "$dir"/Alignment/Cellranger/"$sample"/velocyto/barcodes.tsv
 
-                check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
+            #     check_logfile "$sample" "velocyto" "$dir"/Alignment/Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
+            #     if [[ $? == 1 ]]; then
+            #         continue
+            #     fi
+            # fi
 
             # dropEst
             check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "precheck"
@@ -213,7 +188,7 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment/Cellranger/"$sample"/dropEst
                 mkdir -p "$dir"/Alignment/Cellranger/"$sample"/dropEst
                 cd "$dir"/Alignment/Cellranger/"$sample"/dropEst
-                dropest -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log
+                dropest -V -f -g "$gene_gtf" -c "$dropEst_config" "$dir"/Alignment/Cellranger/"$sample"/outs/possorted_genome_bam.bam &>"$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log
 
                 check_logfile "$sample" "dropEst" "$dir"/Alignment/Cellranger/"$sample"/dropEst/dropEst.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

@@ -100,7 +100,13 @@ CreateSCPWorkDir() {
 RunCellranger() {
   source $1
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/CellCalling.R
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/RunCellranger.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/CellCalling.R
+}
+
+RunSeurat() {
+  source $1
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
+  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.R
 }
 
 Integration() {
@@ -328,6 +334,15 @@ while true; do
       }
       CheckConfigFile $ConfigFile
       RunCellranger $ConfigFile
+      exit 0
+    elif [[ $1 == "RunSeurat" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in RunSeurat MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      RunSeurat $ConfigFile
       exit 0
     elif [[ $1 == "Integration" ]]; then
       { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null

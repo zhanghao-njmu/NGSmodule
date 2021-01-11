@@ -123,7 +123,7 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
       x = paste0(samples[i], "_cellcalling"),
       value = cell_upset
     )
-
+    
     assign(
       x = paste0(samples[i], "_10X"),
       value = Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cells]
@@ -133,7 +133,7 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
       value = ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment/Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
     )
   }
-
+  
   # Preprocessing: Create Seurat object -------------------------------------
   srt_list <- list()
   velocity_list <- list()
@@ -147,7 +147,7 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
     srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
     srt <- RenameCells(object = srt, add.cell.id = samples[i])
     srt_list[[samples[i]]] <- srt
-
+    
     velocity <- as.Seurat(x = get(paste0(samples[i], "_velocity")), project = samples[i])
     velocity <- RenameCells(
       object = velocity,
@@ -157,7 +157,7 @@ if (file.exists("srt_list.rds") & file.exists("velocity_list.rds")) {
     )
     velocity[["orig.ident"]] <- samples[i]
     velocity_list[[samples[i]]] <- velocity
-
+    
     assign(x = paste0(samples[i], "_10X"), value = NULL)
     assign(x = paste0(samples[i], "_velocity"), value = NULL)
   }
@@ -191,20 +191,20 @@ if (file.exists("srt_list_filter.rds")) {
     #   geom_histogram(aes(x = scDblFinder_score)) +
     #   theme_void()
     # p1 %>% insert_top(p2)
-
+    
     sce <- addPerCellQC(sce, percent_top = c(20))
     srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
-
+    
     log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
     log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
     srt[["log10_nCount_RNA"]] <- log10_total_counts
     srt[["log10_nFeature_RNA"]] <- log10_total_features
-
+    
     mod <- loess(log10_total_features ~ log10_total_counts)
     pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
     featcount_dist <- log10_total_features - pred
     srt[["featcount_dist"]] <- featcount_dist
-
+    
     metaCol <- c(
       "percent.mt", "percent.ribo", "cellcalling_methodNum",
       "log10_nCount_RNA", "log10_nFeature_RNA", "percent.top_20"
@@ -246,7 +246,7 @@ if (file.exists("srt_list_filter.rds")) {
     # p <- as.ggplot(aplotGrob(p)) +
     #   labs(title = "nCount vs nFeature") +
     #   theme(aspect.ratio = 1)
-
+    
     filters <- c(
       "log10_total_counts:higher:2.5",
       "log10_total_counts:lower:5",
@@ -257,17 +257,17 @@ if (file.exists("srt_list_filter.rds")) {
     )
     qc_out <- lapply(strsplit(filters, ":"), function(f) {
       colnames(srt)[isOutlier(get(f[1]),
-        log = FALSE,
-        nmads = as.numeric(f[3]),
-        type = f[2]
+                              log = FALSE,
+                              nmads = as.numeric(f[3]),
+                              type = f[2]
       )]
     })
     qc_out <- table(unlist(qc_out))
     qc_out <- names(qc_out)[qc_out >= 2]
-
+    
     umi_out <- colnames(srt)[srt[["nCount_RNA", drop = TRUE]] <= UMI_threshold]
     gene_out <- colnames(srt)[srt[["nFeature_RNA", drop = TRUE]] <= gene_threshold]
-
+    
     pct_counts_Mt <- srt[["percent.mt", drop = TRUE]]
     if (all(pct_counts_Mt > 0 & pct_counts_Mt < 1)) {
       pct_counts_Mt <- pct_counts_Mt * 100
@@ -276,13 +276,13 @@ if (file.exists("srt_list_filter.rds")) {
       mito_threshold <- mito_threshold * 100
     }
     mt_out <- colnames(srt)[isOutlier(pct_counts_Mt, nmads = 3, type = "lower") |
-      (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
-      (pct_counts_Mt > mito_threshold)]
-
+                              (isOutlier(pct_counts_Mt, nmads = 2.5, type = "higher") & pct_counts_Mt > 10) |
+                              (pct_counts_Mt > mito_threshold)]
+    
     total_out <- unique(c(db_out, qc_out, umi_out, gene_out, mt_out))
     srt[["CellFilterng"]] <- rep(x = FALSE, ncol(srt))
     srt[["CellFilterng"]][total_out, ] <- TRUE
-
+    
     cat(">>>", "Total cells:", ntotal, "\n")
     cat(">>>", "Cells which are filtered out:", length(total_out), "\n")
     cat("...", length(db_out), "potential doublets", "\n")
@@ -291,7 +291,7 @@ if (file.exists("srt_list_filter.rds")) {
     cat("...", length(gene_out), "low-Gene cells", "\n")
     cat("...", length(mt_out), "high-Mito cells", "\n")
     cat(">>>", "Remained cells after filtering :", ntotal - length(total_out), "\n")
-
+    
     # df <- data.frame(cell = rownames(srt@meta.data))
     # df[db_out,"db_out"] <- "db_out"
     # df[qc_out,"qc_out"] <- "qc_out"
@@ -333,11 +333,11 @@ if (file.exists("srt_list_filter.rds")) {
     #     aspect.ratio = 0.6,
     #     legend.position = "none"
     #  )
-
+    
     return(srt)
   })
   saveRDS(srt_list_QC, file = "srt_list_QC.rds")
-
+  
   srt_list_filter <- lapply(setNames(samples, samples), function(sc_set) {
     cat("++++++", sc_set, "(Preprocessing-CellFiltering)", "++++++", "\n")
     srt <- srt_list_QC[[sc_set]]
@@ -348,7 +348,7 @@ if (file.exists("srt_list_filter.rds")) {
 }
 
 
-# Preprocessing: Normalization -----------------------------------
+# Preprocessing: Standard_SCP -----------------------------------
 for (nm in normalization_method) {
   dir.create(paste0("Normalization-", nm), recursive = T, showWarnings = FALSE)
   if (file.exists(paste0("srt_list_filter_", nm, ".rds"))) {
@@ -372,7 +372,7 @@ for (nm in normalization_method) {
         return(srt)
       })
     )
-
+    
     invisible(lapply(samples, function(x) {
       saveRDS(get(paste0("srt_list_filter_", nm))[[x]], paste0("Normalization-", nm, "/", x, ".rds"))
     }))
@@ -388,9 +388,9 @@ if (length(datasets) != 0) {
         dir_path <- paste0("Normalization-", nm, "/", HVF_source, "_HVF/")
         cat("++++++ Use", nm, "normalized data to do integration ++++++", "\n")
         dir.create(dir_path, recursive = T, showWarnings = FALSE)
-
+        
         if (file.exists(paste0(dir_path, paste0(dataset, collapse = ","), ".rds")) &
-          file.exists(paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))) {
+            file.exists(paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))) {
           cat("Loading the existed integration data... ...")
           srt_integrated <- readRDS(paste0(dir_path, paste0(dataset, collapse = ","), ".rds"))
           srtList <- readRDS(paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))
@@ -408,7 +408,7 @@ if (length(datasets) != 0) {
           saveRDS(srt_integrated, paste0(dir_path, paste0(dataset, collapse = ","), ".rds"))
           saveRDS(srtList, paste0(dir_path, paste0(dataset, collapse = ","), ".srtList.rds"))
         }
-
+        
         for (im in integration_method) {
           if (im %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
             dir_im_path <- paste0(dir_path, "Integration-", im)
@@ -429,8 +429,8 @@ if (length(datasets) != 0) {
                 exogenous_genes = exogenous_genes
               )
               p1 <- DimPlot(srt_integrated,
-                reduction = paste0(im, "_", reduction),
-                group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE
+                            reduction = paste0(im, "_", reduction),
+                            group.by = c("orig.ident", paste0(im, "_clusters"), "cellcalling_method"), combine = FALSE
               )
               p1 <- lapply(p1, function(p) {
                 p + theme(aspect.ratio = 1)
