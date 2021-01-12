@@ -236,8 +236,10 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment-Cellranger/"$sample"/velocyto
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/velocyto
                 cd "$dir"/Alignment-Cellranger/"$sample"/velocyto
+                # cp "$dir"/Alignment-Cellranger/"$sample"/outs/filtered_feature_bc_matrix/barcodes.tsv.gz ./
+                # gunzip ./barcodes.tsv.gz
                 #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
-                velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+                velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -e $sample -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
 
                 check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
@@ -264,7 +266,7 @@ for sample in "${arr[@]}"; do
 done
 wait
 
-color_echo "green" "Generating merged QC report..."
+color_echo "green" "\nGenerating merged QC report..."
 mkdir -p $maindir/NGSmodule_SCP_analysis/CellQC
 cd $maindir/NGSmodule_SCP_analysis/CellQC
 script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellQC.R

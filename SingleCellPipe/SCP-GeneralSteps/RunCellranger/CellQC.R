@@ -8,7 +8,7 @@ SCPwork_dir <- as.character(args[2])
 # # parameters: global settings ---------------------------------------------
 # SCP_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/"
 # SCPwork_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/"
- 
+
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
@@ -27,26 +27,26 @@ samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 
 # Preprocessing: Create Seurat object ------------------------------------------------
-cellcalling_list <- list()
-srt_list <- list()
-velocity_list <- list()
+cellcallingList <- list()
+srtList <- list()
+velocityList <- list()
 for (i in 1:length(samples)) {
   cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
   cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cell_upset[["sample"]] <- samples[i]
-  cellcalling_list[[samples[i]]] <- cell_upset
+  cellcallingList[[samples[i]]] <- cell_upset
   
   srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[,cell_upset[["Barcode"]]]
   srt <- CreateSeuratObject(counts = srt_matrix, project = samples[i])
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
   srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
-  srt[["cellcalling_method"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_comb"]
-  srt[["cellcalling_methodNum"]] <- get(paste0(samples[i], "_cellcalling"))[Cells(srt), "Method_num"]
+  srt[["cellcalling_method"]] <- cell_upset[Cells(srt), "Method_comb"]
+  srt[["cellcalling_methodNum"]] <- cell_upset[Cells(srt), "Method_num"]
   srt <- RenameCells(object = srt, add.cell.id = samples[i])
-  srt_list[[samples[i]]] <- srt
+  srtList[[samples[i]]] <- srt
   
-  velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"))
+  velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".CellCalling.loom"))
   velocity <- as.Seurat(x = velocity, project = samples[i])
   velocity <- RenameCells(
     object = velocity,
@@ -55,13 +55,13 @@ for (i in 1:length(samples)) {
       paste0(samples[i], "_", .)
   )
   velocity[["orig.ident"]] <- samples[i]
-  velocity_list[[samples[i]]] <- velocity
+  velocityList[[samples[i]]] <- velocity
 }
 
 
 # Preprocessing: Cell QC -----------------------------------
-for (i in srt_list) {
-  srt <- srt_list[[i]]
+for (i in srtList) {
+  srt <- srtList[[i]]
   ntotal <- ncol(srt)
   sce <- as.SingleCellExperiment(srt)
   sce <- scDblFinder(sce, verbose = FALSE)
@@ -81,9 +81,14 @@ for (i in srt_list) {
   featcount_dist <- log10_total_features - pred
   srt[["featcount_dist"]] <- featcount_dist
 
-  srt_list[[i]] <- srt
+  srtList[[i]] <- srt
 }
 
+if (length(srtList)>=2) {
+  srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
+}else{
+  srtMerge <- srtList[[1]]
+}
 
 
 # p1 <- ggplot(srt@meta.data, aes(x = scDblFinder_score, y = "orig.ident")) +
