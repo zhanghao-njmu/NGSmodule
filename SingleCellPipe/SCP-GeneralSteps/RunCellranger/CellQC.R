@@ -12,10 +12,8 @@ SCPwork_dir <- as.character(args[2])
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "Seurat", "SeuratDisk", "SeuratWrappers", "sctransform", "intrinsicDimension", "scater", "Matrix", "BiocParallel",
-    "future", "reticulate", "harmony", "liger", "simspec", "scMerge", "BiocSingular", "zinbwave", "plyr", "dplyr", "RColorBrewer", "scales", "gtools",
-    "ggsci", "ggpubr", "ggplot2", "ggplotify", "aplot", "cowplot", "reshape2", "stringr", "scDblFinder",
-    "velocyto.R", "biomaRt", "rvest", "xml2"
+    "Seurat", "SeuratDisk", "SeuratWrappers","dplyr","ggplot2", "ggplotify", "aplot", "cowplot",
+    "reshape2", "stringr", "scDblFinder","scuttle"
   ),
   require,
   character.only = TRUE
@@ -31,7 +29,8 @@ cellcallingList <- list()
 srtList <- list()
 velocityList <- list()
 for (i in 1:length(samples)) {
-  cat("++++++", samples[i], "(Preprocessing-LoadingData)", "++++++", "\n")
+  cat("++++++", samples[i], "++++++", "\n")
+  cat("Loading single cell expression data...\n")
   cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cell_upset[["sample"]] <- samples[i]
@@ -61,14 +60,17 @@ for (i in 1:length(samples)) {
   pred <- predict(mod, newdata = data.frame(log10_nCount_RNA = srt[["log10_nCount_RNA"]]))
   srt[["featcount_dist"]] <- srt[["log10_nFeature_RNA"]] - pred
 
+  cat("Loading single cell RNA-velocity data...\n")
   velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"), verbose = FALSE)
-  velocity <- as.Seurat(x = velocity, project = samples[i])
+  velocity <- as.Seurat(x = velocity, project = samples[i], verbose = FALSE)
   velocity <- RenameCells(
     object = velocity,
     new.names = gsub(x = colnames(velocity), pattern = ".*:", replacement = "", perl = TRUE) %>%
       gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
       paste0(samples[i], "_", .)
   )
+
+  cat("Combine expression, RNA-velocity, and other annotation to an Seurat object...\n")
   srt@assays$spliced <- velocity@assays$spliced
   srt@assays$unspliced <- velocity@assays$unspliced
   srt@assays$ambiguous <- velocity@assays$ambiguous
@@ -79,23 +81,26 @@ for (i in 1:length(samples)) {
   srt$nCount_ambiguous <- velocity$nCount_ambiguous
   srt$nFeature_ambiguous <- velocity$nFeature_ambiguous
 
-  srtList[[samples[i]]] <- srt
+  cat("Save the Seurat object to h5Seurat...\n")
   SaveH5Seurat(
     object = srt,
     filename = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/", samples[i], ".h5Seurat"),
-    overwrite = TRUE
+    overwrite = TRUE,
+    verbose = FALSE
   )
+
+  srtList[[samples[i]]] <- srt
 }
 
-# 
+#
 # if (length(srtList) >= 2) {
 #   srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
 # } else {
 #   srtMerge <- srtList[[1]]
 # }
-# 
+#
 # meta <- srtMerge@meta.data
-# 
+#
 # p <- ggplot(meta, aes(x = orig.ident, y = scDblFinder_score, fill = orig.ident)) +
 #   geom_point(position = position_jitter(), alpha = 0.5) +
 #   geom_boxplot(outlier.shape = NA) +
@@ -103,7 +108,7 @@ for (i in 1:length(samples)) {
 #   scale_fill_igv() +
 #   theme_classic() +
 #   theme(aspect.ratio = 0.8, panel.grid.major = element_line())
-# 
+#
 # p1 <- meta %>%
 #   group_by(orig.ident, cellcalling_methodNum) %>%
 #   summarise(
@@ -119,7 +124,7 @@ for (i in 1:length(samples)) {
 #   scale_y_continuous(expand = expansion(0.05)) +
 #   theme_classic() +
 #   theme(aspect.ratio = 0.8, panel.grid.major = element_line())
-# 
+#
 # p1 <- ggplot(meta, aes(x = log10_nCount_RNA, y = log10_nFeature_RNA)) +
 #   geom_point(colour = "steelblue") +
 #   geom_smooth(method = "loess", color = "black") +
