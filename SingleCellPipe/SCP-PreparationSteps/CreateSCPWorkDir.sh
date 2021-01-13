@@ -9,7 +9,7 @@ if [[ -d $work_dir ]]; then
 fi
 
 PE_pattern="(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
-color_echo "green" ">>> grep_pattern= $PE_pattern"
+color_echo "green" ">>> grep_pattern=$PE_pattern"
 PE_RunID=()
 while IFS='' read -r line; do PE_RunID+=("$line"); done < <(find "$rawdata_dir" -type f | grep -P "$PE_pattern" | sort | sed "s/.*\///g" | perl -pe "s/(${R1_SufixPattern})|(${R2_SufixPattern})//g" | sort | uniq)
 
