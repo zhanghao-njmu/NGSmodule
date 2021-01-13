@@ -36,17 +36,32 @@ for (i in 1:length(samples)) {
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cell_upset[["sample"]] <- samples[i]
   cellcallingList[[samples[i]]] <- cell_upset
-  
-  srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[,cell_upset[["Barcode"]]]
+
+  srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cell_upset[["Barcode"]]]
   srt <- CreateSeuratObject(counts = srt_matrix, project = samples[i])
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
   srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
   srt[["cellcalling_method"]] <- cell_upset[Cells(srt), "Method_comb"]
   srt[["cellcalling_methodNum"]] <- cell_upset[Cells(srt), "Method_num"]
   srt <- RenameCells(object = srt, add.cell.id = samples[i])
-  srtList[[samples[i]]] <- srt
-  
-  velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".CellCalling.loom"))
+
+  sce <- as.SingleCellExperiment(srt)
+  sce <- scDblFinder(sce, verbose = FALSE)
+  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
+  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+
+  sce <- addPerCellQC(sce, percent_top = c(20))
+  srt[["percent.top_20"]] <- colData(sce)$percent.top_20
+  srt[["log10_nCount_RNA"]] <- log10(srt[["nCount_RNA", drop = TRUE]])
+  srt[["log10_nFeature_RNA"]] <- log10(srt[["nFeature_RNA", drop = TRUE]])
+
+  log10_nFeature_RNA <- srt[["log10_nFeature_RNA", drop = TRUE]]
+  log10_nCount_RNA <- srt[["log10_nCount_RNA", drop = TRUE]]
+  mod <- loess(log10_nFeature_RNA ~ log10_nCount_RNA)
+  pred <- predict(mod, newdata = data.frame(log10_nCount_RNA = srt[["log10_nCount_RNA"]]))
+  srt[["featcount_dist"]] <- srt[["log10_nFeature_RNA"]] - pred
+
+  velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"), verbose = FALSE)
   velocity <- as.Seurat(x = velocity, project = samples[i])
   velocity <- RenameCells(
     object = velocity,
@@ -54,89 +69,74 @@ for (i in 1:length(samples)) {
       gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
       paste0(samples[i], "_", .)
   )
-  velocity[["orig.ident"]] <- samples[i]
-  velocityList[[samples[i]]] <- velocity
+  srt@assays$spliced <- velocity@assays$spliced
+  srt@assays$unspliced <- velocity@assays$unspliced
+  srt@assays$ambiguous <- velocity@assays$ambiguous
+  srt$nCount_spliced <- velocity$nCount_spliced
+  srt$nFeature_spliced <- velocity$nFeature_spliced
+  srt$nCount_unspliced <- velocity$nCount_unspliced
+  srt$nFeature_unspliced <- velocity$nFeature_unspliced
+  srt$nCount_ambiguous <- velocity$nCount_ambiguous
+  srt$nFeature_ambiguous <- velocity$nFeature_ambiguous
+
+  srtList[[samples[i]]] <- srt
+  SaveH5Seurat(
+    object = srt,
+    filename = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/", samples[i], ".h5Seurat"),
+    overwrite = TRUE
+  )
 }
 
-
-# Preprocessing: Cell QC -----------------------------------
-for (i in srtList) {
-  srt <- srtList[[i]]
-  ntotal <- ncol(srt)
-  sce <- as.SingleCellExperiment(srt)
-  sce <- scDblFinder(sce, verbose = FALSE)
-  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
-  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
-  db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
-  
-  sce <- addPerCellQC(sce, percent_top = c(20))
-  srt[["percent.top_20"]] <- pct_counts_in_top_20_features <- colData(sce)$percent.top_20
-  log10_total_counts <- log10(srt[["nCount_RNA", drop = TRUE]])
-  log10_total_features <- log10(srt[["nFeature_RNA", drop = TRUE]])
-  srt[["log10_nCount_RNA"]] <- log10_total_counts
-  srt[["log10_nFeature_RNA"]] <- log10_total_features
-  
-  mod <- loess(log10_total_features ~ log10_total_counts)
-  pred <- predict(mod, newdata = data.frame(log10_total_counts = log10_total_counts))
-  featcount_dist <- log10_total_features - pred
-  srt[["featcount_dist"]] <- featcount_dist
-
-  srtList[[i]] <- srt
-}
-
-if (length(srtList)>=2) {
-  srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
-}else{
-  srtMerge <- srtList[[1]]
-}
-
-
-# p1 <- ggplot(srt@meta.data, aes(x = scDblFinder_score, y = "orig.ident")) +
-#   geom_point(position = position_jitter()) +
+# 
+# if (length(srtList) >= 2) {
+#   srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
+# } else {
+#   srtMerge <- srtList[[1]]
+# }
+# 
+# meta <- srtMerge@meta.data
+# 
+# p <- ggplot(meta, aes(x = orig.ident, y = scDblFinder_score, fill = orig.ident)) +
+#   geom_point(position = position_jitter(), alpha = 0.5) +
 #   geom_boxplot(outlier.shape = NA) +
-#   stat_summary(fun = median, geom = "point", size = 2, shape = 21, color = "black", fill = "white")
-# p2 <- ggplot(srt@meta.data) +
-#   geom_histogram(aes(x = scDblFinder_score))
-# p1 %>% insert_top(p2)
-
-
-# p1 <- srt@meta.data %>%
-#   group_by(cellcalling_methodNum) %>%
+#   stat_summary(fun = median, geom = "point", size = 4, shape = 21, color = "black", fill = "white") +
+#   scale_fill_igv() +
+#   theme_classic() +
+#   theme(aspect.ratio = 0.8, panel.grid.major = element_line())
+# 
+# p1 <- meta %>%
+#   group_by(orig.ident, cellcalling_methodNum) %>%
 #   summarise(
+#     orig.ident = orig.ident,
 #     cellcalling_methodNum = cellcalling_methodNum,
 #     count = n()
 #   ) %>%
 #   distinct() %>%
 #   ggplot(aes(x = cellcalling_methodNum, y = count)) +
-#   geom_col(aes(fill = count), color = "black") +
-#   scale_fill_material(palette = "blue-grey") +
-#   geom_text(aes(label = count), vjust = -1) +
-#   scale_y_continuous(expand = expansion(0.08)) +
+#   geom_col(aes(fill = orig.ident), color = "black", position = position_dodge2(width = 1)) +
+#   scale_fill_igv() +
+#   geom_text(aes(label = count, group = orig.ident), vjust = -1, position = position_dodge2(width = 1)) +
+#   scale_y_continuous(expand = expansion(0.05)) +
 #   theme_classic() +
 #   theme(aspect.ratio = 0.8, panel.grid.major = element_line())
-#
-# df <- data.frame(x = log10_total_counts, y = log10_total_features, featcount_dist = featcount_dist)
-# p1 <- ggplot(df, aes(x = x, y = y)) +
-#   stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = 1), contour = FALSE, show.legend = F) +
-#   stat_density2d(geom = "tile", aes(fill = ..density..^0.25, alpha = ifelse(..density..^0.25 < 0.4, 0, 1)), contour = FALSE, show.legend = F) +
-#   geom_point(aes(colour = featcount_dist)) +
+# 
+# p1 <- ggplot(meta, aes(x = log10_nCount_RNA, y = log10_nFeature_RNA)) +
+#   geom_point(colour = "steelblue") +
 #   geom_smooth(method = "loess", color = "black") +
-#   scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(256)) +
-#   scale_color_material(palette = "blue-grey", reverse = T, guide = FALSE) +
 #   labs(x = "log10_nCount_RNA", y = "log10_nFeature_RNA") +
 #   theme_classic()
-# p2 <- ggplot(df, aes(x = x)) +
-#   geom_histogram(fill = "steelblue") +
+# p2 <- ggplot(meta, aes(x = log10_nCount_RNA)) +
+#   geom_histogram(fill = "steelblue", color = "black") +
 #   theme_void()
-# p3 <- ggplot(df, aes(y = y)) +
-#   geom_histogram(fill = "firebrick") +
+# p3 <- ggplot(meta, aes(y = log10_nFeature_RNA)) +
+#   geom_histogram(fill = "steelblue", color = "black") +
 #   theme_void()
 # p <- p1 %>%
 #   insert_top(p2, height = .3) %>%
 #   insert_right(p3, width = .1)
 # p <- as.ggplot(aplotGrob(p)) +
 #   labs(title = "nCount vs nFeature") +
-#   theme(aspect.ratio = 1)
+#   theme(aspect.ratio = 0.8)
 
 # df <- data.frame(cell = rownames(srt@meta.data))
 # df[db_out,"db_out"] <- "db_out"

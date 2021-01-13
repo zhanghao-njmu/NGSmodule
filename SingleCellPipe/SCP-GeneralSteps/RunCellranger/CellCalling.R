@@ -7,9 +7,9 @@ threads <- as.character(args[3])
 EmptyThreshold <- as.character(args[4])
 CellLabel <- as.character(args[5])
 
-# parameters: global settings ---------------------------------------------
-# cellranger_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/ESC/Alignment/Cellranger/"
-# sample <- "ESC"
+### parameters: global settings ---------------------------------------------
+# cellranger_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/CellLine1/Alignment-Cellranger/"
+# sample <- "CellLine1"
 # threads <- 80
 # EmptyThreshold <- "AUTO"
 # CellLabel <- "GFP"
@@ -36,6 +36,7 @@ library(gridExtra)
 library(cowplot)
 library(scales)
 library(dplyr)
+library(tidyr)
 library(reshape2)
 
 set.seed(11)
@@ -63,7 +64,7 @@ if (EmptyThreshold != "AUTO") {
   EmptyThreshold <- as.numeric(EmptyThreshold)
 } else {
   # EmptyThreshold <- max(sort(colSums(counts(raw)), decreasing = TRUE)[sum(colData(raw)$Cellranger_v2) * 10], 100)
-  EmptyThreshold <- max(sort(colSums(counts(raw)), decreasing = TRUE)[sum(defaultDrops(counts(raw),lower.prop = 0.001))],100)
+  EmptyThreshold <- max(sort(colSums(counts(raw)), decreasing = TRUE)[sum(defaultDrops(counts(raw), lower.prop = 0.001))], 100)
 }
 
 if (CellLabel != "NULL" & !CellLabel %in% rownames(raw)) {
@@ -80,38 +81,86 @@ if (CellLabel == "NULL") {
 
 # Method: emptyDrops ------------------------------------------------------
 bc_ranks <- barcodeRanks(counts(raw), lower = EmptyThreshold)
-colData(raw)$UMIcounts <- bc_ranks$total
-colData(raw)$BarcodeRank <- bc_ranks$rank
+colData(raw)$nCount <- bc_ranks$total
+colData(raw)$nCount_rank <- bc_ranks$rank
+colData(raw)$nFeature <- colSums(counts(raw) > 0)
+colData(raw)$nFeature_rank <- rank(-(colSums(counts(raw) > 0)))
 colData(raw)$Fitted <- bc_ranks$fitted
-colData(raw)$knee <- colData(raw)$UMIcounts > metadata(bc_ranks)$knee
-colData(raw)$inflection <- colData(raw)$UMIcounts > metadata(bc_ranks)$inflection
+colData(raw)$knee <- colData(raw)$nCount > metadata(bc_ranks)$knee
+colData(raw)$inflection <- colData(raw)$nCount > metadata(bc_ranks)$inflection
+
+vars <- c("nCount", "nCount_rank", "nFeature", "nFeature_rank")
+vars_expand <- expand.grid(vars, vars)
+df <- colData(raw) %>%
+  as.data.frame() %>%
+  group_by(Barcode) %>%
+  summarise(
+    Barcode = Barcode,
+    nCount = nCount,
+    nCount_rank = nCount_rank,
+    nFeature = nFeature,
+    nFeature_rank = nFeature_rank,
+    var1 = list(vars_expand[["Var1"]]),
+    var2 = list(vars_expand[["Var2"]])
+  ) %>%
+  unnest(cols = c(var1, var2))
+df[["value1"]] <- apply(df, 1, function(x) {
+  as.numeric(x[x["var1"]])
+})
+df[["value2"]] <- apply(df, 1, function(x) {
+  as.numeric(x[x["var2"]])
+})
+
+p <- ggplot(df, aes(x = value1, y = value2)) +
+  geom_point(alpha = 0.5, shape = 16, color = "steelblue") +
+  scale_y_continuous(
+    trans = log10_trans(),
+    breaks = trans_breaks("log10", function(x) 10^x),
+    labels = trans_format("log10", math_format(10^.x))
+  ) +
+  scale_x_continuous(
+    trans = log10_trans(),
+    breaks = trans_breaks("log10", function(x) 10^x),
+    labels = trans_format("log10", math_format(10^.x))
+  ) +
+  annotation_logticks() +
+  facet_grid(var1 ~ var2) +
+  labs(title = "nCount vs nFeature") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 1,
+    axis.title = element_blank(),
+    panel.grid.major = element_line()
+  )
+ggsave(p, filename = paste0(sample, ".Basic.png"), width = 11, height = 8)
+
 
 # colData(raw) %>%
 #   as.data.frame() %>%
-#   arrange(BarcodeRank) %>%
-#   mutate(cumsum = cumsum(UMIcounts)) %>%
-#   ggplot(aes(x = BarcodeRank, y = cumsum)) +
+#   arrange(nCount_rank) %>%
+#   mutate(cumsum = cumsum(nCount)) %>%
+#   ggplot(aes(x = nCount_rank, y = cumsum)) +
 #   geom_point()
 if (CellLabel != "NULL") {
   p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
-    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_segment(aes(xend = nCount_rank * 2, yend = nCount * 2), color = "grey90", alpha = 0.01) +
     geom_point(
-      aes(color = log10(UMIcounts)),
+      aes(color = log10(nCount)),
       alpha = 0.5, shape = 16
     ) +
     scale_color_material(palette = "blue-grey", guide = FALSE) +
     geom_point(
-      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      aes(x = nCount_rank * 2, y = nCount * 2, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
     scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
     guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
-    geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
+    geom_line(aes(x = nCount_rank, y = Fitted), color = "red") +
     geom_hline(
       yintercept = metadata(bc_ranks)$knee,
       colour = "dodgerblue", linetype = "dashed"
@@ -129,7 +178,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Knee:",
         " UMI=", round(metadata(bc_ranks)$knee),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$knee)
       ),
       colour = "dodgerblue", size = 3, hjust = 0, vjust = -0.5
     ) +
@@ -138,7 +187,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Inflection:",
         " UMI=", round(metadata(bc_ranks)$inflection),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$inflection)
       ),
       colour = "forestgreen", size = 3, hjust = 0, vjust = -0.5
     ) +
@@ -147,7 +196,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Empty threshold:",
         " UMI=", EmptyThreshold,
-        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+        " Rank=", sum(colData(raw)$nCount > EmptyThreshold)
       ),
       colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
     ) +
@@ -171,14 +220,14 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
     geom_point(
-      aes(color = log10(UMIcounts)),
+      aes(color = log10(nCount)),
       alpha = 0.5, shape = 16
     ) +
     scale_color_material(palette = "blue-grey", guide = FALSE) +
-    geom_line(aes(x = BarcodeRank, y = Fitted), color = "red") +
+    geom_line(aes(x = nCount_rank, y = Fitted), color = "red") +
     geom_hline(
       yintercept = metadata(bc_ranks)$knee,
       colour = "dodgerblue", linetype = "dashed"
@@ -196,7 +245,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Knee:",
         " UMI=", round(metadata(bc_ranks)$knee),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$knee)
       ),
       colour = "dodgerblue", size = 3, hjust = 0, vjust = -0.5
     ) +
@@ -205,7 +254,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Inflection:",
         " UMI=", round(metadata(bc_ranks)$inflection),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$inflection)
       ),
       colour = "forestgreen", size = 3, hjust = 0, vjust = -0.5
     ) +
@@ -214,7 +263,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Empty threshold:",
         " UMI=", EmptyThreshold,
-        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+        " Rank=", sum(colData(raw)$nCount > EmptyThreshold)
       ),
       colour = "darkorchid", size = 3, hjust = 0, vjust = 1.5
     ) +
@@ -236,7 +285,7 @@ if (CellLabel != "NULL") {
     )
 }
 
-plotlist[["emptyDrops-BarcodeRankFitted"]] <- p
+plotlist[["emptyDrops-nCount_rankFitted"]] <- p
 
 
 mito_gene <- grep(x = rownames(raw), pattern = "(^MT-)|(^Mt-)|(^mt-)", perl = T)
@@ -259,13 +308,13 @@ colData(raw)$EmpDropsLogProb <- emp_drops$LogProb
 colData(raw)$EmpDropsPValue <- emp_drops$PValue
 colData(raw)$EmpDropsLimited <- emp_drops$Limited
 colData(raw)$EmpDropsFDR <- emp_drops$FDR
-colData(raw)$EmptyDrops <- is_cell & colData(raw)$UMIcounts > EmptyThreshold
+colData(raw)$EmptyDrops <- is_cell & colData(raw)$nCount > EmptyThreshold
 
 p <- colData(raw) %>%
   as.data.frame() %>%
   dplyr::filter(
-    UMIcounts <= EmptyThreshold,
-    UMIcounts > 0
+    nCount <= EmptyThreshold,
+    nCount > 0
   ) %>%
   ggplot(aes(x = EmpDropsPValue)) +
   geom_histogram(aes(fill = ..count..), bins = 30) +
@@ -286,7 +335,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     arrange(desc(EmptyDrops)) %>%
-    ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
+    ggplot(aes(x = nCount, y = -EmpDropsLogProb)) +
     geom_point(aes(color = EmptyDrops),
       alpha = 0.5, shape = 16
     ) +
@@ -295,7 +344,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = UMIcounts, y = -EmpDropsLogProb * 5, fill = CellLabel),
+      aes(x = nCount, y = -EmpDropsLogProb * 5, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -318,7 +367,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Knee:",
         " UMI=", round(metadata(bc_ranks)$knee),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$knee)
       ),
       colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
     ) +
@@ -327,7 +376,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Inflection:",
         " UMI=", round(metadata(bc_ranks)$inflection),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$inflection)
       ),
       colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
     ) +
@@ -336,7 +385,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Empty threshold:",
         " UMI=", EmptyThreshold,
-        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+        " Rank=", sum(colData(raw)$nCount > EmptyThreshold)
       ),
       colour = "darkorchid", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -364,7 +413,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     arrange(desc(EmptyDrops)) %>%
-    ggplot(aes(x = UMIcounts, y = -EmpDropsLogProb)) +
+    ggplot(aes(x = nCount, y = -EmpDropsLogProb)) +
     geom_point(aes(color = EmptyDrops),
       alpha = 0.5, shape = 16
     ) +
@@ -389,7 +438,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Knee:",
         " UMI=", round(metadata(bc_ranks)$knee),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$knee)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$knee)
       ),
       colour = "dodgerblue", size = 3, vjust = 1.5, hjust = 0, angle = 90
     ) +
@@ -398,7 +447,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Inflection:",
         " UMI=", round(metadata(bc_ranks)$inflection),
-        " Rank=", sum(colData(raw)$UMIcounts > metadata(bc_ranks)$inflection)
+        " Rank=", sum(colData(raw)$nCount > metadata(bc_ranks)$inflection)
       ),
       colour = "forestgreen", size = 3, vjust = 1.5, hjust = 0, angle = 90
     ) +
@@ -407,7 +456,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "Empty threshold:",
         " UMI=", EmptyThreshold,
-        " Rank=", sum(colData(raw)$UMIcounts > EmptyThreshold)
+        " Rank=", sum(colData(raw)$nCount > EmptyThreshold)
       ),
       colour = "darkorchid", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -438,9 +487,9 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
-    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_segment(aes(xend = nCount_rank * 2, yend = nCount * 2), color = "grey90", alpha = 0.01) +
     geom_point(
       aes(color = EmptyDrops),
       alpha = 0.5, shape = 16
@@ -450,7 +499,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      aes(x = nCount_rank * 2, y = nCount * 2, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -488,7 +537,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
     geom_point(
       aes(color = EmptyDrops),
@@ -528,14 +577,14 @@ if (CellLabel != "NULL") {
     )
 }
 
-plotlist[["emptyDrops-BarcodeRank"]] <- p
+plotlist[["emptyDrops-nCount_rank"]] <- p
 
 p <- plot_grid(
   plotlist = plotlist[c(
-    "emptyDrops-BarcodeRankFitted",
+    "emptyDrops-nCount_rankFitted",
     "emptyDrops-emptyPValue",
     "emptyDrops-Probability_vs_counts",
-    "emptyDrops-BarcodeRank"
+    "emptyDrops-nCount_rank"
   )],
   nrow = 2, ncol = 2, align = "hv", axis = "tblr"
 )
@@ -574,13 +623,13 @@ qualified <- intersect(
   y = names(scores[scores >= dropest_quality])
 )
 colData(raw)$Score <- scores[colData(raw)$Barcode]
-colData(raw)$dropEst <- colData(raw)$Barcode %in% qualified & colData(raw)$UMIcounts > EmptyThreshold
+colData(raw)$dropEst <- colData(raw)$Barcode %in% qualified & colData(raw)$nCount > EmptyThreshold
 
 if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot() +
-    geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
+    geom_point(aes(x = nCount_rank, y = Score, color = dropEst),
       alpha = 0.5, shape = 16
     ) +
     scale_color_manual(
@@ -588,7 +637,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = BarcodeRank, y = Score - 0.1, fill = CellLabel),
+      aes(x = nCount_rank, y = Score - 0.1, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -638,7 +687,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot() +
-    geom_point(aes(x = BarcodeRank, y = Score, color = dropEst),
+    geom_point(aes(x = nCount_rank, y = Score, color = dropEst),
       alpha = 0.5, shape = 16
     ) +
     scale_color_manual(
@@ -692,9 +741,9 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
-    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_segment(aes(xend = nCount_rank * 2, yend = nCount * 2), color = "grey90", alpha = 0.01) +
     geom_point(
       aes(color = dropEst),
       alpha = 0.5, shape = 16
@@ -704,7 +753,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      aes(x = nCount_rank * 2, y = nCount * 2, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -766,7 +815,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
     geom_point(
       aes(color = dropEst),
@@ -829,12 +878,12 @@ if (CellLabel != "NULL") {
       aspect.ratio = 1,
     )
 }
-plotlist[["dropEst-BarcodeRank"]] <- p
+plotlist[["dropEst-nCount_rank"]] <- p
 
 p <- plot_grid(
   plotlist = plotlist[c(
     "dropEst-CellScore",
-    "dropEst-BarcodeRank"
+    "dropEst-nCount_rank"
   )],
   nrow = 1, align = "hv", axis = "tblr"
 )
@@ -857,23 +906,22 @@ ggsave(p, filename = paste0(sample, ".dropEst.png"), width = 11, height = 8)
 library(inflection)
 bccount <- colData(raw) %>%
   as.data.frame() %>%
-  filter(UMIcounts > EmptyThreshold) %>%
-  arrange(BarcodeRank) %>%
-  mutate(UMIcounts_cumsum = cumsum(UMIcounts))
-if (length(unique(as.integer(quantile(bccount[, "BarcodeRank"])))) != 5) {
-  bccount[nrow(bccount), "BarcodeRank"] <- bccount[nrow(bccount), "BarcodeRank"] + 1
+  filter(nCount_rank < quantile(nCount_rank, 0.9)) %>%
+  arrange(nCount_rank) %>%
+  mutate(nCount_cumsum = cumsum(nCount))
+if (length(unique(as.integer(quantile(bccount[, "nCount_rank"])))) != 5) {
+  bccount[nrow(bccount), "nCount_rank"] <- bccount[nrow(bccount), "nCount_rank"] + 1
 }
-ntop <- floor(uik(x = bccount[, "BarcodeRank"], y = bccount[, "UMIcounts_cumsum"] / 1000))
-cutoff_counts <- bccount[ntop, "UMIcounts"]
-colData(raw)$zUMIs <- colData(raw)$UMIcounts > cutoff_counts
+ntop <- floor(uik(x = bccount[, "nCount_rank"], y = bccount[, "nCount_cumsum"]))
+cutoff_counts <- max(c(bccount[ntop, "nCount"], EmptyThreshold))
+colData(raw)$zUMIs <- colData(raw)$nCount > cutoff_counts
 
 p <- bccount %>%
-  filter(UMIcounts > EmptyThreshold) %>%
-  mutate(zUMIs = UMIcounts > cutoff_counts) %>%
-  arrange(BarcodeRank) %>%
-  mutate(BarcodeRank_uniq = 1:n()) %>%
-  ggplot(aes(x = BarcodeRank_uniq, y = UMIcounts)) +
-  geom_ribbon(aes(ymin = 0, ymax = UMIcounts, fill = zUMIs), alpha = 0.5) +
+  mutate(zUMIs = nCount > cutoff_counts) %>%
+  arrange(nCount_rank) %>%
+  mutate(nCount_rank_uniq = 1:n()) %>%
+  ggplot(aes(x = nCount_rank_uniq, y = nCount)) +
+  geom_ribbon(aes(ymin = 0, ymax = nCount, fill = zUMIs), alpha = 0.5) +
   geom_line() +
   geom_vline(xintercept = ntop, color = "red3") +
   scale_fill_manual(
@@ -889,10 +937,9 @@ plotlist[["zUMIs-UMIbar"]] <- p
 
 if (CellLabel != "NULL") {
   p <- bccount %>%
-    filter(UMIcounts > EmptyThreshold) %>%
-    mutate(zUMIs = UMIcounts > cutoff_counts) %>%
-    ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
-    geom_segment(aes(xend = BarcodeRank, yend = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1), color = "grey90", alpha = 0.01) +
+    mutate(zUMIs = nCount > cutoff_counts) %>%
+    ggplot(aes(x = nCount_rank, y = nCount_cumsum)) +
+    geom_segment(aes(xend = nCount_rank, yend = nCount_cumsum + max(nCount_cumsum) * 0.1), color = "grey90", alpha = 0.01) +
     geom_point(aes(color = zUMIs),
       alpha = 0.5, shape = 16
     ) +
@@ -901,7 +948,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = BarcodeRank, y = UMIcounts_cumsum + max(UMIcounts_cumsum) * 0.1, fill = CellLabel),
+      aes(x = nCount_rank, y = nCount_cumsum + max(nCount_cumsum) * 0.1, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -915,9 +962,8 @@ if (CellLabel != "NULL") {
     )
 } else {
   p <- bccount %>%
-    filter(UMIcounts > EmptyThreshold) %>%
-    mutate(zUMIs = UMIcounts > cutoff_counts) %>%
-    ggplot(aes(x = BarcodeRank, y = UMIcounts_cumsum)) +
+    mutate(zUMIs = nCount > cutoff_counts) %>%
+    ggplot(aes(x = nCount_rank, y = nCount_cumsum)) +
     geom_point(aes(color = zUMIs),
       alpha = 0.5, shape = 16
     ) +
@@ -937,8 +983,8 @@ plotlist[["zUMIs-CumsumPlot"]] <- p
 
 p <- colData(raw) %>%
   as.data.frame() %>%
-  filter(UMIcounts > EmptyThreshold) %>%
-  ggplot(aes(x = UMIcounts)) +
+  filter(nCount_rank < quantile(nCount_rank, 0.9)) %>%
+  ggplot(aes(x = nCount)) +
   geom_histogram(aes(fill = ..count..), bins = 50, color = "black") +
   geom_vline(xintercept = cutoff_counts, color = "red3") +
   scale_fill_material(name = "Count", palette = "blue-grey") +
@@ -964,9 +1010,9 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
-    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+    geom_segment(aes(xend = nCount_rank * 2, yend = nCount * 2), color = "grey90", alpha = 0.01) +
     geom_point(
       aes(color = zUMIs),
       alpha = 0.5, shape = 16
@@ -976,7 +1022,7 @@ if (CellLabel != "NULL") {
       values = setNames(color[c(9, 2)], c(TRUE, FALSE))
     ) +
     geom_point(
-      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      aes(x = nCount_rank * 2, y = nCount * 2, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -988,7 +1034,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "zUMIs threshold:",
         " UMI=", cutoff_counts,
-        " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
+        " Rank=", sum(colData(raw)$nCount > cutoff_counts)
       ),
       colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -1024,7 +1070,7 @@ if (CellLabel != "NULL") {
   p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
-      aes(x = BarcodeRank, y = UMIcounts)
+      aes(x = nCount_rank, y = nCount)
     ) +
     geom_point(
       aes(color = zUMIs),
@@ -1040,7 +1086,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "zUMIs threshold:",
         " UMI=", cutoff_counts,
-        " Rank=", sum(colData(raw)$UMIcounts > cutoff_counts)
+        " Rank=", sum(colData(raw)$nCount > cutoff_counts)
       ),
       colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -1073,14 +1119,14 @@ if (CellLabel != "NULL") {
       aspect.ratio = 1,
     )
 }
-plotlist[["zUMIs-BarcodeRank"]] <- p
+plotlist[["zUMIs-nCount_rank"]] <- p
 
 p <- plot_grid(
   plotlist = plotlist[c(
     "zUMIs-UMIbar",
     "zUMIs-CumsumPlot",
     "zUMIs-UMIdensity",
-    "zUMIs-BarcodeRank"
+    "zUMIs-nCount_rank"
   )],
   nrow = 2, align = "hv", axis = "tblr"
 )
@@ -1104,10 +1150,10 @@ ggsave(p, filename = paste0(sample, ".zUMIs.png"), width = 11, height = 8)
 cell_rank <- colData(raw) %>%
   as.data.frame() %>%
   dplyr::select(
-    Barcode, BarcodeRank, UMIcounts, Fitted, CellLabel,
+    Barcode, nCount_rank, nCount, Fitted, CellLabel,
     Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs
   ) %>%
-  arrange(BarcodeRank) %>%
+  arrange(nCount_rank) %>%
   reshape2::melt(
     measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
     variable.name = "Method",
@@ -1120,8 +1166,8 @@ cell_rank[, "Method"] <- factor(pull(cell_rank, "Method"),
 )
 
 if (CellLabel != "NULL") {
-  p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
-    geom_segment(aes(xend = BarcodeRank * 2, yend = UMIcounts * 2), color = "grey90", alpha = 0.01) +
+  p <- ggplot(cell_rank, aes(x = nCount_rank, y = nCount)) +
+    geom_segment(aes(xend = nCount_rank * 2, yend = nCount * 2), color = "grey90", alpha = 0.01) +
     geom_point(
       aes(color = is_cell),
       alpha = 0.5, shape = 16
@@ -1131,7 +1177,7 @@ if (CellLabel != "NULL") {
       guide = FALSE
     ) +
     geom_point(
-      aes(x = BarcodeRank * 2, y = UMIcounts * 2, fill = CellLabel),
+      aes(x = nCount_rank * 2, y = nCount * 2, fill = CellLabel),
       color = "transparent",
       shape = 21
     ) +
@@ -1166,7 +1212,7 @@ if (CellLabel != "NULL") {
       aspect.ratio = 1
     )
 } else {
-  p <- ggplot(cell_rank, aes(x = BarcodeRank, y = UMIcounts)) +
+  p <- ggplot(cell_rank, aes(x = nCount_rank, y = nCount)) +
     geom_point(
       aes(color = is_cell),
       alpha = 0.5, shape = 16
@@ -1205,7 +1251,7 @@ if (CellLabel != "NULL") {
       aspect.ratio = 1
     )
 }
-plotlist[["MethodCompare-BarcodeRank"]] <- p
+plotlist[["MethodCompare-nCount_rank"]] <- p
 
 cell_count <- colData(raw) %>%
   as.data.frame() %>%
@@ -1277,7 +1323,7 @@ p <- cell_upset %>%
 plotlist[["MethodCompare-upsetR"]] <- p
 
 p <- plot_grid(
-  plotlist[["MethodCompare-BarcodeRank"]],
+  plotlist[["MethodCompare-nCount_rank"]],
   plot_grid(plotlist[["MethodCompare-Barplot"]],
     plotlist[["MethodCompare-upsetR"]],
     nrow = 1, rel_widths = c(0.5, 0.5)
@@ -1303,10 +1349,10 @@ ggsave(p, filename = paste0(sample, ".MethodCompare.png"), width = 11, height = 
 # Output the report -------------------------------------------------------
 saveRDS(raw, file = "raw.rds")
 saveRDS(cell_upset, file = "cell_upset.rds")
-write.table(x = cell_upset[["Barcode"]],file = "barcodes.tsv",row.names = FALSE,col.names = FALSE,quote = FALSE)
+write.table(x = cell_upset[["Barcode"]], file = "barcodes.tsv", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 pdf(paste0(sample, ".CellCalling.pdf"), width = 11, height = 8)
-invisible(lapply(paste0(sample, c(".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".MethodCompare.png")), function(x) {
+invisible(lapply(paste0(sample, c(".Basic.png", ".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".MethodCompare.png")), function(x) {
   grid.arrange(rasterGrob(readPNG(x, native = FALSE),
     interpolate = FALSE
   ))
@@ -1318,4 +1364,3 @@ if (file.exists("Rplots.pdf")) {
 }
 
 cat("Cell Calling Done\n")
-
