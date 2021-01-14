@@ -45,10 +45,6 @@ for (i in 1:length(samples)) {
   srt <- RenameCells(object = srt, add.cell.id = samples[i])
 
   sce <- as.SingleCellExperiment(srt)
-  sce <- scDblFinder(sce, verbose = FALSE)
-  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
-  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
-
   sce <- addPerCellQC(sce, percent_top = c(20))
   srt[["percent.top_20"]] <- colData(sce)$percent.top_20
   srt[["log10_nCount_RNA"]] <- log10(srt[["nCount_RNA", drop = TRUE]])
@@ -81,7 +77,7 @@ for (i in 1:length(samples)) {
   srt$nCount_ambiguous <- velocity$nCount_ambiguous
   srt$nFeature_ambiguous <- velocity$nFeature_ambiguous
 
-  cat("Save the Seurat object to h5Seurat...\n")
+  cat("Saving the Seurat object to h5Seurat...\n")
   SaveH5Seurat(
     object = srt,
     filename = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/", samples[i], ".h5Seurat"),
@@ -92,7 +88,7 @@ for (i in 1:length(samples)) {
   srtList[[samples[i]]] <- srt
 }
 
-#
+
 # if (length(srtList) >= 2) {
 #   srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
 # } else {

@@ -266,7 +266,7 @@ for sample in "${arr[@]}"; do
 done
 wait
 
-color_echo "green" "\nGenerating merged QC report..."
+color_echo "green" "\nGenerating Seurat objects for identified cells..."
 mkdir -p $maindir/NGSmodule_SCP_analysis/CellQC
 cd $maindir/NGSmodule_SCP_analysis/CellQC
 script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellQC.R
