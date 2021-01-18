@@ -12,8 +12,8 @@ SCPwork_dir <- as.character(args[2])
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "Seurat", "SeuratDisk", "SeuratWrappers","dplyr","ggplot2", "ggplotify", "aplot", "cowplot",
-    "reshape2", "stringr", "scDblFinder","scuttle"
+    "Seurat", "SeuratDisk", "SeuratWrappers", "dplyr", "ggplot2", "ggplotify", "aplot", "cowplot",
+    "reshape2", "stringr", "scDblFinder", "scuttle"
   ),
   require,
   character.only = TRUE
@@ -50,12 +50,6 @@ for (i in 1:length(samples)) {
   srt[["log10_nCount_RNA"]] <- log10(srt[["nCount_RNA", drop = TRUE]])
   srt[["log10_nFeature_RNA"]] <- log10(srt[["nFeature_RNA", drop = TRUE]])
 
-  log10_nFeature_RNA <- srt[["log10_nFeature_RNA", drop = TRUE]]
-  log10_nCount_RNA <- srt[["log10_nCount_RNA", drop = TRUE]]
-  mod <- loess(log10_nFeature_RNA ~ log10_nCount_RNA)
-  pred <- predict(mod, newdata = data.frame(log10_nCount_RNA = srt[["log10_nCount_RNA"]]))
-  srt[["featcount_dist"]] <- srt[["log10_nFeature_RNA"]] - pred
-
   cat("Loading single cell RNA-velocity data...\n")
   velocity <- ReadVelocity(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/velocyto/", samples[i], ".loom"), verbose = FALSE)
   velocity <- as.Seurat(x = velocity, project = samples[i], verbose = FALSE)
@@ -65,6 +59,9 @@ for (i in 1:length(samples)) {
       gsub(x = ., pattern = "x$", replacement = "-1", perl = TRUE) %>%
       paste0(samples[i], "_", .)
   )
+  if (!identical(dim(srt), dim(velocity))) {
+    stop(paste0(samples[i], ": RNA velocity have different dimensions with RNA count matrix."))
+  }
 
   cat("Combine expression, RNA-velocity, and other annotation to an Seurat object...\n")
   srt@assays$spliced <- velocity@assays$spliced
@@ -76,8 +73,14 @@ for (i in 1:length(samples)) {
   srt$nFeature_unspliced <- velocity$nFeature_unspliced
   srt$nCount_ambiguous <- velocity$nCount_ambiguous
   srt$nFeature_ambiguous <- velocity$nFeature_ambiguous
-
+  
   cat("Saving the Seurat object to h5Seurat...\n")
+  for (assay in Seurat::Assays(srt)) {
+    counts <- GetAssayData(object = srt,assay = assay, slot = "counts")
+    data <- GetAssayData(object = srt,assay = assay, slot = "data")
+    srt <- SetAssayData(object = srt,assay = assay, slot = "counts", new.data = as(counts,"matrix"))
+    srt <- SetAssayData(object = srt,assay = assay, slot = "data", new.data = as(data,"matrix"))
+  }
   SaveH5Seurat(
     object = srt,
     filename = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/", samples[i], ".h5Seurat"),
