@@ -9,11 +9,17 @@ SCPwork_dir <- as.character(args[2])
 # SCP_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/"
 # SCPwork_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/"
 
+# ##### true data #####
+# setwd("/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_analysis/CellQC/")
+# # parameters: global settings ---------------------------------------------
+# SCP_path <- "/home/zhanghao/Program/NGS/UniversalTools/NGSmodule/SingleCellPipe/"
+# SCPwork_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/"
+
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "Seurat", "SeuratDisk", "SeuratWrappers", "dplyr", "ggplot2", "ggplotify", "aplot", "cowplot",
-    "reshape2", "stringr", "scDblFinder", "scuttle"
+    "reshape2", "stringr", "scuttle"
   ),
   require,
   character.only = TRUE
@@ -25,16 +31,13 @@ samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 
 
 # Preprocessing: Create Seurat object ------------------------------------------------
-cellcallingList <- list()
 srtList <- list()
-velocityList <- list()
 for (i in 1:length(samples)) {
   cat("++++++", samples[i], "++++++", "\n")
   cat("Loading single cell expression data...\n")
   cell_upset <- as.data.frame(readRDS(file = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/cell_upset.rds")))
   rownames(cell_upset) <- cell_upset[, "Barcode"]
   cell_upset[["sample"]] <- samples[i]
-  cellcallingList[[samples[i]]] <- cell_upset
 
   srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cell_upset[["Barcode"]]]
   srt <- CreateSeuratObject(counts = srt_matrix, project = samples[i])
@@ -74,16 +77,10 @@ for (i in 1:length(samples)) {
   srt$nCount_ambiguous <- velocity$nCount_ambiguous
   srt$nFeature_ambiguous <- velocity$nFeature_ambiguous
   
-  cat("Saving the Seurat object to h5Seurat...\n")
-  for (assay in Seurat::Assays(srt)) {
-    counts <- GetAssayData(object = srt,assay = assay, slot = "counts")
-    data <- GetAssayData(object = srt,assay = assay, slot = "data")
-    srt <- SetAssayData(object = srt,assay = assay, slot = "counts", new.data = as(counts,"matrix"))
-    srt <- SetAssayData(object = srt,assay = assay, slot = "data", new.data = as(data,"matrix"))
-  }
+  cat("Save the Seurat object to h5Seurat...\n")
   SaveH5Seurat(
     object = srt,
-    filename = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/CellCalling/", samples[i], ".h5Seurat"),
+    filename = paste0(samples[i], ".h5Seurat"),
     overwrite = TRUE,
     verbose = FALSE
   )
