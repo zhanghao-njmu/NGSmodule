@@ -42,7 +42,7 @@ for (i in 1:length(samples)) {
   srt_matrix <- Read10X(data.dir = paste0(SCPwork_dir, "/", samples[i], "/Alignment-Cellranger/", samples[i], "/outs/raw_feature_bc_matrix/"))[, cell_upset[["Barcode"]]]
   srt <- CreateSeuratObject(counts = srt_matrix, project = samples[i])
   srt[["percent.mt"]] <- PercentageFeatureSet(object = srt, pattern = "(^MT-)|(^Mt-)|(^mt-)")
-  srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)")
+  srt[["percent.ribo"]] <- PercentageFeatureSet(object = srt, pattern = "(^RP[SL]\\d+(\\w|)$)|(^Rp[sl]\\d+(\\w|)$)|(^rp[sl]\\d+(\\w|)$)")
   srt[["cellcalling_method"]] <- cell_upset[Cells(srt), "Method_comb"]
   srt[["cellcalling_methodNum"]] <- cell_upset[Cells(srt), "Method_num"]
   srt <- RenameCells(object = srt, add.cell.id = samples[i])

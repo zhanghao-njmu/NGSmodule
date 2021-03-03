@@ -266,9 +266,9 @@ for sample in "${arr[@]}"; do
 done
 wait
 
-color_echo "green" "\nMerge RNA count and velocity matrix into into Seurat objects for identified cells..."
-mkdir -p $maindir/NGSmodule_SCP_analysis/CellQC
-cd $maindir/NGSmodule_SCP_analysis/CellQC
+color_echo "green" "\nPrepare RNA count and velocity matrix into one Seurat object for each group..."
+mkdir -p $maindir/NGSmodule_SCP_analysis/Prepare
+cd $maindir/NGSmodule_SCP_analysis/Prepare
 script=$SCP_path/SCP-GeneralSteps/RunCellranger/Prepare.R
 Rscript $script $SCP_path $work_dir
 

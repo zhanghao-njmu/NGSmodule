@@ -96,8 +96,10 @@ colData(raw)$knee <- colData(raw)$nCount > metadata(bc_ranks)$knee
 colData(raw)$inflection <- colData(raw)$nCount > metadata(bc_ranks)$inflection
 
 vars <- c("nCount", "nCount_rank", "nFeature", "nFeature_rank")
-vars_expand <- expand.grid(vars, vars)
-df <- colData(raw) %>%
+vars_expand <- expand.grid(vars, vars,stringsAsFactors = FALSE)
+
+
+df1 <- colData(raw) %>%
   as.data.frame() %>%
   group_by(Barcode) %>%
   summarise(
@@ -106,18 +108,21 @@ df <- colData(raw) %>%
     nCount_rank = nCount_rank,
     nFeature = nFeature,
     nFeature_rank = nFeature_rank,
-    var1 = list(vars_expand[["Var1"]]),
-    var2 = list(vars_expand[["Var2"]])
-  ) %>%
-  unnest(cols = c(var1, var2))
-df[["value1"]] <- apply(df, 1, function(x) {
-  as.numeric(x[x["var1"]])
-})
-df[["value2"]] <- apply(df, 1, function(x) {
-  as.numeric(x[x["var2"]])
-})
+    nCount2 = nCount,
+    nCount_rank2 = nCount_rank,
+    nFeature2 = nFeature,
+    nFeature_rank2 = nFeature_rank)
+df2 <- reshape2::melt(df1,
+  id.vars = c("Barcode", "nCount2", "nCount_rank2", "nFeature2", "nFeature_rank2"),
+  variable.name = "var2", value.name = "value2"
+)
+colnames(df2) <- c("Barcode", "nCount", "nCount_rank", "nFeature", "nFeature_rank", "var2", "value2")
+df3 <- reshape2::melt(df2,
+  id.vars = c("Barcode", "var2", "value2"),
+  variable.name = "var1", value.name = "value1"
+)
 
-p <- ggplot(df, aes(x = value1, y = value2)) +
+p <- ggplot(df3, aes(x = value1, y = value2)) +
   geom_point(alpha = 0.5, shape = 16, color = "steelblue") +
   scale_y_continuous(
     trans = log10_trans(),
@@ -130,7 +135,7 @@ p <- ggplot(df, aes(x = value1, y = value2)) +
     labels = trans_format("log10", math_format(10^.x))
   ) +
   annotation_logticks() +
-  facet_grid(var1 ~ var2) +
+  facet_wrap(var1 ~ var2,scales = "fixed") +
   labs(title = "nCount vs nFeature") +
   theme_classic() +
   theme(
@@ -142,7 +147,7 @@ ggsave(p, filename = paste0(sample, ".Basic.png"), width = 11, height = 8)
 
 
 if (CellLabel != "NULL") {
-  p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
+  p <- colData(raw) %>%
     as.data.frame() %>%
     ggplot(
       aes(x = nCount_rank, y = nCount)
