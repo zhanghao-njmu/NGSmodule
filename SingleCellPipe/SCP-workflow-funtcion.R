@@ -422,7 +422,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -517,8 +517,6 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       perplexity = max(ceiling(ncol(srtIntegrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
     )
   }
-
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -618,8 +616,6 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       perplexity = max(ceiling(ncol(srtIntegrated) * 0.01), 30), max_iter = 2000, num_threads = 0, verbose = T
     )
   }
-
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -742,7 +738,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -836,7 +832,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- RunUMAP(object = srtIntegrated, graph = "BBKNN", umap.method = "umap-learn", reduction.name = paste0(reduction_prefix, "umap"))
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -939,7 +935,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -1041,7 +1037,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -1170,7 +1166,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -1311,7 +1307,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     )
   }
 
-  srtIntegrated <- CC_module(srtIntegrated, cc_S_genes, cc_G2M_genes)
+
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
@@ -1479,8 +1475,6 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
     )
   }
 
-  srt <- CC_module(srt, cc_S_genes, cc_G2M_genes)
-
   DefaultAssay(srt) <- "RNA"
   return(srt)
 }
@@ -1495,7 +1489,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge", "ZINBWaVE")) {
+  if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge")) {
     args1 <- c(mget(names(formals())), reduction_prefix = paste0(integration_method, "_"))
     args2 <- c(as.list(match.call()), reduction_prefix = paste0(integration_method, "_"))
     for (n in names(args2)) {

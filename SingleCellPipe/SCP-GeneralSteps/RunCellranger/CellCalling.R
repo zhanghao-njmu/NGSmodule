@@ -8,14 +8,20 @@ EmptyThreshold <- as.character(args[4])
 CellLabel <- as.character(args[5])
 
 ### parameters: global settings ---------------------------------------------
-# cellranger_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/CellLine1/Alignment-Cellranger/"
-# sample <- "CellLine1"
+# cellranger_dir <- "/ssd/lab/ZhangHao/test/SCP/NGSmodule_SCP_work/Testis-d50/Alignment-Cellranger/"
+# sample <- "Testis-d50"
+# threads <- 80
+# EmptyThreshold <- "AUTO"
+# CellLabel <- "GFP"
+#
+# cellranger_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/ESC/Alignment-Cellranger/"
+# sample <- "ESC"
 # threads <- 80
 # EmptyThreshold <- "AUTO"
 # CellLabel <- "GFP"
 
 # parameters: emptyDrops --------------------------------------------------
-iters <- 4e+5
+iters <- 1e+5
 fdr <- 1e-3
 
 # parameters: dropEst -----------------------------------------------------
@@ -135,12 +141,6 @@ p <- ggplot(df, aes(x = value1, y = value2)) +
 ggsave(p, filename = paste0(sample, ".Basic.png"), width = 11, height = 8)
 
 
-# colData(raw) %>%
-#   as.data.frame() %>%
-#   arrange(nCount_rank) %>%
-#   mutate(cumsum = cumsum(nCount)) %>%
-#   ggplot(aes(x = nCount_rank, y = cumsum)) +
-#   geom_point()
 if (CellLabel != "NULL") {
   p <- colData(raw) %>% # [sample(1:nrow(colData(raw)),100000),]
     as.data.frame() %>%
@@ -158,7 +158,7 @@ if (CellLabel != "NULL") {
       color = "transparent",
       shape = 21
     ) +
-    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
     guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
     geom_line(aes(x = nCount_rank, y = Fitted), color = "red") +
     geom_hline(
@@ -284,12 +284,11 @@ if (CellLabel != "NULL") {
       aspect.ratio = 1,
     )
 }
-
 plotlist[["emptyDrops-nCount_rankFitted"]] <- p
 
 
 mito_gene <- grep(x = rownames(raw), pattern = "(^MT-)|(^Mt-)|(^mt-)", perl = T)
-ribo_gene <- grep(x = rownames(raw), pattern = "(^RP[SL]\\d+$)|(^Rp[sl]\\d+$)|(^rp[sl]\\d+$)", perl = T)
+ribo_gene <- grep(x = rownames(raw), pattern = "(^RP[SL]\\d+(\\w|)$)|(^Rp[sl]\\d+(\\w|)$)|(^rp[sl]\\d+(\\w|)$)", perl = T)
 residual <- 1000
 while (residual != 0) {
   cat("emptyDrops niters:", iters, "\n")
@@ -503,7 +502,7 @@ if (CellLabel != "NULL") {
       color = "transparent",
       shape = 21
     ) +
-    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
     guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
     geom_hline(
       yintercept = metadata(bc_ranks)$knee,
@@ -757,7 +756,7 @@ if (CellLabel != "NULL") {
       color = "transparent",
       shape = 21
     ) +
-    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
     guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
     geom_vline(
       xintercept = cell_num$min,
@@ -1026,7 +1025,7 @@ if (CellLabel != "NULL") {
       color = "transparent",
       shape = 21
     ) +
-    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE))) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
     guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
     geom_vline(xintercept = ntop, color = "red3") +
     annotate("text",
@@ -1034,7 +1033,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "zUMIs threshold:",
         " UMI=", cutoff_counts,
-        " Rank=", sum(colData(raw)$nCount > cutoff_counts)
+        " Rank=", ntop
       ),
       colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -1086,7 +1085,7 @@ if (CellLabel != "NULL") {
       label = paste0(
         "zUMIs threshold:",
         " UMI=", cutoff_counts,
-        " Rank=", sum(colData(raw)$nCount > cutoff_counts)
+        " Rank=", ntop
       ),
       colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
     ) +
@@ -1145,17 +1144,358 @@ p <- plot_grid(
 )
 ggsave(p, filename = paste0(sample, ".zUMIs.png"), width = 11, height = 8)
 
+# Method: dropSplit ---------------------------------------------------------
+library(dropSplit)
+result <- dropSplit(counts = counts(raw), Redundancy_control = T)
+meta_info <- result$meta_info
+colData(raw)[rownames(meta_info), "RankMSE"] <- meta_info$RankMSE
+colData(raw)[rownames(meta_info), "CellEntropy"] <- meta_info$CellEntropy
+colData(raw)[rownames(meta_info), "CellRedundancy"] <- meta_info$CellRedundancy
+colData(raw)[rownames(meta_info), "CellGini"] <- meta_info$CellGini
+colData(raw)[rownames(meta_info), "dropSplitClass"] <- as.character(meta_info$dropSplitClass)
+colData(raw)[rownames(meta_info), "dropSplitScore"] <- meta_info$dropSplitScore
+colData(raw)[rownames(meta_info), "dropSplit"] <- ifelse(meta_info$dropSplitClass == "Cell", TRUE, FALSE)
+cutoff_counts <- min(meta_info$nCount[meta_info$preDefinedClass == "Cell"])
+Cell_rank <- max(meta_info$nCount_rank[meta_info$preDefinedClass == "Cell"])
+Uncertain_rank <- max(meta_info$nCount_rank[meta_info$preDefinedClass == "Uncertain"])
+Empty_rank <- max(meta_info$nCount_rank[meta_info$preDefinedClass == "Empty"])
+
+
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(aes(x = nCount_rank, y = nFeature_rank)) +
+    geom_point(
+      aes(color = dropSplit),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = nCount_rank, y = nFeature_rank * 10, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(
+      xintercept = c(Cell_rank, Uncertain_rank, Empty_rank),
+      color = c("red3", "forestgreen", "steelblue")
+    ) +
+    annotate("text",
+      x = Cell_rank, y = 1,
+      label = paste0(
+        "preDefined-Cell threshold:",
+        " Rank=", Cell_rank
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Uncertain_rank, y = 1,
+      label = paste0(
+        "preDefined-Uncertain threshold:",
+        " Rank=", Uncertain_rank
+      ),
+      colour = "forestgreen", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Empty_rank, y = 1,
+      label = paste0(
+        "preDefined-Empty threshold:",
+        " Rank=", Empty_rank
+      ),
+      colour = "steelblue", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "nCount-nFeature Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount_rank", y = "nFeature_rank") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(aes(x = nCount_rank, y = nFeature_rank)) +
+    geom_point(
+      aes(color = dropSplit),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(
+      xintercept = c(Cell_rank, Uncertain_rank, Empty_rank),
+      color = c("red3", "forestgreen", "steelblue")
+    ) +
+    annotate("text",
+      x = Cell_rank, y = 1,
+      label = paste0(
+        "preDefined-Cell threshold:",
+        " Rank=", Cell_rank
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Uncertain_rank, y = 1,
+      label = paste0(
+        "preDefined-Uncertain threshold:",
+        " Rank=", Uncertain_rank
+      ),
+      colour = "forestgreen", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Empty_rank, y = 1,
+      label = paste0(
+        "preDefined-Empty threshold:",
+        " Rank=", Empty_rank
+      ),
+      colour = "steelblue", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "nCount-nFeature Rank Plot", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount_rank", y = "nFeature_rank") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
+plotlist[["dropSplit-Rank"]] <- p
+
+if (CellLabel != "NULL") {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(aes(x = nCount_rank, y = RankMSE)) +
+    geom_point(
+      aes(color = dropSplit),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_point(
+      aes(x = nCount_rank, y = RankMSE * 10, fill = CellLabel),
+      color = "transparent",
+      shape = 21
+    ) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE))) +
+    guides(fill = guide_legend(override.aes = list(fill = c("red", "transparent")))) +
+    geom_vline(
+      xintercept = c(Cell_rank, Uncertain_rank, Empty_rank),
+      color = c("red3", "forestgreen", "steelblue")
+    ) +
+    annotate("text",
+      x = Cell_rank, y = 1,
+      label = paste0(
+        "preDefined-Cell threshold:",
+        " Rank=", Cell_rank
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Uncertain_rank, y = 1,
+      label = paste0(
+        "preDefined-Uncertain threshold:",
+        " Rank=", Uncertain_rank
+      ),
+      colour = "forestgreen", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Empty_rank, y = 1,
+      label = paste0(
+        "preDefined-Empty threshold:",
+        " Rank=", Empty_rank
+      ),
+      colour = "steelblue", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Mean Squared Error of nCount/nFeature Rank", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount_rank", y = "RankMSE") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+} else {
+  p <- colData(raw) %>%
+    as.data.frame() %>%
+    ggplot(aes(x = nCount_rank, y = RankMSE)) +
+    geom_point(
+      aes(color = dropSplit),
+      alpha = 0.5, shape = 16
+    ) +
+    scale_color_manual(
+      name = "is cell",
+      values = setNames(color[c(9, 2)], c(TRUE, FALSE))
+    ) +
+    geom_vline(
+      xintercept = c(Cell_rank, Uncertain_rank, Empty_rank),
+      color = c("red3", "forestgreen", "steelblue")
+    ) +
+    annotate("text",
+      x = Cell_rank, y = 1,
+      label = paste0(
+        "preDefined-Cell threshold:",
+        " Rank=", Cell_rank
+      ),
+      colour = "red3", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Uncertain_rank, y = 1,
+      label = paste0(
+        "preDefined-Uncertain threshold:",
+        " Rank=", Uncertain_rank
+      ),
+      colour = "forestgreen", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    annotate("text",
+      x = Empty_rank, y = 1,
+      label = paste0(
+        "preDefined-Empty threshold:",
+        " Rank=", Empty_rank
+      ),
+      colour = "steelblue", size = 3, vjust = -0.5, hjust = 0, angle = 90
+    ) +
+    scale_x_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    scale_y_continuous(
+      trans = log10_trans(),
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    annotation_logticks() +
+    labs(title = "Mean Squared Error of nCount/nFeature Rank within a window", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount_rank", y = "RankMSE") +
+    theme_classic() +
+    theme(
+      aspect.ratio = 1,
+    )
+}
+plotlist[["dropSplit-RankMSE"]] <- p
+
+
+p <- colData(raw) %>%
+  as.data.frame() %>%
+  subset(!is.na(CellEntropy)) %>%
+  mutate(dropSplitClass = factor(dropSplitClass, levels = c("Cell", "Uncertain", "Empty", "Discarded"))) %>%
+  ggplot(aes(x = nCount, y = CellEntropy)) +
+  geom_point(
+    aes(color = dropSplitClass),
+    alpha = 0.5, shape = 16
+  ) +
+  scale_color_manual(
+    name = "is cell",
+    values = setNames(
+      c("red3", "forestgreen", "steelblue", "grey80"),
+      c("Cell", "Uncertain", "Empty", "Discarded")
+    )
+  ) +
+  scale_x_continuous(
+    trans = log10_trans(),
+    breaks = trans_breaks("log10", function(x) 10^x),
+    labels = trans_format("log10", math_format(10^.x))
+  ) +
+  annotation_logticks(sides = "b") +
+  labs(title = "Cell Entropy Plot", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount", y = "CellEntropy") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 1,
+  )
+
+plotlist[["dropSplit-CellEntropy"]] <- p
+
+
+p <- colData(raw) %>%
+  as.data.frame() %>%
+  subset(!is.na(CellEntropy)) %>%
+  ggplot(aes(x = nCount, y = CellEntropy)) +
+  geom_point(
+    aes(color = dropSplitScore),
+    alpha = 0.5, shape = 16
+  ) +
+  scale_color_viridis_c(
+    name = "dropSplitScore"
+  ) +
+  scale_x_continuous(
+    trans = log10_trans(),
+    breaks = trans_breaks("log10", function(x) 10^x),
+    labels = trans_format("log10", math_format(10^.x))
+  ) +
+  annotation_logticks(sides = "b") +
+  labs(title = "Cell Entropy Plot", subtitle = paste("cells:", sum(colData(raw)$dropSplit)), x = "nCount", y = "CellEntropy") +
+  theme_classic() +
+  theme(
+    aspect.ratio = 1,
+  )
+plotlist[["dropSplit-CellEntropy2"]] <- p
+
+p <- plot_grid(
+  plotlist = plotlist[c(
+    "dropSplit-Rank",
+    "dropSplit-RankMSE",
+    "dropSplit-CellEntropy",
+    "dropSplit-CellEntropy2"
+  )],
+  nrow = 2, align = "hv", axis = "tblr"
+)
+title <- ggdraw() +
+  draw_label(
+    label = "Method: dropSplit",
+    fontface = "bold", x = 0, hjust = 0
+  ) +
+  theme(
+    plot.margin = margin(0, 0, 0, 7)
+  )
+p <- plot_grid(
+  title, p,
+  ncol = 1,
+  rel_heights = c(0.05, 1)
+)
+ggsave(p, filename = paste0(sample, ".dropSplit.png"), width = 11, height = 8)
+
 
 # Summary -----------------------------------------------------------------
 cell_rank <- colData(raw) %>%
   as.data.frame() %>%
   dplyr::select(
     Barcode, nCount_rank, nCount, Fitted, CellLabel,
-    Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs
+    Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs, dropSplit
   ) %>%
   arrange(nCount_rank) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs", "dropSplit"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -1181,7 +1521,7 @@ if (CellLabel != "NULL") {
       color = "transparent",
       shape = 21
     ) +
-    scale_fill_manual(values = setNames(c(alpha("red", 0.02), "transparent"), c(TRUE, FALSE)), guide = FALSE) +
+    scale_fill_manual(values = setNames(c(alpha("red", 0.05), "transparent"), c(TRUE, FALSE)), guide = FALSE) +
     geom_hline(
       yintercept = metadata(bc_ranks)$knee,
       colour = "dodgerblue", linetype = "dashed"
@@ -1255,9 +1595,9 @@ plotlist[["MethodCompare-nCount_rank"]] <- p
 
 cell_count <- colData(raw) %>%
   as.data.frame() %>%
-  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs) %>%
+  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs, dropSplit) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs", "dropSplit"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -1284,9 +1624,9 @@ plotlist[["MethodCompare-Barplot"]] <- p
 
 cell_upset <- colData(raw) %>%
   as.data.frame() %>%
-  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs) %>%
+  dplyr::select(Barcode, Cellranger_v2, Cellranger_v3, EmptyDrops, dropEst, zUMIs, dropSplit) %>%
   reshape2::melt(
-    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs"),
+    measure.vars = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs", "dropSplit"),
     variable.name = "Method",
     value.name = "is_cell"
   ) %>%
@@ -1308,7 +1648,7 @@ p <- cell_upset %>%
   geom_bar(aes(fill = ..count..), color = "black", width = 0.5) +
   geom_text(aes(label = ..count..), stat = "count", vjust = -0.5, hjust = 0, angle = 45) +
   labs(title = "Cell intersection among differnent methods", x = "", y = "Cell number") +
-  scale_x_upset(sets = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs")) +
+  scale_x_upset(sets = c("Cellranger_v2", "Cellranger_v3", "EmptyDrops", "dropEst", "zUMIs", "dropSplit")) +
   scale_y_continuous(limits = c(0, 1.2 * y_max)) +
   scale_fill_material(name = "Count", palette = "blue-grey") +
   theme_combmatrix(
@@ -1352,7 +1692,7 @@ saveRDS(cell_upset, file = "cell_upset.rds")
 write.table(x = cell_upset[["Barcode"]], file = "barcodes.tsv", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 pdf(paste0(sample, ".CellCalling.pdf"), width = 11, height = 8)
-invisible(lapply(paste0(sample, c(".Basic.png", ".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".MethodCompare.png")), function(x) {
+invisible(lapply(paste0(sample, c(".Basic.png", ".emptyDrops.png", ".dropEst.png", ".zUMIs.png", ".dropSplit.png", ".MethodCompare.png")), function(x) {
   grid.arrange(rasterGrob(readPNG(x, native = FALSE),
     interpolate = FALSE
   ))
