@@ -258,7 +258,6 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALS
                                   HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                   maxPC = 100, resolution = 0.8,
                                   reduction = "umap", reduction_prefix = "Uncorrected_",
-                                  cc_S_genes = NULL, cc_G2M_genes = NULL,
                                   exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -330,7 +329,6 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
                              maxPC = 100, resolution = 0.8,
                              reduction = "umap", reduction_prefix = "Seurat_",
-                             cc_S_genes = NULL, cc_G2M_genes = NULL,
                              exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -445,7 +443,6 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
                               reduction = "umap", reduction_prefix = "fastMNN_",
-                              cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -538,7 +535,6 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
                               reduction = "umap", reduction_prefix = "Harmony_",
-                              cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -637,7 +633,6 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                 HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                 maxPC = 100, resolution = 0.8,
                                 reduction = "umap", reduction_prefix = "Scanorama_",
-                                cc_S_genes = NULL, cc_G2M_genes = NULL,
                                 exogenous_genes = NULL, ...) {
   require(reticulate)
   require(plyr)
@@ -762,7 +757,6 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8,
                             reduction_prefix = "BBKNN_",
-                            cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
   require(reticulate)
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -852,7 +846,6 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           maxPC = 100, resolution = 0.8,
                           reduction = "umap", reduction_prefix = "CSS_",
-                          cc_S_genes = NULL, cc_G2M_genes = NULL,
                           exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -957,7 +950,6 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8,
                             reduction = "umap", reduction_prefix = "LIGER_",
-                            cc_S_genes = NULL, cc_G2M_genes = NULL,
                             exogenous_genes = NULL, ...) {
   require(liger)
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1059,7 +1051,6 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
                               maxPC = 100, resolution = 0.8,
                               reduction = "umap", reduction_prefix = "scMerge_",
-                              cc_S_genes = NULL, cc_G2M_genes = NULL,
                               exogenous_genes = NULL, ...) {
   require(scMerge)
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1189,7 +1180,6 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
                                maxPC = 100, resolution = 0.8,
                                reduction = "umap", reduction_prefix = "ZINBWaVE_",
-                               cc_S_genes = NULL, cc_G2M_genes = NULL,
                                exogenous_genes = NULL, ...) {
   require(zinbwave)
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1383,8 +1373,8 @@ DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
 Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
                          maxPC = 100, resolution = 0.8,
                          reduction = "umap", reduction_prefix = "",
-                         cc_S_genes = NULL, cc_G2M_genes = NULL,
                          exogenous_genes = NULL, ...) {
+  require(intrinsicDimension)
   if (class(srt) != "Seurat") {
     stop("'srt' is not a Seurat object.",
       call. = FALSE
@@ -1462,7 +1452,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
 
   srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
   if ("umap" %in% reduction) {
@@ -1484,7 +1474,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             normalization_method = "logCPM",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
                             maxPC = 100, resolution = 0.8, reduction = "umap",
-                            cc_S_genes = NULL, cc_G2M_genes = NULL,
+
                             exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
