@@ -59,7 +59,9 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
         color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
         exit 1
     fi
-
+    if (( threads > 120 ));then
+        threads=120
+    fi
     threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
     memory=$(((total_memory + ntask_per_run) / ntask_per_run - 1))
 
@@ -77,3 +79,4 @@ fi
 echo -e "########################### Global config patameters ###########################\n"
 echo -e "  maindir: ${maindir}\n  rawdata_dir: ${rawdata_dir}\n  work_dir: ${work_dir}\n  SampleInfoFile: ${SampleInfoFile}\n  SampleGrepPattern: ${SampleGrepPattern}\n\n  Total_tasks: ${total_task}\n  nTask_per_run: ${ntask_per_run}\n  Total_threads: ${total_threads}\n  Threads_per_task: ${threads}\n  Total_memory: ${total_memory}\n  Memory_per_task: ${memory}\n"
 echo -e "################################################################################\n\n\n"
+
