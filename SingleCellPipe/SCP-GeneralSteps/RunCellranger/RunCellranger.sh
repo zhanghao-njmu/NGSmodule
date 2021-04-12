@@ -219,6 +219,9 @@ for sample in "${arr[@]}"; do
             # Cell-calling
             check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                if [[ -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log ]]; then
+                    rm -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+                fi
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellCalling.R
