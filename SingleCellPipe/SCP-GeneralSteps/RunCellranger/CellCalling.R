@@ -8,11 +8,11 @@ EmptyThreshold <- as.character(args[4])
 CellLabel <- as.character(args[5])
 
 ### parameters: global settings ---------------------------------------------
-# cellranger_dir <- "/ssd/lab/ZhangHao/HumanTestis/NGSmodule_SCP_work/HT2/Alignment-Cellranger/"
-# sample <- "HT2"
+# cellranger_dir <- "/ssd/lab/ZhangHao/HumanTestis/NGSmodule_SCP_work/HT1/Alignment-Cellranger/"
+# sample <- "HT1"
 # threads <- 80
 # EmptyThreshold <- "AUTO"
-# CellLabel <- "GFP"
+# CellLabel <- "NULL"
 
 # cellranger_dir <- "/ssd/lab/HuangMingQian/scRNAseq/iPSC-ESC-iMeLC-PGCd6-CellLine-Testis/NGSmodule_SCP_work/ESC/Alignment-Cellranger/"
 # sample <- "ESC"
@@ -136,7 +136,7 @@ p <- ggplot(df3, aes(x = value1, y = value2)) +
     labels = trans_format("log10", math_format(10^.x))
   ) +
   annotation_logticks() +
-  facet_grid(var1 ~ var2, scales = "fixed") +
+  facet_grid(var2 ~ var1, scales = "fixed") +
   labs(title = "nCount vs nFeature") +
   theme_classic() +
   theme(
@@ -1148,7 +1148,9 @@ ggsave(p, filename = paste0(sample, ".zUMIs.png"), width = 11, height = 8)
 
 # Method: dropSplit ---------------------------------------------------------
 library(dropSplit)
+# result <- dropSplit(counts = counts(raw))
 result <- suppressMessages(dropSplit(counts = counts(raw),do_plot = FALSE, verbose = 0))
+saveRDS(object = result$meta_info,file = paste0(sample,"dropSplit_meta_info.rds"))
 meta_info <- result$meta_info
 colData(raw)[rownames(meta_info), "nCount"] <- meta_info$nCount
 colData(raw)[rownames(meta_info), "nCount_rank"] <- meta_info$nCount_rank

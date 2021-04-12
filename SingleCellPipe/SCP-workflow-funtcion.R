@@ -407,6 +407,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -502,6 +503,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -600,6 +602,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "Harmony", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -720,6 +723,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -821,6 +825,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
   srtIntegrated <- FindClusters(object = srtIntegrated, graph.name = "BBKNN", resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -915,6 +920,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "CSS", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1016,6 +1022,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "LIGER", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1144,6 +1151,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1284,6 +1292,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srtIntegrated$ident <- NULL
   srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1452,6 +1461,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
 
   srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  srt$ident <- NULL
   srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
