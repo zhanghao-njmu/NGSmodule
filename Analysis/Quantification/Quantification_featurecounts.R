@@ -52,4 +52,4 @@ featureTPM<-cbind(fCountsList$annotation[,1], tpm)
 colnames(featureTPM) <- c("GeneID",outTpmFilePath)
 write.table(featureTPM, outTpmFilePath, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
 
-saveRDS(dgeList, "dgeList.rds")
+saveRDS(dgeList, paste0(outFilePref, ".dgeList.rds"))
