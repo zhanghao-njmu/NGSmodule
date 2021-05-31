@@ -69,7 +69,7 @@ elif [[ ! -f $gtf ]]; then
 fi
 
 echo -e "############################# Alignment Parameters #############################\n"
-echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n"
+echo -e "  SequenceType: ${SequenceType}\n  Aligner: ${Aligner}\n  Deduplication: ${Deduplication}\n"
 echo -e "  Genome_File: ${genome}\n  GTF_File: ${gtf}\n  Aligner_Index: ${index}\n"
 echo -e "################################################################################\n"
 
