@@ -326,7 +326,7 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALS
 Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                              normalization_method = "logCPM", batch = "orig.ident",
                              HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                             maxPC = 100, resolution = 0.8,
+                             maxPC = 100, resolution = 0.8, reorder = TRUE,
                              reduction = "umap", reduction_prefix = "Seurat_",
                              exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -406,8 +406,9 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -441,7 +442,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                              maxPC = 100, resolution = 0.8,
+                              maxPC = 100, resolution = 0.8, reorder = TRUE,
                               reduction = "umap", reduction_prefix = "fastMNN_",
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -502,8 +503,9 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -534,7 +536,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                              maxPC = 100, resolution = 0.8,
+                              maxPC = 100, resolution = 0.8, reorder = TRUE,
                               reduction = "umap", reduction_prefix = "Harmony_",
                               exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -601,8 +603,9 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "Harmony", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -633,7 +636,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                 normalization_method = "logCPM", batch = "orig.ident",
                                 HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                                maxPC = 100, resolution = 0.8,
+                                maxPC = 100, resolution = 0.8, reorder = TRUE,
                                 reduction = "umap", reduction_prefix = "Scanorama_",
                                 exogenous_genes = NULL, ...) {
   require(reticulate)
@@ -722,8 +725,9 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -758,7 +762,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             normalization_method = "logCPM", batch = "orig.ident",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                            maxPC = 100, resolution = 0.8,
+                            maxPC = 100, resolution = 0.8, reorder = TRUE,
                             reduction_prefix = "BBKNN_",
                             exogenous_genes = NULL, ...) {
   require(reticulate)
@@ -824,8 +828,9 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
   srtIntegrated <- FindClusters(object = srtIntegrated, graph.name = "BBKNN", resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   srtIntegrated <- RunUMAP(object = srtIntegrated, graph = "BBKNN", umap.method = "umap-learn", reduction.name = paste0(reduction_prefix, "umap"))
@@ -848,7 +853,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                           normalization_method = "logCPM", batch = "orig.ident",
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                          maxPC = 100, resolution = 0.8,
+                          maxPC = 100, resolution = 0.8, reorder = TRUE,
                           reduction = "umap", reduction_prefix = "CSS_",
                           exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -919,8 +924,9 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "CSS", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -953,7 +959,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             normalization_method = "logCPM", batch = "orig.ident",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                            maxPC = 100, resolution = 0.8,
+                            maxPC = 100, resolution = 0.8, reorder = TRUE,
                             reduction = "umap", reduction_prefix = "LIGER_",
                             exogenous_genes = NULL, ...) {
   require(liger)
@@ -1021,8 +1027,9 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "LIGER", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -1055,7 +1062,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                              maxPC = 100, resolution = 0.8,
+                              maxPC = 100, resolution = 0.8, reorder = TRUE,
                               reduction = "umap", reduction_prefix = "scMerge_",
                               exogenous_genes = NULL, ...) {
   require(scMerge)
@@ -1150,8 +1157,9 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -1185,7 +1193,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                normalization_method = "logCPM", batch = "orig.ident",
                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                               maxPC = 100, resolution = 0.8,
+                               maxPC = 100, resolution = 0.8, reorder = TRUE,
                                reduction = "umap", reduction_prefix = "ZINBWaVE_",
                                exogenous_genes = NULL, ...) {
   require(zinbwave)
@@ -1291,8 +1299,9 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-
-  srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = T, reorder.numeric = T)
+  }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
   if ("umap" %in% reduction) {
@@ -1483,7 +1492,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             integration_method = "Uncorrected", batch = "orig.ident",
                             normalization_method = "logCPM",
                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                            maxPC = 100, resolution = 0.8, reduction = "umap",
+                            maxPC = 100, resolution = 0.8, reorder = TRUE, reduction = "umap",
 
                             exogenous_genes = NULL, ...) {
   if (is.null(srtList) & is.null(srtMerge)) {
