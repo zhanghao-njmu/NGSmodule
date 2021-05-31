@@ -1379,7 +1379,7 @@ DEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = TRUE,
 }
 
 Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf = NULL,
-                         maxPC = 100, resolution = 0.8,
+                         maxPC = 100, resolution = 0.8, reorder = TRUE,
                          reduction = "umap", reduction_prefix = "",
                          exogenous_genes = NULL) {
   require(intrinsicDimension)
@@ -1460,11 +1460,13 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
 
   srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
-  srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
+  if (isTRUE(reorder)) {
+    srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
+  }
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
   if ("umap" %in% reduction) {
-    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"),return.model = TRUE)
+    srt <- RunUMAP(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, n.components = 2, umap.method = "uwot", reduction.name = paste0(reduction_prefix, "umap"), return.model = TRUE)
   }
   if ("tsne" %in% reduction) {
     srt <- RunTSNE(
