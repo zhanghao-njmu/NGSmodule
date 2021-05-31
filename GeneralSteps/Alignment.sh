@@ -107,45 +107,45 @@ for sample in "${arr[@]}"; do
         if [[ $Layout == "SE" ]]; then
           fq1=$dir/${sample}_trim.fq.gz
           if [[ "$Aligner" = "bwa" ]]; then
-            bwa mem -t $threads -M $index ${fq1} | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bwa mem -t $threads -M $index ${fq1} |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "bowtie" ]]; then
-            bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bowtie -p $threads -1 ${fq1} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "bowtie2" ]]; then
-            bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bowtie2 -p $threads -x $index -1 ${fq1} 2>${sample}.${Aligner}.log |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "hisat2" ]]; then
-            hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            hisat2 -p $threads -x $index -U ${fq1} --new-summary 2>${sample}.${Aligner}.log |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1}
-            samtools view -@ $threads -Shb accepted_hits.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            samtools view -@ $threads -Shb accepted_hits.bam |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f accepted_hits.bam
           elif [[ "$Aligner" == "star" ]]; then
             STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} --genomeLoad LoadAndKeep --limitBAMsortRAM 10000000000 \
-            --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD \
-            --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
-            --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
-            --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-            --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
-            samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD \
+              --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
+              --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
+              --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
+              --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+            samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 4 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage \
-            --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --non_directional --nucleotide_coverage \
+              --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 4 --genome $index ${fq1} --quiet \
-            --non_directional --nucleotide_coverage \
-            --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --non_directional --nucleotide_coverage \
+              --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           fi
 
@@ -153,45 +153,45 @@ for sample in "${arr[@]}"; do
           fq1=$dir/${sample}_1_trim.fq.gz
           fq2=$dir/${sample}_2_trim.fq.gz
           if [[ "$Aligner" == "bwa" ]]; then
-            bwa mem -t $threads -M $index ${fq1} ${fq2} | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bwa mem -t $threads -M $index ${fq1} ${fq2} |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" = "bowtie" ]]; then
-            bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bowtie -p $threads -1 ${fq1} -2 ${fq2} -l 22 --fullref --chunkmbs 512 --best --strata -m 20 -n 2 --mm $index -S |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "bowtie2" ]]; then
-            bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            bowtie2 -p $threads -x $index -1 ${fq1} -2 ${fq2} 2>${sample}.${Aligner}.log |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "hisat2" ]]; then
-            hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log | \
-            samtools view -@ $threads -Shb - | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            hisat2 -p $threads -x $index -1 ${fq1} -2 ${fq2} --new-summary 2>${sample}.${Aligner}.log |
+              samtools view -@ $threads -Shb - |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
           elif [[ "$Aligner" == "tophat2" ]]; then
             tophat2 -p $threads --GTF $gtf --output-dir ./ $index ${fq1} ${fq2}
-            samtools view -@ $threads -Shb accepted_hits.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+            samtools view -@ $threads -Shb accepted_hits.bam |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f accepted_hits.bam
           elif [[ "$Aligner" == "star" ]]; then
             STAR --runThreadN $threads --genomeDir $index --readFilesIn ${fq1} ${fq2} --genomeLoad LoadAndKeep --limitBAMsortRAM 10000000000 \
-            --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD \
-            --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
-            --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
-            --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
-            --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
-            samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam | \
-            samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD \
+              --outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 \
+              --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 \
+              --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat \
+              --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+            samtools view -@ $threads -Shb Aligned.sortedByCoord.out.bam |
+              samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
             bismark --bowtie2 --multicore $bismark_threads -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage \
-            --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --non_directional --nucleotide_coverage \
+              --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
             bismark --hisat2 --multicore $bismark_threads -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
-            --non_directional --nucleotide_coverage \
-            --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
+              --non_directional --nucleotide_coverage \
+              --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           fi
 
@@ -235,24 +235,28 @@ for sample in "${arr[@]}"; do
 
         if [[ "$SequenceType" == "dna" ]]; then
           if [[ "$Deduplication" == "TRUE" ]]; then
-          echo "+++++ WGS deduplicate: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -r -t $threads --hash-table-size=1000000 --overflow-list-size=1000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            echo "+++++ DNA remove duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.RG.FMI.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             rm -f ${sample}.${Aligner}.dedup.RG.bam
             mv ${sample}.${Aligner}.dedup.RG.FMI.bam ${sample}.${Aligner}.bam
+          else
+            echo "+++++ DNA mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
           fi
           samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
           if [[ "$Deduplication" == "TRUE" ]]; then
-            echo "+++++ RNAseq deduplicate: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -t $threads --hash-table-size=1000000 --overflow-list-size=1000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            echo "+++++ RNA remove duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             mv ${sample}.${Aligner}.dedup.bam ${sample}.${Aligner}.bam
           else
-            echo "+++++ RNAseq mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -r -t $threads --hash-table-size=1000000 --overflow-list-size=1000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            echo "+++++ RNA mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
           fi
           samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
@@ -260,7 +264,7 @@ for sample in "${arr[@]}"; do
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
           if [[ "$Deduplication" == "TRUE" ]]; then
-            echo "+++++ BS-seq deduplication: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            echo "+++++ BSdna remove duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
             mkdir -p $dir/Alignment-$Aligner/deduplicate_bismark
             deduplicate_bismark --bam $BAM --output_dir $dir/Alignment-$Aligner/deduplicate_bismark &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             BAM=$(ls $dir/Alignment-$Aligner/deduplicate_bismark/*.deduplicated.bam)
@@ -273,13 +277,13 @@ for sample in "${arr[@]}"; do
           else
             dedup_report='none'
           fi
-          
+
           echo "+++++ BS-seq methylation extractor: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/Alignment-$Aligner/bismark_methylation_extractor
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
-          --bedGraph --buffer_size 10G \
-          --cytosine_report --genome_folder $index \
-          --output $dir/Alignment-$Aligner/bismark_methylation_extractor $BAM &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            --bedGraph --buffer_size 10G \
+            --cytosine_report --genome_folder $index \
+            --output $dir/Alignment-$Aligner/bismark_methylation_extractor $BAM &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
 
           echo "+++++ BS-seq html processing report: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/Alignment-$Aligner/bismark2report
@@ -288,11 +292,11 @@ for sample in "${arr[@]}"; do
           mbias_report=$(ls $dir/Alignment-$Aligner/bismark_methylation_extractor/*M-bias.txt)
           nucleotide_report=$(ls $dir/Alignment-$Aligner/*.nucleotide_stats.txt)
           bismark2report --dir $dir/Alignment-$Aligner/bismark2report \
-          --alignment_report $alignment_report \
-          --dedup_report $dedup_report \
-          --splitting_report $splitting_report \
-          --mbias_report $mbias_report \
-          --nucleotide_report $nucleotide_report &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            --alignment_report $alignment_report \
+            --dedup_report $dedup_report \
+            --splitting_report $splitting_report \
+            --mbias_report $mbias_report \
+            --nucleotide_report $nucleotide_report &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         check_logfile "$sample" "BamProcessing" "$dir/Alignment-$Aligner/BamProcessingStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
@@ -326,7 +330,7 @@ if [[ $ninterrupted != 0 ]]; then
   cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/Alignment.Interrupted.txt
   color_echo "red" "\n\n################################################################################"
   color_echo "red" "    $ninterrupted of $total_task tasks interrupted."
-  color_echo "red" "    Please check the samples in $maindir/Alignment.Interrupted.txt"   
+  color_echo "red" "    Please check the samples in $maindir/Alignment.Interrupted.txt"
   color_echo "red" "################################################################################\n\n"
 fi
 
