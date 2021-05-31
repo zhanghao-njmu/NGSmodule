@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
-#trap "exit" SIGINT SIGTERM
-#trap "kill 0" EXIT
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 #### User can prepare the meta file using pysradb (https://github.com/saketkc/pysradb), which is a python package and can be installed using the command "conda install pysradb".
 #### e.g. If one wants to download a meta file for a SRP study accession, he can use the command 'pysradb srp-to-srr --detailed --desc --expand --saveto ${SRP}.tsv ${SRP}'
