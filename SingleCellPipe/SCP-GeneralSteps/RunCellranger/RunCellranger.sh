@@ -183,6 +183,8 @@ for sample in "${arr[@]}"; do
                     --localcores "$threads" \
                     --localmem "$memory" \
                     --transcriptome "$cellranger_ref" &>"$dir"/Alignment-Cellranger/cellranger.log
+                mv "$dir"/Alignment-Cellranger/"$sample"/outs/web_summary.html "$dir"/Alignment-Cellranger/"$sample"/outs/"$sample".cellranger.html
+                mv "$dir"/Alignment-Cellranger/"$sample"/outs/cloupe.cloupe "$dir"/Alignment-Cellranger/"$sample"/outs/"$sample".cloupe
 
                 check_logfile "$sample" "cellranger" "$dir"/Alignment-Cellranger/cellranger.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
@@ -274,7 +276,6 @@ mkdir -p $maindir/NGSmodule_SCP_analysis/Prepare
 cd $maindir/NGSmodule_SCP_analysis/Prepare
 script=$SCP_path/SCP-GeneralSteps/RunCellranger/Prepare.R
 Rscript $script $SCP_path $work_dir
-
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
