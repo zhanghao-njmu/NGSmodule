@@ -31,7 +31,7 @@ total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)               
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
-force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE .
+force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE.
 
 
 ############# CreateWorkDir Paramaters ######################################################################
@@ -75,6 +75,7 @@ Species="Homo_sapiens"                           ## Homo_sapiens,Mus_musculus,Ma
 Source="Ensembl"                                 ## Ensembl,NCBI,UCSC
 Build="GRCh38"                                   ## The genome build version.
 Aligner="hisat2"                                 ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
+Deduplication=""                             ## Whether to perfomrm deduplication. Default is automatic: dna/BSdna = "TRUE", rna = "FALSE".
 Aligner_parament=""                              ## Optional. Specify custom parameters and overwrite the default patameters excluding the index path and threads number.  
 Genome_direct=""                                 ## Optional. Specify a genome file path used for the alignment.  
 GTF_direct=""                                    ## Optional. Specify a gtf file path used for the alignment.  

@@ -26,6 +26,27 @@ else
   FastqScreen_mode=""
 fi
 
+de_option=("TRUE" "FALSE")
+if [[ ${Deduplication} == "" ]];then
+  case ${Deduplication} in
+    rna)
+        Deduplication="FALSE"
+        ;;
+    dna)
+        Deduplication="TRUE"
+        ;;
+    BSdna)
+        Deduplication="TRUE"
+        ;;
+    *)
+        Deduplication="FALSE"
+  esac
+elif [[ " ${de_option[*]} " != *" $Deduplication "* ]]; then
+  color_echo "red" "ERROR! Deduplication must be empty or one of 'TRUE' and 'FALSE'.\nPlease check the paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
+
 if [[ $Genome_direct == "" ]]; then
   genome="$iGenomes_Dir/$Species/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
 else

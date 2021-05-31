@@ -95,7 +95,7 @@ for sample in "${arr[@]}"; do
         rm -rf $dir/$Aligner/CNV/HMMcopy
         mkdir -p $dir/$Aligner/CNV/HMMcopy
         cd $dir/$Aligner/CNV/HMMcopy
-        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig 2>>HMMcopyStatus.log
+        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>HMMcopyStatus.log
         cmd="Rscript $1 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.HMMcopy"
         echo $cmd >>HMMcopyStatus.log
         eval $cmd &>>HMMcopyStatus.log
@@ -112,7 +112,7 @@ for sample in "${arr[@]}"; do
         rm -rf $dir/$Aligner/CNV/DNAcopy
         mkdir -p $dir/$Aligner/CNV/DNAcopy
         cd $dir/$Aligner/CNV/DNAcopy
-        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam >${sample}.${Aligner}.w$Window.wig 2>>DNAcopyStatus.log
+        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>DNAcopyStatus.log
         cmd="Rscript $2 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.DNAcopy"
         echo $cmd >>DNAcopyStatus.log
         eval $cmd &>>DNAcopyStatus.log
@@ -167,7 +167,7 @@ for sample in "${arr[@]}"; do
         rm -rf $dir/$Aligner/SNV/GATK3
         mkdir -p $dir/$Aligner/SNV/GATK3
         cd $dir/$Aligner/SNV/GATK3
-        eval "$GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz" &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
+        eval "$GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.bam -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz" &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
         if [[ $? == 0 ]]; then
           bcftools view $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
           Rscript $3 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.GATK3 &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
@@ -187,7 +187,7 @@ for sample in "${arr[@]}"; do
         cd $dir/$Aligner/SNV/Strelka2
 
         configureStrelkaGermlineWorkflow.py \
-        --bam ${dir}/${Aligner}/${sample}.${Aligner}.dedup.bam \
+        --bam ${dir}/${Aligner}/${sample}.${Aligner}.bam \
         --referenceFasta $genome \
         --runDir $dir/$Aligner/SNV/Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
         $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log

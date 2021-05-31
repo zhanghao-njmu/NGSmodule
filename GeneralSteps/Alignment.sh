@@ -43,11 +43,6 @@ picard &>/dev/null
   echo -e "Cannot find the command picard.\n"
   exit 1
 }
-bam &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command bam. One can install bamutil by 'conda install -c bioconda bamutil'.\n"
-  exit 1
-}
 
 aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
 if [[ " ${aligners[*]} " != *" $Aligner "* ]]; then
@@ -239,43 +234,56 @@ for sample in "${arr[@]}"; do
         fi
 
         if [[ "$SequenceType" == "dna" ]]; then
-          echo "+++++ WGS deduplication: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          rm -f ${sample}.${Aligner}.dedup.RG.bam
-          samtools index -@ $threads ${sample}.${Aligner}.dedup.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          if [[ "$Deduplication" == "TRUE" ]]; then
+          echo "+++++ WGS deduplicate: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.RG.FMI.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            rm -f ${sample}.${Aligner}.dedup.RG.bam
+            mv ${sample}.${Aligner}.dedup.RG.FMI.bam ${sample}.${Aligner}.bam
+          fi
+          samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
-          echo "+++++ RNAseq Mark Duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          bam dedup --force --noPhoneHome --in ${sample}.${Aligner}.bam --out ${sample}.${Aligner}.markdup.bam --log ${sample}.${Aligner}.markdup.log &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
+          if [[ "$Deduplication" == "TRUE" ]]; then
+            echo "+++++ RNAseq deduplicate: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            mv ${sample}.${Aligner}.dedup.bam ${sample}.${Aligner}.bam
+          else
+            echo "+++++ RNAseq mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            sambamba markdup -r -t $threads ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
+          fi
           samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-          echo "+++++ BS-seq deduplication: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          mkdir -p $dir/Alignment-$Aligner/deduplicate_bismark
-          deduplicate_bismark --bam $BAM --output_dir $dir/Alignment-$Aligner/deduplicate_bismark &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          dedupBAM=$(ls $dir/Alignment-$Aligner/deduplicate_bismark/*.deduplicated.bam)
-          samtools quickcheck -v ${dedupBAM} &>/dev/null
-          if [[ $? != 0 ]]; then
-            color_echo "yellow" "[INFO] $sample: BS-seq deduplicated.bam check failed."
-            continue
+          if [[ "$Deduplication" == "TRUE" ]]; then
+            echo "+++++ BS-seq deduplication: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            mkdir -p $dir/Alignment-$Aligner/deduplicate_bismark
+            deduplicate_bismark --bam $BAM --output_dir $dir/Alignment-$Aligner/deduplicate_bismark &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            BAM=$(ls $dir/Alignment-$Aligner/deduplicate_bismark/*.deduplicated.bam)
+            dedup_report=$(ls $dir/Alignment-$Aligner/deduplicate_bismark/*.deduplication_report.txt)
+            samtools quickcheck -v ${BAM} &>/dev/null
+            if [[ $? != 0 ]]; then
+              color_echo "yellow" "[INFO] $sample: BS-seq deduplicated.bam check failed."
+              continue
+            fi
+          else
+            dedup_report='none'
           fi
-
+          
           echo "+++++ BS-seq methylation extractor: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/Alignment-$Aligner/bismark_methylation_extractor
           bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
           --bedGraph --buffer_size 10G \
           --cytosine_report --genome_folder $index \
-          --output $dir/Alignment-$Aligner/bismark_methylation_extractor $dedupBAM &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          --output $dir/Alignment-$Aligner/bismark_methylation_extractor $BAM &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
 
           echo "+++++ BS-seq html processing report: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/Alignment-$Aligner/bismark2report
           alignment_report=$(ls $dir/Alignment-$Aligner/*_[SP]E_report.txt)
-          dedup_report=$(ls $dir/Alignment-$Aligner/deduplicate_bismark/*.deduplication_report.txt)
           splitting_report=$(ls $dir/Alignment-$Aligner/bismark_methylation_extractor/*_splitting_report.txt)
           mbias_report=$(ls $dir/Alignment-$Aligner/bismark_methylation_extractor/*M-bias.txt)
           nucleotide_report=$(ls $dir/Alignment-$Aligner/*.nucleotide_stats.txt)
