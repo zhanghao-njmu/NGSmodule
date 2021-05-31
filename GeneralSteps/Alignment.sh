@@ -44,12 +44,6 @@ picard &>/dev/null
   exit 1
 }
 
-aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
-if [[ " ${aligners[*]} " != *" $Aligner "* ]]; then
-  color_echo "red" "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
-  exit 1
-fi
-
 if [[ "$SequenceType" == "BSdna" ]] && [[ ! "$Aligner" =~ bismark_* ]]; then
   color_echo "red" "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
   exit 1
@@ -60,12 +54,66 @@ if [[ ! "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
   exit 1
 fi
 
+aligners=("bwa" "bowtie" "bowtie2" "hisat2" "tophat2" "star" "bismark_bowtie2" "bismark_hisat2")
+if [[ " ${aligners[*]} " != *" $Aligner "* ]]; then
+  color_echo "red" "ERROR! Aligner is wrong.\nPlease check theParamaters in your ConfigFile.\n"
+  exit 1
+fi
+
+de_option=("TRUE" "FALSE")
+if [[ ${Deduplication} == "" ]]; then
+  case ${Deduplication} in
+  rna)
+    Deduplication="FALSE"
+    ;;
+  dna)
+    Deduplication="TRUE"
+    ;;
+  BSdna)
+    Deduplication="TRUE"
+    ;;
+  *)
+    Deduplication="FALSE"
+    ;;
+  esac
+elif [[ " ${de_option[*]} " != *" $Deduplication "* ]]; then
+  color_echo "red" "ERROR! Deduplication must be empty or one of 'TRUE' and 'FALSE'.\nPlease check the paramaters in your ConfigFile.\n"
+  exit 1
+fi
+
+if [[ $Genome_direct == "" ]]; then
+  genome="$iGenomes_Dir/$Species/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
+else
+  genome=$Genome_direct
+fi
+
+if [[ $GTF_direct == "" ]]; then
+  gtf="$iGenomes_Dir/$Species/$Source/$Build/Annotation/Genes/genes.gtf"
+else
+  gtf=$GTF_direct
+fi
+
 if [[ ! -f $genome ]]; then
   color_echo "red" "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
 elif [[ ! -f $gtf ]]; then
   color_echo "red" "ERROR! Cannot find the gtf file: $gtf\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
+fi
+
+bwa_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BWAIndex/genome.fa"
+bowtie_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BowtieIndex/genome"
+bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Bowtie2Index/genome"
+hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/Hisat2Index/genome"
+star_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/STARIndex/genome"
+bismark_bowtie2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/bowtie2"
+bismark_hisat2_index="$iGenomes_Dir/$Species/$Source/$Build/Sequence/BismarkIndex/hisat2"
+tophat2_index=$bowtie2_index
+
+if [[ $Index_direct == "" ]]; then
+  eval "index=\${${Aligner}_index}"
+else
+  index=$Index_direct
 fi
 
 echo -e "############################# Alignment Parameters #############################\n"
