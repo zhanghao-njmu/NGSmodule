@@ -83,6 +83,12 @@ CNVanalysis() {
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/DNAcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
+GATK-somatic-short-variant() {
+  source $1
+  source $shell_folder/LoadConfig.sh
+  source $shell_folder/Analysis/GATK/GATK-somatic-short-variant.sh
+}
+
 CreateSCPConfigFile() {
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPConfigFile.sh $1
 }
@@ -152,6 +158,9 @@ help() {
 
     # CNVAnalysis:
        CNVanalysis
+    
+    # GATK:
+       GATK-somatic-short-variant
     
     # SingleCellPipe
        CreateSCPConfigFile
@@ -308,6 +317,15 @@ while true; do
       }
       CheckConfigFile $ConfigFile
       CNVanalysis $ConfigFile
+      exit 0
+    elif [[ $1 == "GATK-somatic-short-variant" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in GATK-somatic-short-variant MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      GATK-somatic-short-variant $ConfigFile
       exit 0
 
     ### SingleCellPipe
