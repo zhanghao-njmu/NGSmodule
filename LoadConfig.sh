@@ -90,8 +90,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$threads
   fi
 
-  if ((threads > 120)); then
-    threads=120
+  if ((threads > 64)); then
+    threads=64
   else
     threads=$threads
   fi
