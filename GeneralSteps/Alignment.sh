@@ -287,11 +287,13 @@ for sample in "${arr[@]}"; do
             sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             picard AddOrReplaceReadGroups I=${sample}.${Aligner}.dedup.bam O=${sample}.${Aligner}.dedup.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             picard FixMateInformation I=${sample}.${Aligner}.dedup.RG.bam O=${sample}.${Aligner}.dedup.RG.FMI.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            rm -f ${sample}.${Aligner}.dedup.bam.bai
             rm -f ${sample}.${Aligner}.dedup.RG.bam
             mv ${sample}.${Aligner}.dedup.RG.FMI.bam ${sample}.${Aligner}.bam
           else
             echo "+++++ DNA mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
             sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            rm -f ${sample}.${Aligner}.markdup.bam.bai
             mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
           fi
           samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
