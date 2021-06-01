@@ -66,17 +66,27 @@ for sample in "${arr[@]}"; do
 
     dir=$work_dir/$sample
     if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
-      bam=$(ls $dir/$Aligner/*.bam)
+      bam=$(ls $dir/Alignment-$Aligner/*.bam)
     else
-      bam=$dir/$Aligner/${sample}.${Aligner}.bam
+       case ${Deduplication} in
+        FALSE)
+          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.markdup.bam"
+          ;;
+        TRUE)
+          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.dedup.bam"
+          ;;
+        *)
+          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.bam"
+          ;;
+        esac
     fi
     if [[ ! -f $bam ]]; then
       color_echo "red" "ERROR! Bam file:$bam do not exist. Please check the file.\n"
       exit 1
     fi
 
-    mkdir -p $dir/$Aligner/postAlignmentQC/RSeQC
-    cd $dir/$Aligner/postAlignmentQC/RSeQC
+    mkdir -p $dir/Alignment-$Aligner/postAlignmentQC/RSeQC
+    cd $dir/Alignment-$Aligner/postAlignmentQC/RSeQC
     bam_stat.py -i $bam >${sample}.${Aligner}.bam_stat.txt 2>bam_stat.log
     infer_experiment.py -r $genes_bed -i $bam >${sample}.${Aligner}.infer_experiment.txt 2>infer_experiment.log
     inner_distance.py -r $genes_bed -i $bam -o ${sample}.${Aligner} &>inner_distance.log
@@ -92,21 +102,21 @@ for sample in "${arr[@]}"; do
     if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       echo "+++++ Waiting for the background processes..........+++++"
     else
-      mkdir -p $dir/$Aligner/postAlignmentQC/Preseq
-      cd $dir/$Aligner/postAlignmentQC/Preseq
+      mkdir -p $dir/Alignment-$Aligner/postAlignmentQC/Preseq
+      cd $dir/Alignment-$Aligner/postAlignmentQC/Preseq
       preseq lc_extrap -B $bam -o ${sample}.${Aligner}.txt &>preseq_lc_extrap.log
-      mkdir -p $dir/$Aligner/postAlignmentQC/goleft
-      cd $dir/$Aligner/postAlignmentQC/goleft
+      mkdir -p $dir/Alignment-$Aligner/postAlignmentQC/goleft
+      cd $dir/Alignment-$Aligner/postAlignmentQC/goleft
       goleft indexcov --directory ./ $bam &>goleft_indexcov.log
-      mkdir -p $dir/$Aligner/postAlignmentQC/mosdepth
-      cd $dir/$Aligner/postAlignmentQC/mosdepth
+      mkdir -p $dir/Alignment-$Aligner/postAlignmentQC/mosdepth
+      cd $dir/Alignment-$Aligner/postAlignmentQC/mosdepth
       mosdepth -t $threads -n --fast-mode ${sample}.${Aligner} $bam &>mosdepth.log
-      mkdir -p $dir/$Aligner/postAlignmentQC/dupRadar
-      cd $dir/$Aligner/postAlignmentQC/dupRadar
-      Rscript $1 $bam $gtf $strandspecific $Layout $threads_featurecounts $dir/$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
+      mkdir -p $dir/Alignment-$Aligner/postAlignmentQC/dupRadar
+      cd $dir/Alignment-$Aligner/postAlignmentQC/dupRadar
+      Rscript $1 $bam $gtf $strandspecific $Layout $threads_featurecounts $dir/Alignment-$Aligner/postAlignmentQC/dupRadar ${sample}.${Aligner}
     fi
 
-    ##  mkdir -p $dir/$Aligner/Qualimap; cd $dir/$Aligner/Qualimap #### too slow!!!
+    ##  mkdir -p $dir/Alignment-$Aligner/Qualimap; cd $dir/Alignment-$Aligner/Qualimap #### too slow!!!
     ##  unset DISPLAY
     ##  if [[ $Layout == "SE" && $SequenceType == "rna" ]];then
     ##    qualimap rnaseq -bam $bam -gtf $gtf -outdir ${sample}.${Aligner} -outformat HTML --java-mem-size=10G  &
@@ -116,7 +126,7 @@ for sample in "${arr[@]}"; do
     ##  wait
     ##  qualimap bamqc -bam $bam -gff $gtf -nt $threads -nr 100000 -nw 300 -outdir ${sample}.${Aligner} -outformat HTML java_options="-Djava.awt.headless=true -Xmx$JAVA_MEM_SIZE -XX:MaxPermSize=10G"
     #
-    ##  mkdir -p $dir/$Aligner/deepTools; cd $dir/$Aligner/deepTools
+    ##  mkdir -p $dir/Alignment-$Aligner/deepTools; cd $dir/Alignment-$Aligner/deepTools
     ##  bamPEFragmentSize -p $threads -b $bam  --table ${sample}.${Aligner}.table.txt --outRawFragmentLengths ${sample}.${Aligner}.RawFragmentLengths.txt
     ##  estimateReadFiltering -p $threads -b $bam >${sample}.${Aligner}.estimateRead.txt
     ##  plotCoverage -p $threads -b $bam --outRawCounts ${sample}.${Aligner}.CoverageRawCounts.txt

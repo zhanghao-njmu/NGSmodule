@@ -1,0 +1,230 @@
+#!/usr/bin/bash
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
+
+#######################################################################################
+$GATK3 --help &>/dev/null
+[ $? -ne 0 ] && {
+    color_echo "red" "Cannot find the tool GATK3.\n"
+    exit 1
+}
+
+known_indels=()
+known_snps=()
+resource_indels=()
+resource_snps=()
+if [[ ${Species} == "Homo_sapiens" ]]; then
+    case ${Build} in
+    hg19)
+        Hapmap_snps="$iGenomes_Dir/$Species/GATK/hg19/hapmap_3.3.hg19.sites.vcf.gz"
+        Omni_snps="$iGenomes_Dir/$Species/GATK/hg19/1000G_omni2.5.hg19.sites.vcf.gz"
+        KG_indels="$iGenomes_Dir/$Species/GATK/hg19/1000G_phase1.indels.hg19.sites.vcf.gz"
+        KG_snps="$iGenomes_Dir/$Species/GATK/hg19/1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz"
+        Mills_indels="$iGenomes_Dir/$Species/GATK/hg19/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz"
+        dbSNP_snps="$iGenomes_Dir/$Species/GATK/hg19/dbsnp_138.hg19.vcf.gz"
+
+        known_indels+=($KG_indels $Mills_indels)
+        known_snps+=($dbSNP_snps)
+        ;;
+    hg38)
+        Hapmap_snps="$iGenomes_Dir/$Species/GATK/hg38/hapmap_3.3.hg38.vcf.gz"
+        Omni_snps="$iGenomes_Dir/$Species/GATK/hg38/1000G_omni2.5.hg38.vcf.gz"
+        KG_snps="$iGenomes_Dir/$Species/GATK/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz"
+        Mills_indels="$iGenomes_Dir/$Species/GATK/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
+        dbSNP_snps="$iGenomes_Dir/$Species/GATK/hg38/dbsnp_146.hg38.vcf.gz"
+
+        known_indels+=($Mills_indels)
+        known_snps+=($dbSNP_snps)
+        ;;
+    GRCh37)
+        Hapmap_snps="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/hapmap_3.3.b37.vcf.gz"
+        Omni_snps="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/1000G_omni2.5.b37.vcf.gz"
+        KG_snps="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/1000G_phase1.snps.high_confidence.b37.vcf.gz"
+        KG_indels="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/1000G_phase1.indels.b37.vcf.gz"
+        Mills_indels="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"
+        dbSNP_snps="$iGenomes_Dir/$Species/GATK/GRCh37/Annotation/GATKBundle/dbsnp_138.b37.vcf.gz"
+
+        known_indels+=($KG_indels $Mills_indels)
+        known_snps+=($dbSNP_snps)
+        ;;
+    GRCh38)
+        Hapmap_snps="$iGenomes_Dir/$Species/GATK/GRCh38/Annotation/GATKBundle/hapmap_3.3.hg38.vcf.gz"
+        Omni_snps="$iGenomes_Dir/$Species/GATK/GRCh38/Annotation/GATKBundle/1000G_omni2.5.hg38.vcf.gz"
+        KG_snps="$iGenomes_Dir/$Species/GATK/GRCh38/Annotation/GATKBundle/1000G_phase1.snps.high_confidence.hg38.vcf.gz"
+        Mills_indels="$iGenomes_Dir/$Species/GATK/GRCh38/Annotation/GATKBundle/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
+        dbSNP_snps="$iGenomes_Dir/$Species/GATK/GRCh38/Annotation/GATKBundle/dbsnp_146.hg38.vcf.gz"
+
+        known_indels+=($Mills_indels)
+        known_snps+=($dbSNP_snps)
+        ;;
+    *)
+        color_echo "yellow" "No support vcf for the ${Build}.\n"
+        ;;
+    esac
+
+    resource_snps+=("-resource:hapmap,known=false,training=true,truth=true,prior=15.0 $Hapmap_snps")
+    resource_snps+=("-resource:omini,known=false,training=true,truth=false,prior=12.0 $Omni_snps")
+    resource_snps+=("-resource:1000G,known=false,training=true,truth=false,prior=10.0 $KG_snps")
+    resource_snps+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_indels+=("-resource:mills,known=true,training=true,truth=true,prior=12.0 $Mills_indels")
+    resource_indels+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+fi
+if [[ ${Species} == "Mus_musculus" ]] && [[ ${Source} == "Ensembl" ]] && [[ ${Build} == "GRCm38" ]]; then
+    dbSNP_indels="$iGenomes_Dir/$Species/Ensembl/GRCm38/MouseGenomeProject/mgp.v5.merged.indels.dbSNP142.normed.vcf.gz"
+    dbSNP_snps="$iGenomes_Dir/$Species/Ensembl/GRCm38/MouseGenomeProject/mgp.v5.merged.snps_all.dbSNP142.vcf.gz"
+   
+    known_indels+=($dbSNP_indels)
+    known_snps+=($dbSNP_snps)
+    resource_snps+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_indels+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+fi
+
+echo -e "############################# GATK Parameters #############################\n"
+echo -e "  GATK3: \"${GATK3}\"\n"
+echo -e "  known_indels: ${known_indels[*]} \n"
+echo -e "  known_snps: ${known_snps[*]} \n"
+echo -e "################################################################################\n"
+
+echo -e "****************** Start GATK ******************\n"
+SECONDS=0
+
+for sample in "${arr[@]}"; do
+    read -u1000
+    {
+        dir=${work_dir}/${sample}
+        if [ ! -d "$dir/Alignment-$Aligner" ]; then
+            color_echo "red" "Cannot find alignment result. Please run 'Alignment' first.\n"
+            exit 1
+        fi
+
+        case ${Deduplication} in
+        FALSE)
+            BAM="$dir/Alignment-$Aligner/${sample}.${Aligner}.markdup.bam"
+            ;;
+        TRUE)
+            BAM="$dir/Alignment-$Aligner/${sample}.${Aligner}.dedup.bam"
+            ;;
+        *)
+            BAM="$dir/Alignment-$Aligner/${sample}.${Aligner}.bam"
+            ;;
+        esac
+        prefix=${${BAM%%.bam}##*/}
+
+        dir_result="$dir/Alignment-$Aligner/GATK-somatic-short-variant"
+        mkdir -p $dir_result
+        cd $dir_result
+
+        force=${force_complete}
+        status="uncompleted"
+        attempt=0
+
+        echo "===== $sample ====="
+
+        while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+            ((attempt++))
+            if [[ $attempt != 1 ]]; then
+                echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
+            fi
+
+            logfiles=("Realigner.log" "BQSR.log" "HaplotypeCaller.log")
+            globalcheck_logfile "$dir_result" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
+
+            ##### Realigner #####
+            check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir_result/Realigner
+                mkdir -p $dir_result/Realigner
+                cd $dir_result/Realigner
+                par_known_indels=$(printf -- " --known '%s'" "${known_indels[@]}")
+                eval "$GATK3 -T RealignerTargetCreator -R $genome -I $BAM $par_known_indels -o ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
+                eval "$GATK3 -T IndelRealigner -R $genome -I $BAM $par_known_indels -o ${prefix}.realign.bam --targetIntervals ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
+
+                check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    continue
+                fi
+            fi
+
+            ##### BQSR #####
+            check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir_result/BQSR
+                mkdir -p $dir_result/BQSR
+                cd $dir_result/BQSR
+                par_known_indels=$(printf -- " --knownSites '%s'" "${known_indels[@]}")
+                par_known_snps=$(printf -- " --knownSites '%s'" "${known_snps[@]}")
+                eval "$GATK3 -T BaseRecalibrator -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
+                eval "$GATK3 -T PrintReads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam -BQSR ${prefix}.BQSR.table -o ${prefix}.realign.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
+
+                check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    continue
+                fi
+            fi
+
+            ##### HaplotypeCaller #####
+            check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir_result/HaplotypeCaller
+                mkdir -p $dir_result/HaplotypeCaller
+                cd $dir_result/HaplotypeCaller
+                eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -nct $threads -R $genome -I ${dir_result}/BQSR/${prefix}.realign.BQSR.bam -o ${prefix}.gvcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
+                eval "$GATK3 -T GenotypeGVCFs -nct $threads -R $genome --variant ${prefix}.gvcf.gz -o ${prefix}.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
+                
+                check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    continue
+                fi
+            fi
+
+            ##### VQSR #####
+            check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir_result/VQSR
+                mkdir -p $dir_result/VQSR
+                cd $dir_result/VQSR
+                par_resource_snps=$(printf -- " '%s'" "${resource_snps[@]}")
+                par_resource_indels=$(printf -- " '%s'" "${resource_indels[@]}")
+                eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz $par_resource_snps -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode SNP -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -rscriptFile ${prefix}.snps.plots.R" &>>$dir_result/VQSR/VQSR.log
+                eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -mode SNP -o ${prefix}.snps.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
+                eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz $par_resource_indels -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode INDEL -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -rscriptFile ${prefix}.snps.indels.plots.R" &>>$dir_result/VQSR/VQSR.log
+                eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -mode INDEL -o ${prefix}.snps.indels.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
+                
+                check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    continue
+                fi
+
+            fi
+
+            status="completed"
+            color_echo "blue" "+++++ ${sample}: GATK completed +++++"
+        done
+
+        if [[ "$status" == "completed" ]]; then
+            echo "Completed: $sample" >>"$tmpfile"
+        else
+            echo "Interrupted: $sample" >>"$tmpfile"
+            color_echo "red" "ERROR! ${sample} interrupted! Please check the processing log and your raw bam file."
+        fi
+
+        color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
+
+        echo >&1000
+    } &
+    ((bar++))
+    processbar $bar $total_task
+done
+wait
+
+ninterrupted=$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l)
+if [[ $ninterrupted != 0 ]]; then
+    cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/GATK.Interrupted.txt
+    color_echo "red" "\n\n################################################################################"
+    color_echo "red" "    $ninterrupted of $total_task tasks interrupted."
+    color_echo "red" "    Please check the samples in $maindir/GATK.Interrupted.txt"
+    color_echo "red" "################################################################################\n\n"
+fi
+
+ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
+echo -e "\n$ELAPSED"
+echo -e "****************** GATK Done ******************\n"

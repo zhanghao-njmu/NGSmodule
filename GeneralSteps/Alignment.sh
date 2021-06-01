@@ -62,7 +62,7 @@ fi
 
 de_option=("TRUE" "FALSE")
 if [[ ${Deduplication} == "" ]]; then
-  case ${Deduplication} in
+  case ${SequenceType} in
   rna)
     Deduplication="FALSE"
     ;;
@@ -275,42 +275,40 @@ for sample in "${arr[@]}"; do
           samtools stats -@ $threads $BAM >${BAM}.stats 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
           samtools flagstat -@ $threads $BAM >${BAM}.flagstat 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         else
-          samtools index -@ $threads ${sample}.${Aligner}.bam 2>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          samtools stats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.stats 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          samtools idxstats -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.idxstats 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-          samtools flagstat -@ $threads ${sample}.${Aligner}.bam >${sample}.${Aligner}.bam.flagstat 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools index -@ $threads $BAM 2>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools stats -@ $threads $BAM >$BAM.stats 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools idxstats -@ $threads $BAM >$BAM.idxstats 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools flagstat -@ $threads $BAM >$BAM.flagstat 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "dna" ]]; then
           if [[ "$Deduplication" == "TRUE" ]]; then
             echo "+++++ DNA remove duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            rm -f ${sample}.${Aligner}.dedup.bam.bai
-            mv ${sample}.${Aligner}.dedup.bam ${sample}.${Aligner}.bam
+            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 $BAM ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            BAM=${sample}.${Aligner}.dedup.bam
           else
             echo "+++++ DNA mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            rm -f ${sample}.${Aligner}.markdup.bam.bai
-            mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
+            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 $BAM ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            BAM=${sample}.${Aligner}.markdup.bam
           fi
-            picard AddOrReplaceReadGroups I=${sample}.${Aligner}.bam O=${sample}.${Aligner}.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            picard AddOrReplaceReadGroups I=$BAM O=${sample}.${Aligner}.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             picard FixMateInformation I=${sample}.${Aligner}.RG.bam O=${sample}.${Aligner}.RG.FMI.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             rm -f ${sample}.${Aligner}.RG.bam
-            mv ${sample}.${Aligner}.RG.FMI.bam ${sample}.${Aligner}.bam
-            samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            mv ${sample}.${Aligner}.RG.FMI.bam $BAM
+            samtools index -@ $threads $BAM 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
           if [[ "$Deduplication" == "TRUE" ]]; then
             echo "+++++ RNA remove duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            mv ${sample}.${Aligner}.dedup.bam ${sample}.${Aligner}.bam
+            sambamba markdup -r -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 $BAM ${sample}.${Aligner}.dedup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            BAM=${sample}.${Aligner}.dedup.bam
           else
             echo "+++++ RNA mark duplicates: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 ${sample}.${Aligner}.bam ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            mv ${sample}.${Aligner}.markdup.bam ${sample}.${Aligner}.bam
+            sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 $BAM ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+            BAM=${sample}.${Aligner}.markdup.bam
           fi
-          samtools index -@ $threads ${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools index -@ $threads $BAM 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
         fi
 
         if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then

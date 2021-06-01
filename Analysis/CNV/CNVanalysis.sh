@@ -71,8 +71,8 @@ for sample in "${arr[@]}"; do
   read -u1000
   {
     dir=${work_dir}/${sample}
-    mkdir -p $dir/$Aligner
-    cd $dir/$Aligner
+    mkdir -p "$dir/Alignment-$Aligner"
+    cd $dir/Alignment-$Aligner
 
     force=${force_complete}
     status="uncompleted"
@@ -87,37 +87,37 @@ for sample in "${arr[@]}"; do
       fi
 
       logfiles=("HMMcopyStatus.log" "DNAcopyStatus.log" "GATK3Status.log" "Strelka2Status.log")
-      globalcheck_logfile "$dir/$Aligner" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
+      globalcheck_logfile "$dir/Alignment-$Aligner" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
       ##### HMMcopy #####
-      check_logfile "$sample" "HMMcopy" "$dir/$Aligner/CNV/HMMcopy/HMMcopyStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "HMMcopy" "$dir/Alignment-$Aligner/CNV/HMMcopy/HMMcopyStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
-        rm -rf $dir/$Aligner/CNV/HMMcopy
-        mkdir -p $dir/$Aligner/CNV/HMMcopy
-        cd $dir/$Aligner/CNV/HMMcopy
-        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>HMMcopyStatus.log
+        rm -rf $dir/Alignment-$Aligner/CNV/HMMcopy
+        mkdir -p $dir/Alignment-$Aligner/CNV/HMMcopy
+        cd $dir/Alignment-$Aligner/CNV/HMMcopy
+        readCounter -w $Window ${dir}/Alignment-${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>HMMcopyStatus.log
         cmd="Rscript $1 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.HMMcopy"
         echo $cmd >>HMMcopyStatus.log
         eval $cmd &>>HMMcopyStatus.log
 
-        check_logfile "$sample" "HMMcopy" "$dir/$Aligner/CNV/HMMcopy/HMMcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$sample" "HMMcopy" "$dir/Alignment-$Aligner/CNV/HMMcopy/HMMcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ##### DNAcopy #####
-      check_logfile "$sample" "DNAcopy" "$dir/$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "DNAcopy" "$dir/Alignment-$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
-        rm -rf $dir/$Aligner/CNV/DNAcopy
-        mkdir -p $dir/$Aligner/CNV/DNAcopy
-        cd $dir/$Aligner/CNV/DNAcopy
-        readCounter -w $Window ${dir}/${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>DNAcopyStatus.log
+        rm -rf $dir/Alignment-$Aligner/CNV/DNAcopy
+        mkdir -p $dir/Alignment-$Aligner/CNV/DNAcopy
+        cd $dir/Alignment-$Aligner/CNV/DNAcopy
+        readCounter -w $Window ${dir}/Alignment-${Aligner}/${sample}.${Aligner}.bam >${sample}.${Aligner}.w$Window.wig 2>>DNAcopyStatus.log
         cmd="Rscript $2 ${sample}.${Aligner}.w$Window.wig $GC_bin $Map_bin $PloidyAssumed ${sample}.${Aligner}.DNAcopy"
         echo $cmd >>DNAcopyStatus.log
         eval $cmd &>>DNAcopyStatus.log
 
-        check_logfile "$sample" "DNAcopy" "$dir/$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$sample" "DNAcopy" "$dir/Alignment-$Aligner/CNV/DNAcopy/DNAcopyStatus.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
@@ -162,43 +162,43 @@ for sample in "${arr[@]}"; do
       #bcftools mpileup --threads $threads -d 500 -Ou -f $genome ${sample}.bowtie2.hg19.filter.rmdup.bam | bcftools call --threads $threads -mv -Oz | bcftools view -i '%QUAL>=20' -Oz -o ${sample}.calls.vcf
 
       ## GATK3 #####
-      check_logfile "$sample" "GATK3" "$dir/$Aligner/SNV/GATK3/GATK3Status.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "GATK3" "$dir/Alignment-$Aligner/SNV/GATK3/GATK3Status.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
-        rm -rf $dir/$Aligner/SNV/GATK3
-        mkdir -p $dir/$Aligner/SNV/GATK3
-        cd $dir/$Aligner/SNV/GATK3
-        eval "$GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/${Aligner}/${sample}.${Aligner}.bam -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz" &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
+        rm -rf $dir/Alignment-$Aligner/SNV/GATK3
+        mkdir -p $dir/Alignment-$Aligner/SNV/GATK3
+        cd $dir/Alignment-$Aligner/SNV/GATK3
+        eval "$GATK3 -T HaplotypeCaller -nct $threads -R $genome -I ${dir}/Alignment-${Aligner}/${sample}.${Aligner}.bam -o $dir/Alignment-$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz" &>>$dir/Alignment-$Aligner/SNV/GATK3/GATK3Status.log
         if [[ $? == 0 ]]; then
-          bcftools view $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
-          Rscript $3 $dir/$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.GATK3 &>>$dir/$Aligner/SNV/GATK3/GATK3Status.log
+          bcftools view $dir/Alignment-$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/Alignment-$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz &>>$dir/Alignment-$Aligner/SNV/GATK3/GATK3Status.log
+          Rscript $3 $dir/Alignment-$Aligner/SNV/GATK3/${sample}.${Aligner}.GATK3.filter.vcf.gz $dir/Alignment-$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.GATK3 &>>$dir/Alignment-$Aligner/SNV/GATK3/GATK3Status.log
         fi
 
-        check_logfile "$sample" "GATK3" "$dir/$Aligner/SNV/GATK3/GATK3Status.log" "$error_pattern" "$complete_pattern" "postcheck"
+        check_logfile "$sample" "GATK3" "$dir/Alignment-$Aligner/SNV/GATK3/GATK3Status.log" "$error_pattern" "$complete_pattern" "postcheck"
         if [[ $? == 1 ]]; then
           continue
         fi
       fi
 
       ### Strelka2 #####
-      check_logfile "$sample" "Strelka2" "$dir/$Aligner/SNV/Strelka2/Strelka2Status.log" "$error_pattern" "$complete_pattern" "precheck"
+      check_logfile "$sample" "Strelka2" "$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log" "$error_pattern" "$complete_pattern" "precheck"
       if [[ $? == 1 ]]; then
-        rm -rf $dir/$Aligner/SNV/Strelka2
-        mkdir -p $dir/$Aligner/SNV/Strelka2
-        cd $dir/$Aligner/SNV/Strelka2
+        rm -rf $dir/Alignment-$Aligner/SNV/Strelka2
+        mkdir -p $dir/Alignment-$Aligner/SNV/Strelka2
+        cd $dir/Alignment-$Aligner/SNV/Strelka2
 
         configureStrelkaGermlineWorkflow.py \
-        --bam ${dir}/${Aligner}/${sample}.${Aligner}.bam \
+        --bam ${dir}/Alignment-${Aligner}/${sample}.${Aligner}.bam \
         --referenceFasta $genome \
-        --runDir $dir/$Aligner/SNV/Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
-        $dir/$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
+        --runDir $dir/Alignment-$Aligner/SNV/Strelka2 &>>$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log
+        $dir/Alignment-$Aligner/SNV/Strelka2/runWorkflow.py -m local -j $threads &>>$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log
         if [[ $? == 0 ]]; then
-          bcftools view $dir/$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
-          Rscript $3 $dir/$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.Strelka2 &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
+          bcftools view $dir/Alignment-$Aligner/SNV/Strelka2/results/variants/variants.vcf.gz | bcftools filter -i 'TYPE="snp" && MIN(FORMAT/DP)>=5 && QUAL>=20' -Oz -o $dir/Alignment-$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz &>>$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log
+          Rscript $3 $dir/Alignment-$Aligner/SNV/Strelka2/${sample}.${Aligner}.Strelka2.filter.vcf.gz $dir/Alignment-$Aligner/CNV/HMMcopy/${sample}.${Aligner}.HMMcopy ${sample}.${Aligner}.Strelka2 &>>$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log
 
           if [[ $? != 0 ]]; then
             continue
           else
-            echo -e "NGSmodule finished the job[Strelka2]" &>>$dir/$Aligner/SNV/Strelka2/Strelka2Status.log
+            echo -e "NGSmodule finished the job[Strelka2]" &>>$dir/Alignment-$Aligner/SNV/Strelka2/Strelka2Status.log
           fi
         fi
 
