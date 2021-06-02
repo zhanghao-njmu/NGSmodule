@@ -61,12 +61,12 @@ if [[ ${Species} == "Homo_sapiens" ]]; then
         ;;
     esac
 
-    resource_snps+=("-resource:hapmap,known=false,training=true,truth=true,prior=15.0 $Hapmap_snps")
-    resource_snps+=("-resource:omini,known=false,training=true,truth=false,prior=12.0 $Omni_snps")
-    resource_snps+=("-resource:1000G,known=false,training=true,truth=false,prior=10.0 $KG_snps")
-    resource_snps+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
-    resource_indels+=("-resource:mills,known=true,training=true,truth=true,prior=12.0 $Mills_indels")
-    resource_indels+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_snps+=("hapmap,known=false,training=true,truth=true,prior=15.0 $Hapmap_snps")
+    resource_snps+=("omini,known=false,training=true,truth=false,prior=12.0 $Omni_snps")
+    resource_snps+=("1000G,known=false,training=true,truth=false,prior=10.0 $KG_snps")
+    resource_snps+=("dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_indels+=("mills,known=true,training=true,truth=true,prior=12.0 $Mills_indels")
+    resource_indels+=("dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
 fi
 if [[ ${Species} == "Mus_musculus" ]] && [[ ${Source} == "Ensembl" ]] && [[ ${Build} == "GRCm38" ]]; then
     dbSNP_indels="$iGenomes_Dir/$Species/Ensembl/GRCm38/MouseGenomeProject/mgp.v5.merged.indels.dbSNP142.normed.vcf.gz"
@@ -74,14 +74,16 @@ if [[ ${Species} == "Mus_musculus" ]] && [[ ${Source} == "Ensembl" ]] && [[ ${Bu
    
     known_indels+=($dbSNP_indels)
     known_snps+=($dbSNP_snps)
-    resource_snps+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
-    resource_indels+=("-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_snps+=("dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
+    resource_indels+=("dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
 fi
 
 echo -e "############################# GATK Parameters #############################\n"
 echo -e "  GATK3: \"${GATK3}\"\n"
 echo -e "  known_indels: ${known_indels[*]} \n"
 echo -e "  known_snps: ${known_snps[*]} \n"
+echo -e "  resource_snps: ${resource_snps[*]} \n"
+echo -e "  resource_indels: ${resource_indels[*]} \n"
 echo -e "################################################################################\n"
 
 echo -e "****************** Start GATK ******************\n"
@@ -182,8 +184,8 @@ for sample in "${arr[@]}"; do
                 rm -rf $dir_result/VQSR
                 mkdir -p $dir_result/VQSR
                 cd $dir_result/VQSR
-                par_resource_snps=$(printf -- " '%s'" "${resource_snps[@]}")
-                par_resource_indels=$(printf -- " '%s'" "${resource_indels[@]}")
+                par_resource_snps=$(printf -- "-resource:%s " "${resource_snps[@]}")
+                par_resource_indels=$(printf -- "-resource:%s " "${resource_indels[@]}")
                 eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz $par_resource_snps -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode SNP -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -rscriptFile ${prefix}.snps.plots.R" &>>$dir_result/VQSR/VQSR.log
                 eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -mode SNP -o ${prefix}.snps.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
                 eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz $par_resource_indels -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode INDEL -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -rscriptFile ${prefix}.snps.indels.plots.R" &>>$dir_result/VQSR/VQSR.log
@@ -193,7 +195,6 @@ for sample in "${arr[@]}"; do
                 if [[ $? == 1 ]]; then
                     continue
                 fi
-
             fi
 
             status="completed"
