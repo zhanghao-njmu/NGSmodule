@@ -55,8 +55,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_fastp=$threads
   fi
 
-  if ((threads > 48)); then
-    threads_featurecounts=48
+  if ((threads > 64)); then
+    threads_featurecounts=64
   else
     threads_featurecounts=$threads
   fi
