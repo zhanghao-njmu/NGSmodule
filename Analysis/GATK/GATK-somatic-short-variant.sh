@@ -109,7 +109,8 @@ for sample in "${arr[@]}"; do
             BAM="$dir/Alignment-$Aligner/${sample}.${Aligner}.bam"
             ;;
         esac
-        prefix=${${BAM%%.bam}##*/}
+        prefix=${BAM%%.bam}
+        prefix=${prefix##*/}
 
         dir_result="$dir/Alignment-$Aligner/GATK-somatic-short-variant"
         mkdir -p $dir_result
