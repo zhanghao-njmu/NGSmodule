@@ -8,54 +8,6 @@ if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
   exit 1
 fi
 
-types=("rna" "dna" "BSdna")
-if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
-  color_echo "red" "ERROR! SequenceType is wrong.\nPlease check the paramaters in your ConfigFile.\n"
-  exit 1
-fi
-
-if [[ $SortmeRNA_ref_direct == "" ]]; then
-  SortmeRNA_ref="${SortmeRNA_Dir}/${SortmeRNA_Type}.${Species}.${SortmeRNA_DataVersion}.fa"
-else
-  SortmeRNA_ref=$SortmeRNA_ref_direct
-fi
-
-if [[ "$SequenceType" == "BSdna" ]]; then
-  FastqScreen_mode="--bisulfite"
-else
-  FastqScreen_mode=""
-fi
-
-############# Load SampleInfoFile ###################################################################
-declare -A Sample_dict
-declare -A Layout_dict
-if [[ -f $SampleInfoFile ]]; then
-  echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
-  sed -i '/^$/d' $SampleInfoFile
-
-  if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
-    color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
-    exit 1
-  fi
-
-  validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
-  if [[ $validation == "FALSE" ]]; then
-    color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
-    exit 1
-  fi
-
-  dos2unix $SampleInfoFile &>/dev/null
-  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
-    RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
-    SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
-    Sample_dict[$RunID]=$SampleID
-    Layout_dict[$SampleID]=$Layout
-  done <$SampleInfoFile
-else
-  color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
-  exit 1
-fi
-
 ###### START ######
 if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
 
@@ -90,8 +42,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$threads
   fi
 
-  if ((threads > 64)); then
-    threads=64
+  if ((threads > 48)); then
+    threads=48
   else
     threads=$threads
   fi
@@ -102,16 +54,67 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_fastp=$threads
   fi
 
-  if ((threads > 64)); then
-    threads_featurecounts=64
+  if ((threads > 48)); then
+    threads_featurecounts=48
   else
     threads_featurecounts=$threads
   fi
 
   if ((((threads / 8)) == 0)); then
-    bismark_threads=1
+    threads_bismark=1
   else
-    bismark_threads=$((threads / 8))
+    threads_bismark=$((threads / 8))
+  fi
+
+  types=("rna" "dna" "BSdna")
+  if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
+    color_echo "red" "ERROR! SequenceType is wrong.\nPlease check the paramaters in your ConfigFile.\n"
+    exit 1
+  fi
+
+  if [[ $SortmeRNA_ref_direct == "" ]]; then
+    SortmeRNA_ref="${SortmeRNA_Dir}/${SortmeRNA_Type}.${Species}.${SortmeRNA_DataVersion}.fa"
+  else
+    SortmeRNA_ref=$SortmeRNA_ref_direct
+  fi
+
+  if [[ "$SequenceType" == "BSdna" ]]; then
+    FastqScreen_mode="--bisulfite"
+  else
+    FastqScreen_mode=""
+  fi
+
+  de_option=("TRUE" "FALSE")
+  if [[ ${Deduplication} == "" ]]; then
+    case ${SequenceType} in
+    rna)
+      Deduplication="FALSE"
+      ;;
+    dna)
+      Deduplication="TRUE"
+      ;;
+    BSdna)
+      Deduplication="TRUE"
+      ;;
+    *)
+      Deduplication="FALSE"
+      ;;
+    esac
+  elif [[ " ${de_option[*]} " != *" $Deduplication "* ]]; then
+    color_echo "red" "ERROR! Deduplication must be empty or one of 'TRUE' and 'FALSE'.\nPlease check the paramaters in your ConfigFile.\n"
+    exit 1
+  fi
+
+  if [[ $Genome_direct == "" ]]; then
+    genome="$iGenomes_Dir/$Species/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
+  else
+    genome=$Genome_direct
+  fi
+
+  if [[ $GTF_direct == "" ]]; then
+    gtf="$iGenomes_Dir/$Species/$Source/$Build/Annotation/Genes/genes.gtf"
+  else
+    gtf=$GTF_direct
   fi
 
   ###### fifo ######

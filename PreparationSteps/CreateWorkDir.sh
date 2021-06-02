@@ -15,9 +15,39 @@ color_echo "green" "    SE_SufixPattern=$SE_SufixPattern"
 color_echo "green" "    R1_SufixPattern=$R1_SufixPattern"
 color_echo "green" "    R2_SufixPattern=$R2_SufixPattern\n"
 
-arr=($(find $rawdata_dir -type f | grep -P $grep_pattern |sort))
+arr=($(find $rawdata_dir -type f | grep -P $grep_pattern | sort))
 if [[ ${#arr} == 0 ]]; then
   color_echo "red" "Error! Cannot find any file matched the pattern!\nPlease check the RunIDPattern and SufixPattern in the ConfigFile!\n"
+  exit 1
+fi
+
+############# Load SampleInfoFile ###################################################################
+declare -A Sample_dict
+declare -A Layout_dict
+if [[ -f $SampleInfoFile ]]; then
+  echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
+  sed -i '/^$/d' $SampleInfoFile
+
+  if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
+    color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+    exit 1
+  fi
+
+  validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
+  if [[ $validation == "FALSE" ]]; then
+    color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
+    exit 1
+  fi
+
+  dos2unix $SampleInfoFile &>/dev/null
+  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+    RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
+    SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
+    Sample_dict[$RunID]=$SampleID
+    Layout_dict[$SampleID]=$Layout
+  done <$SampleInfoFile
+else
+  color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
   exit 1
 fi
 
@@ -43,7 +73,7 @@ for file in "${arr[@]}"; do
       fi
     done
   else
-    color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile." 
+    color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile."
     exit 1
   fi
 

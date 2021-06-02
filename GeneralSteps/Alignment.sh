@@ -60,39 +60,6 @@ if [[ " ${aligners[*]} " != *" $Aligner "* ]]; then
   exit 1
 fi
 
-de_option=("TRUE" "FALSE")
-if [[ ${Deduplication} == "" ]]; then
-  case ${SequenceType} in
-  rna)
-    Deduplication="FALSE"
-    ;;
-  dna)
-    Deduplication="TRUE"
-    ;;
-  BSdna)
-    Deduplication="TRUE"
-    ;;
-  *)
-    Deduplication="FALSE"
-    ;;
-  esac
-elif [[ " ${de_option[*]} " != *" $Deduplication "* ]]; then
-  color_echo "red" "ERROR! Deduplication must be empty or one of 'TRUE' and 'FALSE'.\nPlease check the paramaters in your ConfigFile.\n"
-  exit 1
-fi
-
-if [[ $Genome_direct == "" ]]; then
-  genome="$iGenomes_Dir/$Species/$Source/$Build/Sequence/WholeGenomeFasta/genome.fa"
-else
-  genome=$Genome_direct
-fi
-
-if [[ $GTF_direct == "" ]]; then
-  gtf="$iGenomes_Dir/$Species/$Source/$Build/Annotation/Genes/genes.gtf"
-else
-  gtf=$GTF_direct
-fi
-
 if [[ ! -f $genome ]]; then
   color_echo "red" "ERROR! Cannot find the genome file: $genome\nPlease check the Alignment Paramaters in your ConfigFile.\n"
   exit 1
@@ -186,12 +153,12 @@ for sample in "${arr[@]}"; do
               samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $bismark_threads -p 4 --genome $index ${fq1} --quiet \
+            bismark --bowtie2 --multicore $threads_bismark -p 4 --genome $index ${fq1} --quiet \
               --non_directional --nucleotide_coverage \
               --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $bismark_threads -p 4 --genome $index ${fq1} --quiet \
+            bismark --hisat2 --multicore $threads_bismark -p 4 --genome $index ${fq1} --quiet \
               --non_directional --nucleotide_coverage \
               --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_trim*; do mv $file ${file//_trim/}; done
@@ -232,12 +199,12 @@ for sample in "${arr[@]}"; do
               samtools sort -@ $threads - >${sample}.${Aligner}.bam 2>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             rm -f Aligned.sortedByCoord.out.bam
           elif [[ "$Aligner" == "bismark_bowtie2" ]]; then
-            bismark --bowtie2 --multicore $bismark_threads -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            bismark --bowtie2 --multicore $threads_bismark -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
               --non_directional --nucleotide_coverage \
               --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
           elif [[ "$Aligner" == "bismark_hisat2" ]]; then
-            bismark --hisat2 --multicore $bismark_threads -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
+            bismark --hisat2 --multicore $threads_bismark -p 4 --genome $index -1 ${fq1} -2 ${fq2} --quiet \
               --non_directional --nucleotide_coverage \
               --output_dir $dir/Alignment-$Aligner &>>"$dir/Alignment-$Aligner/AlignmentStatus.log"
             for file in ./*_1_trim*; do mv $file ${file//_1_trim/}; done
@@ -329,7 +296,7 @@ for sample in "${arr[@]}"; do
 
           echo "+++++ BS-seq methylation extractor: $sample +++++" | tee -a "$dir/Alignment-$Aligner/BamProcessingStatus.log"
           mkdir -p $dir/Alignment-$Aligner/bismark_methylation_extractor
-          bismark_methylation_extractor --multicore $bismark_threads --gzip --comprehensive --merge_non_CpG \
+          bismark_methylation_extractor --multicore $threads_bismark --gzip --comprehensive --merge_non_CpG \
             --bedGraph --buffer_size 10G \
             --cytosine_report --genome_folder $index \
             --output $dir/Alignment-$Aligner/bismark_methylation_extractor $BAM &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"

@@ -98,8 +98,11 @@ Kmer=150
 PloidyAssumed=2
 
 ############# SNV Paramaters ################################################################################
-GATK3="java -jar -Xmx32g /path/to/GenomeAnalysisTK.jar"
-
+GATK3="java -jar -Xmx64g /path/to/GenomeAnalysisTK.jar"
+known_indels=()
+known_snps=()
+resource_indels=()
+resource_snps=()
 
 
 EOF

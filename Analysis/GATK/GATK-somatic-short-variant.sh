@@ -1,17 +1,14 @@
-#!/usr/bin/bash
-trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
+#!/usr/bin/env bash
 
 #######################################################################################
+trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
+
 $GATK3 --help &>/dev/null
 [ $? -ne 0 ] && {
     color_echo "red" "Cannot find the tool GATK3.\n"
     exit 1
 }
 
-known_indels=()
-known_snps=()
-resource_indels=()
-resource_snps=()
 if [[ ${Species} == "Homo_sapiens" ]]; then
     case ${Build} in
     hg19)
@@ -71,7 +68,7 @@ fi
 if [[ ${Species} == "Mus_musculus" ]] && [[ ${Source} == "Ensembl" ]] && [[ ${Build} == "GRCm38" ]]; then
     dbSNP_indels="$iGenomes_Dir/$Species/Ensembl/GRCm38/MouseGenomeProject/mgp.v5.merged.indels.dbSNP142.normed.vcf.gz"
     dbSNP_snps="$iGenomes_Dir/$Species/Ensembl/GRCm38/MouseGenomeProject/mgp.v5.merged.snps_all.dbSNP142.vcf.gz"
-   
+
     known_indels+=($dbSNP_indels)
     known_snps+=($dbSNP_snps)
     resource_snps+=("dbsnp,known=true,training=false,truth=false,prior=2.0 $dbSNP_snps")
@@ -80,6 +77,7 @@ fi
 
 echo -e "############################# GATK Parameters #############################\n"
 echo -e "  GATK3: \"${GATK3}\"\n"
+echo -e "  Genome: ${genome} \n"
 echo -e "  known_indels: ${known_indels[*]} \n"
 echo -e "  known_snps: ${known_snps[*]} \n"
 echo -e "  resource_snps: ${resource_snps[*]} \n"
@@ -120,9 +118,9 @@ for sample in "${arr[@]}"; do
         status="uncompleted"
         attempt=0
 
-        echo "===== $sample ====="
+        echo "+++++ ${sample} +++++"
 
-        while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+        while [[ $status == "uncompleted" ]] && (("$attempt" <= 0)); do
             ((attempt++))
             if [[ $attempt != 1 ]]; then
                 echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
@@ -137,8 +135,8 @@ for sample in "${arr[@]}"; do
                 rm -rf $dir_result/Realigner
                 mkdir -p $dir_result/Realigner
                 cd $dir_result/Realigner
-                par_known_indels=$(printf -- " --known '%s'" "${known_indels[@]}")
-                eval "$GATK3 -T RealignerTargetCreator -R $genome -I $BAM $par_known_indels -o ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
+                par_known_indels=$(printf -- " -known '%s'" "${known_indels[@]}")
+                eval "$GATK3 -T RealignerTargetCreator -nt $threads -R $genome -I $BAM $par_known_indels -o ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
                 eval "$GATK3 -T IndelRealigner -R $genome -I $BAM $par_known_indels -o ${prefix}.realign.bam --targetIntervals ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
 
                 check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "postcheck"
@@ -155,8 +153,8 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/BQSR
                 par_known_indels=$(printf -- " --knownSites '%s'" "${known_indels[@]}")
                 par_known_snps=$(printf -- " --knownSites '%s'" "${known_snps[@]}")
-                eval "$GATK3 -T BaseRecalibrator -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
-                eval "$GATK3 -T PrintReads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam -BQSR ${prefix}.BQSR.table -o ${prefix}.realign.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
+                eval "$GATK3 -T BaseRecalibrator -nct $threads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
+                eval "$GATK3 -T PrintReads -nct $threads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam -BQSR ${prefix}.BQSR.table -o ${prefix}.realign.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
 
                 check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
@@ -172,7 +170,7 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/HaplotypeCaller
                 eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -nct $threads -R $genome -I ${dir_result}/BQSR/${prefix}.realign.BQSR.bam -o ${prefix}.gvcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
                 eval "$GATK3 -T GenotypeGVCFs -nct $threads -R $genome --variant ${prefix}.gvcf.gz -o ${prefix}.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
-                
+
                 check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
@@ -191,7 +189,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -mode SNP -o ${prefix}.snps.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
                 eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz $par_resource_indels -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode INDEL -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -rscriptFile ${prefix}.snps.indels.plots.R" &>>$dir_result/VQSR/VQSR.log
                 eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -mode INDEL -o ${prefix}.snps.indels.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
-                
+
                 check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
