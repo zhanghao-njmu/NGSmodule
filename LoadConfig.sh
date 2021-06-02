@@ -16,6 +16,7 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     arr+=("$line")
   done < <(find "$work_dir" -mindepth 1 -maxdepth 1 -type l -o -type d -printf '%P\n' | grep -P "$SampleGrepPattern" | sort)
 
+  ###### threads ######
   total_task=${#arr[@]}
   if [[ "$total_task" == 0 ]]; then
     color_echo "red" "ERROR! No sample sub-directory found in the work_dir:$work_dir\n"
@@ -66,6 +67,7 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads_bismark=$((threads / 8))
   fi
 
+  ###### other parameters ######
   types=("rna" "dna" "BSdna")
   if [[ " ${types[*]} " != *" $SequenceType "* ]]; then
     color_echo "red" "ERROR! SequenceType is wrong.\nPlease check the paramaters in your ConfigFile.\n"
