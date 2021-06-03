@@ -84,7 +84,7 @@ echo -e "  resource_snps: ${resource_snps[*]} \n"
 echo -e "  resource_indels: ${resource_indels[*]} \n"
 echo -e "################################################################################\n"
 
-echo -e "****************** Start GATK ******************\n"
+echo -e "****************** Start GATK-somatic-short-variant ******************\n"
 SECONDS=0
 
 for sample in "${arr[@]}"; do
@@ -126,24 +126,24 @@ for sample in "${arr[@]}"; do
                 echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
             fi
 
-            logfiles=("Realigner.log" "BQSR.log" "HaplotypeCaller.log")
+            logfiles=("BQSR.log" "Mutect2.log" "VariantFiltration.log")
             globalcheck_logfile "$dir_result" logfiles[@] "$force" "$error_pattern" "$complete_pattern" "$sample"
 
             ##### Realigner #####
-            check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                rm -rf $dir_result/Realigner
-                mkdir -p $dir_result/Realigner
-                cd $dir_result/Realigner
-                par_known_indels=$(printf -- " -known '%s'" "${known_indels[@]}")
-                eval "$GATK3 -T RealignerTargetCreator -nt $threads -R $genome -I $BAM $par_known_indels -o ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
-                eval "$GATK3 -T IndelRealigner -R $genome -I $BAM $par_known_indels -o ${prefix}.realign.bam --targetIntervals ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
+            # check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "precheck"
+            # if [[ $? == 1 ]]; then
+            #     rm -rf $dir_result/Realigner
+            #     mkdir -p $dir_result/Realigner
+            #     cd $dir_result/Realigner
+            #     par_known_indels=$(printf -- " -known '%s'" "${known_indels[@]}")
+            #     eval "$GATK3 -T RealignerTargetCreator -nt $threads -R $genome -I $BAM $par_known_indels -o ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
+            #     eval "$GATK3 -T IndelRealigner -R $genome -I $BAM $par_known_indels -o ${prefix}.realign.bam --targetIntervals ${prefix}.IndelRealigner.intervals" &>>$dir_result/Realigner/Realigner.log
 
-                check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
+            #     check_logfile "$sample" "Realigner" "$dir_result/Realigner/Realigner.log" "$error_pattern" "$complete_pattern" "postcheck"
+            #     if [[ $? == 1 ]]; then
+            #         continue
+            #     fi
+            # fi
 
             ##### BQSR #####
             check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "precheck"
@@ -153,8 +153,8 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/BQSR
                 par_known_indels=$(printf -- " --knownSites '%s'" "${known_indels[@]}")
                 par_known_snps=$(printf -- " --knownSites '%s'" "${known_snps[@]}")
-                eval "$GATK3 -T BaseRecalibrator -nct $threads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
-                eval "$GATK3 -T PrintReads -nct $threads -R $genome -I ${dir_result}/Realigner/${prefix}.realign.bam -BQSR ${prefix}.BQSR.table -o ${prefix}.realign.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
+                eval "$GATK3 -T BaseRecalibrator -nct $threads -R $genome -I $BAM $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
+                eval "$GATK3 -T PrintReads -nct $threads -R $genome -I $BAM -BQSR ${prefix}.BQSR.table -o ${prefix}.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
 
                 check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
@@ -162,42 +162,61 @@ for sample in "${arr[@]}"; do
                 fi
             fi
 
-            ##### HaplotypeCaller #####
-            check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "precheck"
+            ##### Mutect2 #####
+            check_logfile "$sample" "Mutect2" "$dir_result/Mutect2/Mutect2.log" "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                rm -rf $dir_result/HaplotypeCaller
-                mkdir -p $dir_result/HaplotypeCaller
-                cd $dir_result/HaplotypeCaller
-                eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -nct $threads -R $genome -I ${dir_result}/BQSR/${prefix}.realign.BQSR.bam -o ${prefix}.gvcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
-                eval "$GATK3 -T GenotypeGVCFs -nct $threads -R $genome --variant ${prefix}.gvcf.gz -o ${prefix}.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
+                rm -rf $dir_result/Mutect2
+                mkdir -p $dir_result/Mutect2
+                cd $dir_result/Mutect2
+                eval "$GATK3 -T MuTect2 -R $genome -I:tumor ${dir_result}/BQSR/${prefix}.BQSR.bam -o ${prefix}.Mutect2.vcf.gz -bamout ${prefix}.Mutect2.bam" &>>$dir_result/Mutect2/Mutect2.log
 
-                check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "Mutect2" "$dir_result/Mutect2/Mutect2.log" "$error_pattern" "$complete_pattern" "postcheck"
+                if [[ $? == 1 ]]; then
+                    continue
+                fi
+            fi
+
+            ##### VariantFiltration #####
+            check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "precheck"
+            if [[ $? == 1 ]]; then
+                rm -rf $dir_result/VariantFiltration
+                mkdir -p $dir_result/VariantFiltration
+                cd $dir_result/VariantFiltration
+                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.Mutect2.vcf.gz -selectType SNP -o ${prefix}.Mutect2.snps.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.Mutect2.vcf.gz -selectType INDEL -o ${prefix}.Mutect2.indels.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.snps.vcf.gz --filterExpression 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T CombineVariants -V ${prefix}.Mutect2.snps.vcf.gz -V ${prefix}.Mutect2.indels.vcf.gz -o ${prefix}.Mutect2.VariantFiltration.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+
+                check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then
                     continue
                 fi
             fi
 
             ##### VQSR #####
-            check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                rm -rf $dir_result/VQSR
-                mkdir -p $dir_result/VQSR
-                cd $dir_result/VQSR
-                par_resource_snps=$(printf -- "-resource:%s " "${resource_snps[@]}")
-                par_resource_indels=$(printf -- "-resource:%s " "${resource_indels[@]}")
-                eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz $par_resource_snps -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode SNP -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -rscriptFile ${prefix}.snps.plots.R" &>>$dir_result/VQSR/VQSR.log
-                eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input $dir_result/HaplotypeCaller/${prefix}.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.recal -tranchesFile ${prefix}.snps.tranches -mode SNP -o ${prefix}.snps.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
-                eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz $par_resource_indels -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode INDEL -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -rscriptFile ${prefix}.snps.indels.plots.R" &>>$dir_result/VQSR/VQSR.log
-                eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input ${prefix}.snps.VQSR.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.snps.indels.recal -tranchesFile ${prefix}.snps.indels.tranches -mode INDEL -o ${prefix}.snps.indels.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
+            # check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "precheck"
+            # if [[ $? == 1 ]]; then
+            #     rm -rf $dir_result/VQSR
+            #     mkdir -p $dir_result/VQSR
+            #     cd $dir_result/VQSR
+            #     par_resource_snps=$(printf -- "-resource:%s " "${resource_snps[@]}")
+            #     par_resource_indels=$(printf -- "-resource:%s " "${resource_indels[@]}")
+            #     eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input $dir_result/Mutect2/${prefix}.Mutect2.vcf.gz $par_resource_snps -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode SNP -recalFile ${prefix}.Mutect2.snps.recal -tranchesFile ${prefix}.Mutect2.snps.tranches -rscriptFile ${prefix}.Mutect2.snps.plots.R" &>>$dir_result/VQSR/VQSR.log
+            #     eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input $dir_result/Mutect2/${prefix}.Mutect2.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.Mutect2.snps.recal -tranchesFile ${prefix}.Mutect2.snps.tranches -mode SNP -o ${prefix}.Mutect2.snps.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
+            #     eval "$GATK3 -T VariantRecalibrator -nct $threads -R $genome -input ${prefix}.Mutect2.snps.VQSR.vcf.gz $par_resource_indels -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -mode INDEL -recalFile ${prefix}.Mutect2.snps.indels.recal -tranchesFile ${prefix}.Mutect2.snps.indels.tranches -rscriptFile ${prefix}.Mutect2.snps.indels.plots.R" &>>$dir_result/VQSR/VQSR.log
+            #     eval "$GATK3 -T ApplyRecalibration -nct $threads -R $genome -input ${prefix}.Mutect2.snps.VQSR.vcf.gz --ts_filter_level 99.0 -recalFile ${prefix}.Mutect2.snps.indels.recal -tranchesFile ${prefix}.Mutect2.snps.indels.tranches -mode INDEL -o ${prefix}.Mutect2.snps.indels.VQSR.vcf.gz" &>>$dir_result/VQSR/VQSR.log
+            #     rm -f ${prefix}.Mutect2.snps.VQSR.vcf.gz
+            #     mv ${prefix}.Mutect2.snps.indels.VQSR.vcf.gz ${prefix}.Mutect2.VQSR.vcf.gz
 
-                check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
+            #     check_logfile "$sample" "VQSR" "$dir_result/VQSR/VQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
+            #     if [[ $? == 1 ]]; then
+            #         continue
+            #     fi
+            # fi
 
             status="completed"
-            color_echo "blue" "+++++ ${sample}: GATK completed +++++"
+            color_echo "blue" "+++++ ${sample}: GATK-somatic-short-variant completed +++++"
         done
 
         if [[ "$status" == "completed" ]]; then
@@ -218,13 +237,13 @@ wait
 
 ninterrupted=$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l)
 if [[ $ninterrupted != 0 ]]; then
-    cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/GATK.Interrupted.txt
+    cat "$tmpfile" | grep "Interrupted" | uniq >$maindir/GATK-somatic-short-variant.Interrupted.txt
     color_echo "red" "\n\n################################################################################"
     color_echo "red" "    $ninterrupted of $total_task tasks interrupted."
-    color_echo "red" "    Please check the samples in $maindir/GATK.Interrupted.txt"
+    color_echo "red" "    Please check the samples in $maindir/GATK-somatic-short-variant.Interrupted.txt"
     color_echo "red" "################################################################################\n\n"
 fi
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
-echo -e "****************** GATK Done ******************\n"
+echo -e "****************** GATK-somatic-short-variant Done ******************\n"

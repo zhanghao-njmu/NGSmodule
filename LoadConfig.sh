@@ -8,6 +8,39 @@ if [[ ! -d $work_dir ]] && [[ $1 != "prepare" ]]; then
   exit 1
 fi
 
+############# Load SampleInfoFile ###################################################################
+declare -A Sample_dict
+declare -A Layout_dict
+declare -A Group_dict
+if [[ -f $SampleInfoFile ]]; then
+  echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
+  sed -i '/^$/d' $SampleInfoFile
+
+  if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
+    color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+    exit 1
+  fi
+
+  validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
+  if [[ $validation == "FALSE" ]]; then
+    color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
+    exit 1
+  fi
+
+  dos2unix $SampleInfoFile &>/dev/null
+  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+    RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
+    SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
+    Sample_dict[$RunID]=$SampleID
+    Group_dict[$SampleID]=$Group
+    Layout_dict[$SampleID]=$Layout
+  done <$SampleInfoFile
+  
+else
+  color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
+  exit 1
+fi
+
 ###### START ######
 if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
 
@@ -43,8 +76,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$threads
   fi
 
-  if ((threads > 48)); then
-    threads=48
+  if ((threads > 32)); then
+    threads=32
   else
     threads=$threads
   fi
@@ -128,6 +161,38 @@ else
   threads="Waiting for creating the workdir"
 fi
 
+############# Load SampleInfoFile ###################################################################
+declare -A Sample_dict
+declare -A Layout_dict
+declare -A Group_dict
+if [[ -f $SampleInfoFile ]]; then
+  echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
+  sed -i '/^$/d' $SampleInfoFile
+
+  if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
+    color_echo "red" "ERROR! SampleInfoFile name must end with '.csv'.\n"
+    exit 1
+  fi
+
+  validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
+  if [[ $validation == "FALSE" ]]; then
+    color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
+    exit 1
+  fi
+
+  dos2unix $SampleInfoFile &>/dev/null
+  while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
+    RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
+    SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
+    Sample_dict[$RunID]=$SampleID
+    Group_dict[$SampleID]=$Group
+    Layout_dict[$SampleID]=$Layout
+  done <$SampleInfoFile
+  
+else
+  color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
+  exit 1
+fi
 ################################################################################################################
 echo -e "########################### Global config patameters ###########################\n"
 echo -e "  SequenceType: $SequenceType\n  maindir: ${maindir}\n  rawdata_dir: ${rawdata_dir}\n  work_dir: ${work_dir}\n  SampleInfoFile: ${SampleInfoFile}\n  SampleGrepPattern: ${SampleGrepPattern}\n\n  Total_tasks: ${total_task}\n  nTask_per_run: ${ntask_per_run}\n  Total_threads: ${total_threads}\n  Threads_per_task: ${threads} (max=120)\n"

@@ -97,12 +97,17 @@ Window=1000000
 Kmer=150
 PloidyAssumed=2
 
-############# SNV Paramaters ################################################################################
-GATK3="java -jar -Xmx64g /path/to/GenomeAnalysisTK.jar"
+############# GATK3 Paramaters ################################################################################
+GATK3="java -jar -Xmx128g /path/to/GenomeAnalysisTK.jar"
 known_indels=()
 known_snps=()
 resource_indels=()
 resource_snps=()
+
+############# Strelka2 Paramaters ################################################################################
+exome=FALSE
+targeted=FALSE
+
 
 
 EOF

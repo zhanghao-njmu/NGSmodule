@@ -83,10 +83,28 @@ CNVanalysis() {
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/DNAcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
+GATK-germline-short-variant() {
+  source $1
+  source $shell_folder/LoadConfig.sh
+  source $shell_folder/Analysis/GATK/GATK-germline-short-variant.sh
+}
+
 GATK-somatic-short-variant() {
   source $1
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-somatic-short-variant.sh
+}
+
+GATK-germline-CNV() {
+  source $1
+  source $shell_folder/LoadConfig.sh
+  source $shell_folder/Analysis/GATK/GATK-germline-CNV.sh
+}
+
+GATK-somatic-CNV() {
+  source $1
+  source $shell_folder/LoadConfig.sh
+  source $shell_folder/Analysis/GATK/GATK-somatic-CNV.sh
 }
 
 CreateSCPConfigFile() {
@@ -160,7 +178,10 @@ help() {
        CNVanalysis
     
     # GATK:
+       GATK-germline-short-variant
        GATK-somatic-short-variant
+       GATK-germline-CNV
+       GATK-somatic-CNV
     
     # SingleCellPipe
        CreateSCPConfigFile
@@ -318,6 +339,15 @@ while true; do
       CheckConfigFile $ConfigFile
       CNVanalysis $ConfigFile
       exit 0
+    elif [[ $1 == "GATK-germline-short-variant" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in GATK-somatic-short-variant MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      GATK-germline-short-variant $ConfigFile
+      exit 0
     elif [[ $1 == "GATK-somatic-short-variant" ]]; then
       { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
       [ $? -ne 0 ] && {
@@ -326,6 +356,24 @@ while true; do
       }
       CheckConfigFile $ConfigFile
       GATK-somatic-short-variant $ConfigFile
+      exit 0
+    elif [[ $1 == "GATK-germline-CNV" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in GATK-somatic-short-variant MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      GATK-germline-CNV $ConfigFile
+      exit 0
+    elif [[ $1 == "GATK-somatic-CNV" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in GATK-somatic-short-variant MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      GATK-somatic-CNV $ConfigFile
       exit 0
 
     ### SingleCellPipe
