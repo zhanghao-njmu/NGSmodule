@@ -156,7 +156,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T BaseRecalibrator -nct $threads -R $genome -I $BAM $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
                 eval "$GATK3 -T PrintReads -nct $threads -R $genome -I $BAM -BQSR ${prefix}.BQSR.table -o ${prefix}.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
 
-                check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi
@@ -171,7 +171,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -R $genome -I ${dir_result}/BQSR/${prefix}.BQSR.bam -variant_index_type LINEAR -variant_index_parameter 128000 -o ${prefix}.HaplotypeCaller.gvcf.gz -bamout ${prefix}.HaplotypeCaller.bam" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
                 eval "$GATK3 -T GenotypeGVCFs -nt $threads -R $genome --variant ${prefix}.HaplotypeCaller.gvcf.gz -o ${prefix}.HaplotypeCaller.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
 
-                check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi
@@ -189,7 +189,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.HaplotypeCaller.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0' --filterName 'VariantFiltration_indels' -o ${prefix}.HaplotypeCaller.indels.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
                 eval "$GATK3 -T CombineVariants -R $genome --genotypemergeoption UNSORTED -V ${prefix}.HaplotypeCaller.snps.filter.vcf.gz -V ${prefix}.HaplotypeCaller.indels.filter.vcf.gz -o ${prefix}.HaplotypeCaller.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
 
-                check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi

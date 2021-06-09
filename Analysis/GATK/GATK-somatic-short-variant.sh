@@ -156,7 +156,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T BaseRecalibrator -nct $threads -R $genome -I $BAM $par_known_indels $par_known_snps -o ${prefix}.BQSR.table" &>>$dir_result/BQSR/BQSR.log
                 eval "$GATK3 -T PrintReads -nct $threads -R $genome -I $BAM -BQSR ${prefix}.BQSR.table -o ${prefix}.BQSR.bam" &>>$dir_result/BQSR/BQSR.log
 
-                check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "BQSR" "$dir_result/BQSR/BQSR.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi
@@ -170,7 +170,7 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/Mutect2
                 eval "$GATK3 -T MuTect2 -R $genome -I:tumor ${dir_result}/BQSR/${prefix}.BQSR.bam -o ${prefix}.Mutect2.vcf.gz -bamout ${prefix}.Mutect2.bam" &>>$dir_result/Mutect2/Mutect2.log
 
-                check_logfile "$sample" "Mutect2" "$dir_result/Mutect2/Mutect2.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "Mutect2" "$dir_result/Mutect2/Mutect2.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi
@@ -188,7 +188,7 @@ for sample in "${arr[@]}"; do
                 eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0' --filterName 'VariantFiltration_indels' -o ${prefix}.Mutect2.indels.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
                 eval "$GATK3 -T CombineVariants -R $genome --genotypemergeoption UNSORTED -V ${prefix}.Mutect2.snps.filter.vcf.gz -V ${prefix}.Mutect2.indels.filter.vcf.gz -o ${prefix}.Mutect2.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
 
-                check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
                 fi
