@@ -94,9 +94,9 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/VariantFiltration
                 bcftools view --threads $threads --types snps --output-type z --output-file ${prefix}.Samtools.snps.vcf.gz $dir_result/Samtools/${prefix}.Samtools.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
                 bcftools view --threads $threads --types indels  --output-type z --output-file ${prefix}.Samtools.indels.vcf.gz $dir_result/Samtools/${prefix}.Samtools.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
-                bcftools filter --threads $threads -i 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0' --output-type z --output-file ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.snps.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
-                bcftools filter --threads $threads -i 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0' --output-type z --output-file ${prefix}.Samtools.indels.filter.vcf.gz ${prefix}.Samtools.indels.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
-                bcftools concat --threads $threads --output-type z --output-file ${prefix}.Samtools.filter.vcf.gz ${prefix}.Samtools.snps.filter.vcf.gz -V ${prefix}.Samtools.indels.filter.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
+                bcftools filter --threads $threads -e 'MQ < 40.0' --output-type z --output ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.snps.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
+                bcftools filter --threads $threads -e 'MQ < 20.0' --output-type z --output ${prefix}.Samtools.indels.filter.vcf.gz ${prefix}.Samtools.indels.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
+                bcftools concat --threads $threads --output-type z --output ${prefix}.Samtools.filter.vcf.gz ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.indels.filter.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
                 
                 check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
