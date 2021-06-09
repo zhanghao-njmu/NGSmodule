@@ -98,7 +98,7 @@ Kmer=150
 PloidyAssumed=2
 
 ############# GATK3 Paramaters ################################################################################
-GATK3="java -jar -Xmx128g /path/to/GenomeAnalysisTK.jar"
+GATK3="java -jar -Xmx256g /path/to/GenomeAnalysisTK.jar"
 known_indels=()
 known_snps=()
 resource_indels=()

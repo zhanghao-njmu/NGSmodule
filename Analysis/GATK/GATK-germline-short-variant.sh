@@ -183,11 +183,11 @@ for sample in "${arr[@]}"; do
                 rm -rf $dir_result/VariantFiltration
                 mkdir -p $dir_result/VariantFiltration
                 cd $dir_result/VariantFiltration
-                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.HaplotypeCaller.vcf.gz -selectType SNP -o ${prefix}.HaplotypeCaller.snps.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.HaplotypeCaller.vcf.gz -selectType INDEL -o ${prefix}.HaplotypeCaller.indels.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.HaplotypeCaller.snps.vcf.gz --filterExpression 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.HaplotypeCaller.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T CombineVariants -V ${prefix}.HaplotypeCaller.snps.vcf.gz -V ${prefix}.HaplotypeCaller.indels.vcf.gz -o ${prefix}.HaplotypeCaller.VariantFiltration.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T SelectVariants -R $genome -V ${dir_result}/HaplotypeCaller/${prefix}.HaplotypeCaller.vcf.gz -selectType SNP -o ${prefix}.HaplotypeCaller.snps.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T SelectVariants -R $genome -V ${dir_result}/HaplotypeCaller/${prefix}.HaplotypeCaller.vcf.gz -selectType INDEL -o ${prefix}.HaplotypeCaller.indels.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.HaplotypeCaller.snps.vcf.gz --filterExpression 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0' --filterName 'VariantFiltration_snps' -o ${prefix}.HaplotypeCaller.snps.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.HaplotypeCaller.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0' --filterName 'VariantFiltration_indels' -o ${prefix}.HaplotypeCaller.indels.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T CombineVariants -R $genome --genotypemergeoption UNSORTED -V ${prefix}.HaplotypeCaller.snps.filter.vcf.gz -V ${prefix}.HaplotypeCaller.indels.filter.vcf.gz -o ${prefix}.HaplotypeCaller.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
 
                 check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

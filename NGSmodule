@@ -119,6 +119,12 @@ Strelka2-somatic-short-variant(){
   source $shell_folder/Analysis/Strelka2/Strelka2-somatic-short-variant.sh
 }
 
+Samtools-variant-calling(){
+  source $1
+  source $shell_folder/LoadConfig.sh
+  source $shell_folder/Analysis/Samtools/Samtools-variant-calling.sh
+}
+
 CreateSCPConfigFile() {
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPConfigFile.sh $1
 }
@@ -196,10 +202,13 @@ help() {
        GATK-somatic-CNV
     
     # Strelka2:
-      Strelka2-germline-short-variant
-      Strelka2-somatic-short-variant
+       Strelka2-germline-short-variant
+       Strelka2-somatic-short-variant
     
-    # SingleCellPipe
+    # Samtools:
+       Samtools-variant-calling
+    
+    # SingleCellPipe:
        CreateSCPConfigFile
        CreateSCPSampleInfoFile
        CreateSCPWorkDir
@@ -409,7 +418,15 @@ while true; do
       CheckConfigFile $ConfigFile
       Strelka2-somatic-short-variant $ConfigFile
       exit 0
-
+    elif [[ $1 == "Samtools-variant-calling" ]]; then
+      { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
+      [ $? -ne 0 ] && {
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in Samtools-variant-calling MODE!\nTry '$0 --help' for more information.\n"
+        exit 1
+      }
+      CheckConfigFile $ConfigFile
+      Samtools-variant-calling $ConfigFile
+      exit 0
 
     ### SingleCellPipe
     elif [[ $1 == "CreateSCPConfigFile" ]]; then

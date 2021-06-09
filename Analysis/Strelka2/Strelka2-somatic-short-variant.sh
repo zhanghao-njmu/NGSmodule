@@ -85,10 +85,11 @@ for sample in "${arr[@]}"; do
                     $par_exome $par_targeted \
                     --runDir $dir_result/Strelka2 &>>$dir_result/Strelka2/Strelka2.log
                 $dir_result/Strelka2/runWorkflow.py -m local -j $threads &>>$dir_result/Strelka2/Strelka2.log
+                status=$?
                 cp $dir_result/Strelka2/results/variants/variants.vcf.gz $dir_result/Strelka2/${prefix}.Strelka2.vcf.gz
                 cp $dir_result/Strelka2/results/variants/variants.vcf.gz.tbi $dir_result/Strelka2/${prefix}.Strelka2.vcf.gz.tbi
 
-                check_logfile "$sample" "Strelka2" "$dir_result/Strelka2/Strelka2.log" "$error_pattern" "$complete_pattern" "postcheck"
+                check_logfile "$sample" "Strelka2" "$dir_result/Strelka2/Strelka2.log" "$error_pattern" "$complete_pattern" "postcheck" $status
                 if [[ $? == 1 ]]; then
                     continue
                 fi

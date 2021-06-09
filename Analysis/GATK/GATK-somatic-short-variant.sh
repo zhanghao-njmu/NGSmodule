@@ -182,11 +182,11 @@ for sample in "${arr[@]}"; do
                 rm -rf $dir_result/VariantFiltration
                 mkdir -p $dir_result/VariantFiltration
                 cd $dir_result/VariantFiltration
-                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.Mutect2.vcf.gz -selectType SNP -o ${prefix}.Mutect2.snps.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T SelectVariants -R $genome -V ${prefix}.Mutect2.vcf.gz -selectType INDEL -o ${prefix}.Mutect2.indels.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.snps.vcf.gz --filterExpression 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0'" &>>$dir_result/VariantFiltration/VariantFiltration.log
-                eval "$GATK3 -T CombineVariants -V ${prefix}.Mutect2.snps.vcf.gz -V ${prefix}.Mutect2.indels.vcf.gz -o ${prefix}.Mutect2.VariantFiltration.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T SelectVariants -R $genome -V ${dir_result}/Mutect2/${prefix}.Mutect2.vcf.gz -selectType SNP -o ${prefix}.Mutect2.snps.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T SelectVariants -R $genome -V ${dir_result}/Mutect2/${prefix}.Mutect2.vcf.gz -selectType INDEL -o ${prefix}.Mutect2.indels.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.snps.vcf.gz --filterExpression 'QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0' --filterName 'VariantFiltration_snps' -o ${prefix}.Mutect2.snps.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T VariantFiltration -R $genome -V ${prefix}.Mutect2.indels.vcf.gz --filterExpression 'QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0' --filterName 'VariantFiltration_indels' -o ${prefix}.Mutect2.indels.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
+                eval "$GATK3 -T CombineVariants -R $genome --genotypemergeoption UNSORTED -V ${prefix}.Mutect2.snps.filter.vcf.gz -V ${prefix}.Mutect2.indels.filter.vcf.gz -o ${prefix}.Mutect2.filter.vcf.gz" &>>$dir_result/VariantFiltration/VariantFiltration.log
 
                 check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

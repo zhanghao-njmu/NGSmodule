@@ -38,11 +38,6 @@ sambamba &>/dev/null
   echo -e "Cannot find the command sambamba.\n"
   exit 1
 }
-picard &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command picard.\n"
-  exit 1
-}
 
 if [[ "$SequenceType" == "BSdna" ]] && [[ ! "$Aligner" =~ bismark_* ]]; then
   color_echo "red" "ERROR! Aligner must be bismark_bowtie2 or bismark_hisat2 for the SequenceType 'BSdna'."
@@ -258,11 +253,12 @@ for sample in "${arr[@]}"; do
             sambamba markdup -t $threads --hash-table-size=3000000 --overflow-list-size=3000000 $BAM ${sample}.${Aligner}.markdup.bam &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
             BAM=${sample}.${Aligner}.markdup.bam
           fi
-            picard AddOrReplaceReadGroups I=$BAM O=${sample}.${Aligner}.RG.bam RGLB=lib1 RGPL=illumina RGPU=unit1 RGSM=$sample &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            picard FixMateInformation I=${sample}.${Aligner}.RG.bam O=${sample}.${Aligner}.RG.FMI.bam ADD_MATE_CIGAR=true &>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
-            rm -f ${sample}.${Aligner}.RG.bam
-            mv ${sample}.${Aligner}.RG.FMI.bam $BAM
-            samtools index -@ $threads $BAM 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools sort -@ $threads -n $BAM |
+            samtools addreplacerg -@ $threads -O bam -r "ID:S1" -r "LB:lib1" -r "PL:illumina" -r "PU:unit1" -r "SM:$sample" - |
+            samtools fixmate -@ $threads -O bam - ${sample}.${Aligner}.fixmate.bam 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          samtools sort -@ $threads -O bam -o $BAM ${sample}.${Aligner}.fixmate.bam
+          samtools index -@ $threads $BAM 2>>"$dir/Alignment-$Aligner/BamProcessingStatus.log"
+          rm -f ${sample}.${Aligner}.fixmate.bam
         fi
 
         if [[ "$SequenceType" == "rna" ]]; then
