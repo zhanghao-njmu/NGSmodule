@@ -96,7 +96,7 @@ for sample in "${arr[@]}"; do
                 bcftools view --threads $threads --types indels  --output-type z --output-file ${prefix}.Samtools.indels.vcf.gz $dir_result/Samtools/${prefix}.Samtools.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
                 bcftools filter --threads $threads -e 'MQ < 40.0' --output-type z --output ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.snps.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
                 bcftools filter --threads $threads -e 'MQ < 20.0' --output-type z --output ${prefix}.Samtools.indels.filter.vcf.gz ${prefix}.Samtools.indels.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
-                bcftools concat --threads $threads --output-type z --output ${prefix}.Samtools.filter.vcf.gz ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.indels.filter.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
+                bcftools concat --threads $threads -a --output-type z --output ${prefix}.Samtools.filter.vcf.gz ${prefix}.Samtools.snps.filter.vcf.gz ${prefix}.Samtools.indels.filter.vcf.gz &>>$dir_result/VariantFiltration/VariantFiltration.log
                 
                 check_logfile "$sample" "VariantFiltration" "$dir_result/VariantFiltration/VariantFiltration.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
