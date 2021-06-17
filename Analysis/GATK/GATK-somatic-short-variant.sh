@@ -169,6 +169,7 @@ for sample in "${arr[@]}"; do
                 mkdir -p $dir_result/Mutect2
                 cd $dir_result/Mutect2
                 eval "$GATK3 -T MuTect2 -R $genome -I:tumor ${dir_result}/BQSR/${prefix}.BQSR.bam -o ${prefix}.Mutect2.vcf.gz -bamout ${prefix}.Mutect2.bam" &>>$dir_result/Mutect2/Mutect2.log
+                bcftools stats  -F $genome -s - $dir_result/Mutect2/${prefix}.Mutect2.vcf.gz
 
                 check_logfile "$sample" "Mutect2" "$dir_result/Mutect2/Mutect2.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then

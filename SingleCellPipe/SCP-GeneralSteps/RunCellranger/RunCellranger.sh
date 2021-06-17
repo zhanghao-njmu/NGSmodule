@@ -95,7 +95,7 @@ for sample in "${arr[@]}"; do
 
         echo "+++++ ${sample} +++++"
 
-        while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+        while [[ $status == "uncompleted" ]] && (("$attempt" <= 0)); do
             ((attempt++))
             if [[ $attempt != 1 ]]; then
                 echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"

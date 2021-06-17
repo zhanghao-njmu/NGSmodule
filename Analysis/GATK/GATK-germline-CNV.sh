@@ -171,6 +171,7 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/HaplotypeCaller
                 eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -nct $threads -R $genome -D $dbSNP_snps -I ${dir_result}/BQSR/${prefix}.BQSR.bam -variant_index_type LINEAR -variant_index_parameter 128000 -o ${prefix}.gvcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
                 eval "$GATK3 -T GenotypeGVCFs -nt $threads -R $genome --variant ${prefix}.gvcf.gz -o ${prefix}.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
+                bcftools stats  -F $genome -s - $dir_result/HaplotypeCaller/${prefix}.HaplotypeCaller.vcf.gz
 
                 check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

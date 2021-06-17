@@ -88,6 +88,7 @@ for sample in "${arr[@]}"; do
                 status=$?
                 cp $dir_result/Strelka2/results/variants/variants.vcf.gz $dir_result/Strelka2/${prefix}.Strelka2.vcf.gz
                 cp $dir_result/Strelka2/results/variants/variants.vcf.gz.tbi $dir_result/Strelka2/${prefix}.Strelka2.vcf.gz.tbi
+                bcftools stats  -F $genome -s - $dir_result/Strelka2/${prefix}.Strelka2.vcf.gz
 
                 check_logfile "$sample" "Strelka2" "$dir_result/Strelka2/Strelka2.log" "$error_pattern" "$complete_pattern" "postcheck" $status
                 if [[ $? == 1 ]]; then

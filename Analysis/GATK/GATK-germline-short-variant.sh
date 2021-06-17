@@ -170,6 +170,7 @@ for sample in "${arr[@]}"; do
                 cd $dir_result/HaplotypeCaller
                 eval "$GATK3 -T HaplotypeCaller --emitRefConfidence GVCF -R $genome -I ${dir_result}/BQSR/${prefix}.BQSR.bam -variant_index_type LINEAR -variant_index_parameter 128000 -o ${prefix}.HaplotypeCaller.gvcf.gz -bamout ${prefix}.HaplotypeCaller.bam" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
                 eval "$GATK3 -T GenotypeGVCFs -nt $threads -R $genome --variant ${prefix}.HaplotypeCaller.gvcf.gz -o ${prefix}.HaplotypeCaller.vcf.gz" &>>$dir_result/HaplotypeCaller/HaplotypeCaller.log
+                bcftools stats  -F $genome -s - $dir_result/HaplotypeCaller/${prefix}.HaplotypeCaller.vcf.gz
 
                 check_logfile "$sample" "HaplotypeCaller" "$dir_result/HaplotypeCaller/HaplotypeCaller.log" "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
