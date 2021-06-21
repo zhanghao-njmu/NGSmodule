@@ -140,6 +140,7 @@ for sample in "${arr[@]}"; do
             # FastQC
             check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                rm -rf "$dir"/PreAlignmentQC/fastqc
                 mkdir -p "$dir"/PreAlignmentQC/fastqc
                 fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
@@ -153,6 +154,7 @@ for sample in "${arr[@]}"; do
             #FastQ_Screen
             check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                rm -rf "$dir"/PreAlignmentQC/fastq_screen
                 mkdir -p "$dir"/PreAlignmentQC/fastq_screen
                 fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq2" \
                     --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
@@ -208,6 +210,7 @@ for sample in "${arr[@]}"; do
 
             check_logfile "$sample" "dropReport" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
+                rm -rf "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 cd "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 dropReport.Rsc "$dir"/Alignment-Cellranger/"$sample"/dropEst/cell.counts.rds &>"$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log
@@ -224,6 +227,7 @@ for sample in "${arr[@]}"; do
                 if [[ -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log ]]; then
                     rm -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
                 fi
+                rm -rf "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
                 script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellCalling.R

@@ -133,6 +133,7 @@ for sample in "${arr[@]}"; do
         # FastQC
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
+          rm -rf "$dir"/PreAlignmentQC/fastqc
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
@@ -146,6 +147,7 @@ for sample in "${arr[@]}"; do
         # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
+          rm -rf "$dir"/PreAlignmentQC/fastp
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" \
             --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
@@ -170,6 +172,7 @@ for sample in "${arr[@]}"; do
           #FastQ_Screen
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
           if [[ $? == 1 ]]; then
+            rm -rf "$dir"/PreAlignmentQC/fastq_screen
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" \
               --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
@@ -186,6 +189,7 @@ for sample in "${arr[@]}"; do
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
+              rm -rf "$dir"/PreAlignmentQC/sortmerna
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               sortmerna --ref "${SortmeRNA_ref}" \
@@ -280,6 +284,7 @@ for sample in "${arr[@]}"; do
         # FastQC
         check_logfile "$sample" "FastQC" "$dir"/PreAlignmentQC/fastqc/fastqc.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
+          rm -rf "$dir"/PreAlignmentQC/fastqc
           mkdir -p "$dir"/PreAlignmentQC/fastqc
           fastqc -o "$dir"/PreAlignmentQC/fastqc -t "$threads" "${fq1}" "${fq2}" &>"$dir"/PreAlignmentQC/fastqc/fastqc.log
 
@@ -293,6 +298,7 @@ for sample in "${arr[@]}"; do
         # Fastp
         check_logfile "$sample" "Fastp" "$dir"/PreAlignmentQC/fastp/fastp.log "$error_pattern" "$complete_pattern" "precheck"
         if [[ $? == 1 ]]; then
+          rm -rf "$dir"/PreAlignmentQC/fastp
           mkdir -p "$dir"/PreAlignmentQC/fastp
           fastp --thread "$threads_fastp" --trim_front1 "$trim_front1" --trim_tail1 "$trim_tail1" --trim_front2 "$trim_front2" --trim_tail2 "$trim_tail2" \
             --qualified_quality_phred "$qualified_quality_phred" --unqualified_percent_limit "$unqualified_percent_limit" \
@@ -318,6 +324,7 @@ for sample in "${arr[@]}"; do
           #FastQ_Screen
           check_logfile "$sample" "FastQ_Screen" "$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log "$error_pattern" "$complete_pattern" "precheck"
           if [[ $? == 1 ]]; then
+            rm -rf "$dir"/PreAlignmentQC/fastq_screen
             mkdir -p "$dir"/PreAlignmentQC/fastq_screen
             fastq_screen --force --Aligner bowtie2 "$FastqScreen_mode" --conf "$FastqScreen_config" --threads "$threads" "$fq1" "$fq2" \
               --outdir "$dir"/PreAlignmentQC/fastq_screen 2>"$dir"/PreAlignmentQC/fastq_screen/fastq_screen.log
@@ -334,6 +341,7 @@ for sample in "${arr[@]}"; do
             check_logfile "$sample" "SortMeRNA" "$dir"/PreAlignmentQC/sortmerna/sortmerna.process.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
               rm -rf "$dir"/PreAlignmentQC/sortmerna_tmp
+              rm -rf "$dir"/PreAlignmentQC/sortmerna
               mkdir -p "$dir"/PreAlignmentQC/sortmerna_tmp
               mkdir -p "$dir"/PreAlignmentQC/sortmerna
               reformat.sh in1="$fq1" in2="$fq2" out="$dir"/"${sample}".fq overwrite=true 2>"$dir"/PreAlignmentQC/sortmerna/reformat_merge.log
