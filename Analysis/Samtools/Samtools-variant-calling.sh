@@ -76,7 +76,7 @@ for sample in "${arr[@]}"; do
                 rm -rf $dir_result/Samtools
                 mkdir -p $dir_result/Samtools
                 cd $dir_result/Samtools
-                bcftools mpileup --threads $threads -Ou -f $genome $BAM | bcftools call -vmO z -o ${prefix}.Samtools.vcf.gz &>$dir_result/Samtools/Samtools.log
+                bcftools mpileup --threads $threads -d 100000000 -Ou -f $genome $BAM | bcftools call -vmO z -o ${prefix}.Samtools.vcf.gz &>$dir_result/Samtools/Samtools.log
                 tabix -p vcf ${prefix}.Samtools.vcf.gz &>$dir_result/Samtools/Samtools.log
                 bcftools stats -F $genome -s - ${prefix}.Samtools.vcf.gz > ${prefix}.Samtools.vcf.gz.stats 2>$dir_result/Samtools/Samtools.log
 

@@ -119,8 +119,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     FastqScreen_mode=""
   fi
 
-  de_option=("TRUE" "FALSE")
-  if [[ ${Deduplication} == "" ]]; then
+  de_option=("TRUE" "FALSE" "automatic")
+  if [[ ${Deduplication} == "automatic" ]]; then
     case ${SequenceType} in
     rna)
       Deduplication="FALSE"

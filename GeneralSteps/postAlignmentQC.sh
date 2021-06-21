@@ -68,17 +68,17 @@ for sample in "${arr[@]}"; do
     if [[ "$SequenceType" == "BSdna" ]] && [[ "$Aligner" =~ bismark_* ]]; then
       bam=$(ls $dir/Alignment-$Aligner/*.bam)
     else
-       case ${Deduplication} in
-        FALSE)
-          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.markdup.bam"
-          ;;
-        TRUE)
-          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.dedup.bam"
-          ;;
-        *)
-          bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.bam"
-          ;;
-        esac
+      case ${Deduplication} in
+      FALSE)
+        bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.markdup.bam"
+        ;;
+      TRUE)
+        bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.dedup.bam"
+        ;;
+      *)
+        bam="$dir/Alignment-$Aligner/${sample}.${Aligner}.bam"
+        ;;
+      esac
     fi
     if [[ ! -f $bam ]]; then
       color_echo "red" "ERROR! Bam file:$bam do not exist. Please check the file.\n"

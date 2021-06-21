@@ -84,10 +84,10 @@ for sample in "${arr[@]}"; do
 
     echo "+++++ ${sample} +++++"
 
-    while [[ $status == "uncompleted" ]] && (("$attempt" <= 1)); do
+    while [[ $status == "uncompleted" ]] && (("$attempt" <= $retry)); do
       ((attempt++))
       if [[ $attempt != 1 ]]; then
-        echo -e "+++++ ${sample}: Number of attempts: $attempt +++++"
+        echo -e "+++++ ${sample}: Number of retries: $attempt +++++"
       fi
 
       ### check existed logs

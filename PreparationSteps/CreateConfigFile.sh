@@ -30,7 +30,7 @@ ntask_per_run="ALL"                           ## "ALL" or numeric value to speci
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
 force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE.
-
+retry=0                                       ## Number of retries when the task has an error.
 
 ############# CreateWorkDir Paramaters ######################################################################
 ### raw_run_file_name= RunIDPattern  + SufixPattern
@@ -72,9 +72,10 @@ iGenomes_Dir="/archive/reference/iGenomes"          ## The iGenomes dir containi
 Species="Homo_sapiens"                              ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster, ...
 Source="Ensembl"                                    ## Ensembl,NCBI,UCSC
 Build="GRCh38"                                      ## The genome build version.
-Aligner="hisat2"                                    ## bwa,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
-Deduplication=""                                    ## Whether to perfomrm deduplication. Default is automatic: dna/BSdna = "TRUE", rna = "FALSE".
-Aligner_parament=""                                 ## Optional. Specify custom parameters and overwrite the default patameters excluding the index path and threads number.  
+Aligner="hisat2"                                    ## bwa_mem,bwa_aln,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
+Deduplication="automatic"                           ## Whether to perfomrm deduplication. Default is automatic: dna/BSdna = "TRUE", rna = "FALSE".
+Subsample_proportion=1                              ## The proportion of the subsamples. 1 indicates no subsampling.
+Aligner_parameters=""                               ## Optional. Specify custom parameters and overwrite the default parameters excluding the index path and threads number.  
 Genome_direct=""                                    ## Optional. Specify a genome file path used for the alignment.  
 GTF_direct=""                                       ## Optional. Specify a gtf file path used for the alignment.  
 Index_direct=""                                     ## Optional. Specify the index path used for the alignment.  
