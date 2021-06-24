@@ -210,7 +210,6 @@ for sample in "${arr[@]}"; do
 
             check_logfile "$sample" "dropReport" "$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log "$error_pattern" "$complete_pattern" "precheck"
             if [[ $? == 1 ]]; then
-                rm -rf "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 cd "$dir"/Alignment-Cellranger/"$sample"/dropEst
                 dropReport.Rsc "$dir"/Alignment-Cellranger/"$sample"/dropEst/cell.counts.rds &>"$dir"/Alignment-Cellranger/"$sample"/dropEst/dropReport.log
@@ -222,22 +221,22 @@ for sample in "${arr[@]}"; do
             fi
 
             # Cell-calling
-            check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
-            if [[ $? == 1 ]]; then
-                if [[ -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log ]]; then
-                    rm -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
-                fi
-                rm -rf "$dir"/Alignment-Cellranger/"$sample"/CellCalling
-                mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
-                cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
-                script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellCalling.R
-                Rscript "$script" "$dir"/Alignment-Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log
+            # check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "precheck"
+            # if [[ $? == 1 ]]; then
+            #     if [[ -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log ]]; then
+            #         rm -f "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+            #     fi
+            #     rm -rf "$dir"/Alignment-Cellranger/"$sample"/CellCalling
+            #     mkdir -p "$dir"/Alignment-Cellranger/"$sample"/CellCalling
+            #     cd "$dir"/Alignment-Cellranger/"$sample"/CellCalling
+            #     script=$SCP_path/SCP-GeneralSteps/RunCellranger/CellCalling.R
+            #     Rscript "$script" "$dir"/Alignment-Cellranger "$sample" "$threads" "$EmptyThreshold" "$CellLabel" &>"$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log
 
-                check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
-                if [[ $? == 1 ]]; then
-                    continue
-                fi
-            fi
+            #     check_logfile "$sample" "CellCalling" "$dir"/Alignment-Cellranger/"$sample"/CellCalling/CellCalling.log "$error_pattern" "$complete_pattern" "postcheck"
+            #     if [[ $? == 1 ]]; then
+            #         continue
+            #     fi
+            # fi
 
             # velocyto
             check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
@@ -247,8 +246,8 @@ for sample in "${arr[@]}"; do
                 cd "$dir"/Alignment-Cellranger/"$sample"/velocyto
                 # cp "$dir"/Alignment-Cellranger/"$sample"/outs/filtered_feature_bc_matrix/barcodes.tsv.gz ./
                 # gunzip ./barcodes.tsv.gz
-                #velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
-                velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -e $sample -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+                velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+                #velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -e $sample -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
 
                 check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck"
                 if [[ $? == 1 ]]; then

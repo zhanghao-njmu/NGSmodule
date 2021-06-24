@@ -76,8 +76,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$threads
   fi
 
-  if ((threads > 32)); then
-    threads=32
+  if ((threads > 64)); then
+    threads=64
   else
     threads=$threads
   fi

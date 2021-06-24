@@ -59,11 +59,12 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
         color_echo "red" "ERROR! ntask_per_run should be 'ALL' or an interger!\n"
         exit 1
     fi
-    if (( threads > 120 ));then
-        threads=120
-    fi
     threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
     memory=$(((total_memory + ntask_per_run) / ntask_per_run - 1))
+    
+    if (( threads > 64 ));then
+        threads=64
+    fi
 
     ###### fifo ######
     fifo $ntask_per_run
