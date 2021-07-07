@@ -46,6 +46,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
         color_echo "red" "ERROR! No sample sub-directory found in the work_dir:$work_dir\n"
         exit 1
     fi
+    total_threads=${total_threads%%.*}
+    total_memory=${total_memory%%.*}
 
     if [[ "$ntask_per_run" =~ ^[0-9]+$ ]]; then
         ntask_per_run=$ntask_per_run

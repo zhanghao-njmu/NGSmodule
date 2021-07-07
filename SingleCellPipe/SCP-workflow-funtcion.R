@@ -1464,7 +1464,12 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   }
 
   srt <- RunPCA(object = srt, npcs = maxPC, features = hvf, reduction.name = paste0(reduction_prefix, "pca"))
-  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srt, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
+  dim_est <- maxLikGlobalDimEst(data = Embeddings(srt, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]]
+  if (!is.na(dim_est)) {
+    dims <- 1:ceiling(dim_est)
+  }else{
+    dims <- 1:20
+  }
   srt@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
