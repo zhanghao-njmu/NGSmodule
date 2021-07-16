@@ -46,24 +46,27 @@ Check_srtList <- function(srtList, normalization_method,
       x = GetAssayData(srtList[[i]], slot = "counts"),
       y = GetAssayData(srtList[[i]], slot = "data")
     )) {
+      cat("Perform NormalizeData(logCPM) on the data",i,"of the srtList...\n")
       srtList[[i]] <- NormalizeData(object = srtList[[i]], normalization.method = "LogNormalize", verbose = FALSE)
     }
     if (!"vst.variance.standardized" %in% colnames(srtList[[i]]@assays$RNA@meta.features)) {
+      cat("Perform FindVariableFeatures on the data",i,"of the srtList...\n")
       srtList[[i]] <- FindVariableFeatures(srtList[[i]], verbose = FALSE)
     }
     m <- GetAssayData(srtList[[i]], slot = "counts")
     gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
-    VariableFeatures(srtList[[i]]) <- HVFInfo(srtList[[i]]) %>%
-      filter(variance.standardized > 1 &
+    VariableFeatures(srtList[[i]]) <- srtList[[i]]@assays$RNA@meta.features %>%
+      filter(vst.variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_keep) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(vst.variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
     DefaultAssay(srtList[[i]]) <- "RNA"
 
     if (normalization_method %in% c("SCT")) {
       if (!"SCT" %in% Seurat::Assays(srtList[[i]])) {
+        cat("Perform SCTransform on the data",i,"of the srtList...\n")
         srtList[[i]] <- SCTransform(
           object = srtList[[i]],
           method = "glmGamPoi",
@@ -87,7 +90,7 @@ Check_srtList <- function(srtList, normalization_method,
       }
       m <- GetAssayData(srtList[[i]], slot = "counts")
       gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
-      VariableFeatures(srtList[[i]]) <- HVFInfo(srtList[[i]]) %>%
+      VariableFeatures(srtList[[i]]) <- srtList[[i]]@assays$SCT@meta.features %>%
         filter((!rownames(.) %in% exogenous_genes) &
           rownames(.) %in% gene_keep) %>%
         dplyr::arrange(desc(residual_variance)) %>%
@@ -98,6 +101,7 @@ Check_srtList <- function(srtList, normalization_method,
 
   if (is.null(hvf)) {
     if (HVF_source == "global") {
+      cat("Perform global HVF calculation on the merged datasets from the srtList...\n")
       gene_common <- lapply(srtList, function(x) {
         m <- GetAssayData(x, slot = "counts")
         gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5 * length(srtList)]
@@ -106,14 +110,15 @@ Check_srtList <- function(srtList, normalization_method,
       srtMerge <- Reduce(function(x, y) merge(x, y), srtList)
       hvf <- FindVariableFeatures(srtMerge, verbose = FALSE) %>%
         HVFInfo(.) %>%
-        filter(variance.standardized > 1 &
+        filter(vst.variance.standardized > 1 &
           (!rownames(.) %in% exogenous_genes) &
           rownames(.) %in% gene_common) %>%
-        dplyr::arrange(desc(variance.standardized)) %>%
+        dplyr::arrange(desc(vst.variance.standardized)) %>%
         rownames(.) %>%
         head(n = nHVF)
     }
     if (HVF_source == "separate") {
+      cat("Perform separate HVF calculation with SelectIntegrationFeatures from the existed HVF in srtList...\n")
       hvf <- SelectIntegrationFeatures(object.list = srtList, nfeatures = nHVF, verbose = FALSE)
     }
   } else {
@@ -137,8 +142,6 @@ Check_srtList <- function(srtList, normalization_method,
 Check_srtMerge <- function(srtMerge, normalization_method, batch,
                            HVF_source = "separate", nHVF = 3000, hvf = NULL,
                            exogenous_genes = NULL, ...) {
-  cat("Spliting srtMerge into srtList... ...\n")
-
   if (class(srtMerge) != "Seurat") {
     stop("'srtMerge' is not a Seurat object.",
       call. = FALSE
@@ -154,7 +157,7 @@ Check_srtMerge <- function(srtMerge, normalization_method, batch,
       call. = FALSE
     )
   }
-
+  cat("Spliting srtMerge into srtList... ...\n")
   srtList <- SplitObject(object = srtMerge, split.by = batch)
 
   checked <- Check_srtList(srtList,
@@ -260,6 +263,28 @@ CC_module <- function(srt, cc_S_genes, cc_G2M_genes, ...) {
   return(srt)
 }
 
+SrtReorder <- function(srt, features = NULL, reorder_by = NULL, slot = "data", assay = NULL) {
+  if (is.null(features)) {
+    features <- VariableFeatures(srt)
+  }
+  features <- intersect(x = features, y = rownames(x = srt))
+  if (is.null(reorder_by)) {
+    srt$ident <- Idents(srt)
+  } else {
+    srt$ident <- srt[[reorder_by, drop = TRUE]]
+  }
+  if (is.null(assay)) {
+    assay <- DefaultAssay(srt)
+  }
+  data.avg <- AverageExpression(object = srt, features = features, slot = slot, assays = assay, group.by = "ident")[[1]]
+  data.dist <- dist(x = t(x = data.avg[features, ]))
+  hc <- hclust(d = data.dist)
+  ident_new <- plyr::mapvalues(x = srt$ident, from = hc$labels[hc$order], to = 1:length(hc$labels))
+  ident_new <- factor(ident_new, levels = 1:length(hc$labels))
+  Idents(srt) <- srt$ident <- ident_new
+  return(srt)
+}
+
 Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                   normalization_method = "logCPM", batch = "orig.ident",
                                   HVF_source = "separate", nHVF = 3000, hvf = NULL,
@@ -320,6 +345,7 @@ Uncorrected_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALS
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -411,18 +437,18 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
   srtIntegrated <- ScaleData(srtIntegrated, features = hvf)
-  srtIntegrated <- RunPCA(object = srtIntegrated, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
+  srtIntegrated <- RunPCA(
+    object = srtIntegrated, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
   dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtIntegrated, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -454,6 +480,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     srtMerge_raw@assays$Seurat <- srtIntegrated@assays$Seurat
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -472,6 +499,8 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               maxPC = 100, resolution = 0.8, reorder = TRUE,
                               reduction = "umap", reduction_prefix = "fastMNN",
                               exogenous_genes = NULL, ...) {
+  require(SeuratWrappers)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -531,9 +560,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -564,6 +591,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$fastMNN <- srtIntegrated@reductions$fastMNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -582,6 +610,8 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               maxPC = 100, resolution = 0.8, reorder = TRUE,
                               reduction = "umap", reduction_prefix = "Harmony",
                               exogenous_genes = NULL, ...) {
+  require(SeuratWrappers)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -626,10 +656,12 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
-  srtMerge <- RunPCA(object = srtMerge, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
-  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction =  paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
+  srtMerge <- RunPCA(
+    object = srtMerge, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
+  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
 
   srtIntegrated <- RunHarmony(
     object = srtMerge,
@@ -649,9 +681,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "Harmony", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -682,6 +712,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$Harmony <- srtIntegrated@reductions$Harmony
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -694,14 +725,15 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
 }
 
-Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
-                                normalization_method = "logCPM", batch = "orig.ident",
-                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
-                                maxPC = 100, resolution = 0.8, reorder = TRUE,
-                                reduction = "umap", reduction_prefix = "Scanorama",
-                                exogenous_genes = NULL, ...) {
-  require(reticulate)
-  require(plyr)
+Concos_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
+                             normalization_method = "logCPM", batch = "orig.ident",
+                             HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                             maxPC = 100, resolution = 0.8, reorder = TRUE,
+                             reduction = "umap", reduction_prefix = "Harmony",
+                             exogenous_genes = NULL, ...) {
+  require(SeuratWrappers)
+  require(conos)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -744,7 +776,118 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     hvf <- checked[["hvf"]]
   }
 
+  srtIntegrated <- Conos$new(srtList)
+  srtIntegrated$buildGraph(
+    k = 15, k.self = 10, space = "PCA", ncomps = 40, n.odgenes = nHVF, matching.method = "mNN",
+    metric = "angular", score.component.variance = TRUE, verbose = TRUE
+  )
+  srtIntegrated$findCommunities()
+  srtIntegrated$embedGraph()
+  srtIntegrated <- as.Seurat(srtIntegrated)
+
+  srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
+
+  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtIntegrated, reduction = "fastMNN"), k = 20, iterations = 100)[["dim.est"]])
+  srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
+
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
+  if (isTRUE(reorder)) {
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
+  }
+  srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
+
+  for (n in reduction_components) {
+    if ("umap" %in% reduction) {
+      srtIntegrated <- RunUMAP(
+        object = srtIntegrated, reduction = "fastMNN",
+        reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
+        reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
+        dims = dims, n.components = n, umap.method = "uwot",
+        return.model = TRUE, verbose = TRUE
+      )
+    }
+    if ("tsne" %in% reduction) {
+      srtIntegrated <- RunTSNE(
+        object = srtIntegrated, reduction = "fastMNN",
+        reduction.name = paste0(reduction_prefix, "TSNE", n, "d"),
+        reduction.key = paste0(reduction_prefix, "TSNE", n, "d_"),
+        dims = dims, dim.embed = n, tsne.method = "Rtsne",
+        perplexity = max(ceiling(ncol(srtIntegrated) * 0.01), 30), max_iter = 2000,
+        num_threads = 0, verbose = TRUE
+      )
+    }
+  }
+
+  DefaultAssay(srtIntegrated) <- "RNA"
+  if (isTRUE(append)) {
+    DefaultAssay(srtMerge_raw) <- "RNA"
+    srtMerge_raw@reductions$fastMNN <- srtIntegrated@reductions$fastMNN
+    srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
+    srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
+    for (n in reduction_components) {
+      for (i in reduction) {
+        srtMerge_raw[[paste0(reduction_prefix, toupper(i), n, "d")]] <- srtIntegrated[[paste0(reduction_prefix, toupper(i), n, "d")]]
+      }
+    }
+    return(srtMerge_raw)
+  } else {
+    return(srtIntegrated)
+  }
+}
+
+Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
+                                normalization_method = "logCPM", batch = "orig.ident",
+                                HVF_source = "separate", nHVF = 3000, hvf = NULL,
+                                maxPC = 100, resolution = 0.8, reorder = TRUE,
+                                reduction = "umap", reduction_prefix = "Scanorama",
+                                exogenous_genes = NULL, ...) {
+  require(reticulate)
+  require(plyr)
   scanorama <- reticulate::import("scanorama")
+
+  if (is.null(srtList) & is.null(srtMerge)) {
+    stop("srtList and srtMerge were all empty.")
+  }
+  if (!is.null(srtList) & !is.null(srtMerge)) {
+    cell1 <- lapply(srtList, colnames) %>%
+      unlist() %>%
+      unique() %>%
+      sort()
+    cell2 <- colnames(srtMerge) %>%
+      unique() %>%
+      sort()
+    if (!identical(cell1, cell2)) {
+      stop("srtList and srtMerge have different cells.")
+    }
+  }
+  if (isTRUE(append)) {
+    if (is.null(srtMerge)) {
+      stop("srtMerge must be provided when 'append = TRUE'.")
+    } else {
+      srtMerge_raw <- srtMerge
+    }
+  }
+  if (!is.null(srtList)) {
+    checked <- Check_srtList(srtList,
+      normalization_method = normalization_method,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = exogenous_genes
+    )
+    srtList <- checked[["srtList"]]
+    hvf <- checked[["hvf"]]
+  }
+  if (is.null(srtList) & !is.null(srtMerge)) {
+    srtList <- SplitObject(object = srtMerge, split.by = batch)
+    checked <- Check_srtList(srtList,
+      normalization_method = normalization_method,
+      HVF_source = HVF_source, nHVF = nHVF, hvf = hvf,
+      exogenous_genes = exogenous_genes
+    )
+    srtList <- checked[["srtList"]]
+    hvf <- checked[["hvf"]]
+  }
 
   assaylist <- list()
   genelist <- list()
@@ -780,18 +923,18 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
   srtIntegrated <- ScaleData(srtIntegrated, features = hvf)
-  srtIntegrated <- RunPCA(object = srtIntegrated, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
+  srtIntegrated <- RunPCA(
+    object = srtIntegrated, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
   dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtIntegrated, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -824,6 +967,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     srtMerge_raw@reductions$Scanorama_reduction <- srtIntegrated@reductions$Scanorama_reduction
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -843,6 +987,8 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             reduction_prefix = "BBKNN",
                             exogenous_genes = NULL, ...) {
   require(reticulate)
+  bbknn <- reticulate::import("bbknn", convert = FALSE)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -887,18 +1033,18 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
-  srtIntegrated <- RunPCA(object = srtIntegrated, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
-  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
+  srtMerge <- RunPCA(
+    object = srtMerge, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
+  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
   srtMerge@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  bbknn <- reticulate::import("bbknn", convert = FALSE)
-  pca <- reticulate::r_to_py(Embeddings(srtMerge, reduction = "pca")[, dims])
-
+  pca <- reticulate::r_to_py(Embeddings(srtMerge, reduction = paste0(reduction_prefix, "pca"))[, dims])
   bem <- bbknn$bbknn_pca_matrix(pca, batch_list = srtMerge[[batch, drop = TRUE]])
   bem <- reticulate::py_to_r(bem)
-  bbknn_graph <- as.matrix(bem[[2]])
+  bbknn_graph <- as(as(bem[[2]], "CsparseMatrix"), "dgCMatrix")
   rownames(bbknn_graph) <- colnames(bbknn_graph) <- colnames(srtMerge)
   srtMerge@graphs$BBKNN <- as.Graph(bbknn_graph)
   srtIntegrated <- srtMerge
@@ -908,9 +1054,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- FindClusters(object = srtIntegrated, graph.name = "BBKNN", resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -921,16 +1065,17 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       umap.method = "umap-learn", metric = "correlation",
       reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
       reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
-      verbose = TRUE
+      n.components = as.integer(n),
+      return.model = TRUE, verbose = TRUE
     )
   }
-  # srtIntegrated <- RunUMAP(object = srtIntegrated, graph = "BBKNN", umap.method = "umap-learn", reduction.name = paste0(reduction_prefix, "umap"))
 
   DefaultAssay(srtIntegrated) <- "RNA"
   if (isTRUE(append)) {
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@graphs$BBKNN <- srtIntegrated@graphs$BBKNN
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -949,6 +1094,8 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                           maxPC = 100, resolution = 0.8, reorder = TRUE,
                           reduction = "umap", reduction_prefix = "CSS",
                           exogenous_genes = NULL, ...) {
+  require(simspec)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -993,12 +1140,16 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
 
   srtMerge <- ScaleData(object = srtMerge, features = rownames(srtMerge))
-  srtMerge <- RunPCA(object = srtMerge, npcs = maxPC, features = hvf)
-  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = "pca"), k = 20, iterations = 100)[["dim.est"]])
+  srtMerge <- RunPCA(
+    object = srtMerge, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
+  dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtMerge, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
 
   srtIntegrated <- cluster_sim_spectrum(
     object = srtMerge,
-    use_dr = "pca",
+    use_dr = paste0(reduction_prefix, "pca"),
     dims_use = dims,
     var_genes = hvf,
     label_tag = batch,
@@ -1018,9 +1169,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "CSS", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1051,6 +1200,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$CSS <- srtIntegrated@reductions$CSS
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -1069,7 +1219,9 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             maxPC = 100, resolution = 0.8, reorder = TRUE,
                             reduction = "umap", reduction_prefix = "LIGER",
                             exogenous_genes = NULL, ...) {
-  require(liger)
+  require(SeuratWrappers)
+  require(rliger)
+
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1135,9 +1287,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "LIGER", dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1168,6 +1318,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     DefaultAssay(srtMerge_raw) <- "RNA"
     srtMerge_raw@reductions$LIGER <- srtIntegrated@reductions$LIGER
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -1180,6 +1331,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
 }
 
+## slow
 scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               normalization_method = "logCPM", batch = "orig.ident",
                               HVF_source = "separate", nHVF = 3000, hvf = NULL,
@@ -1230,7 +1382,17 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     hvf <- checked[["hvf"]]
   }
 
-  sce <- as.SingleCellExperiment(srtMerge)
+  assay_use <- GetAssay(
+    object = srtMerge,
+    assay = switch(normalization_method,
+      "logCPM" = "RNA",
+      "SCT" = "SCT"
+    )
+  )
+  sce <- SingleCellExperiment(
+    assays = list(counts = assay_use@counts, logcounts = assay_use@data),
+    colData = DataFrame(srtMerge@meta.data)
+  )
   assay(sce, "counts") <- as(counts(sce), "dgeMatrix")
   assay(sce, "logcounts") <- as(logcounts(sce), "dgeMatrix")
 
@@ -1260,11 +1422,12 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   )
   assay(sce_scMerge, "counts") <- as(assay(sce_scMerge, "counts"), "dgCMatrix")
   assay(sce_scMerge, "scMerge") <- as(assay(sce_scMerge, "scMerge"), "dgCMatrix")
-  srtIntegrated <- as.Seurat(sce_scMerge,
+  srtIntegrated <- as.Seurat(
+    x = sce_scMerge,
     counts = "counts",
-    data = "scMerge",
-    assay = "scMerge"
+    data = "scMerge"
   )
+  srtIntegrated <- RenameAssays(srtIntegrated, originalexp = "scMerge")
   srtIntegrated@assays$RNA <- srtMerge@assays$RNA
   DefaultAssay(srtIntegrated) <- "scMerge"
   sce_scMerge <- sce <- NULL
@@ -1272,18 +1435,18 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated <- Check_srtIntegrated(srtIntegrated, hvf = hvf, batch = batch)
 
   srtIntegrated <- ScaleData(srtIntegrated, features = hvf)
-  srtIntegrated <- RunPCA(object = srtIntegrated, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
+  srtIntegrated <- RunPCA(
+    object = srtIntegrated, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
   dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtIntegrated, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1315,6 +1478,7 @@ scMerge_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     srtMerge_raw@assays$scMerge <- srtIntegrated@assays$scMerge
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -1430,18 +1594,18 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
 
   srtIntegrated <- NormalizeData(object = srtIntegrated, normalization.method = "LogNormalize")
   srtIntegrated <- ScaleData(srtIntegrated, features = hvf)
-  srtIntegrated <- RunPCA(object = srtIntegrated, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
+  srtIntegrated <- RunPCA(
+    object = srtIntegrated, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
   dims <- 1:ceiling(maxLikGlobalDimEst(data = Embeddings(srtIntegrated, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]])
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
   srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srtIntegrated$ident <- srtIntegrated@active.ident
-    srtIntegrated <- BuildClusterTree(srtIntegrated, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srtIntegrated) <- srtIntegrated$tree.ident <- srtIntegrated$ident <- srtIntegrated$seurat_clusters
+    srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
@@ -1473,6 +1637,7 @@ ZINBWaVE_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
     srtMerge_raw@assays$ZINBWaVE <- srtIntegrated@assays$ZINBWaVE
     srtMerge_raw[[paste0(reduction_prefix, "pca")]] <- srtIntegrated[[paste0(reduction_prefix, "pca")]]
     srtMerge_raw@misc[[paste0(reduction_prefix, "Dims")]] <- srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]]
+    srtMerge_raw@misc[[paste0(reduction_prefix, "HVF")]] <- hvf
     srtMerge_raw[[paste0(reduction_prefix, "clusters")]] <- srtIntegrated[[paste0(reduction_prefix, "clusters")]]
     for (n in reduction_components) {
       for (i in reduction) {
@@ -1546,6 +1711,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
                          exogenous_genes = NULL) {
   require(glmGamPoi)
   require(intrinsicDimension)
+
   if (class(srt) != "Seurat") {
     stop("'srt' is not a Seurat object.",
       call. = FALSE
@@ -1566,16 +1732,16 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
     srt <- NormalizeData(object = srt, normalization.method = "LogNormalize")
   }
   if (is.null(hvf)) {
-    if (!"variance.standardized" %in% colnames(srt@assays$RNA@meta.features)) {
+    if (!"vst.variance.standardized" %in% colnames(srt@assays$RNA@meta.features)) {
       srt <- FindVariableFeatures(srt)
     }
     m <- GetAssayData(srt, slot = "counts")
     gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
-    VariableFeatures(srt) <- hvf <- HVFInfo(srt) %>%
-      filter(variance.standardized > 1 &
+    VariableFeatures(srt) <- hvf <- srt@assays$RNA@meta.features %>%
+      filter(vst.variance.standardized > 1 &
         (!rownames(.) %in% exogenous_genes) &
         rownames(.) %in% gene_keep) %>%
-      dplyr::arrange(desc(variance.standardized)) %>%
+      dplyr::arrange(desc(vst.variance.standardized)) %>%
       rownames(.) %>%
       head(n = nHVF)
   } else {
@@ -1611,7 +1777,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
       }
       m <- GetAssayData(srt, slot = "counts")
       gene_keep <- rownames(m)[Matrix::rowSums(m >= 1) >= 5]
-      VariableFeatures(srt) <- hvf <- HVFInfo(srt) %>%
+      VariableFeatures(srt) <- hvf <- srt@assays$SCT@meta.features %>%
         filter((!rownames(.) %in% exogenous_genes) &
           rownames(.) %in% gene_keep) %>%
         dplyr::arrange(desc(residual_variance)) %>%
@@ -1623,9 +1789,11 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
     }
   }
 
-  srt <- RunPCA(object = srt, npcs = maxPC, features = hvf,
-                          reduction.name = paste0(reduction_prefix, "pca"),
-                          reduction.key =  paste0(reduction_prefix, "pca_"))
+  srt <- RunPCA(
+    object = srt, npcs = maxPC, features = hvf,
+    reduction.name = paste0(reduction_prefix, "pca"),
+    reduction.key = paste0(reduction_prefix, "pca_")
+  )
   dim_est <- maxLikGlobalDimEst(data = Embeddings(srt, reduction = paste0(reduction_prefix, "pca")), k = 20, iterations = 100)[["dim.est"]]
   if (!is.na(dim_est)) {
     dims <- 1:ceiling(dim_est)
@@ -1637,9 +1805,7 @@ Standard_SCP <- function(srt, normalization_method = "logCPM", nHVF = 3000, hvf 
   srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T)
   srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000)
   if (isTRUE(reorder)) {
-    srt$ident <- srt@active.ident
-    srt <- BuildClusterTree(srt, features = hvf, slot = "data", reorder = TRUE, reorder.numeric = TRUE)
-    Idents(srt) <- srt$tree.ident <- srt$ident <- srt$seurat_clusters
+    srt <- SrtReorder(srt, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
@@ -1678,7 +1844,7 @@ Integration_SCP <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
-  if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER", "scMerge")) {
+  if (length(integration_method) == 1 & integration_method %in% c("Uncorrected", "Seurat", "fastMNN", "Harmony", "Scanorama", "BBKNN", "CSS", "LIGER")) {
     args1 <- c(mget(names(formals())), reduction_prefix = integration_method)
     args2 <- c(as.list(match.call()), reduction_prefix = integration_method)
     for (n in names(args2)) {
