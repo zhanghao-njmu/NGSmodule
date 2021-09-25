@@ -248,7 +248,7 @@ Check_srtList <- function(srtList, do_normalization = NULL, normalization_method
     }
     if (HVF_source == "separate") {
       cat("Perform separate HVF calculation with SelectIntegrationFeatures from the existed HVF in srtList...\n")
-      hvf <- SelectIntegrationFeatures(object.list = srtList, assay = "RNA", nfeatures = nHVF, verbose = FALSE)
+      hvf <- SelectIntegrationFeatures(object.list = srtList, nfeatures = nHVF, verbose = FALSE)
     }
   } else {
     cf <- lapply(srtList, function(x) {
@@ -521,8 +521,10 @@ GeneConvert <- function(geneID, geneID_from_IDtype, geneID_to_IDtype, species_fr
   }
   geneID_sim <- geneID_res %>%
     group_by(from_geneID) %>%
-    summarise(from_geneID = unique(from_geneID), to_geneID = list(unique(to_geneID[to_geneID != ""]))) %>%
-    as.data.frame()
+    mutate(from_geneID = unique(from_geneID), to_geneID = list(unique(to_geneID[to_geneID != ""]))) %>%
+    select(from_geneID, to_geneID) %>%
+    as.data.frame() %>%
+    unique()
   geneID_sim <- geneID_sim[sapply(geneID_sim$to_geneID, length) > 0, ]
   rownames(geneID_sim) <- geneID_sim[, "from_geneID"]
 
@@ -593,9 +595,9 @@ RenameFeatures <- function(srt, newnames = NULL) {
       if (dim(slot(assay, d))[1] == length(newnames)) {
         rownames(slot(assay, d)) <- newnames
       } else {
-        if (identical(dim(slot(assay, d)),as.integer(c(0,0)))) {
+        if (identical(dim(slot(assay, d)), as.integer(c(0, 0)))) {
           next
-        }else{
+        } else {
           message(paste0("Slot ", d, " have a different number of features."))
         }
       }
@@ -776,8 +778,8 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -897,8 +899,8 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "fastMNN", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1028,8 +1030,8 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "Harmony", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "Harmony", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1185,8 +1187,8 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1441,8 +1443,8 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   CSSdims <- 1:ncol(Embeddings(srtIntegrated, reduction = "CSS"))
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- CSSdims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "CSS", dims = CSSdims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "CSS", dims = CSSdims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1566,8 +1568,8 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   dims <- 1:ncol(Embeddings(srtIntegrated, reduction = "LIGER"))
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "LIGER", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = "LIGER", dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1735,8 +1737,8 @@ scMerge_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, append
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -1903,8 +1905,8 @@ ZINBWaVE_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, appen
   }
   srtIntegrated@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srtIntegrated <- FindNeighbors(object = srtIntegrated, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srtIntegrated <- FindClusters(object = srtIntegrated, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srtIntegrated <- SrtReorder(srtIntegrated, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -2064,8 +2066,8 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
   }
   srt@misc[[paste0(reduction_prefix, "Dims")]] <- dims
 
-  srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")),verbose = FALSE)
-  srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"),verbose = FALSE)
+  srt <- FindNeighbors(object = srt, reduction = paste0(reduction_prefix, "pca"), dims = dims, force.recalc = T, graph.name = paste0(reduction_prefix, "_", c("NN", "SNN")), verbose = FALSE)
+  srt <- FindClusters(object = srt, resolution = resolution, algorithm = 1, n.start = 100, n.iter = 10000, graph.name = paste0(reduction_prefix, "_SNN"), verbose = FALSE)
   if (isTRUE(reorder)) {
     srt <- SrtReorder(srt, features = hvf, reorder_by = "seurat_clusters", slot = "data")
   }
@@ -2200,9 +2202,13 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
         min.pct = min_percent,
         test.use = "wilcox"
       )
-      markers[, "gene"] <- rownames(markers)
-      markers[, "group1"] <- as.character(group)
-      markers[, "group2"] <- "others"
+      if (nrow(markers) > 0) {
+        markers[, "gene"] <- rownames(markers)
+        markers[, "group1"] <- as.character(group)
+        markers[, "group2"] <- "others"
+      } else {
+        return(NULL)
+      }
       return(markers)
     }, BPPARAM = BPPARAM)
     AllMarkers_Wilcoxon <- dplyr::bind_rows(AllMarkers_Wilcoxon)
@@ -2266,17 +2272,18 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
 srt_to_adata <- function(srt = NULL) {
   require(reticulate)
   require(Seurat)
+  require(Matrix)
   if (!is.null(srt)) {
     sc <- import("scanpy", convert = FALSE)
     adata <- sc$AnnData(
-      X = t(GetAssayData(srt, assay = "RNA", slot = "counts")),
+      X = Matrix::t(GetAssayData(srt, assay = "RNA", slot = "counts")),
       obs = srt[[]],
       var = data.frame(features = rownames(srt))
     )
 
     layer_list <- list()
     for (assay in Seurat::Assays(srt)) {
-      if (assay != "RNA") {
+      if (assay %in% c("spliced","unspliced","ambiguous")) {
         layer_list[[assay]] <- t(GetAssayData(srt, assay = assay, slot = "counts"))
       }
     }

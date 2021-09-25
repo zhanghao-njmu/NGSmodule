@@ -19,6 +19,14 @@ theme_zh <- function(aspect.ratio = 1, ...) {
     complete = TRUE
   )
   args2 <- c(as.list(match.call()))
+  call.envir <- parent.frame(1)
+  args2 <- lapply(args2, function(arg) {
+    if (is.symbol(arg)) {
+      eval(arg, envir = call.envir)
+    } else {
+      arg
+    }
+  })
   for (n in names(args2)) {
     args1[[n]] <- args2[[n]]
   }
@@ -246,6 +254,7 @@ ClassDimPlot <- function(srt, group.by = "orig.ident", split.by = NULL, reductio
                          palette = "Paired", legend.position = "right", combine = TRUE, nrow = NULL, ncol = NULL, byrow = TRUE) {
   require(shadowtext)
   require(dplyr)
+  require(ggplot2)
   if (is.null(split.by)) {
     split.by <- "All_cells"
     srt[[split.by]] <- factor("All_cells")
