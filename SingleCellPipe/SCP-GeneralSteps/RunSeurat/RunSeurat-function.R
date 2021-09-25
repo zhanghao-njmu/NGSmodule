@@ -8,8 +8,8 @@ db_scDblFinder <- function(srt, ...) {
   require(scDblFinder)
   sce <- as.SingleCellExperiment(srt, assay = "RNA")
   sce <- scDblFinder(sce, dbr = db_rate)
-  srt[["scDblFinder_score"]] <- sce[["scDblFinder.score"]]
-  srt[["scDblFinder_class"]] <- sce[["scDblFinder.class"]]
+  srt[["db.scDblFinder_score"]] <- sce[["scDblFinder.score"]]
+  srt[["db.scDblFinder_class"]] <- sce[["scDblFinder.class"]]
   db_out <- colnames(srt)[srt[["scDblFinder_class"]] == "doublet"]
   return(list(srt = srt, db_out = db_out))
 }
@@ -24,13 +24,13 @@ db_scds <- function(srt, method = "hybrid", ...) {
   require(scds)
   sce <- as.SingleCellExperiment(srt, assay = "RNA")
   sce <- cxds_bcds_hybrid(sce)
-  srt[["cxds_score"]] <- sce[["cxds_score"]]
-  srt[["bcds_score"]] <- sce[["bcds_score"]]
-  srt[["hybrid_score"]] <- sce[["hybrid_score"]]
+  srt[["db.cxds_score"]] <- sce[["cxds_score"]]
+  srt[["db.bcds_score"]] <- sce[["bcds_score"]]
+  srt[["db.hybrid_score"]] <- sce[["hybrid_score"]]
   ntop <- ceiling(db_rate * ncol(sce))
   db_out <- names(sort(srt[[paste0(method, "_score"), drop = T]], decreasing = T)[1:ntop])
-  srt[[paste0(method, "_class")]] <- "singlet"
-  srt[[paste0(method, "_class")]][db_out, ] <- "doublet"
+  srt[[paste0("db.",method, "_class")]] <- "singlet"
+  srt[[paste0("db.",method, "_class")]][db_out, ] <- "doublet"
   return(list(srt = srt, db_out = db_out))
 }
 
@@ -49,13 +49,13 @@ db_Scrublet <- function(srt, ...) {
   doublet_scores <- res[[1]]
   predicted_doublets <- res[[2]]
 
-  srt[["Scrublet_score"]] <- doublet_scores
-  srt[["Scrublet_class"]] <- sapply(predicted_doublets, function(i) {
+  srt[["db.Scrublet_score"]] <- doublet_scores
+  srt[["db.Scrublet_class"]] <- sapply(predicted_doublets, function(i) {
     switch(as.character(i),
       "FALSE" = "singlet", "TRUE" = "doublet"
     )
   })
-  db_out <- colnames(srt)[srt[["Scrublet_class"]] == "doublet"]
+  db_out <- colnames(srt)[srt[["db.Scrublet_class"]] == "doublet"]
   return(list(srt = srt, db_out = db_out))
 }
 
@@ -73,13 +73,13 @@ db_DoubletDetection <- function(srt, ...) {
   labels <- clf$fit(raw_counts)$predict()
   scores <- clf$doublet_score()
 
-  srt[["DoubletDetection_score"]] <- scores
-  srt[["DoubletDetection_class"]] <- sapply(labels, function(i) {
+  srt[["db.DoubletDetection_score"]] <- scores
+  srt[["db.DoubletDetection_class"]] <- sapply(labels, function(i) {
     switch(as.character(i),
       "0" = "singlet", "1" = "doublet"
     )
   })
-  db_out <- colnames(srt)[srt[["DoubletDetection_class"]] == "doublet"]
+  db_out <- colnames(srt)[srt[["db.DoubletDetection_class"]] == "doublet"]
   return(list(srt = srt, db_out = db_out))
 }
 

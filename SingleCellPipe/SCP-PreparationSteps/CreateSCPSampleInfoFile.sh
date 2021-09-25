@@ -2,11 +2,11 @@
 
 tmp=($(date +"%Y%m%d%H%M%S"))
 cat <<-EOF >temp_${tmp}.Sample_info.csv
-RunID,SampleID
-Sample1,Brain
-Sample2,Testis
-Sample3,Kidney
-Sample3,Pancreas
+RunID,SampleID,Group
+Sample1,Brain,Brain
+Sample2,Testis,Testis
+Sample3,Kidney-1,Kidney
+Sample4,Kidney-2,Kidney
 
 
 

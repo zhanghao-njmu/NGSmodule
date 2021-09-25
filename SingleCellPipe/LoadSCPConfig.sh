@@ -25,7 +25,7 @@ if [[ -f $SampleInfoFile ]]; then
     fi
 
     dos2unix $SampleInfoFile &>/dev/null
-    while IFS=',' read -r RunID SampleID; do
+    while IFS=',' read -r RunID SampleID Group; do
         Sample_dict[$RunID]=$SampleID
     done <$SampleInfoFile
 else

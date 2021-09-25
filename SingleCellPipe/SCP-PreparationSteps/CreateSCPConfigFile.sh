@@ -16,7 +16,7 @@ cat <<- EOF >$ConfigFile
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="$(pwd)/rawdata/"
 total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)                             ## Total threads.
-total_memory=$(free -g | awk 'NR==2 {print ($7/2)}')                             ## Total memory(gigabytes).
+total_memory=$(free -g | awk 'NR==2 {print ($7/3)}')                             ## Total memory(gigabytes).
 ntask_per_run="ALL"
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
@@ -24,37 +24,42 @@ force_complete="FALSE"
 retry=0
 
 ############# CreateWorkDir Paramaters ###################################################################
-### raw_fastq_file_name= LibraryIdPattern  + SufixPattern
+### raw_fastq_file_name= RunIDPattern + SufixPattern
 ### Example: ESC_20200911NB_S244_L004_R1_001.fastq.gz
-### LibraryIdPattern=".*"
-### SufixPattern="_2020.*\.fastq\.gz"
+### RunIDPattern="ESC_.*"
+### SufixPattern="_S\d+_L\d+_R1_001\.fastq\.gz"
 RunIDPattern=".*"                                                          ## This pattern must could be matched with the LibraryId after excluding Sufix.    
-R1_SufixPattern="_2020.*_S\d+_L\d+_R1_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
-R2_SufixPattern="_2020.*_S\d+_L\d+_R2_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
+R1_SufixPattern="_S\d+_L\d+_R1_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
+R2_SufixPattern="_S\d+_L\d+_R2_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
 R1_to_R2="_R1_/_R2_"
 
 ############# Cellranger Paramaters #######################################################################
 ### FastqScreen ###
-FastqScreen_config="/archive/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
-### cellranger ###
-cellranger_ref="/archive/reference/CellRanger/refdata-gex-GRCh38-2020-A_addGFP"
+### CellRanger ###
+cellranger_ref="/data/reference/CellRanger/refdata-gex-GRCh38-and-mm10-2020-A_addGFP"
 
-### velocyto and dropEst ###
-dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
+### Velocyto ###
 gene_gtf="\$cellranger_ref/genes/genes.gtf"
-rmsk_gtf="\$cellranger_ref/genes/hg38_rmsk.gtf"
+rmsk_gtf="\$cellranger_ref/genes/genes_rmsk.gtf"
 
-### Cell-Calling ###
-EmptyThreshold="AUTO"                               # an integer number or 'AUTO'
-CellLabel="NULL"                                    # a gene name or 'NULL'
+# ### dropEst ### (test)
+# dropEst_config="/home/zhanghao/Program/NGS/SingleCell/dropEst/configs/10x_v3.xml"
 
-############# Intergration #######################################################################
+# ### Cell-Calling ### (test)
+# EmptyThreshold="AUTO"                               # an integer number or "AUTO"
+# CellLabel="NULL"                                    # a gene name or "NULL"
+
+############# Prepare Paramaters #######################################################################
+
+
+############# Analysis Paramaters #######################################################################
 ### base parameters ###
 Rscript_threads=120
 datasets="ESC,iMeLC,PGC;Testis1,Testis2;"
 species="Homo_sapiens"                              # Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
-exogenous_genes="NULL"                              # a gene name, e.g. 'GFP' or 'NULL'
+exogenous_genes="NULL"                              # a gene name, e.g. "GFP" or "NULL"
 
 ### cell-filtering ###
 cell_calling_methodNum=3

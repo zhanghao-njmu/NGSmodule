@@ -36,7 +36,7 @@ retry=0                                       ## Number of retries when the task
 ### raw_run_file_name= RunIDPattern  + SufixPattern
 ### Example: Sample1: R19051060_2020_L001_1.fq.gz, R19051060_2020_L001_2.fq.gz; Sample2: R19051061_2020_L002.fq.gz
 ### RunIDPattern=".*"
-### SE_SufixPattern="_2020.*\.fastq\.gz"; R1_SufixPattern="_2020.*_1\.fastq\.gz"; R2_SufixPattern="_2020.*_2\.fastq\.gz"
+### SE_SufixPattern="_2021.*\.fastq\.gz"; R1_SufixPattern="_2020.*_1\.fastq\.gz"; R2_SufixPattern="_2020.*_2\.fastq\.gz"
 RunIDPattern=".*"                               ## This pattern must could be matched with the RunId in the SampleInfoFile after excluding Sufix.
 SE_SufixPattern="\.((fastq)|(fq))\.gz"          ## Must start with and end with a fixed string. 
 R1_SufixPattern="_1\.((fastq)|(fq))\.gz"        ## Must start with and end with a fixed string.     
@@ -57,10 +57,10 @@ cut_mean_quality=20                 ## the mean quality requirement option share
 length_required=20                  ## reads shorter than length_required will be discarded.
 
 ### FastqScreen ###
-FastqScreen_config="/archive/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### SortmeRNA ###
-SortmeRNA_Dir="/archive/reference/SortmeRNA"        ## the path of the dir containing the reference sequence.
+SortmeRNA_Dir="/data/reference/SortmeRNA"        ## the path of the dir containing the reference sequence.
 SortmeRNA_Type="rRNA"                               ## rRNA,Mt_tRNA,Mt_rRNA
 SortmeRNA_Species="Homo_sapiens"                    ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 SortmeRNA_DataVersion="101"                         ## the version of the sequence 
@@ -68,7 +68,7 @@ SortmeRNA_ref_direct=""                             ## Optional. Specify the pat
 
 
 ############# Alignment Paramaters ##########################################################################
-iGenomes_Dir="/archive/reference/iGenomes"          ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
+iGenomes_Dir="/data/reference/iGenomes"          ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
 Species="Homo_sapiens"                              ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster, ...
 Source="Ensembl"                                    ## Ensembl,NCBI,UCSC
 Build="GRCh38"                                      ## The genome build version.
