@@ -96,18 +96,18 @@ def RunSCVELO(adata=None, h5ad=None, group_by=None, neighbors_reduction=None, co
     scv.pl.velocity_embedding(adata2, title="dynamical", basis=compare_reduction, vkey=[
                               "dynamical"], color=group_by, arrow_length=arrow_length, arrow_size=arrow_size, density=arrow_density, dpi=300, save=prefix+"dynamical_arrow.png", show=True)
 
-    scv.tl.velocity_confidence(adata, vkey="dynamical")
-    scv.tl.velocity_pseudotime(adata, vkey="stochastic")
-    scv.pl.scatter(adata, basis=compare_reduction, color=('dynamical_length', 'dynamical_confidence'),
+    scv.tl.velocity_confidence(adata2, vkey="dynamical")
+    scv.tl.velocity_pseudotime(adata2, vkey="dynamical")
+    scv.pl.scatter(adata2, basis=compare_reduction, color=('dynamical_length', 'dynamical_confidence'),
                    cmap='coolwarm', perc=[5, 95], dpi=300, save=prefix+"dynamical_length_confidence.png", show=True)
-    scv.pl.scatter(adata, basis=compare_reduction, color='dynamical_pseudotime',
+    scv.pl.scatter(adata2, basis=compare_reduction, color='dynamical_pseudotime',
                    cmap='gnuplot', dpi=300, save=prefix+"dynamical_pseudotime.png", show=True)
 
     scv.tl.latent_time(adata2, vkey="dynamical")
     scv.pl.scatter(adata2, basis=compare_reduction, color='latent_time',
                    color_map='gnuplot', dpi=300, save=prefix+"dynamical_latent_time.png", show=True)
 
-    if calculate_velocity_genes is True:
+    if calculate_dynamical_genes is True:
       scv.tl.rank_dynamical_genes(
           adata2, groupby=group_by, n_genes=dynamical_ngenes)
       df = scv.DataFrame(adata2.uns['rank_dynamical_genes']['names'])

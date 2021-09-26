@@ -25,9 +25,9 @@ db_scds <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, method = "hybrid", .
   srt[["db.bcds_score"]] <- sce[["bcds_score"]]
   srt[["db.hybrid_score"]] <- sce[["hybrid_score"]]
   ntop <- ceiling(db_rate * ncol(sce))
-  db_out <- names(sort(srt[[paste0(method, "_score"), drop = T]], decreasing = T)[1:ntop])
-  srt[[paste0("db.", method, "_class")]] <- "singlet"
-  srt[[paste0("db.", method, "_class")]][db_out, ] <- "doublet"
+  db_out <- names(sort(srt[[paste0("db.",method, "_score"), drop = T]], decreasing = T)[1:ntop])
+  srt[[paste0("db.scds_", method, "_class")]] <- "singlet"
+  srt[[paste0("db.scds_", method, "_class")]][db_out, ] <- "doublet"
   return(srt)
 }
 
@@ -62,10 +62,15 @@ db_DoubletDetection <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, ...) {
     )
   }
   require(reticulate)
-  raw_counts <- r_to_py(t(as.matrix(GetAssayData(object = srt, assay = "RNA", slot = "counts"))))
+  require(Matrix)
+  counts <- GetAssayData(object = srt, assay = "RNA", slot = "counts")
   doubletdetection <- reticulate::import("doubletdetection")
-  clf <- doubletdetection$BoostClassifier()
-  labels <- clf$fit(raw_counts)$predict()
+  clf <- doubletdetection$BoostClassifier(
+    n_iters = as.integer(5),
+    use_phenograph = FALSE,
+    standard_scaling = TRUE
+  )
+  labels <- clf$fit(Matrix::t(counts))$predict()
   scores <- clf$doublet_score()
 
   srt[["db.DoubletDetection_score"]] <- scores
@@ -85,6 +90,7 @@ RunDoubletCalling <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, db_method 
     )
   }
   if (db_method %in% c("scDblFinder", "Scrublet", "DoubletDetection", "scds_cxds", "scds_bcds", "scds_hybrid")) {
+    message("Run doublet-calling with ", db_method, " method...")
     methods <- unlist(strsplit(db_method, "_"))
     method1 <- methods[1]
     method2 <- methods[2]
@@ -2283,7 +2289,7 @@ srt_to_adata <- function(srt = NULL) {
 
     layer_list <- list()
     for (assay in Seurat::Assays(srt)) {
-      if (assay %in% c("spliced","unspliced","ambiguous")) {
+      if (assay %in% c("spliced", "unspliced", "ambiguous")) {
         layer_list[[assay]] <- t(GetAssayData(srt, assay = assay, slot = "counts"))
       }
     }
