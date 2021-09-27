@@ -799,7 +799,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -920,7 +920,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1051,7 +1051,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1208,7 +1208,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1341,7 +1341,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
       reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
       reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
       n.components = as.integer(n),
-      return.model = TRUE, verbose = TRUE
+      return.model = TRUE, verbose = FALSE
     )
   }
 
@@ -1464,7 +1464,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = CSSdims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1589,7 +1589,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1758,7 +1758,7 @@ scMerge_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, append
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -1926,7 +1926,7 @@ ZINBWaVE_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, appen
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {
@@ -2087,7 +2087,7 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
         reduction.name = paste0(reduction_prefix, "UMAP", n, "d"),
         reduction.key = paste0(reduction_prefix, "UMAP", n, "d_"),
         dims = dims, n.components = n, umap.method = "uwot",
-        return.model = TRUE, verbose = TRUE
+        return.model = TRUE, verbose = FALSE
       )
     }
     if ("tsne" %in% reduction) {

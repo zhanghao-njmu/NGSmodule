@@ -38,7 +38,7 @@ R1_to_R2="_R1_/_R2_"
 FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### CellRanger ###
-cellranger_ref="/data/reference/CellRanger/refdata-gex-GRCh38-and-mm10-2020-A_addGFP"
+cellranger_ref="/data/reference/CellRanger/refdata-gex-GRCh38-and-mm10-2020-A"
 
 ### Velocyto ###
 gene_gtf="\$cellranger_ref/genes/genes.gtf"
