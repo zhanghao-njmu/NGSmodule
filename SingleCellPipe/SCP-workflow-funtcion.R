@@ -4,7 +4,7 @@ db_scDblFinder <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, ...) {
       call. = FALSE
     )
   }
-  require(scDblFinder)
+  library(scDblFinder)
   sce <- as.SingleCellExperiment(srt, assay = "RNA")
   sce <- scDblFinder(sce, dbr = db_rate, verbose = FALSE, ...)
   srt[["db.scDblFinder_score"]] <- sce[["scDblFinder.score"]]
@@ -18,7 +18,7 @@ db_scds <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, method = "hybrid", .
       call. = FALSE
     )
   }
-  require(scds)
+  library(scds)
   sce <- as.SingleCellExperiment(srt, assay = "RNA")
   sce <- cxds_bcds_hybrid(sce)
   srt[["db.cxds_score"]] <- sce[["cxds_score"]]
@@ -37,7 +37,7 @@ db_Scrublet <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, ...) {
       call. = FALSE
     )
   }
-  require(reticulate)
+  library(reticulate)
   scr <- reticulate::import("scrublet")
   raw_counts <- r_to_py(t(as.matrix(GetAssayData(object = srt, assay = "RNA", slot = "counts"))))
   scrub <- scr$Scrublet(raw_counts, expected_doublet_rate = db_rate)
@@ -61,10 +61,9 @@ db_DoubletDetection <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, ...) {
       call. = FALSE
     )
   }
-  require(reticulate)
-  require(Matrix)
-  counts <- GetAssayData(object = srt, assay = "RNA", slot = "counts")
+  library(reticulate)
   doubletdetection <- reticulate::import("doubletdetection")
+  counts <- GetAssayData(object = srt, assay = "RNA", slot = "counts")
   clf <- doubletdetection$BoostClassifier(
     n_iters = as.integer(5),
     use_phenograph = FALSE,
@@ -125,9 +124,9 @@ Check_srtList <- function(srtList, do_normalization = NULL, normalization_method
                           HVF_source = "separate", nHVF = 3000, hvf = NULL,
                           exogenous_genes = NULL, ...) {
   cat(paste0("[", Sys.time(), "]", " Checking srtList... ...\n"))
-  require(Seurat)
-  require(sctransform)
-  require(glmGamPoi)
+  library(Seurat)
+  library(sctransform)
+  library(glmGamPoi)
 
   if (class(srtList) != "list" | any(sapply(srtList, class) != "Seurat")) {
     stop("'srtList' is not a list of Seurat object.",
@@ -342,9 +341,9 @@ Check_srtIntegrated <- function(srtIntegrated, do_normalization = NULL, hvf, bat
 }
 
 GeneConvert <- function(geneID, geneID_from_IDtype, geneID_to_IDtype, species_from, species_to, Ensembl_version = "current_release") {
-  require(biomaRt)
-  require(dplyr)
-  require(httr)
+  library(biomaRt)
+  library(dplyr)
+  library(httr)
   httr::set_config(httr::config(ssl_verifypeer = FALSE))
 
   species_from_split <- unlist(strsplit(species_from, split = "_"))
@@ -527,10 +526,8 @@ GeneConvert <- function(geneID, geneID_from_IDtype, geneID_to_IDtype, species_fr
   }
   geneID_sim <- geneID_res %>%
     group_by(from_geneID) %>%
-    mutate(from_geneID = unique(from_geneID), to_geneID = list(unique(to_geneID[to_geneID != ""]))) %>%
-    select(from_geneID, to_geneID) %>%
-    as.data.frame() %>%
-    unique()
+    mutate(from_geneID = unique(from_geneID), to_geneID = list(unique(to_geneID[to_geneID != ""])))
+  geneID_sim <- unique(as.data.frame(geneID_sim[,c("from_geneID", "to_geneID")]))
   geneID_sim <- geneID_sim[sapply(geneID_sim$to_geneID, length) > 0, ]
   rownames(geneID_sim) <- geneID_sim[, "from_geneID"]
 
@@ -556,20 +553,6 @@ CC_GenePrefetch <- function(species) {
     cc_S_genes = cc_S_genes,
     cc_G2M_genes = cc_G2M_genes
   ))
-}
-
-CC_module <- function(srt, cc_S_genes, cc_G2M_genes, ...) {
-  if (length(cc_S_genes) >= 3 & length(cc_G2M_genes) >= 3) {
-    srt <- CellCycleScoring(
-      object = srt,
-      s.features = cc_S_genes,
-      g2m.features = cc_G2M_genes,
-      set.ident = FALSE
-    )
-    srt[["CC.Difference"]] <- srt[["S.Score"]] - srt[["G2M.Score"]]
-    srt[["Phase"]] <- factor(srt[["Phase", drop = TRUE]], levels = c("G1", "S", "G2M"))
-  }
-  return(srt)
 }
 
 SrtReorder <- function(srt, features = NULL, reorder_by = NULL, slot = "data", assay = NULL) {
@@ -792,6 +775,7 @@ Seurat_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -843,7 +827,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               reduction = "umap", reduction_prefix = "fastMNN", reduction_components = 2:3,
                               exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(SeuratWrappers)
+  library(SeuratWrappers)
 
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -913,6 +897,7 @@ fastMNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -963,7 +948,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                               reduction = "umap", reduction_prefix = "Harmony", reduction_components = 2:3,
                               exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(SeuratWrappers)
+  library(SeuratWrappers)
 
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -1044,6 +1029,7 @@ Harmony_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1095,8 +1081,8 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                                 reduction = "umap", reduction_prefix = "Scanorama", reduction_components = 2:3,
                                 exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(reticulate)
-  require(plyr)
+  library(reticulate)
+  library(plyr)
   tryCatch(expr = {
     scanorama <- reticulate::import("scanorama")
   }, error = function(e) {
@@ -1201,6 +1187,7 @@ Scanorama_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1253,7 +1240,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             reduction_prefix = "BBKNN", reduction_components = 2:3,
                             exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(reticulate)
+  library(reticulate)
   bbknn <- reticulate::import("bbknn", convert = FALSE)
 
   if (is.null(srtList) & is.null(srtMerge)) {
@@ -1333,6 +1320,7 @@ BBKNN_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   reduction <- "umap"
   for (n in reduction_components) {
     srtIntegrated <- RunUMAP(
@@ -1373,7 +1361,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                           reduction = "umap", reduction_prefix = "CSS", reduction_components = 2:3,
                           exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(simspec) # devtools::install_github("zh542370159/simspec@v1.0.3")
+  library(simspec) # devtools::install_github("zh542370159/simspec@v1.0.3")
 
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -1457,6 +1445,7 @@ CSS_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1508,8 +1497,8 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
                             reduction = "umap", reduction_prefix = "LIGER", reduction_components = 2:3,
                             exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(SeuratWrappers)
-  require(rliger)
+  library(SeuratWrappers)
+  library(rliger)
 
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
@@ -1582,6 +1571,7 @@ LIGER_integrate <- function(srtList = NULL, srtMerge = NULL, append = FALSE,
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1633,7 +1623,7 @@ scMerge_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, append
                                          reduction = "umap", reduction_prefix = "scMerge", reduction_components = 2:3,
                                          exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(scMerge)
+  library(scMerge)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1751,6 +1741,7 @@ scMerge_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, append
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1801,7 +1792,7 @@ ZINBWaVE_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, appen
                                           reduction = "umap", reduction_prefix = "ZINBWaVE", reduction_components = 2:3,
                                           exogenous_genes = NULL, seed = 11, ...) {
   set.seed(seed)
-  require(zinbwave)
+  library(zinbwave)
   if (is.null(srtList) & is.null(srtMerge)) {
     stop("srtList and srtMerge were all empty.")
   }
@@ -1919,6 +1910,7 @@ ZINBWaVE_integrate_deprecated <- function(srtList = NULL, srtMerge = NULL, appen
   srtIntegrated[["seurat_clusters"]] <- NULL
   srtIntegrated[[paste0(reduction_prefix, "clusters")]] <- Idents(srtIntegrated)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srtIntegrated <- RunUMAP(
@@ -1968,9 +1960,9 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
                          reduction = "umap", reduction_prefix = "Standard", reduction_components = 2:3,
                          exogenous_genes = NULL, seed = 11) {
   set.seed(seed)
-  require(glmGamPoi)
-  require(intrinsicDimension)
-  require(dplyr)
+  library(glmGamPoi)
+  library(intrinsicDimension)
+  library(dplyr)
 
   if (class(srt) != "Seurat") {
     stop("'srt' is not a Seurat object.",
@@ -2015,7 +2007,6 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
     cat("Perform ScaleData on the data...\n")
     srt <- Seurat::ScaleData(object = srt, features = rownames(srt), vars.to.regress = vars_to_regress)
   }
-  DefaultAssay(srt) <- "RNA"
 
   if (normalization_method %in% c("SCT")) {
     if (!"SCT" %in% Seurat::Assays(srt)) {
@@ -2055,6 +2046,7 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
     }
   }
 
+  cat("Perform PCA on the data...\n")
   srt <- RunPCA(
     object = srt, npcs = maxPC, features = hvf,
     reduction.name = paste0(reduction_prefix, "pca"),
@@ -2080,6 +2072,7 @@ Standard_SCP <- function(srt, do_normalization = NULL, normalization_method = "l
   srt[["seurat_clusters"]] <- NULL
   srt[[paste0(reduction_prefix, "clusters")]] <- Idents(srt)
 
+  cat("Perform nonlinear dimension reduction on the data...\n")
   for (n in reduction_components) {
     if ("umap" %in% reduction) {
       srt <- RunUMAP(
@@ -2152,8 +2145,8 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
                       group_by = NULL, cell_group1 = NULL, cell_group2 = NULL,
                       foldchange_threshold = 1.5, min_percent = 0.1,
                       BPPARAM = MulticoreParam(), force = FALSE, ...) {
-  require(BiocParallel)
-  require(dplyr)
+  library(BiocParallel)
+  library(dplyr)
 
   if (!is.null(cell_group1)) {
     if (!all(cell_group1) %in% colnames(srt)) {
@@ -2165,7 +2158,7 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
     if (!all(cell_group2) %in% colnames(srt)) {
       stop("cell_group2 has some cells not in the Seurat object.")
     }
-    cat("Perform Wilcoxon FindMarkers for custom cell groups...\n")
+    cat("Perform FindMarkers(Wilcoxon) for custom cell groups...\n")
     markers <- FindMarkers(
       object = Seurat::Assays(srt, "RNA"), slot = "data",
       cells.1 = cell_group1,
@@ -2185,7 +2178,6 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
     srt@tools[["DEtest_custom"]][["CellMarkers_Wilcoxon"]] <- markers
     srt@tools[["DEtest_custom"]][["cell_group1"]] <- cell_group1
     srt@tools[["DEtest_custom"]][["cell_group2"]] <- cell_group2
-    cat("Task done.\n")
   }
   if (is.null(group_by)) {
     cell_group <- Idents(srt)
@@ -2197,7 +2189,7 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
     cell_group <- factor(cell_group, levels = unique(cell_group))
   }
   if (isTRUE(FindAllMarkers)) {
-    cat("Perform Wilcoxon FindAllMarkers...\n")
+    cat("Perform FindAllMarkers(Wilcoxon)...\n")
     AllMarkers_Wilcoxon <- bplapply(levels(cell_group), FUN = function(group) {
       markers <- FindMarkers(
         object = Seurat::Assays(srt, "RNA"), slot = "data",
@@ -2230,8 +2222,6 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
     #   as.data.frame()
     AllMarkers_Wilcoxon[, "DE_group_number"] <- as.integer(table(AllMarkers_Wilcoxon[["gene"]])[AllMarkers_Wilcoxon[, "gene"]])
     srt@tools[[paste0("DEtest_", group_by)]][["AllMarkers_Wilcoxon"]] <- AllMarkers_Wilcoxon
-
-    cat("Task done.\n")
   }
 
   if (isTRUE(FindPairMarkers)) {
@@ -2270,15 +2260,14 @@ RunDEtest <- function(srt, FindAllMarkers = TRUE, FindPairMarkers = FALSE,
     })[PairMarkers_Wilcoxon[, "gene"]]
     srt@tools[[paste0("DEtest_", group_by)]][["PairMarkers_Wilcoxon"]] <- PairMarkers_Wilcoxon
     srt@tools[[paste0("DEtest_", group_by)]][["PairMarkers_matrix"]] <- PairMarkers_matrix
-    cat("Task done.\n")
   }
   return(srt)
 }
 
 srt_to_adata <- function(srt = NULL) {
-  require(reticulate)
-  require(Seurat)
-  require(Matrix)
+  library(reticulate)
+  library(Seurat)
+  library(Matrix)
   if (!is.null(srt)) {
     sc <- import("scanpy", convert = FALSE)
     adata <- sc$AnnData(

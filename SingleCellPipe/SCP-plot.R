@@ -1,5 +1,5 @@
 theme_zh <- function(aspect.ratio = 1, ...) {
-  require(ggplot2)
+  library(ggplot2)
   args1 <- list(
     aspect.ratio = aspect.ratio,
     text = element_text(size = 14, color = "black"),
@@ -38,8 +38,8 @@ theme_zh <- function(aspect.ratio = 1, ...) {
 }
 
 palette_zh <- function(x, palette = "Paired", type = "auto", matched = FALSE, reverse = FALSE, NA_color = "grey90") {
-  require(RColorBrewer)
-  require(ggsci)
+  library(RColorBrewer)
+  library(ggsci)
   brewer.pal.info <- RColorBrewer::brewer.pal.info
   ggsci_db <- ggsci:::ggsci_db
   if (!palette %in% c(rownames(brewer.pal.info), names(ggsci_db))) {
@@ -111,155 +111,20 @@ palette_zh <- function(x, palette = "Paired", type = "auto", matched = FALSE, re
   return(color)
 }
 
-SummaryPlot <- function(srt, cluster_column = "Uncorrectedclusters", group_column = "orig.ident", reduction = "UncorrectedUMAP2d",
-                        genes_inspect = "POU5F1", metainfo_inspect = "percent.mt", tag = "Uncorrected", palette = "Spectral") {
-  require(RColorBrewer)
-  for (i in c(cluster_column, group_column)) {
-    if (!is.factor(srt[[i, drop = TRUE]])) {
-      srt[[i, drop = TRUE]] <- factor(srt[[i, drop = TRUE]], levels = unique(as.character(srt[[i, drop = TRUE]])))
-    }
-  }
-  genes_inspect <- genes_inspect[genes_inspect %in% rownames(srt)]
-  metainfo_inspect <- metainfo_inspect[metainfo_inspect %in% colnames(srt@meta.data)]
-  for (i in metainfo_inspect) {
-    if (!is.numeric(srt@meta.data[[i]])) {
-      stop(paste(i, "is not a numeric variable"))
-    }
-  }
-  if (length(c(genes_inspect, metainfo_inspect)) == 0) {
-    stop("No valid terms to inspect.")
-  }
-  brewer.pal.info <- RColorBrewer::brewer.pal.info
-  brewer.pal.info <- brewer.pal.info[brewer.pal.info$category %in% c("div", "seq"), ]
-  if (length(palette) > 1) {
-    pal_category <- "custom"
-  } else {
-    if (!palette %in% rownames(brewer.pal.info)) {
-      stop(paste0("Invalid palette Must be one of ", paste0(rownames(brewer.pal.info), collapse = ",")))
-    }
-    pal_n <- brewer.pal.info[palette, "maxcolors"]
-    pal_category <- brewer.pal.info[palette, "category"]
-  }
-  if (pal_category == "seq") {
-    colors <- colorRampPalette(brewer.pal(name = palette, n = pal_n))(100)
-  }
-  if (pal_category == "div") {
-    colors <- colorRampPalette(rev(brewer.pal(name = palette, n = pal_n)))(100)
-  }
-  if (pal_category == "custom") {
-    colors <- colorRampPalette(palette)(100) # palette <- c("wheat", "red")
-  }
-
-  labels <- levels(srt[[group_column, drop = T]])
-  labels_tb <- table(srt[[group_column, drop = T]])
-  p1 <- DimPlot(srt,
-    shuffle = T,
-    reduction = reduction,
-    group.by = group_column
-  ) +
-    scale_color_manual(
-      name = paste0("All_cells: ", ncol(srt)),
-      values = palette_zh(labels),
-      labels = paste0(labels, "(", labels_tb[labels], ")")
-    ) +
-    labs(
-      title = paste0("Group view (", tag, ")"),
-      x = paste0(reduction, "_1"),
-      y = paste0(reduction, "_2")
-    ) +
-    theme_zh() +
-    theme(aspect.ratio = 1)
-
-  labels <- levels(srt[[cluster_column, drop = TRUE]])
-  labels_tb <- table(srt[[cluster_column, drop = TRUE]])
-  p2 <- DimPlot(srt,
-    shuffle = T,
-    reduction = reduction,
-    group.by = cluster_column, label = T
-  ) +
-    scale_color_manual(
-      name = paste0("All_cells: ", ncol(srt)),
-      values = palette_zh(labels, matched = T),
-      labels = paste0(labels, "(", labels_tb[labels], ")")
-    ) +
-    labs(
-      title = paste0("Cluster view (", tag, ")"),
-      x = paste0(reduction, "_1"),
-      y = paste0(reduction, "_2")
-    ) +
-    guides(color = guide_legend(ncol = 2, override.aes = list(size = 3))) +
-    theme_zh() +
-    theme(aspect.ratio = 1)
-  p_a <- cowplot::plot_grid(plotlist = list(p1, p2), align = "hv", axis = "tblr", nrow = 2, byrow = T)
-
-  p3_list <- FeaturePlot(
-    object = srt,
-    reduction = reduction,
-    cols = c("grey90", "red3"),
-    features = c(genes_inspect, metainfo_inspect),
-    combine = FALSE, order = TRUE
-  )
-  p3_list <- lapply(p3_list, function(p) {
-    color_raw <- unique(sort(p$data[[4]]))
-    color_raw <- color_raw[color_raw != 0]
-    colors_value <- seq(min(color_raw, na.rm = T), quantile(color_raw, 0.99) + 0.001, length.out = 100)
-    p$data[[4]][p$data[[4]] == 0] <- NA
-    p + scale_colour_gradientn(
-      name = "Exp", colours = colors, values = scales::rescale(colors_value), na.value = "grey90",
-      guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")
-    ) +
-      labs(
-        x = paste0(reduction, "_1"),
-        y = paste0(reduction, "_2")
-      ) +
-      theme_zh() +
-      theme(aspect.ratio = 1)
-  })
-  p_b <- cowplot::plot_grid(plotlist = p3_list, align = "hv", axis = "tblr", nrow = 2, byrow = T)
-
-  ncols <- ceiling(length(c(genes_inspect, metainfo_inspect)) / 2)
-  p_ab <- cowplot::plot_grid(p_a, p_b, align = "hv", axis = "tblr", nrow = 1, byrow = T, rel_widths = c(2, ncols))
-
-  labels <- levels(srt[[group_column, drop = T]])
-  labels_tb <- table(srt[[group_column, drop = T]])
-  p4_list <- DimPlot(srt,
-    shuffle = T,
-    reduction = reduction,
-    group.by = group_column,
-    split.by = group_column,
-    combine = F
-  )
-  p4 <- lapply(p4_list, function(p) {
-    p + scale_color_manual(
-      name = paste0("All_cells: ", ncol(srt)),
-      values = palette_zh(labels, matched = T),
-      labels = paste0(labels, "(", labels_tb[labels], ")")
-    ) +
-      labs(
-        title = paste0("Split view (", tag, ")"),
-        x = paste0(reduction, "_1"),
-        y = paste0(reduction, "_2")
-      ) +
-      theme_zh() +
-      theme(aspect.ratio = 1)
-  })
-  p_c <- cowplot::plot_grid(plotlist = p4, align = "hv", axis = "tblr", nrow = 1, byrow = T)
-
-  p <- cowplot::plot_grid(p_ab, p_c, align = "hv", axis = "tblr", nrow = 2, byrow = T, rel_heights = c(2 / 3, 1 / 3))
-  return(p)
-}
-
 ClassDimPlot <- function(srt, group.by = "orig.ident", split.by = NULL, reduction = NULL,
                          label = FALSE, cells.highlight = NULL, cols.highlight = "black", sizes.highlight = 1,
                          palette = "Paired", legend.position = "right", combine = TRUE, nrow = NULL, ncol = NULL, byrow = TRUE) {
-  require(shadowtext)
-  require(dplyr)
-  require(ggplot2)
+  library(shadowtext)
+  library(dplyr)
+  library(ggplot2)
   if (is.null(split.by)) {
     split.by <- "All_cells"
     srt[[split.by]] <- factor("All_cells")
   }
   for (i in c(group.by, split.by)) {
+    if (!i %in% colnames(srt@meta.data)) {
+      stop(paste0(i, " is not in the meta.data of srt object."))
+    }
     if (!is.factor(srt[[i, drop = TRUE]])) {
       srt[[i, drop = TRUE]] <- factor(srt[[i, drop = TRUE]], levels = unique(as.character(srt[[i, drop = TRUE]])))
     }
@@ -267,6 +132,10 @@ ClassDimPlot <- function(srt, group.by = "orig.ident", split.by = NULL, reductio
   if (is.null(reduction)) {
     reduction <- Seurat:::DefaultDimReduc(srt)
   }
+  if (!reduction %in% Reductions(srt)) {
+    stop(paste0(reduction, " is not in the srt reduction names."))
+  }
+
   dat_meta <- FetchData(object = srt, vars = c(group.by, split.by))
   dat_dim <- Embeddings(srt, reduction = reduction)
   dat_use <- cbind(dat_dim, dat_meta)
@@ -368,12 +237,15 @@ ClassDimPlot <- function(srt, group.by = "orig.ident", split.by = NULL, reductio
 
 ExpDimPlot <- function(srt, features = NULL, split.by = NULL, reduction = NULL, keep.scale = NULL,
                        cells.highlight = NULL, palette = "Spectral", nrow = NULL, ncol = NULL, byrow = TRUE, combine = TRUE) {
-  require(shadowtext)
+  library(shadowtext)
   if (is.null(split.by)) {
     split.by <- "All_cells"
     srt[[split.by]] <- factor("All_cells")
   }
   for (i in c(split.by)) {
+    if (!i %in% colnames(srt@meta.data)) {
+      stop(paste0(i, " is not in the meta.data of srt object."))
+    }
     if (!is.factor(srt[[i, drop = TRUE]])) {
       srt[[i, drop = TRUE]] <- factor(srt[[i, drop = TRUE]], levels = unique(as.character(srt[[i, drop = TRUE]])))
     }
@@ -381,9 +253,13 @@ ExpDimPlot <- function(srt, features = NULL, split.by = NULL, reduction = NULL, 
   if (is.null(reduction)) {
     reduction <- Seurat:::DefaultDimReduc(srt)
   }
+  if (!reduction %in% Reductions(srt)) {
+    stop(paste0(reduction, " is not in the srt reduction names."))
+  }
+
   nafeatures <- features[!features %in% c(rownames(srt), colnames(srt@meta.data))]
   if (length(nafeatures) > 0) {
-    warning(paste0(nafeatures, collapse = ","), "are not in the features of srt.")
+    warning(paste0(nafeatures, collapse = ","), " are not in the features of srt.")
     features <- features[features != nafeatures]
   }
   dat_exp <- FetchData(object = srt, vars = features)
@@ -473,13 +349,13 @@ ExpDimPlot <- function(srt, features = NULL, split.by = NULL, reduction = NULL, 
 
 ExpDotPlot <- function(srt, genes = NULL, gene_groups = NULL, columns = c("orig.ident", "Uncorrectedclusters"), assay = "RNA",
                        cluster_rows = TRUE, cluster_columns = FALSE, grid_size = 0.5) {
-  require(Seurat)
-  require(ggplot2)
-  require(ggpubr)
-  require(ComplexHeatmap)
-  require(circlize)
-  require(RColorBrewer)
-  require(dplyr)
+  library(Seurat)
+  library(ggplot2)
+  library(ggpubr)
+  library(ComplexHeatmap)
+  library(circlize)
+  library(RColorBrewer)
+  library(dplyr)
 
   if (is.null(genes)) {
     genes <- VariableFeatures(srt)
@@ -605,13 +481,13 @@ ExpDotPlot <- function(srt, genes = NULL, gene_groups = NULL, columns = c("orig.
 
 ExpHeatmapPlot <- function(srt, genes = NULL, gene_groups = NULL, samplesize = 100,
                            columns = c("orig.ident", "Uncorrectedclusters"), assay = "RNA") {
-  require(Seurat)
-  require(ggplot2)
-  require(ggpubr)
-  require(ComplexHeatmap)
-  require(circlize)
-  require(RColorBrewer)
-  require(dplyr)
+  library(Seurat)
+  library(ggplot2)
+  library(ggpubr)
+  library(ComplexHeatmap)
+  library(circlize)
+  library(RColorBrewer)
+  library(dplyr)
 
   if (!is.null(gene_groups)) {
     if (length(gene_groups) != length(genes)) {
@@ -694,9 +570,9 @@ ExpHeatmapPlot <- function(srt, genes = NULL, gene_groups = NULL, samplesize = 1
 }
 
 SankeyPlot <- function(source, target) {
-  require(networkD3)
-  require(tidyverse)
-  require(plotly)
+  library(networkD3)
+  library(tidyverse)
+  library(plotly)
   data <- cbind(source = source, target = target) %>%
     as.data.frame() %>%
     table() %>%
@@ -717,5 +593,212 @@ SankeyPlot <- function(source, target) {
     Value = "value", NodeID = "name",
     sinksRight = FALSE, nodeWidth = 40, fontSize = 15, nodePadding = 20
   )
+  return(p)
+}
+
+SummaryPlot <- function(srt, groups = "orig.ident", clusters = "Standardclusters",
+                        features = c("POU5F1", "percent.mito"),
+                        reduction = "StandardUMAP2d",
+                        Class_palette = "Paired", Exp_palette = "Spectral") {
+  for (i in c(clusters, groups)) {
+    if (!i %in% colnames(srt@meta.data)) {
+      stop(paste0(i, " is not in the meta.data of srt object."))
+    }
+    if (!is.factor(srt[[i, drop = TRUE]])) {
+      srt[[i, drop = TRUE]] <- factor(srt[[i, drop = TRUE]], levels = unique(as.character(srt[[i, drop = TRUE]])))
+    }
+  }
+  nafeatures <- features[!features %in% c(rownames(srt), colnames(srt@meta.data))]
+  if (length(nafeatures) > 0) {
+    warning(paste0(nafeatures, collapse = ","), " are not in the features of srt.")
+    features <- features[features != nafeatures]
+  }
+  class_features <- c()
+  exp_features <- c()
+  for (i in features) {
+    if (i %in% colnames(srt@meta.data)) {
+      if (!is.numeric(srt@meta.data[[i]])) {
+        class_features <- c(class_features, i)
+      } else {
+        exp_features <- c(exp_features, i)
+      }
+    } else {
+      exp_features <- c(exp_features, i)
+    }
+  }
+  if (length(features) == 0) {
+    stop("No valid features to inspect.")
+  }
+  if (is.null(reduction)) {
+    reduction <- Seurat:::DefaultDimReduc(srt)
+  }
+  if (!reduction %in% Reductions(srt)) {
+    stop(paste0(reduction, " is not in the srt reduction names."))
+  }
+
+  p1 <- ClassDimPlot(srt,
+    reduction = reduction,
+    group.by = groups,
+    palette = Class_palette
+  )
+
+  p2 <- ClassDimPlot(srt,
+    reduction = reduction,
+    group.by = clusters,
+    palette = Class_palette,
+    label = T
+  )
+  p_a <- cowplot::plot_grid(plotlist = list(p1, p2), align = "hv", axis = "tblr", nrow = 2, byrow = T)
+
+  p3_list1 <- ClassDimPlot(
+    srt = srt,
+    reduction = reduction,
+    group.by = class_features,
+    palette = Class_palette,
+    combine = FALSE,
+  )
+  p3_list2 <- ExpDimPlot(
+    srt = srt,
+    reduction = reduction,
+    features = exp_features,
+    palette = Exp_palette,
+    combine = FALSE,
+  )
+  p3_list <- c(p3_list1, p3_list2)
+
+  p_b <- cowplot::plot_grid(plotlist = p3_list, align = "hv", axis = "tblr", nrow = 2, byrow = T)
+
+  ncols <- ceiling(length(features) / 2)
+  p_ab <- cowplot::plot_grid(p_a, p_b, align = "hv", axis = "tblr", nrow = 1, byrow = T, rel_widths = c(2, ncols))
+
+  p4_list <- ClassDimPlot(srt,
+    reduction = reduction,
+    group.by = groups,
+    split.by = groups,
+    palette = Class_palette,
+    combine = F
+  )
+  p_c <- cowplot::plot_grid(plotlist = p4_list, align = "hv", axis = "tblr", nrow = 1, byrow = T)
+
+  p <- cowplot::plot_grid(p_ab, p_c, align = "hv", axis = "tblr", nrow = 2, byrow = T, rel_heights = c(2 / 3, 1 / 3))
+  return(p)
+}
+
+ClassDimPlot3D <- function(srt, group.by = "orig.ident", reduction = "StandardUMAP3d", split.by = NULL, plotsize = 600) {
+  library(plotly)
+  for (i in group.by) {
+    if (!i %in% colnames(srt@meta.data)) {
+      stop(paste0(i, " is not in the meta.data of srt object."))
+    }
+    if (!is.factor(srt[[i, drop = TRUE]])) {
+      srt[[i, drop = TRUE]] <- factor(srt[[i, drop = TRUE]], levels = unique(as.character(srt[[i, drop = TRUE]])))
+    }
+  }
+  if (is.null(reduction)) {
+    reduction <- Seurat:::DefaultDimReduc(srt)
+  }
+  if (!reduction %in% Reductions(srt)) {
+    stop(paste0(reduction, " is not in the srt reduction names."))
+  }
+  if (ncol(Embeddings(srt, reduction = reduction)) < 3) {
+    stop("Reduction must be in three dimensions or higher.")
+  }
+
+  df0 <- cbind(Embeddings(srt, reduction = reduction), srt@meta.data)
+  if (!is.factor(df0[[group.by]])) {
+    df0[[group.by]] <- factor(df0[[group.by]], levels = unique(as.character(df0[[group.by]])))
+  }
+  df0[["group.by"]] <- df0[[group.by]]
+
+  if (!is.null(split.by)) {
+    if (!is.factor(df0[[split.by]])) {
+      df0[[split.by]] <- factor(df0[[split.by]], levels = unique(as.character(df0[[split.by]])))
+    }
+    for (i in levels(df0[[split.by]])) {
+      df0[[paste0(reduction, "_1_", i)]] <- ifelse(df0[[split.by]] == i, df0[[paste0(reduction, "_1")]], NA)
+      df0[[paste0(reduction, "_2_", i)]] <- ifelse(df0[[split.by]] == i, df0[[paste0(reduction, "_2")]], NA)
+      df0[[paste0(reduction, "_3_", i)]] <- ifelse(df0[[split.by]] == i, df0[[paste0(reduction, "_3")]], NA)
+    }
+  } else {
+    split.by <- "All_cells"
+    df0[[split.by]] <- factor("All_cells")
+  }
+  df0[[paste0(reduction, "_1_All_cells")]] <- df0[[paste0(reduction, "_1")]]
+  df0[[paste0(reduction, "_2_All_cells")]] <- df0[[paste0(reduction, "_2")]]
+  df0[[paste0(reduction, "_3_All_cells")]] <- df0[[paste0(reduction, "_3")]]
+
+  p <- plot_ly(data = df0, width = plotsize * 1.5, height = plotsize)
+  i <- 0
+  sp <- ifelse(i == 0, "All_cells", levels(df0[[split.by]])[i])
+  p <- p %>% add_trace(
+    x = df0[[paste0(reduction, "_1_", sp)]],
+    y = df0[[paste0(reduction, "_2_", sp)]],
+    z = df0[[paste0(reduction, "_3_", sp)]],
+    colors = palette_zh(df0[["group.by"]]),
+    color = df0[["group.by"]],
+    text = paste0("Cell:", rownames(df0), "\ngroup.by:", df0[["group.by"]]),
+    type = "scatter3d",
+    mode = "markers",
+    showlegend = ifelse(i == 0, TRUE, FALSE),
+    visible = ifelse(i == 0, TRUE, FALSE),
+    marker = list(
+      size = 1.5
+    )
+  )
+
+  split_option <- list()
+  for (i in 0:nlevels(df0[[split.by]])) {
+    sp <- ifelse(i == 0, "All_cells", levels(df0[[split.by]])[i])
+    ncells <- ifelse(i == 0, nrow(df0), table(df0[[split.by]])[sp])
+    split_option[[i + 1]] <- list(
+      method = "update",
+      args = list(
+        list(
+          x = list(df0[[paste0(reduction, "_1_", sp)]]),
+          y = list(df0[[paste0(reduction, "_2_", sp)]]),
+          z = list(df0[[paste0(reduction, "_3_", sp)]]),
+          marker = list(
+            size = 1.5,
+            color = palette_zh(df0[["group.by"]])[df0[["group.by"]]]
+          )
+        ),
+        list(title = list(
+          text = paste0(sp, " (nCells:", ncells, ")"),
+          font = list(size = 16, color = "black"),
+          y = 0.95
+        ))
+      ),
+      label = sp
+    )
+  }
+  p <- p %>% plotly::layout(
+    title = list(
+      text = paste0("Total", " (nCells:", nrow(df0), ")"),
+      font = list(size = 16, color = "black"),
+      y = 0.95
+    ),
+    font = list(size = 12, color = "black"),
+    showlegend = T,
+    legend = list(
+      itemsizing = "constant",
+      y = 0.5,
+      x = 1,
+      xanchor = "left"
+    ),
+    scene = list(
+      xaxis = list(title = paste0(reduction, "_1"), range = c(min(df0[[paste0(reduction, "_1")]]), max(df0[[paste0(reduction, "_1")]]))),
+      yaxis = list(title = paste0(reduction, "_2"), range = c(min(df0[[paste0(reduction, "_2")]]), max(df0[[paste0(reduction, "_2")]]))),
+      zaxis = list(title = paste0(reduction, "_3"), range = c(min(df0[[paste0(reduction, "_3")]]), max(df0[[paste0(reduction, "_3")]]))),
+      aspectratio = list(x = 1, y = 1, z = 1)
+    ),
+    updatemenus = list(
+      list(
+        y = 0.5,
+        buttons = split_option
+      )
+    ),
+    autosize = FALSE
+  )
+
   return(p)
 }
