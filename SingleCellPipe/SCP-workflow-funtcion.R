@@ -25,7 +25,7 @@ db_scds <- function(srt, db_rate = ncol(srt) / 1000 * 0.01, method = "hybrid", .
   srt[["db.bcds_score"]] <- sce[["bcds_score"]]
   srt[["db.hybrid_score"]] <- sce[["hybrid_score"]]
   ntop <- ceiling(db_rate * ncol(sce))
-  db_out <- names(sort(srt[[paste0("db.",method, "_score"), drop = T]], decreasing = T)[1:ntop])
+  db_out <- names(sort(srt[[paste0("db.", method, "_score"), drop = T]], decreasing = T)[1:ntop])
   srt[[paste0("db.scds_", method, "_class")]] <- "singlet"
   srt[[paste0("db.scds_", method, "_class")]][db_out, ] <- "doublet"
   return(srt)
@@ -350,6 +350,9 @@ GeneConvert <- function(geneID, geneID_from_IDtype, geneID_to_IDtype, species_fr
   species_to_split <- unlist(strsplit(species_to, split = "_"))
   species_from_simp <- paste0(tolower(substring(species_from_split[1], 1, 1)), species_from_split[2])
   species_to_simp <- paste0(tolower(substring(species_to_split[1], 1, 1)), species_to_split[2])
+  if (geneID_from_IDtype == "symbol") {
+    geneID_from_IDtype <- c("ensembl_symbol", "entrez_symbol")
+  }
   from_IDtype <- sapply(geneID_from_IDtype, function(x) {
     switch(x,
       "ensembl_symbol" = "external_gene_name",
@@ -527,7 +530,7 @@ GeneConvert <- function(geneID, geneID_from_IDtype, geneID_to_IDtype, species_fr
   geneID_sim <- geneID_res %>%
     group_by(from_geneID) %>%
     mutate(from_geneID = unique(from_geneID), to_geneID = list(unique(to_geneID[to_geneID != ""])))
-  geneID_sim <- unique(as.data.frame(geneID_sim[,c("from_geneID", "to_geneID")]))
+  geneID_sim <- unique(as.data.frame(geneID_sim[, c("from_geneID", "to_geneID")]))
   geneID_sim <- geneID_sim[sapply(geneID_sim$to_geneID, length) > 0, ]
   rownames(geneID_sim) <- geneID_sim[, "from_geneID"]
 
@@ -2335,6 +2338,61 @@ aplotGrob <- function(x) {
 }
 
 
-RunEnrichment <- function(gene, group, enrichment = "GO") {
+RunEnrichment <- function(geneID, geneID_groups, IDtype = "ensembl_symbol", 
+                          enrichment = "GO", species = "Homo_sapiens",
+                          TERM2GENE = NULL, BPPARAM = MulticoreParam()) {
+  library(clusterProfiler)
+  library(GOSemSim)
+  library(org.Hs.eg.db)
+  library(BiocParallel)
+  org_sp <- paste0("org.", paste0(substring(unlist(strsplit(species, split = "_")), 1, 1), collapse = ""), ".eg.db")
+  if (!require(org_sp, character.only = T)) {
+    stop("No annoatation package found for the ", species)
+  }
 
+  enrichKEGG()
+  
+  bplapply(unique(gene_groups), FUN = function(group) {
+    geneid <- gene[gene_groups == group]
+    ego_bp <- enricher(
+      gene = ID,
+      minGSSize = 10,
+      maxGSSize = 500,
+      pAdjustMethod = "BH",
+      pvalueCutoff = 1,
+      qvalueCutoff = 1,
+      TERM2GENE = TERM2GENE
+    )
+  }, BPPARAM = BPPARAM)
+
+  bp_list <- list()
+
+  for (i in unique(gene_groups)) {
+    ID <- de[, "gene"][de$group1 == i]
+    ID_type <- "SYMBOL"
+    GO_OrgDb <- org.Hs.eg.db
+
+    ego_bp <- enricher(
+      gene = ID,
+      minGSSize = 10,
+      maxGSSize = 500,
+      pAdjustMethod = "BH",
+      pvalueCutoff = 1,
+      qvalueCutoff = 1,
+      TERM2GENE = cell_genes[, c("cell", "GeneCards-symbol")],
+      TERM2NAME = cell_genes[, c("cell", "cell")],
+    )
+    ego_bp@result <- ego_bp@result[ego_bp@result$p.adjust < 0.05, ]
+    if (nrow(ego_bp@result) == 0) {
+      next
+    }
+    sim_bp <- ego_bp
+    sim_bp@result$p.adjust <- signif(sim_bp@result$p.adjust, digits = 2)
+    sim_bp@result$ONTOLOGY <- "LifeMap_Markers"
+    sim_bp@result$Cluster <- i
+
+    bp_list[[i]] <- sim_bp@result
+  }
+  bp_df <- bind_rows(bp_list)
+  bp_df$Cluster <- factor(bp_df$Cluster, levels = levels(de$group1))
 }
