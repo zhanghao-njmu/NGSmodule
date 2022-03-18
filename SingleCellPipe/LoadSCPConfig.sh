@@ -64,8 +64,8 @@ if [[ -d $work_dir ]] && [[ $1 != "prepare" ]]; then
     threads=$(((total_threads + ntask_per_run) / ntask_per_run - 1))
     memory=$(((total_memory + ntask_per_run) / ntask_per_run - 1))
     
-    if (( threads > 64 ));then
-        threads=64
+    if (( threads > 32 ));then
+        threads=32
     fi
 
     ###### fifo ######

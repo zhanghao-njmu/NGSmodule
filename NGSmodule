@@ -37,90 +37,105 @@ CreateWorkDir() {
 
 preAlignmentQC() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/preAlignmentQC.sh
 }
 
 Alignment() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/Alignment.sh
 }
 
 postAlignmentQC() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/postAlignmentQC.sh $shell_folder/GeneralSteps/dupRadar.R
 }
 
 Quantification() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/Quantification.sh $shell_folder/Analysis/Quantification/Quantification_featurecounts.R $shell_folder/Analysis/Quantification/Quantification_annotation.R
 }
 
 postQuantificationQC() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
 BatchCorrection() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/BatchCorrection.sh $shell_folder/Analysis/Quantification/BatchCorrection.R
 }
 
 DifferentialExpression() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.sh $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.R
 }
 
 CNVanalysis() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/DNAcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
 GATK-germline-short-variant() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-germline-short-variant.sh
 }
 
 GATK-somatic-short-variant() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-somatic-short-variant.sh
 }
 
 GATK-germline-CNV() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-germline-CNV.sh
 }
 
 GATK-somatic-CNV() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-somatic-CNV.sh
 }
 
 Strelka2-germline-short-variant(){
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Strelka2/Strelka2-germline-short-variant.sh
 }
 
 Strelka2-somatic-short-variant(){
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Strelka2/Strelka2-somatic-short-variant.sh
 }
 
 Samtools-variant-calling(){
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Samtools/Samtools-variant-calling.sh
 }
@@ -141,21 +156,32 @@ CreateSCPWorkDir() {
 
 RunCellranger() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/RunCellranger.sh $shell_folder/SingleCellPipe
 }
 
-RunSeurat() {
+RunCellQC() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunSeurat/RunSeurat.sh  $shell_folder/SingleCellPipe 
+  source $shell_folder/SingleCellPipe/SCP-Analysis/CellQC/RunCellQC.sh  $shell_folder/SingleCellPipe 
 }
 
-Integration() {
+RunStandardSCP() {
   source $1
+  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
-  source $shell_folder/SingleCellPipe/SCP-Analysis/Integration/Integration.sh  $shell_folder/SingleCellPipe
+  source $shell_folder/SingleCellPipe/SCP-Analysis/StandardSCP/RunStandardSCP.sh  $shell_folder/SingleCellPipe 
 }
+
+RunIntegrationSCP() {
+  source $1
+  source $shell_folder/CheckENV.sh
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
+  source $shell_folder/SingleCellPipe/SCP-Analysis/IntegrationSCP/RunIntegrationSCP.sh  $shell_folder/SingleCellPipe 
+}
+
 
 help() {
   cat <<-EOF
@@ -213,7 +239,9 @@ help() {
        CreateSCPSampleInfoFile
        CreateSCPWorkDir
        RunCellranger
-       Integration
+       RunCellQC
+       RunStandardSCP
+       RunIntegrationSCP
     
   Other options:
     -c, --ConfigFile          Specify the path of configuration file.
@@ -453,14 +481,14 @@ while true; do
       CheckConfigFile $ConfigFile
       RunCellranger $ConfigFile
       exit 0
-    elif [[ $1 == "RunSeurat" ]]; then
+    elif [[ $1 == "RunCellQC" ]]; then
       { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null
       [ $? -ne 0 ] && {
-        echo -e "ERROR!\nOption -c|--ConfigFile needed in RunSeurat MODE!\nTry '$0 --help' for more information.\n"
+        echo -e "ERROR!\nOption -c|--ConfigFile needed in RunCellQC MODE!\nTry '$0 --help' for more information.\n"
         exit 1
       }
       CheckConfigFile $ConfigFile
-      RunSeurat $ConfigFile
+      RunCellQC $ConfigFile
       exit 0
     elif [[ $1 == "Integration" ]]; then
       { echo "$parameters" | grep -E '\-\-ConfigFile|\-c'; } &>/dev/null

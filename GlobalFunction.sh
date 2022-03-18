@@ -25,7 +25,7 @@ trap_add() {
 }
 declare -f -t trap_add
 
-###### check_logfile <sample> <tool> <logfile> ######
+###### color_echo <color> <message> ######
 color_echo() {
     local color=$1
     local text=$2

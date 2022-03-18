@@ -1,41 +1,33 @@
 #!/usr/bin/env bash
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
+declare -a package_install
+
 pigz --version &>/dev/null
 [ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the command pigz.\n"
-    exit 1
+    package_install+=('pigz')
 }
 fastqc --version &>/dev/null
 [ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the command fastqc.\n"
-    exit 1
+    package_install+=('fastqc')
 }
 fastq_screen --version &>/dev/null
 [ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the command fastq_screen.\n"
-    exit 1
+    package_install+=('fastq-screen')
 }
+velocyto &>/dev/null
+[ $? -eq 127 ] && {
+    package_install+=('velocyto.py')
+}
+# echo "Install packages:" "${package_install[@]}"
+# conda install -y -c conda-forge -c bioconda "${package_install[@]}"
+
 cellranger &>/dev/null
 [ $? -eq 127 ] && {
     echo -e "Cannot find the command cellranger.\n"
     exit 1
 }
-velocyto &>/dev/null
-[ $? -eq 127 ] && {
-    echo -e "Cannot find the command velocyto.\n"
-    exit 1
-}
-# dropest &>/dev/null
-# [ $? -eq 127 ] && {
-#     echo -e "Cannot find the command dropest.\n"
-#     exit 1
-# }
-dropReport.Rsc &>/dev/null
-[ $? -eq 127 ] && {
-    echo -e "Cannot find the command dropReport.Rsc.\n"
-    exit 1
-}
+
 Rscript &>/dev/null
 [ $? -eq 127 ] && {
     echo -e "Cannot find the command Rscript.\n"
@@ -173,10 +165,6 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment-Cellranger
                 mkdir -p "$dir"/Alignment-Cellranger
                 cd "$dir"/Alignment-Cellranger
-                # sample_run=($(find "$dir" -type l | grep -P "$SufixPattern" | grep -oP "(?<=$dir/).*(?=_S\d+_L\d+)" | sort | uniq))
-                # sample_run=$(printf ",%s" "${sample_run[@]}")
-                # sample_run=${sample_run:1}
-                # echo -e "$sample: $sample_run"
 
                 cellranger count --id "${sample}" \
                     --fastqs "${dir}" \
@@ -245,15 +233,31 @@ for sample in "${arr[@]}"; do
                 rm -rf "$dir"/Alignment-Cellranger/"$sample"/velocyto
                 mkdir -p "$dir"/Alignment-Cellranger/"$sample"/velocyto
                 cd "$dir"/Alignment-Cellranger/"$sample"/velocyto
+
+                BAM="$dir"/Alignment-Cellranger/"$sample"/outs/cellsorted_possorted_genome_bam.bam
+                if [ -f ${BAM} ]; then
+                    samtools quickcheck -v ${BAM} &>/dev/null
+                    if [[ $? != 0 ]]; then
+                        color_echo "yellow" "[INFO] $sample: BAM file checked failed. Remove the cellsorted_possorted_genome_bam.bam"
+                        rm -f ${BAM}
+                        continue
+                    fi
+                fi
+                if (($(find "$dir"/Alignment-Cellranger/"$sample"/outs/ -name "*bam.tmp.*.bam" | wc -l) > 1)); then
+                    rm -f "$dir"/Alignment-Cellranger/"$sample"/outs/*bam.tmp.*.bam
+                fi
+
                 # cp "$dir"/Alignment-Cellranger/"$sample"/outs/filtered_feature_bc_matrix/barcodes.tsv.gz ./
                 # gunzip ./barcodes.tsv.gz
                 ### samtools sort -t CB -O BAM -o "$dir"/Alignment-Cellranger/"$sample"/outs/cellsorted_possorted_genome_bam.bam "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam
-                velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
                 #velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -e $sample -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
+                velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
 
                 check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck" $?
                 if [[ $? == 1 ]]; then
                     continue
+                else
+                    rm -f "$dir"/Alignment-Cellranger/"$sample"/outs/cellsorted_possorted_genome_bam.bam
                 fi
             fi
 
@@ -276,11 +280,11 @@ for sample in "${arr[@]}"; do
 done
 wait
 
-# color_echo "green" "\nPrepare RNA count and velocity matrix into one Seurat object for each group..."
-# mkdir -p $maindir/NGSmodule_SCP_analysis/Prepare
-# cd $maindir/NGSmodule_SCP_analysis/Prepare
-# script=$SCP_path/SCP-GeneralSteps/RunCellranger/Prepare.R
-# Rscript $script $SCP_path $work_dir
+color_echo "green" "\nPrepare Seurat object ..."
+mkdir -p $maindir/NGSmodule_SCP_analysis/Prepare
+cd $maindir/NGSmodule_SCP_analysis/Prepare
+script=$SCP_path/SCP-GeneralSteps/RunCellranger/Prepare.R
+Rscript $script $work_dir
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"
