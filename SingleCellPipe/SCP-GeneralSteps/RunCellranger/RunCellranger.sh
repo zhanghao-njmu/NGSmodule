@@ -65,6 +65,12 @@ elif [[ ! -f $rmsk_gtf ]]; then
 #     exit 1
 fi
 
+if [[ $include_introns == "TRUE" ]];then
+    cellranger_param="--include-introns"
+else
+    cellranger_param=""
+fi
+
 echo -e "########################### RunCellranger Parameters ###########################\n"
 echo -e "  FastqScreen_config: ${FastqScreen_config}\n"
 echo -e "  cellranger_ref: ${cellranger_ref}"
@@ -169,7 +175,7 @@ for sample in "${arr[@]}"; do
                 cellranger count --id "${sample}" \
                     --fastqs "${dir}" \
                     --sample "${sample}" \
-                    --include-introns \
+                    ${cellranger_param} \
                     --disable-ui \
                     --localcores "$threads" \
                     --localmem "$memory" \

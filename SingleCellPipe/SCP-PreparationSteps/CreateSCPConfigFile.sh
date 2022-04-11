@@ -39,6 +39,7 @@ FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_scre
 
 ### CellRanger ###
 cellranger_ref="/data/reference/CellRanger/refdata-gex-GRCh38-and-mm10-2020-A"
+include_introns="TRUE"
 
 ############# CellCalling Paramaters #######################################################################
 # ### dropEst ### (test)
@@ -55,6 +56,8 @@ rmsk_gtf="\$cellranger_ref/genes/genes_rmsk.gtf"
 ############# Analysis Paramaters #######################################################################
 ### CellQC ###
 db_method="scDblFinder" ## Doublet-calling methods used. Can be one of scDblFinder, Scrublet, DoubletDetection, scds_cxds, scds_bcds, scds_hybrid.
+outlier_cutoff="log10_nCount:both:2.5,log10_nFeature:both:2.5,featurecount_dist:lower:2.5"
+outlier_n=1
 gene_threshold=1000 ## 1000. Minimum threshold for the cell gene count.
 UMI_threshold=3000 ## 3000. Minimum threshold for the cell UMI count.
 mito_threshold=20 ## 20. Maximum threshold for the count proportion of mitochondrial genes.

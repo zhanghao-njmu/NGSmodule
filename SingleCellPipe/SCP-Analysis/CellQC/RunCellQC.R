@@ -4,28 +4,32 @@ analysis_dir <- as.character(args[1])
 samples <- as.character(args[2])
 simple_analysis <- as.logical(args[3])
 db_method <- as.character(args[4])
-gene_threshold <- as.numeric(args[5])
-UMI_threshold <- as.numeric(args[6])
-mito_threshold <- as.numeric(args[7])
-ribo_threshold <- as.numeric(args[8])
-species <- as.character(args[9])
-species_gene_prefix <- as.character(args[10])
-species_percent <- as.character(args[11])
-exogenous_genes <- as.character(args[12])
-features_inspect <- as.character(args[13])
+outlier_cutoff <- as.character(args[5])
+outlier_n <- as.numeric(args[6])
+gene_threshold <- as.numeric(args[7])
+UMI_threshold <- as.numeric(args[8])
+mito_threshold <- as.numeric(args[9])
+ribo_threshold <- as.numeric(args[10])
+species <- as.character(args[11])
+species_gene_prefix <- as.character(args[12])
+species_percent <- as.character(args[13])
+exogenous_genes <- as.character(args[14])
+features_inspect <- as.character(args[15])
 
 
 # # Set parameters ---------------------------------------------------------
 # ## parameters: global settings ---------------------------------------------
-# analysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/H0CellLine-project/NGSmodule_SCP_analysis/"
+# analysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/22CellLine-project/NGSmodule_SCP_analysis/"
 # samples <- "" ## Leave blank or comma-separated names of samples to be analyzed. Leave blank means analyze all samples.
 # simple_analysis <- FALSE ## Whether to do a simple analysis.
 #
 # ## parameters: cell filtering ----------------------------------------------
 # db_method <- "scDblFinder" ## Doublet-calling methods used. Can be one of scDblFinder, Scrublet, DoubletDetection, scds_cxds, scds_bcds, scds_hybrid.
+# outlier_cutoff <- "log10_nCount:higher:2.5,log10_nCount:lower:5,log10_nFeature:higher:2.5,log10_nFeature:lower:5,pct_counts_in_top_20_features:both:5,featcount_dist:both:5,percent.ribo:both:1,percent.mito:both:1"
+# outlier_n <- 2
 # gene_threshold <- 1000. ## 1000. Minimum threshold for the cell gene count.
 # UMI_threshold <- 3000 ## 3000. Minimum threshold for the cell UMI count.
-# mito_threshold <- 20 ## 20. Maximum threshold for the count proportion of mitochondrial genes.
+# mito_threshold <- 15 ## 15. Maximum threshold for the count proportion of mitochondrial genes.
 # ribo_threshold <- 50 ## 50. Maximum threshold for the count proportion of ribosomal genes.
 # species <- "Homo_sapiens,Mus_musculus" ## Leave blank or comma-separated species names, e.g. "Homo_sapiens,Mus_musculus". The first is the species of interest.
 # species_gene_prefix <- "GRCh38-,mm10-" ## Leave blank or comma-separated prefixes, e.g. "GRCh38-,mm10-". The first is the species of interest.
@@ -48,6 +52,7 @@ setwd(analysis_dir)
 dir.create("CellQC/Plot", recursive = TRUE, showWarnings = FALSE)
 
 db_method <- strsplit(db_method, split = ",") %>% unlist()
+outlier_cutoff <- strsplit(outlier_cutoff, split = ",") %>% unlist()
 species <- strsplit(species, split = ",") %>% unlist()
 species_gene_prefix <- strsplit(species_gene_prefix, split = ",") %>% unlist()
 exogenous_genes <- strsplit(exogenous_genes, split = ",") %>% unlist()
@@ -96,11 +101,7 @@ p <- ggplot(df, aes(x = variable, fill = orig.ident)) +
     axis.ticks.x = element_blank(),
     panel.grid.major.y = element_line(colour = "grey90")
   )
-p <- panel_fix(p, height = 2, width = max(2 / (5 / length(samples)), 3))
-ggsave(p,
-  filename = "CellQC/Plot/raw_QCvariable.box.png", limitsize = FALSE,
-  units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-)
+p <- panel_fix(p, height = 2, width = max(2 / (5 / length(samples)), 3), save = "CellQC/Plot/raw_QCvariable.box.pdf")
 
 df1 <- table(meta_raw$orig.ident) %>% reshape2::melt()
 df1$Var1 <- factor(df1$Var1, levels = samples)
@@ -118,11 +119,7 @@ p <- ggplot(df1, aes(x = Var1, y = value)) +
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
     panel.grid.major.y = element_line(colour = "grey90")
   )
-p <- panel_fix(p, height = 2)
-ggsave(p,
-  filename = "CellQC/Plot/raw_cellnumber.bar.png", limitsize = FALSE,
-  units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-)
+p <- panel_fix(p, height = 2, save = "CellQC/Plot/raw_cellnumber.bar.pdf")
 
 # Cell QC -----------------------------------
 srt_list_QC <- list()
@@ -133,6 +130,7 @@ for (i in 1:length(samples)) {
     srt <- rawList[[samples[i]]]
     srt <- RunCellQC(
       srt = srt, db_method = db_method,
+      outlier_cutoff = outlier_cutoff, outlier_n = outlier_n,
       UMI_threshold = UMI_threshold, gene_threshold = gene_threshold,
       mito_threshold = mito_threshold, ribo_threshold = ribo_threshold,
       species = species, species_gene_prefix = species_gene_prefix, species_percent = species_percent
@@ -178,11 +176,7 @@ if (length(species) == 2) {
       axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
       panel.grid.major = element_line(colour = "grey90")
     )
-  p <- panel_fix(p, height = 3)
-  ggsave(p,
-    filename = "CellQC/Plot/raw_speciesmixed.point.png", limitsize = FALSE,
-    units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-  )
+  p <- panel_fix(p, height = 3, save = "CellQC/Plot/raw_speciesmixed.point.pdf")
 
   for (sp in species) {
     df3 <- meta_qc[, c("CellName", "orig.ident", paste0("percent.genome.", sp))]
@@ -201,11 +195,7 @@ if (length(species) == 2) {
         aspect.ratio = length(samples) / 10, axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
         panel.grid.major = element_line(colour = "grey90")
       )
-    p <- panel_fix(p, width = 3, margin = 0.1)
-    ggsave(p,
-      filename = paste0("CellQC/Plot/raw_proportion.", sp, ".density.png"), limitsize = FALSE,
-      units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-    )
+    p <- panel_fix(p, width = 3, margin = 0.1, save = paste0("CellQC/Plot/raw_proportion.", sp, ".density.pdf"))
   }
 }
 
@@ -226,11 +216,7 @@ p <- ggplot(df4, aes(x = orig.ident, fill = CellQC)) +
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
     panel.grid.major = element_line(colour = "grey90")
   )
-p <- panel_fix(p, height = 3)
-ggsave(
-  plot = p, filename = "CellQC/Plot/qc_stat.bar.png", limitsize = FALSE,
-  units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-)
+p <- panel_fix(p, height = 3, save = "CellQC/Plot/qc_stat.bar.pdf")
 
 filter_upset <- df4 %>%
   dplyr::select(CellName, orig.ident, db_qc, outlier_qc, umi_qc, gene_qc, mito_qc, ribo_qc, species_qc) %>%
@@ -288,7 +274,7 @@ nrow <- ceiling(sqrt(length(upset_list)))
 ncol <- ceiling(length(upset_list) / nrow)
 p_all <- cowplot::plot_grid(plotlist = upset_list, nrow = nrow, ncol = ncol, align = "hv", axis = "tblr")
 ggsave(p_all,
-  filename = "CellQC/Plot/qc_stat.upset.png", limitsize = FALSE,
+  filename = "CellQC/Plot/qc_stat.upset.pdf", limitsize = FALSE,
   width = ncol * width, height = nrow * height, units = units
 )
 
@@ -330,7 +316,7 @@ for (i in 1:length(samples)) {
   srt_list_filter[[samples[i]]] <- srt_filter
 }
 if (!file.exists(paste0("CellQC/Merge.filtered.h5Seurat"))) {
-  srt_filter_merge <- Reduce(function(x, y) merge(x, y), srt_list_filter)
+  srt_filter_merge <- Reduce(merge, srt_list_filter)
   for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")) {
     srt_filter_merge[[qc]] <- factor(srt_filter_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
   }
@@ -374,11 +360,7 @@ p <- ggplot(df, aes(x = variable, fill = orig.ident)) +
     axis.ticks.x = element_blank(),
     panel.grid.major.y = element_line(colour = "grey90")
   )
-p <- panel_fix(p, height = 2, width = max(2 / (5 / length(samples)), 3))
-ggsave(p,
-  filename = "CellQC/Plot/filtered_QCvariable.box.png", limitsize = FALSE,
-  units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-)
+p <- panel_fix(p, height = 2, width = max(2 / (5 / length(samples)), 3), save = "CellQC/Plot/filtered_QCvariable.box.pdf")
 
 df1 <- table(meta_filter$orig.ident) %>% reshape2::melt()
 df1$Var1 <- factor(df1$Var1, levels = samples)
@@ -396,19 +378,20 @@ p <- ggplot(df1, aes(x = Var1, y = value)) +
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
     panel.grid.major.y = element_line(colour = "grey90")
   )
-p <- panel_fix(p, height = 2)
-ggsave(p,
-  filename = "CellQC/Plot/filtered_cellnumber.bar.png", limitsize = FALSE,
-  units = attr(p, "size")$units, width = attr(p, "size")$width, height = attr(p, "size")$height
-)
+p <- panel_fix(p, height = 2, save = "CellQC/Plot/filtered_cellnumber.bar.pdf")
 
 # Simple Analysis --------------------------------------------------------
 if (isTRUE(simple_analysis)) {
-  srt_qc_merge <- Reduce(function(x, y) merge(x, y), srt_list_QC)
-  for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")) {
-    srt_qc_merge[[qc]] <- factor(srt_qc_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
+  if (file.exists("CellQC/Merge.qc.h5Seurat")) {
+    srt_qc_merge <- LoadH5Seurat("CellQC/Merge.qc.h5Seurat", verbose = FALSE)
+    srt_list_all <- c(srt_list_QC, "Merge" = srt_qc_merge)
+  } else {
+    srt_qc_merge <- Reduce(merge, srt_list_QC)
+    for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")) {
+      srt_qc_merge[[qc]] <- factor(srt_qc_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
+    }
+    srt_list_all <- c(srt_list_QC, "Merge" = srt_qc_merge)
   }
-  srt_list_all <- c(srt_list_QC, "Merge" = srt_qc_merge)
   for (sample in names(srt_list_all)) {
     cat("++++++", sample, "(Simple Analysis)", "++++++", "\n")
     srt <- srt_list_all[[sample]]
