@@ -56,12 +56,14 @@ rmsk_gtf="\$cellranger_ref/genes/genes_rmsk.gtf"
 ############# Analysis Paramaters #######################################################################
 ### CellQC ###
 db_method="scDblFinder" ## Doublet-calling methods used. Can be one of scDblFinder, Scrublet, DoubletDetection, scds_cxds, scds_bcds, scds_hybrid.
-outlier_cutoff="log10_nCount:both:2.5,log10_nFeature:both:2.5,featurecount_dist:lower:2.5"
+outlier_cutoff="log10_nCount:lower:2.5,log10_nCount:higher:5,log10_nFeature:lower:2.5,log10_nFeature:higher:5,featurecount_dist:lower:2.5"
 outlier_n=1
 gene_threshold=1000 ## 1000. Minimum threshold for the cell gene count.
 UMI_threshold=3000 ## 3000. Minimum threshold for the cell UMI count.
 mito_threshold=20 ## 20. Maximum threshold for the count proportion of mitochondrial genes.
 ribo_threshold=50 ## 50. Maximum threshold for the count proportion of ribosomal genes.
+ribo_mito_ratio_min=1
+ribo_mito_ratio_max="Inf"
 species="" ## Leave blank or comma-separated species names, e.g. "Homo_sapiens,Mus_musculus". The first is the species of interest.
 species_gene_prefix="" ## Leave blank or comma-separated prefixes, e.g. "GRCh38-,mm10-". The first is the species of interest.
 species_percent=95 ## Count proportion thresholds for species of interest.

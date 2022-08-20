@@ -24,7 +24,7 @@ echo -e "    analysis_dir: ${analysis_dir}\n    samples: ${samples}\n    simple_
 echo -e "*** cell-filtering parameters ***"
 echo -e "    db_method: ${db_method}\n    outlier_cutoff: ${outlier_cutoff}\n    outlier_n: ${outlier_n}"
 echo -e "    gene_threshold: ${gene_threshold}\n    UMI_threshold: ${UMI_threshold}"
-echo -e "    mito_threshold: ${mito_threshold}\n    ribo_threshold: ${ribo_threshold}"
+echo -e "    mito_threshold: ${mito_threshold}\n    ribo_threshold: ${ribo_threshold}\n    ribo_mito_ratio_min: ${ribo_mito_ratio_min}\n    ribo_mito_ratio_max: ${ribo_mito_ratio_max}" 
 echo -e "    species: ${species}\n    species_gene_prefix: ${species_gene_prefix}\n    species_percent: ${species_percent}"
 echo -e "    exogenous_genes: ${exogenous_genes}\n    features_inspect: ${features_inspect}\n"
 echo -e "################################################################################\n"
@@ -53,7 +53,7 @@ if [[ $? == 1 ]]; then
     script="$SCP_path/SCP-Analysis/CellQC/RunCellQC.R"
     Rscript "$script" "${analysis_dir}" "${samples}" "${simple_analysis}" \
         "${db_method}" "${outlier_cutoff}" "${outlier_n}"\
-        "${gene_threshold}" "${UMI_threshold}"  "${mito_threshold}" "${ribo_threshold}" \
+        "${gene_threshold}" "${UMI_threshold}"  "${mito_threshold}" "${ribo_threshold}" "${ribo_mito_ratio_min}" "${ribo_mito_ratio_max}"\
         "${species}" "${species_gene_prefix}" "${species_percent}" \
         "${exogenous_genes}" "${features_inspect}" | tee RunCellQCStatus.log
 

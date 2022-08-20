@@ -10,32 +10,35 @@ gene_threshold <- as.numeric(args[7])
 UMI_threshold <- as.numeric(args[8])
 mito_threshold <- as.numeric(args[9])
 ribo_threshold <- as.numeric(args[10])
-species <- as.character(args[11])
-species_gene_prefix <- as.character(args[12])
-species_percent <- as.character(args[13])
-exogenous_genes <- as.character(args[14])
-features_inspect <- as.character(args[15])
+ribo_mito_ratio_min <- as.numeric(args[11])
+ribo_mito_ratio_max <- as.numeric(args[12])
+species <- as.character(args[13])
+species_gene_prefix <- as.character(args[14])
+species_percent <- as.numeric(args[15])
+exogenous_genes <- as.character(args[16])
+features_inspect <- as.character(args[17])
 
 
 # # Set parameters ---------------------------------------------------------
 # ## parameters: global settings ---------------------------------------------
-# analysis_dir <- "/ssd/lab/HuangMingQian/scRNAseq/22CellLine-project/NGSmodule_SCP_analysis/"
+# analysis_dir <- "/ssd/lab/ChenMengQi/scRNAseq/in_vitro_culture/analysis_zh/NGSmodule_SCP_analysis/"
 # samples <- "" ## Leave blank or comma-separated names of samples to be analyzed. Leave blank means analyze all samples.
-# simple_analysis <- FALSE ## Whether to do a simple analysis.
+# simple_analysis <- TRUE ## Whether to do a simple analysis.
 #
 # ## parameters: cell filtering ----------------------------------------------
 # db_method <- "scDblFinder" ## Doublet-calling methods used. Can be one of scDblFinder, Scrublet, DoubletDetection, scds_cxds, scds_bcds, scds_hybrid.
-# outlier_cutoff <- "log10_nCount:higher:2.5,log10_nCount:lower:5,log10_nFeature:higher:2.5,log10_nFeature:lower:5,pct_counts_in_top_20_features:both:5,featcount_dist:both:5,percent.ribo:both:1,percent.mito:both:1"
-# outlier_n <- 2
+# outlier_cutoff <- "log10_nCount:lower:2.5,log10_nCount:higher:5,log10_nFeature:lower:2.5,log10_nFeature:higher:5,featurecount_dist:lower:2.5"
+# outlier_n <- 1
 # gene_threshold <- 1000. ## 1000. Minimum threshold for the cell gene count.
 # UMI_threshold <- 3000 ## 3000. Minimum threshold for the cell UMI count.
-# mito_threshold <- 15 ## 15. Maximum threshold for the count proportion of mitochondrial genes.
-# ribo_threshold <- 50 ## 50. Maximum threshold for the count proportion of ribosomal genes.
-# species <- "Homo_sapiens,Mus_musculus" ## Leave blank or comma-separated species names, e.g. "Homo_sapiens,Mus_musculus". The first is the species of interest.
-# species_gene_prefix <- "GRCh38-,mm10-" ## Leave blank or comma-separated prefixes, e.g. "GRCh38-,mm10-". The first is the species of interest.
+# mito_threshold <- 20 ## 15. Maximum threshold for the count proportion of mitochondrial genes.
+# ribo_threshold <- 20 ## 50. Maximum threshold for the count proportion of ribosomal genes.
+# ribo_mito_ratio_threshold <- 1
+# species <- "" ## Leave blank or comma-separated species names, e.g. "Homo_sapiens,Mus_musculus". The first is the species of interest.
+# species_gene_prefix <- "" ## Leave blank or comma-separated prefixes, e.g. "GRCh38-,mm10-". The first is the species of interest.
 # species_percent <- 95 ## Count proportion thresholds for species of interest.
-# exogenous_genes <- "GFP" ## Leave blank or or comma-separated gene symbol.
-# features_inspect <- "POU5F1,SOX2,SOX17,EOMES,ISL1,PAX6,SOX1,nCount_RNA,nFeature_RNA,percent.mito,percent.ribo" ## Comma-separated gene symbol or other features.
+# exogenous_genes <- "" ## Leave blank or or comma-separated gene symbol.
+# features_inspect <- "nCount_RNA,nFeature_RNA,percent.mito,percent.ribo" ## Comma-separated gene symbol or other features.
 
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
@@ -58,6 +61,9 @@ species_gene_prefix <- strsplit(species_gene_prefix, split = ",") %>% unlist()
 exogenous_genes <- strsplit(exogenous_genes, split = ",") %>% unlist()
 features_inspect <- c(exogenous_genes, strsplit(features_inspect, split = ",") %>% unlist())
 
+if (length(species) == 0 || species == "") {
+  species <- species_gene_prefix <- NULL
+}
 if (samples == "") {
   samples <- gsub(".h5Seurat", "", list.files(path = paste0(analysis_dir, "/Prepare"), pattern = ".h5Seurat"))
 } else {
@@ -133,6 +139,7 @@ for (i in 1:length(samples)) {
       outlier_cutoff = outlier_cutoff, outlier_n = outlier_n,
       UMI_threshold = UMI_threshold, gene_threshold = gene_threshold,
       mito_threshold = mito_threshold, ribo_threshold = ribo_threshold,
+      ribo_mito_ratio_range = c(ribo_mito_ratio_min, ribo_mito_ratio_max),
       species = species, species_gene_prefix = species_gene_prefix, species_percent = species_percent
     )
     cat("Save the Seurat object as h5Seurat...\n")
@@ -147,6 +154,19 @@ for (i in 1:length(samples)) {
     srt <- LoadH5Seurat(paste0("CellQC/", samples[i], ".qc.h5Seurat"), verbose = FALSE)
   }
   srt_list_QC[[samples[i]]] <- srt
+}
+if (!file.exists(paste0("CellQC/Merge.qc.h5Seurat"))) {
+  srt_qc_merge <- Reduce(merge, srt_list_QC)
+  for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc", "CellQC")) {
+    srt_qc_merge[[qc]] <- factor(srt_qc_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
+  }
+  cat("Save all qc data as one merged h5Seurat...\n")
+  SaveH5Seurat(
+    object = srt_qc_merge,
+    filename = "CellQC/Merge.qc.h5Seurat",
+    overwrite = TRUE,
+    verbose = FALSE
+  )
 }
 
 ## qc statistic plot --------------------------------------------------------------------
@@ -199,7 +219,7 @@ if (length(species) == 2) {
   }
 }
 
-df4 <- meta_qc[, c("CellName", "orig.ident", "db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")]
+df4 <- meta_qc[, c("CellName", "orig.ident", "db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc", "CellQC")]
 df4$orig.ident <- factor(df4$orig.ident, levels = samples)
 df4$CellQC <- factor(df4$CellQC, levels = c("Fail", "Pass"))
 p <- ggplot(df4, aes(x = orig.ident, fill = CellQC)) +
@@ -219,9 +239,9 @@ p <- ggplot(df4, aes(x = orig.ident, fill = CellQC)) +
 p <- panel_fix(p, height = 3, save = "CellQC/Plot/qc_stat.bar.pdf")
 
 filter_upset <- df4 %>%
-  dplyr::select(CellName, orig.ident, db_qc, outlier_qc, umi_qc, gene_qc, mito_qc, ribo_qc, species_qc) %>%
+  dplyr::select(CellName, orig.ident, db_qc, outlier_qc, umi_qc, gene_qc, mito_qc, ribo_qc, ribo_mito_ratio_qc, species_qc) %>%
   reshape2::melt(
-    measure.vars = c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc"),
+    measure.vars = c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc"),
     variable.name = "filter_by",
     value.name = "filter_out"
   ) %>%
@@ -252,7 +272,7 @@ for (i in samples) {
       point.size = NA, bg.color = "white", bg.r = 0.1, size = 4, color = "black"
     ) +
     labs(title = i, x = "", y = "Number of cells with failed QC") +
-    scale_x_upset(sets = c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc")) +
+    scale_x_upset(sets = c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc")) +
     scale_y_continuous(limits = c(0, 1.2 * y_max)) +
     scale_fill_gradientn(name = "Count", colors = palette_scp(palette = "material-indigo")) +
     theme_scp(
@@ -264,7 +284,7 @@ for (i in samples) {
       combmatrix.label.text = element_text(size = 12, color = "black"),
       combmatrix.label.extra_spacing = 6
     )
-  p <- panel_fix(p, height = 2, margin = 0)
+  p <- panel_fix(p, height = 2, margin = 0.1)
   upset_list[[i]] <- p
 }
 units <- attr(p, "size")$units
@@ -317,7 +337,7 @@ for (i in 1:length(samples)) {
 }
 if (!file.exists(paste0("CellQC/Merge.filtered.h5Seurat"))) {
   srt_filter_merge <- Reduce(merge, srt_list_filter)
-  for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")) {
+  for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc", "CellQC")) {
     srt_filter_merge[[qc]] <- factor(srt_filter_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
   }
   cat("Save all filtered data as one merged h5Seurat...\n")
@@ -327,8 +347,6 @@ if (!file.exists(paste0("CellQC/Merge.filtered.h5Seurat"))) {
     overwrite = TRUE,
     verbose = FALSE
   )
-} else {
-  cat("The merged data is ready.\n")
 }
 
 ## basic plot --------------------------------------------------------------------
@@ -387,7 +405,7 @@ if (isTRUE(simple_analysis)) {
     srt_list_all <- c(srt_list_QC, "Merge" = srt_qc_merge)
   } else {
     srt_qc_merge <- Reduce(merge, srt_list_QC)
-    for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc", "CellQC")) {
+    for (qc in c("db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc", "CellQC")) {
       srt_qc_merge[[qc]] <- factor(srt_qc_merge[[qc, drop = TRUE]], levels = c("Pass", "Fail"))
     }
     srt_list_all <- c(srt_list_QC, "Merge" = srt_qc_merge)
@@ -415,19 +433,21 @@ if (isTRUE(simple_analysis)) {
       features_inspect,
       paste0(features_inspect, rep(paste0(".", species), each = length(features_inspect)))
     )
+    if (length(species_gene_prefix) > 0) {
+      features <- c(
+        features,
+        unlist(sapply(paste0(species_gene_prefix, "-*", rep(features_inspect, each = length(species_gene_prefix)), "$"), function(pat) {
+          rownames(srt)[grep(pattern = pat, x = rownames(srt))]
+        }))
+      )
+    }
     features <- c(
-      features,
-      unlist(sapply(paste0(species_gene_prefix, "-*", rep(features_inspect, each = length(species_gene_prefix)), "$"), function(pat) {
-        rownames(srt)[grep(pattern = pat, x = rownames(srt))]
-      }))
-    )
-    features <- c(
-      "CellQC", "db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "species_qc",
+      "CellQC", "db_qc", "outlier_qc", "umi_qc", "gene_qc", "mito_qc", "ribo_qc", "ribo_mito_ratio_qc", "species_qc",
       exogenous_genes, features
     )
     features <- features[features %in% c(colnames(srt@meta.data), rownames(srt))]
     p <- SummaryPlot(
-      srt = srt, group.by = "Standardclusters", group.split.by = "orig.ident",
+      srt = srt, group.by = c("orig.ident", "Standardclusters"), group.split.by = "orig.ident",
       features = features, reduction = "StandardUMAP2D"
     )
     ggsave(
