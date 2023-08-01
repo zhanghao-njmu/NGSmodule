@@ -261,7 +261,3 @@ fifo() {
         echo >&1000
     done
 }
-
-###### temp file ######
-tmpfile=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
-trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT

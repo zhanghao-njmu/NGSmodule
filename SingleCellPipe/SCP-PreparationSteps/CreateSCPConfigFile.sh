@@ -29,17 +29,23 @@ retry=0
 ### RunIDPattern="ESC_.*"
 ### SufixPattern="_S\d+_L\d+_R1_001\.fastq\.gz"
 RunIDPattern=".*"                                                          ## This pattern must could be matched with the LibraryId after excluding Sufix.    
-R1_SufixPattern="_S\d+_L\d+_R1_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
-R2_SufixPattern="_S\d+_L\d+_R2_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string. 
+R1_SufixPattern="_S\d+_L\d+_R1_\d+\.((fastq)|(fq))\.gz"             ## Must start with and end with a fixed string.
 R1_to_R2="_R1_/_R2_"
+R1_to_R3="_R1_/_R3_"
+R1_to_I1="_R1_/_I1_"
 
 ############# Cellranger Paramaters #######################################################################
 ### FastqScreen ###
 FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### CellRanger ###
+mode="rna"                                                                                  ##"rna", "atac", "arc"
 cellranger_ref="/data/reference/CellRanger/refdata-gex-GRCh38-and-mm10-2020-A"
-include_introns="TRUE"
+cellranger_param=""                                                                         ## "--include-introns"
+gene_gtf="\$cellranger_ref/genes/genes.gtf"
+
+### Velocyto ###
+rmsk_gtf="\$cellranger_ref/genes/genes_rmsk.gtf"
 
 ############# CellCalling Paramaters #######################################################################
 # ### dropEst ### (test)
@@ -48,10 +54,6 @@ include_introns="TRUE"
 # ### CellCalling ### (test)
 # EmptyThreshold="AUTO"                               # an integer number or "AUTO"
 # CellLabel="NULL"                                    # a gene name or "NULL"
-
-### Velocyto ###
-gene_gtf="\$cellranger_ref/genes/genes.gtf"
-rmsk_gtf="\$cellranger_ref/genes/genes_rmsk.gtf"
 
 ############# Analysis Paramaters #######################################################################
 ### CellQC ###

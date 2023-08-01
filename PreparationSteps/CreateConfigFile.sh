@@ -11,16 +11,17 @@ else
     ConfigFile=temp_${tmp}.config
 fi
 
-# ############# PrefetchData Paramaters #######################################################################
-# iGenomes_dir="/reference/iGenomes/"
-# Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta")
-# Sources=("Ensembl" "NCBI" "UCSC")
-# kmers=(150 100 50)
-# windows=(2000000 1000000 500000 100000)
-# total_threads=384
-# ntask_per_run="ALL"
 
 cat <<- EOF >$ConfigFile
+############# Prefetch_iGenomes Paramaters #######################################################################
+iGenomes_dir="/data/reference/iGenomes"
+Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta" "Rattus norvegicus")
+Sources=("Ensembl" "NCBI" "UCSC")
+kmers=(150 100 50)
+windows=(2000000 1000000 500000 100000)
+total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+ntask_per_run="ALL"
+
 ############# Global Paramaters #############################################################################
 maindir="$(pwd)"        ## Absolute path of your project directory.
 rawdata_dir="$(pwd)/rawdata/"   ## Absolute path of directory containing the raw fastq.gz data.
@@ -29,7 +30,7 @@ total_threads=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)               
 ntask_per_run="ALL"                           ## "ALL" or numeric value to specify the number of tasks run simultaneously at the backend.
 SampleInfoFile="$(pwd)/temp_Sample_info.csv" ## Absolute path of a .csv SampleInfoFile.
 SampleGrepPattern=""                          ## Optional. Perl-compatible regexps used for matching the SampleID under the NGSmodule_work directory.
-force_complete="FALSE"                        ## A global option to determine whether to execute a complete process for any MODE.
+force_complete="FALSE"                        ## A global option to determine whether to execute a complete process.
 retry=0                                       ## Number of retries when the task has an error.
 
 ############# CreateWorkDir Paramaters ######################################################################

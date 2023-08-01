@@ -10,42 +10,11 @@ trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 # total_threads=384
 # ntask_per_run="ALL"
 
-######## check command available ##########
-samtools &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the tool samtools. User can install it with the command 'conda install -c bioconda samtools'.\n"
-  exit 1
-}
-faidx &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the tool pyfaidx. User can install it with the command 'conda install -c bioconda pyfaidx'.\n"
-  exit 1
-}
-gem-mappability &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command gem-mappability. User can install it from 'https://sourceforge.net/projects/gemlibrary'.\n"
-  exit 1
-}
-genmap &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command genmap. User can install it with the command 'conda install -c bioconda genmap'.\n"
-  exit 1
-}
-wigToBigWig &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command wigToBigWig. User can install it with the command 'conda install -c bioconda ucsc-wigtobigwig'.\n"
-  exit 1
-}
-mapCounter &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command mapCounter. User can install it from 'https://github.com/shahcompbio/hmmcopy_utils'.\n"
-  exit 1
-}
-picard &>/dev/null
-[ $? -eq 127 ] && {
-  echo -e "Cannot find the command picard.\n"
-  exit 1
-}
+if [[ ! $(conda env list | grep "NGSmodule-PrefetchData") ]]; then
+  conda create -y -q --name "NGSmodule-PrefetchData" -c conda-forge -c bioconda -c dranew samtools pyfaidx gem2 genmap ucsc-wigtobigwig hmmcopy_utils picard awscli bowtie bowtie2 hisat2 star bismark sra-tools
+fi
+
+conda activate NGSmodule-PrefetchData
 
 if [[ -d $iGenomes_dir ]]; then
   echo -e ">>> iGenomes_dir exist: $iGenomes_dir \n"
@@ -112,7 +81,11 @@ done
 #aws s3 --no-sign-request sync s3://ngi-igenomes/igenomes $iGenomes_dir
 
 ######## Start buiding #########
-arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta"))
+pattern=$(
+  IFS="|"
+  echo "${Species[*]}"
+)
+arr=($(find $iGenomes_dir -name "genome.fa" | grep "WholeGenomeFasta" | grep -P "$pattern"))
 total_task=${#arr[@]}
 
 if [[ "$total_task" == 0 ]]; then
@@ -168,7 +141,7 @@ for genome in "${arr[@]}"; do
     cd $SequenceDir
 
     sed -i 's/\s.*$//g' $genome
-   
+
     arr1=($(find $SequenceDir -mindepth 1 -maxdepth 1 -name "*Index" -type d))
     if [[ "${#arr1[@]}" != 0 ]]; then
       for index in "${arr1[@]}"; do
@@ -302,14 +275,14 @@ for genome in "${arr[@]}"; do
         ln -fs $genome $STARIndex/genome.fa
         if [[ -f $gtf ]]; then
           STAR --runMode genomeGenerate --runThreadN $threads \
-          --genomeDir $STARIndex \
-          --genomeFastaFiles $STARIndex/genome.fa \
-          --sjdbGTFfile $gtf \
-          --sjdbOverhang 100 &>$STARIndex/IndexStatus.log
+            --genomeDir $STARIndex \
+            --genomeFastaFiles $STARIndex/genome.fa \
+            --sjdbGTFfile $gtf \
+            --sjdbOverhang 100 &>$STARIndex/IndexStatus.log
         else
           STAR --runMode genomeGenerate --runThreadN $threads \
-          --genomeDir $STARIndex \
-          --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
+            --genomeDir $STARIndex \
+            --genomeFastaFiles $STARIndex/genome.fa &>$STARIndex/IndexStatus.log
         fi
 
         check_logfile "$id" "STAR_index" "$STARIndex/IndexStatus.log" "$error_pattern" "$complete_pattern" "postcheck" $?
@@ -451,6 +424,8 @@ for genome in "${arr[@]}"; do
   } &
 done
 wait
+
+conda deactivate
 
 ELAPSED="Elapsed: $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
 echo -e "\n$ELAPSED"

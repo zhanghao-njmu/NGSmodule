@@ -3,14 +3,11 @@
 #  Author     : zhanghao                                  #
 ###########################################################
 
-#################### Functions ##################################################
 shell_folder=$(dirname $(readlink -f "$0"))
 source $shell_folder/GlobalFunction.sh
 
-Prefetch_iGenomes() {
-  source $1
-  source $shell_folder/PrefetchData/Prefetch_iGenomes.sh
-}
+tmpfile=$(mktemp /tmp/NGSmodule.XXXXXXXXXXXXXX) || exit 1
+trap_add "rm -f $tmpfile" SIGINT SIGTERM EXIT
 
 CreateConfigFile() {
   source $shell_folder/PreparationSteps/CreateConfigFile.sh $1
@@ -21,7 +18,7 @@ CheckConfigFile() {
     echo -e "Cannot find the ConfigFile:$ConfigFile !\n"
     exit 1
   else
-    echo -e ">>> Find the ConfigFile: $ConfigFile\n"
+    echo -e ">>> Found the ConfigFile: $ConfigFile\n"
   fi
 }
 
@@ -31,111 +28,105 @@ CreateSampleInfoFile() {
 
 CreateWorkDir() {
   source $1
-  source $shell_folder/LoadConfig.sh prepare
+  source $shell_folder/LoadConfig.sh "prepare"
   source $shell_folder/PreparationSteps/CreateWorkDir.sh
+}
+
+Prefetch_iGenomes() {
+  source $1
+  source $shell_folder/CheckENV.sh "NGSmodule-PrefetchData"
+  source $shell_folder/PrefetchData/Prefetch_iGenomes.sh
 }
 
 preAlignmentQC() {
   source $1
-  source $shell_folder/CheckENV.sh
+  source $shell_folder/CheckENV.sh "NGSmodule-preAlignmentQC"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/preAlignmentQC.sh
 }
 
 Alignment() {
   source $1
-  source $shell_folder/CheckENV.sh
+  source $shell_folder/CheckENV.sh "NGSmodule-Alignment"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/Alignment.sh
 }
 
 postAlignmentQC() {
   source $1
-  source $shell_folder/CheckENV.sh
+  source $shell_folder/CheckENV.sh "NGSmodule-postAlignmentQC"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/GeneralSteps/postAlignmentQC.sh $shell_folder/GeneralSteps/dupRadar.R
 }
 
 Quantification() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/Quantification.sh $shell_folder/Analysis/Quantification/Quantification_featurecounts.R $shell_folder/Analysis/Quantification/Quantification_annotation.R
 }
 
 postQuantificationQC() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
 BatchCorrection() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/BatchCorrection.sh $shell_folder/Analysis/Quantification/BatchCorrection.R
 }
 
 DifferentialExpression() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.sh $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.R
 }
 
 CNVanalysis() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/CNV/CNVanalysis.sh $shell_folder/Analysis/CNV/HMMcopy.R $shell_folder/Analysis/CNV/DNAcopy.R $shell_folder/Analysis/CNV/SNV2ploidy.R
 }
 
 GATK-germline-short-variant() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-germline-short-variant.sh
 }
 
 GATK-somatic-short-variant() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-somatic-short-variant.sh
 }
 
 GATK-germline-CNV() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-germline-CNV.sh
 }
 
 GATK-somatic-CNV() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/GATK/GATK-somatic-CNV.sh
 }
 
 Strelka2-germline-short-variant(){
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Strelka2/Strelka2-germline-short-variant.sh
 }
 
 Strelka2-somatic-short-variant(){
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Strelka2/Strelka2-somatic-short-variant.sh
 }
 
 Samtools-variant-calling(){
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Samtools/Samtools-variant-calling.sh
 }
@@ -150,34 +141,31 @@ CreateSCPSampleInfoFile() {
 
 CreateSCPWorkDir() {
   source $1
-  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh prepare
+  source $shell_folder/SingleCellPipe/LoadSCPConfig.sh "prepare"
   source $shell_folder/SingleCellPipe/SCP-PreparationSteps/CreateSCPWorkDir.sh
 }
 
 RunCellranger() {
   source $1
-  source $shell_folder/CheckENV.sh
+  source $shell_folder/CheckENV.sh  "NGSmodule-SCP"
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-GeneralSteps/RunCellranger/RunCellranger.sh $shell_folder/SingleCellPipe
 }
 
 RunCellQC() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/CellQC/RunCellQC.sh  $shell_folder/SingleCellPipe 
 }
 
 RunStandardSCP() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/StandardSCP/RunStandardSCP.sh  $shell_folder/SingleCellPipe 
 }
 
 RunIntegrationSCP() {
   source $1
-  source $shell_folder/CheckENV.sh
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/IntegrationSCP/RunIntegrationSCP.sh  $shell_folder/SingleCellPipe 
 }
@@ -199,10 +187,12 @@ help() {
     NGSmodule [MODE options] [ -c <Configuration file> ]
   
   MODE options:
-    
+    # Prefetch_iGenomes
+    # Prefetch_SRA
+    # Prefetch_sequences
+
     # PreparationSteps:
-       CreateConfigFile         Create a configuration template file for NGSmodule.
-       Prefetch_iGenomes        
+       CreateConfigFile         Create a configuration template file for NGSmodule.        
        CreateSampleInfoFile     Create a sample information template file for NGSmodule.
        CreateWorkDir            Create a working directory. The configuration file and
                                 the sample information file must be provided together.
