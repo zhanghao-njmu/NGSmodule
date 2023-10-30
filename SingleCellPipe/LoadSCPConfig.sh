@@ -9,27 +9,27 @@ fi
 
 ############# Load SampleInfoFile ###################################################################
 declare -A Sample_dict
-if [[ -f $SampleInfoFile ]]; then
-    echo -e ">>> Find the SampleInfoFile: $SampleInfoFile\n"
-    sed -i '/^$/d' $SampleInfoFile
+if [[ -f "$SampleInfoFile" ]]; then
+    echo -e ">>> Find the SampleInfoFile: "$SampleInfoFile"\n"
+    sed -i '/^$/d' "$SampleInfoFile"
     
-    if [[ ! $(echo $SampleInfoFile | grep ".csv") ]]; then
+    if [[ ! $(echo "$SampleInfoFile" | grep ".csv") ]]; then
         color_echo "red" "ERROR! SampleInfoFile must be a comma-separated values file and named with the suffix '.csv' .\n"
         exit 1
     fi
 
-    validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' $SampleInfoFile)
+    validation=$(awk 'BEGIN {FS=","; v = "TRUE" } NR == 1 { n = NF; next } NF != n || NF<2 { v = "FALSE"; exit }END{printf(v)}' "$SampleInfoFile")
     if  [[ $validation == "FALSE" ]];then
         color_echo "red" "ERROR! Content in SampleInfoFile is not in a valid comma-separated format.\n.\n"
         exit 1
     fi
 
-    dos2unix $SampleInfoFile &>/dev/null
+    dos2unix "$SampleInfoFile" &>/dev/null
     while IFS=',' read -r RunID SampleID Group; do
         Sample_dict[$RunID]=$SampleID
-    done <$SampleInfoFile
+    done <"$SampleInfoFile"
 else
-    color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"
+    color_echo "red" "ERROR! Cannot find SampleInfoFile: "$SampleInfoFile". Please check your config!\n"
     exit 1
 fi
 

@@ -101,17 +101,17 @@ MDplot <- function(count_matrix, group, up, down, nonsig, drop, label) {
   }))
   log2fc <- log2(cpm_mean_group[, "Group1"] / cpm_mean_group[, "Group2"])
   df <- data.frame(cpm = cpm_rowmean, log2fc = log2fc)
-  df[drop, "group"] <- paste0("Droped(", length(drop), ")")
+  df[drop, "group"] <- paste0("Excluded(", length(drop), ")")
   df[up, "group"] <- paste0("Up-regulated(", length(up), ")")
   df[down, "group"] <- paste0("Down-regulated(", length(down), ")")
   df[, "group"] <- factor(df[, "group"], levels = c(
-    paste0("Droped(", length(drop), ")"),
+    paste0("Excluded(", length(drop), ")"),
     paste0("Up-regulated(", length(up), ")"),
     paste0("Down-regulated(", length(down), ")")
   ))
   colors <- c("grey", theme_use[1], theme_use[2])
   names(colors) <- c(
-    paste0("Droped(", length(drop), ")"),
+    paste0("Excluded(", length(drop), ")"),
     paste0("Up-regulated(", length(up), ")"),
     paste0("Down-regulated(", length(down), ")")
   )
@@ -587,11 +587,11 @@ gene_test_plot <- function(test, drop_low, drop_outlier = NULL, annotation_matri
     gene = c(test, drop_low, drop_outlier),
     class = c(
       rep("Tested", length(test)),
-      rep("Droped.LowExp", length(drop_low)),
-      rep("Droped.Outlier", length(drop_outlier))
+      rep("Excluded.LowExp", length(drop_low)),
+      rep("Excluded.Outlier", length(drop_outlier))
     ), stringsAsFactors = F
   )
-  df[, "class"] <- factor(df[, "class"], levels = c("Droped.Outlier", "Droped.LowExp", "Tested"))
+  df[, "class"] <- factor(df[, "class"], levels = c("Excluded.Outlier", "Excluded.LowExp", "Tested"))
   df <- merge(x = df, by.x = "gene", y = annotation_matrix, by.y = "row.names")
 
   df <- df %>%
@@ -731,7 +731,7 @@ dges_compare <- function(data, col_log2fc = c("log2FoldChange.x", "log2FoldChang
 
   colors[grep(x = groups, pattern = "Up-regulated.*Down-regulated")] <- "black"
   colors[grep(x = groups, pattern = "Down-regulated.*Up-regulated")] <- "black"
-  colors[grep(x = groups, pattern = "Droped")] <- "purple4"
+  colors[grep(x = groups, pattern = "Excluded")] <- "purple4"
 
   alpha <- rep(1, length(groups))
   names(alpha) <- groups
@@ -749,7 +749,7 @@ dges_compare <- function(data, col_log2fc = c("log2FoldChange.x", "log2FoldChang
   x_max <- ceiling(max(abs(data[, col_log2fc[1]]), na.rm = TRUE))
   y_max <- ceiling(max(abs(data[, col_log2fc[2]]), na.rm = TRUE))
 
-  data1 <- data[-grep(x = data[, col_label], pattern = "Droped"), ]
+  data1 <- data[-grep(x = data[, col_label], pattern = "Excluded"), ]
   p1 <- ggplot(
     data = data1,
     aes(x = data1[, col_log2fc[1]], y = data1[, col_log2fc[2]], fill = data1[, col_label], alpha = data1[, col_label])
@@ -811,7 +811,7 @@ alluvial_plot <- function(res_list, annotation_matrix, tool, stratum_col) {
     all_gene <- rownames(counts_matrix)
     df <- df[, c("RowID", "DifferentialExpression")]
     drop <- setdiff(x = all_gene, y = df[, "RowID"])
-    df <- rbind(df, data.frame(RowID = drop, DifferentialExpression = "Droped"), stringsAsFactors = F)
+    df <- rbind(df, data.frame(RowID = drop, DifferentialExpression = "Excluded"), stringsAsFactors = F)
     df <- cbind(df, name, stringsAsFactors = F)
     return(df)
   })
@@ -826,7 +826,7 @@ alluvial_plot <- function(res_list, annotation_matrix, tool, stratum_col) {
   compare_df$name <- gsub(x = compare_df$name, pattern = "_vs_", replacement = "/")
   compare_df$name <- factor(compare_df$name, levels = gsub(x = compare_label, pattern = "_vs_", replacement = "/"))
   compare_df$DifferentialExpression <- factor(compare_df$DifferentialExpression,
-    levels = (c("Up-regulated", "Down-regulated", "Non-significant", "Droped"))
+    levels = (c("Up-regulated", "Down-regulated", "Non-significant", "Excluded"))
   )
   compare_df$unit <- 1
 

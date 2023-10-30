@@ -10,17 +10,19 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("Rsubread" "edgeR" "Rsamtools" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
+R_packages=("Rsubread" "edgeR" "Rsamtools" "data.table" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
+
+all_installed=$(Rscript -e "installed.packages()" | awk '{print $1}')
+Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager',repos='https://cran.r-project.org/')"
+Rscript -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes',repos='https://cran.r-project.org/')"
 for package in "${R_packages[@]}"; do
-  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
-  if [ $? -ne 0 ]; then
-    color_echo "red" "Cannot find the R package $package.\n"
+  if ! echo "$all_installed" | grep -q "$package"; then
+    color_echo "yellow" "Install the R package: '$package'.\n"
     if [[ $package == "refGenome" ]]; then
-      color_echo "red" "Please install it in the R environment using \"remotes::install_version('$package')\" "
+      Rscript -e "remotes::install_version('refGenome',repos='https://cran.r-project.org/')"
     else
-      color_echo "red" "Please install it in the R environment using \"BiocManager::install('$package')\" "
+      Rscript -e "BiocManager::install('$package')"
     fi
-    exit 1
   fi
 done
 
@@ -43,16 +45,28 @@ for sample in "${arr[@]}"; do
   {
     echo "+++++ $sample +++++"
     dir=$work_dir/$sample
-    bam=$dir/Alignment-$Aligner/${sample}.${Aligner}.bam
-    if [[ ! -f $bam ]]; then
-      echo -e "ERROR: Bam file:$bam do not exist. Please check the file.\n"
-      exit 1
+    
+    if [[ ${Aligner} == "kallisto" ]]; then
+      if [[ -f $dir/Alignment-$Aligner/abundance.tsv ]]; then
+        color_echo "green" "kallisto quant output (abundance.tsv) detected."
+      else
+        echo -e "ERROR: kallisto quant output do not exist. Please re-run Alignment.\n"
+        exit 1
+      fi
+    else
+      bam=$dir/Alignment-$Aligner/${sample}.${Aligner}.bam
+      if [[ ! -f $bam ]]; then
+        echo -e "ERROR: Bam file:$bam do not exist. Please re-run Alignment.\n"
+        exit 1
+      fi
+
+      mkdir -p $dir/Alignment-$Aligner/Quantification
+      rm -f $dir/Alignment-$Aligner/Quantification/*.tmp
+      
+      cd $dir/Alignment-$Aligner/Quantification
+      Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
     fi
-
-    mkdir -p $dir/Alignment-$Aligner/Quantification
-    cd $dir/Alignment-$Aligner/Quantification
-    Rscript $1 $threads_featurecounts $gtf $strandspecific $bam ${sample}.${Aligner} &>Quantification.R.log
-
+    
     echo "Completed: $sample" >>$tmpfile
     color_echo "green" "***** Completed:$(cat "$tmpfile" | grep "Completed" | uniq | wc -l) | Interrupted:$(cat "$tmpfile" | grep "Interrupted" | uniq | wc -l) | Total:$total_task *****"
 

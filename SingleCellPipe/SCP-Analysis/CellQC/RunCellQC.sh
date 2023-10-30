@@ -33,7 +33,7 @@ echo -e "****************** Start RunCellQC ******************\n"
 SECONDS=0
 SCP_path=$1
 
-if [[ ! -e "$maindir/NGSmodule_SCP_analysis/Prepare" ]]; then
+if [[ ! -e "$maindir/NGSmodule_SCP_analysis/Preparation" ]]; then
     color_echo "red" "Cannot find the prepared data.\n"
     exit 1
 fi

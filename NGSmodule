@@ -61,24 +61,28 @@ postAlignmentQC() {
 
 Quantification() {
   source $1
+  source $shell_folder/CheckENV.sh "NGSmodule-Analysis"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/Quantification.sh $shell_folder/Analysis/Quantification/Quantification_featurecounts.R $shell_folder/Analysis/Quantification/Quantification_annotation.R
 }
 
 postQuantificationQC() {
   source $1
+  source $shell_folder/CheckENV.sh "NGSmodule-Analysis"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/postQuantificationQC.sh $shell_folder/Analysis/Quantification/postQuantificationQC.R
 }
 
 BatchCorrection() {
   source $1
+  source $shell_folder/CheckENV.sh "NGSmodule-Analysis"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/Quantification/BatchCorrection.sh $shell_folder/Analysis/Quantification/BatchCorrection.R
 }
 
 DifferentialExpression() {
   source $1
+  source $shell_folder/CheckENV.sh "NGSmodule-Analysis"
   source $shell_folder/LoadConfig.sh
   source $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.sh $shell_folder/Analysis/DifferentialExpression/DifferentialExpression.R
 }
@@ -154,18 +158,21 @@ RunCellranger() {
 
 RunCellQC() {
   source $1
+  source $shell_folder/CheckENV.sh  "NGSmodule-SCP"
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/CellQC/RunCellQC.sh  $shell_folder/SingleCellPipe 
 }
 
 RunStandardSCP() {
   source $1
+  source $shell_folder/CheckENV.sh  "NGSmodule-SCP"
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/StandardSCP/RunStandardSCP.sh  $shell_folder/SingleCellPipe 
 }
 
 RunIntegrationSCP() {
   source $1
+  source $shell_folder/CheckENV.sh  "NGSmodule-SCP"
   source $shell_folder/SingleCellPipe/LoadSCPConfig.sh
   source $shell_folder/SingleCellPipe/SCP-Analysis/IntegrationSCP/RunIntegrationSCP.sh  $shell_folder/SingleCellPipe 
 }

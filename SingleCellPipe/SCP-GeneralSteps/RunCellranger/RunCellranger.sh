@@ -78,7 +78,7 @@ SCP_path=$1
 for sample in "${arr[@]}"; do
     read -u1000
     {
-        dir=$work_dir/$sample
+        dir="$work_dir/$sample"
         cd "$dir"
 
         force=${force_complete}
@@ -105,11 +105,11 @@ for sample in "${arr[@]}"; do
                 else
                     runs1=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R1_001.fastq.gz)
                     runs2=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R2_001.fastq.gz)
-                    if [[ ! -f ${dir}/${sample}_S1_L001_R1_001.fastq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_R1_001.fastq.gz" ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
                     fi
-                    if [[ ! -f ${dir}/${sample}_S1_L001_R2_001.fastq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_R2_001.fastq.gz" ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
                     fi
@@ -131,19 +131,19 @@ for sample in "${arr[@]}"; do
                     runs2=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R2_001.fastq.gz)
                     runs3=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_R3_001.fastq.gz)
                     runs4=$(ls -lL "${dir}"/run*_"${sample}"_S1_L001_I1_001.fastq.gz)
-                    if [[ ! -f ${dir}/${sample}_S1_L001_R1_001.fastq.gz ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_R1_001.fastq.gz" ]] || [[ ! $(echo "${runs1[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs1[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R1_001.fastq.gz
                     fi
-                    if [[ ! -f ${dir}/${sample}_S1_L001_R2_001.fastq.gz ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_R2_001.fastq.gz" ]] || [[ ! $(echo "${runs2[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs2[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R2_001.fastq.gz
                     fi
-                    if [[ ! -f ${dir}/${sample}_S1_L001_R3_001.fastq.gz ]] || [[ ! $(echo "${runs3[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R3_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_R3_001.fastq.gz" ]] || [[ ! $(echo "${runs3[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_R3_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs3[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R3_001.fastq.gz
                     fi
-                    if [[ ! -f ${dir}/${sample}_S1_L001_I1_001.fastq.gz ]] || [[ ! $(echo "${runs4[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_I1_001.fastq.gz | awk '{print$5}') ]]; then
+                    if [[ ! -f "${dir}"/"${sample}_S1_L001_I1_001.fastq.gz" ]] || [[ ! $(echo "${runs4[*]}" | awk 'BEGIN{sum=0}{sum+=$5}END{print sum}') == $(ls -lL "${dir}"/"${sample}"_S1_L001_I1_001.fastq.gz | awk '{print$5}') ]]; then
                         rm -f "$dir"/fqPrepare.log
                         echo "${runs4[*]}" | awk '{print$9}' | xargs cat >"${dir}"/"${sample}"_S1_L001_R3_001.fastq.gz
                     fi
@@ -151,8 +151,8 @@ for sample in "${arr[@]}"; do
                     echo -e "====== ${sample}_S1_L001_R1_001.fastq.gz ======\n${runs1[*]}\n====== ${sample}_S1_L001_R2_001.fastq.gz ======\n${runs2[*]}" >>"$dir"/fqPrepare.log
                     echo -e "====== ${sample}_S1_L001_R3_001.fastq.gz ======\n${runs3[*]}\n====== ${sample}_S1_L001_I1_001.fastq.gz ======\n${runs4[*]}" >>"$dir"/fqPrepare.log
                 fi
-                fq1=${dir}/${sample}_S1_L001_R1_001.fastq.gz
-                fq2=${dir}/${sample}_S1_L001_R3_001.fastq.gz
+                fq1="${dir}"/"${sample}_S1_L001_R1_001.fastq.gz"
+                fq2="${dir}"/"${sample}_S1_L001_R3_001.fastq.gz"
             fi
 
             ##To verify that reads appear to be correctly paired
@@ -271,12 +271,6 @@ for sample in "${arr[@]}"; do
                 # velocyto
                 check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "precheck"
                 if [[ $? == 1 ]]; then
-                    if conda env list | grep -v "velocyto" >/dev/null 2>&1; then
-                        conda create -y -q --name "velocyto" -c conda-forge -c bioconda velocyto.py
-                    fi
-
-                    conda activate velocyto
-
                     rm -rf "$dir"/Alignment-Cellranger/"$sample"/velocyto
                     mkdir -p "$dir"/Alignment-Cellranger/"$sample"/velocyto
                     cd "$dir"/Alignment-Cellranger/"$sample"/velocyto
@@ -299,8 +293,6 @@ for sample in "${arr[@]}"; do
                     ### samtools sort -t CB -O BAM -o "$dir"/Alignment-Cellranger/"$sample"/outs/cellsorted_possorted_genome_bam.bam "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam
                     #velocyto run -b "$dir"/Alignment-Cellranger/"$sample"/CellCalling/barcodes.tsv -e $sample -o "$dir"/Alignment-Cellranger/"$sample"/velocyto -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample"/outs/possorted_genome_bam.bam "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
                     velocyto run10x -m "$rmsk_gtf" --samtools-threads "$threads" "$dir"/Alignment-Cellranger/"$sample" "$gene_gtf" &>"$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log
-
-                    conda deactivate
 
                     check_logfile "$sample" "velocyto" "$dir"/Alignment-Cellranger/"$sample"/velocyto/velocyto.log "$error_pattern" "$complete_pattern" "postcheck" $?
                     if [[ $? == 1 ]]; then
@@ -390,7 +382,7 @@ if [[ $? == 1 ]]; then
     mkdir -p $maindir/NGSmodule_SCP_analysis/Preparation
     cd $maindir/NGSmodule_SCP_analysis/Preparation
     script=$SCP_path/SCP-GeneralSteps/RunCellranger/Preparation.R
-    Rscript $script $work_dir $mode $genome $gene_gtf &>$maindir/NGSmodule_SCP_analysis/Preparation/preparation.log
+    Rscript $script $work_dir $mode $genome $gene_gtf &>"$maindir/NGSmodule_SCP_analysis/Preparation/preparation.log"
 
     check_logfile "All" "Preparation" $maindir/NGSmodule_SCP_analysis/Preparation/preparation.log "$error_pattern" "$complete_pattern" "postcheck" $?
     if [[ $? == 1 ]]; then

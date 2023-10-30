@@ -8,13 +8,16 @@ Rscript &>/dev/null
   color_echo "red" "Cannot find the command Rscript.\n"
   exit 1
 }
-R_packages=("BiocParallel" "edgeR" "DESeq2" "stringr" "scales" "RColorBrewer" "ggpubr" "ggsci" "ggforce" "reshape2" "VennDiagram" "gridExtra" "gplots" "dplyr" "openxlsx" "ggalluvial" "ggfittext" "ComplexHeatmap" "circlize" "nord" "ggupset")
+R_packages=("BiocParallel" "edgeR" "DESeq2" "statmod" "dplyr" "stringr" "scales" "RColorBrewer" "ggpubr" "ggsci" "ggforce" "reshape2" "VennDiagram" "gridExtra" "gplots" "openxlsx" "ggalluvial" "ggfittext" "ComplexHeatmap" "circlize" "nord")
+
+all_installed=$(Rscript -e "installed.packages()" | awk '{print $1}')
+Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager',repos='https://cran.r-project.org/')"
+Rscript -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes',repos='https://cran.r-project.org/')"
 for package in "${R_packages[@]}"; do
-  Rscript -e "installed.packages()" | awk '{print $1}' | grep $package &>/dev/null
-  [ $? -ne 0 ] && {
-    color_echo "red" "Cannot find the R package $package.\n"
-    exit 1
-  }
+  if ! echo "$all_installed" | grep -q "$package"; then
+    color_echo "yellow" "Install the R package: '$package'.\n"
+    Rscript -e "BiocManager::install('$package')"
+  fi
 done
 
 echo -e "####################### DifferentialExpression Parameters ######################\n"

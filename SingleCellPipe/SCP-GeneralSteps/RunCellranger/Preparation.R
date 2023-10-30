@@ -27,8 +27,8 @@ samples <- list.dirs(path = SCPwork_dir, recursive = FALSE, full.names = FALSE)
 # Library -----------------------------------------------------------------
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "SCP", "Seurat", "SeuratWrappers", "future",
-    "Signac", "rtracklayer", "Rsamtools", "GenomicRanges"
+    "SCP", "Seurat", "Signac", "SeuratWrappers",
+    "future", "rtracklayer", "Rsamtools", "GenomicRanges"
   ),
   require,
   character.only = TRUE
@@ -140,7 +140,7 @@ if (!file.exists("./srtMerge.Seurat.rds")) {
 
       cat("Merge Seurat objects...\n")
       srtMerge <- merge(srtList[[1]], srtList[2:length(srtList)])
-      saveRDS(srtMerge, file = paste0("./srtMerge.Seurat.rds"))
+      saveRDS(srtMerge, file = "./srtMerge.Seurat.rds")
     }
     if (mode == "atac") {
       # combined.peaks <- suppressWarnings(reduce(do.call(base::c, unname(lapply(srtList, function(srt) granges(srt[["ATAC"]]))))))
@@ -183,11 +183,11 @@ if (!file.exists("./srtMerge.Seurat.rds")) {
 
       cat("Merge Seurat objects...\n")
       srtMerge <- merge(srtList[[1]], srtList[2:length(srtList)])
-      saveRDS(srtMerge, file = paste0("./srtMerge.Seurat.rds"))
+      saveRDS(srtMerge, file = "./srtMerge.Seurat.rds")
     }
   } else {
     saveRDS(srtList[[1]], file = paste0("./", names(srtList)[1], ".Seurat.rds"))
-    file.copy(paste0("./", names(srtList)[1], ".Seurat.rds"), paste0("./srtMerge.Seurat.rds"))
+    file.copy(paste0("./", names(srtList)[1], ".Seurat.rds"), "./srtMerge.Seurat.rds")
   }
 } else {
   cat("All tasks have been completed.")

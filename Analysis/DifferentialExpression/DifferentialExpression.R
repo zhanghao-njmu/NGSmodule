@@ -1,13 +1,12 @@
 #!/usr/bin/env Rscript
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
-    "BiocParallel", "edgeR", "DESeq2", "dplyr", "stringr", "scales", "RColorBrewer",
+    "BiocParallel", "edgeR", "DESeq2", "dplyr", "statmod", "stringr", "scales", "RColorBrewer",
     "ggpubr", "ggsci", "ggforce", "reshape2", "VennDiagram", "gridExtra",
     "gplots", "openxlsx", "ggalluvial", "ggfittext", "ComplexHeatmap", "circlize", "nord", "ggupset"
   ), require,
   character.only = TRUE
 ))))
-register(MulticoreParam())
 
 args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
@@ -21,16 +20,16 @@ DGEs_multi_compare <- as.numeric(args[8])
 script_path <- as.character(args[9])
 
 ######## example 1 ############
-# setwd("/data/lab/ZhangHao/tmp/NGSmodule_analysis/DifferentialExpression/")
-# maindir <- "/data/lab/ZhangHao/tmp/"
+# setwd("/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/NGSmodule_analysis/DifferentialExpression/")
+# maindir <- "/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/"
 # aligner <- "hisat2"
-# SampleInfoFile <- "/data/lab/ZhangHao/tmp/temp_20200413205117.Sample_info.csv"
-# comparison <- "Hom,WT"
+# SampleInfoFile <- "/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/temp_20230804094002.Sample_info.csv"
+# comparison <- "CFR,FR;"
 # max_padj <- 0.05
 # min_fc <- 2
 # min_count <- 10
 # DGEs_multi_compare <- 1
-# script_path <- "/data/lab/ZhangHao/NGSmodule/DifferentialExpression.R"
+# script_path <- "/home/shihongjunLab/lichenxi/Program/NGSmodule/Analysis/DifferentialExpression/DifferentialExpression.R"
 ##############################
 
 ######### example 2 ############
@@ -87,7 +86,7 @@ comparison_list <- lapply(as.list(str_split(string = comparison, pattern = ";")[
 })
 comparison_list_name <- gsub(x = str_split(string = comparison, pattern = ";")[[1]], pattern = ",", replacement = "_vs_")
 names(comparison_list) <- comparison_list_name
-
+comparison_list <- comparison_list[comparison_list!=""]
 
 ###### START #####
 
@@ -136,7 +135,7 @@ for (compare in comparison_list) {
     edgeR_down <- rownames(res)[which(res[["DifferentialExpression"]] == "Down-regulated")]
     edgeR_nonsig <- rownames(res)[which(res[["DifferentialExpression"]] == "Non-significant")]
     edgeR_drop <- setdiff(x = rownames(compare_counts), y = c(edgeR_up, edgeR_down, edgeR_nonsig))
-    cat("*** edgeR Number of genes tested/droped: ", sum(keep), "/", (nrow(compare_counts) - sum(keep)), "\n", sep = "")
+    cat("*** edgeR Number of genes tested/excluded: ", sum(keep), "/", (nrow(compare_counts) - sum(keep)), "\n", sep = "")
     cat(">>> edgeR All DGEs: ", length(c(edgeR_up, edgeR_down)), "  Up-/Down-regulated: ", length(edgeR_up), "/", length(edgeR_down), "\n",
       ">>> edgeR Non-significant: ", length(edgeR_nonsig), "\n\n",
       sep = ""
@@ -148,22 +147,20 @@ for (compare in comparison_list) {
     res_list[[paste0("edgeR_LogNorm@", paste0(compare, collapse = "_vs_"))]] <- edgeR_log_norm
 
     addWorksheet(wb, sheetName = "edgeR_LogNorm")
-    writeDataTable(
+    writeData(
       wb = wb,
       x = edgeR_log_norm,
       sheet = "edgeR_LogNorm",
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     sheetname <- paste0("edgeR@U", length(edgeR_up), "-D", length(edgeR_down), "-N", length(edgeR_nonsig))
     addWorksheet(wb, sheetName = sheetname)
-    writeDataTable(
+    writeData(
       wb = wb,
       x = res[with(res, order(FDR)), ],
       sheet = sheetname,
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
     saveWorkbook(wb, file = paste0("./DGEs_data/", paste0(compare, collapse = "_vs_"), ".xlsx"), overwrite = TRUE)
 
@@ -248,7 +245,7 @@ for (compare in comparison_list) {
     edgeR_down <- rownames(res)[which(res[["DifferentialExpression"]] == "Down-regulated")]
     edgeR_nonsig <- rownames(res)[which(res[["DifferentialExpression"]] == "Non-significant")]
     edgeR_drop <- setdiff(x = rownames(compare_counts), y = c(edgeR_up, edgeR_down, edgeR_nonsig))
-    cat("*** edgeR Number of genes tested/droped: ", sum(keep), "/", (nrow(compare_counts) - sum(keep)), "\n", sep = "")
+    cat("*** edgeR Number of genes tested/excluded: ", sum(keep), "/", (nrow(compare_counts) - sum(keep)), "\n", sep = "")
     cat(">>> edgeR All DGEs: ", length(c(edgeR_up, edgeR_down)), "  Up-/Down-regulated: ", length(edgeR_up), "/", length(edgeR_down), "\n",
       ">>> edgeR Non-significant: ", length(edgeR_nonsig), "\n\n",
       sep = ""
@@ -260,22 +257,20 @@ for (compare in comparison_list) {
     res_list[[paste0("edgeR_LogNorm@", paste0(compare, collapse = "_vs_"))]] <- edgeR_log_norm
 
     addWorksheet(wb, sheetName = "edgeR_LogNorm")
-    writeDataTable(
+    writeData(
       wb = wb,
       x = edgeR_log_norm,
       sheet = "edgeR_LogNorm",
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     sheetname <- paste0("edgeR@U", length(edgeR_up), "-D", length(edgeR_down), "-N", length(edgeR_nonsig))
     addWorksheet(wb, sheetName = sheetname)
-    writeDataTable(
+    writeData(
       wb = wb,
       x = res[with(res, order(FDR)), ],
       sheet = sheetname,
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     edgeR_p1 <- MDplot(
@@ -335,7 +330,7 @@ for (compare in comparison_list) {
     colData <- data.frame(row.names = colnames(compare_counts), condition = compare_groups)
     dds <- DESeqDataSetFromMatrix(countData = compare_counts, colData = colData, design = ~condition)
     dds <- dds[keep, ]
-    dds <- suppressMessages(DESeq(dds, parallel = TRUE))
+    dds <- suppressMessages(DESeq(dds, parallel = FALSE))
     DESeq2_log_norm <- as.data.frame(cpm(counts(dds, normalized = T), log = TRUE))
     DESeq2_log_norm <- cbind(rownames(DESeq2_log_norm), DESeq2_log_norm)
     colnames(DESeq2_log_norm)[1] <- "RowID"
@@ -351,7 +346,7 @@ for (compare in comparison_list) {
     DESeq2_drop <- setdiff(x = rownames(compare_counts), y = c(DESeq2_up, DESeq2_down, DESeq2_nonsig))
     DESeq2_drop_outlier <- rownames(dds_res)[is.na(dds_res[, "pvalue"]) & is.na(dds_res[, "padj"])]
     DESeq2_drop_low <- DESeq2_drop[which(!DESeq2_drop %in% DESeq2_drop_outlier)]
-    cat("*** DESeq2 Number of genes tested/droped: ", sum(length(c(DESeq2_up, DESeq2_down, DESeq2_nonsig))), "/", (nrow(compare_counts) - sum(length(c(DESeq2_up, DESeq2_down, DESeq2_nonsig)))), "\n", sep = "")
+    cat("*** DESeq2 Number of genes tested/excluded: ", sum(length(c(DESeq2_up, DESeq2_down, DESeq2_nonsig))), "/", (nrow(compare_counts) - sum(length(c(DESeq2_up, DESeq2_down, DESeq2_nonsig)))), "\n", sep = "")
     cat(">>> DESeq2 All DGEs: ", length(c(DESeq2_up, DESeq2_down)), "  Up-/Down-regulated: ", length(DESeq2_up), "/", length(DESeq2_down), "\n",
       ">>> DESeq2 Non-significant: ", length(DESeq2_nonsig), "\n\n",
       sep = ""
@@ -363,22 +358,20 @@ for (compare in comparison_list) {
     res_list[[paste0("DESeq2_LogNorm@", paste0(compare, collapse = "_vs_"))]] <- DESeq2_log_norm
 
     addWorksheet(wb, sheetName = "DESeq2_LogNorm")
-    writeDataTable(
+    writeData(
       wb = wb,
       x = DESeq2_log_norm,
       sheet = "DESeq2_LogNorm",
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     sheetname <- paste0("DESeq2@U", length(DESeq2_up), "-D", length(DESeq2_down), "-N", length(DESeq2_nonsig))
     addWorksheet(wb, sheetName = sheetname)
-    writeDataTable(
+    writeData(
       wb = wb,
       x = res[with(res, order(padj)), ],
       sheet = sheetname,
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     DESeq2_p1 <- MDplot(
@@ -510,12 +503,11 @@ for (compare in comparison_list) {
 
     sheetname <- "Compare_Algorithm"
     addWorksheet(wb, sheetName = sheetname)
-    writeDataTable(
+    writeData(
       wb = wb,
       x = intersections,
       sheet = sheetname,
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     DGEs_stat_1 <- as.data.frame(table(intersections[, "Algorithm"]))
@@ -526,12 +518,11 @@ for (compare in comparison_list) {
     DGEs_stat <- cbind(DGEs_stat_1, DGEs_stat_2)
 
     addWorksheet(wb, sheetName = "Stat")
-    writeDataTable(
+    writeData(
       wb = wb,
       x = DGEs_stat,
       sheet = "Stat",
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
     saveWorkbook(wb, file = paste0("./DGEs_data/DGEs@", paste0(compare, collapse = "_vs_"), ".xlsx"), overwrite = TRUE)
   }
@@ -555,7 +546,7 @@ saveRDS(object = res_plot, file = "./DGEs_rds/res_plot.rds")
 
 
 ##### Compare DGEs among different comparison #####
-if (length(comparison_list) >= 2 & DGEs_multi_compare == 1) {
+if (length(comparison_list) >= 2) {
   cat("\n+++++++++++++++ Comparing DGEs ... +++++++++++++++\n\n")
   compare_plot <- list()
   compare_list <- list()
@@ -699,20 +690,19 @@ if (length(comparison_list) >= 2 & DGEs_multi_compare == 1) {
     colnames(df2)[1] <- paste0(">>", n[2])
 
     df <- merge(x = df1, y = df2, by = "RowID", all = TRUE)
-    df[is.na(df$DifferentialExpression.x), "DifferentialExpression.x"] <- "Droped"
-    df[is.na(df$DifferentialExpression.y), "DifferentialExpression.y"] <- "Droped"
-    df[, "DifferentialExpression.x"] <- factor(df[, "DifferentialExpression.x"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Droped"))
-    df[, "DifferentialExpression.y"] <- factor(df[, "DifferentialExpression.y"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Droped"))
+    df[is.na(df$DifferentialExpression.x), "DifferentialExpression.x"] <- "Excluded"
+    df[is.na(df$DifferentialExpression.y), "DifferentialExpression.y"] <- "Excluded"
+    df[, "DifferentialExpression.x"] <- factor(df[, "DifferentialExpression.x"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Excluded"))
+    df[, "DifferentialExpression.y"] <- factor(df[, "DifferentialExpression.y"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Excluded"))
     df <- merge(x = df, y = annotation_matrix, by.x = "RowID", by.y = "row.names", all.x = T)
     compare_list[[paste0("Compare_edgeR@", n, collapse = "&")]] <- df
 
     addWorksheet(wb, sheetName = "edgeR")
-    writeDataTable(
+    writeData(
       wb = wb,
       x = df,
       sheet = "edgeR",
-      withFilter = F,
-      tableStyle = "TableStyleLight8"
+      withFilter = F
     )
 
     label <- gsub(x = n, pattern = "_vs_", replacement = "/")
@@ -739,20 +729,19 @@ if (length(comparison_list) >= 2 & DGEs_multi_compare == 1) {
       colnames(df2)[1] <- paste0(">>", n[2])
 
       df <- merge(x = df1, y = df2, by = "RowID", all = TRUE)
-      df[is.na(df$DifferentialExpression.x), "DifferentialExpression.x"] <- "Droped"
-      df[is.na(df$DifferentialExpression.y), "DifferentialExpression.y"] <- "Droped"
-      df[, "DifferentialExpression.x"] <- factor(df[, "DifferentialExpression.x"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Droped"))
-      df[, "DifferentialExpression.y"] <- factor(df[, "DifferentialExpression.y"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Droped"))
+      df[is.na(df$DifferentialExpression.x), "DifferentialExpression.x"] <- "Excluded"
+      df[is.na(df$DifferentialExpression.y), "DifferentialExpression.y"] <- "Excluded"
+      df[, "DifferentialExpression.x"] <- factor(df[, "DifferentialExpression.x"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Excluded"))
+      df[, "DifferentialExpression.y"] <- factor(df[, "DifferentialExpression.y"], levels = c("Down-regulated", "Non-significant", "Up-regulated", "Excluded"))
       df <- merge(x = df, y = annotation_matrix, by.x = "RowID", by.y = "row.names", all.x = T)
       compare_list[[paste0("Compare_DESeq2@", n, collapse = "&")]] <- df
 
       addWorksheet(wb, sheetName = "DESeq2")
-      writeDataTable(
+      writeData(
         wb = wb,
         x = df,
         sheet = "DESeq2",
-        withFilter = F,
-        tableStyle = "TableStyleLight8"
+        withFilter = F
       )
 
       label <- gsub(x = n, pattern = "_vs_", replacement = "/")
@@ -778,14 +767,14 @@ if (length(comparison_list) >= 2 & DGEs_multi_compare == 1) {
   # compare_plot_Grob<- suppressWarnings(sapply(compare_plot, ggplotGrob))
   # class(compare_plot_Grob) <- c("arrangelist", class(compare_plot_Grob))
   # suppressMessages(suppressWarnings(
-  #   ggsave(filename = "./DGEs_plot/DGEs_multi_compare.pdf", plot = compare_plot_Grob,height = 5,width = 8)
+  #   ggsave(filename = "./DGEs_plot/DGEs_comparison.pdf", plot = compare_plot_Grob,height = 5,width = 8)
   # ))
-  pdf("./DGEs_plot/DGEs_multi_compare.pdf", width = 8, height = 5)
+  pdf("./DGEs_plot/DGEs_comparison.pdf", width = 8, height = 5)
   invisible(lapply(compare_plot, print))
   invisible(dev.off())
 
-  saveRDS(object = compare_list, file = "./DGEs_rds/compare_list.rds")
-  saveRDS(object = compare_plot, file = "./DGEs_rds/compare_plot.rds")
+  saveRDS(object = compare_list, file = "./DGEs_rds/comparison_list.rds")
+  saveRDS(object = compare_plot, file = "./DGEs_rds/comparison_plot.rds")
 }
 
 

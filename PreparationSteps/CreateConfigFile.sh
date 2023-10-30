@@ -80,7 +80,8 @@ Aligner_parameters=""                               ## Optional. Specify custom 
 Genome_direct=""                                    ## Optional. Specify a genome file path used for the alignment.  
 GTF_direct=""                                       ## Optional. Specify a gtf file path used for the alignment.  
 Index_direct=""                                     ## Optional. Specify the index path used for the alignment.  
-
+kallisto_fragment_length=180
+kallisto_fragment_sd=20
 
 ############# Quantification Paramaters #####################################################################
 strandspecific=0                                    ## 0(unstranded),1(stranded),2(reversely stranded)

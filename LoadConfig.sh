@@ -34,7 +34,7 @@ if [[ -f $SampleInfoFile ]]; then
     Sample_dict[$RunID]=$SampleID
     Group_dict[$SampleID]=$Group
     Layout_dict[$SampleID]=$Layout
-  done <$SampleInfoFile
+  done < <(cat $SampleInfoFile; echo)
 
 else
   color_echo "red" "ERROR! Cannot find SampleInfoFile: $SampleInfoFile. Please check your config!\n"

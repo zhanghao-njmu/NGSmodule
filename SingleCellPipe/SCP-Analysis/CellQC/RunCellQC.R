@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+##### wait to rewrite ######
 args <- commandArgs(TRUE)
 analysis_dir <- as.character(args[1])
 samples <- as.character(args[2])
@@ -65,7 +66,7 @@ if (length(species) == 0 || species == "") {
   species <- species_gene_prefix <- NULL
 }
 if (samples == "") {
-  samples <- gsub(".h5Seurat", "", list.files(path = paste0(analysis_dir, "/Prepare"), pattern = ".h5Seurat"))
+  samples <- gsub(".h5Seurat", "", list.files(path = paste0(analysis_dir, "/Preparation"), pattern = ".h5Seurat"))
 } else {
   samples <- strsplit(samples, split = ",") %>% unlist()
 }
@@ -74,7 +75,7 @@ if (samples == "") {
 rawList <- list()
 for (i in 1:length(samples)) {
   cat("++++++", as.character(samples[i]), "(Data Loading)", "++++++", "\n")
-  rawList[[as.character(samples[i])]] <- LoadH5Seurat(paste0(analysis_dir, "/Prepare/", samples[i], ".h5Seurat"), verbose = FALSE)
+  rawList[[as.character(samples[i])]] <- LoadH5Seurat(paste0(analysis_dir, "/Preparation/", samples[i], ".h5Seurat"), verbose = FALSE)
 }
 
 ## basic plot -----------------------------------------------------------------
