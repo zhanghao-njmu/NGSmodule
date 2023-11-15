@@ -17,7 +17,7 @@ env_packages["NGSmodule-Alignment"]="-c conda-forge -c bioconda bwa bowtie hisat
 env_packages["NGSmodule-postAlignmentQC"]="-c conda-forge -c bioconda rseqc preseq goleft mosdepth"
 env_packages["NGSmodule-Analysis"]="-c conda-forge -c bioconda r-base"
 
-env_packages["NGSmodule-SCP"]="-c conda-forge -c bioconda fastqc fastq-screen velocyto.py r-base r-seurat r-signac r-future r-hdf5r r-seuratdisk r-velocyto.r bioconductor-rtracklayer bioconductor-rsamtools bioconductor-genomicranges bioconductor-rhdf5 bioconductor-hdf5array"
+env_packages["NGSmodule-SCP"]="-c conda-forge -c bioconda fastqc fastq-screen velocyto.py 'r-base>=4.2.1' r-seurat r-signac r-future r-seuratdisk r-velocyto.r bioconductor-rtracklayer bioconductor-rsamtools bioconductor-genomicranges bioconductor-rhdf5 bioconductor-hdf5array"
 
 env_name=$1
 
