@@ -8,7 +8,7 @@ if [[ -d $work_dir ]]; then
   mkdir "${work_dir}"
 fi
 
-grep_pattern="(/${RunIDPattern}${SE_SufixPattern}$)|(/${RunIDPattern}${R1_SufixPattern}$)|(/${RunIDPattern}${R2_SufixPattern}$)"
+grep_pattern="(${RunIDPattern}${SE_SufixPattern}$)|(${RunIDPattern}${R1_SufixPattern}$)|(${RunIDPattern}${R2_SufixPattern}$)"
 
 color_echo "green" ">>> Please make sure your file SufixPattern matched with the following pattern:\n"
 color_echo "green" "    SE_SufixPattern=$SE_SufixPattern"
@@ -30,9 +30,9 @@ for file in "${arr[@]}"; do
   if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]]; then
     use_run="FALSE"
     for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix; do
-      if [[ $map_Sufix ]] && [[ ${Sample_dict[${file_sim%%$map_Sufix}]} ]]; then
-        Sufix=$map_Sufix
-        RunID=${file_sim%%$map_Sufix}
+      id=$(echo "${file_sim%%$map_Sufix}" | grep -oP "$RunIDPattern")
+      if [[ $map_Sufix ]] && [[ ${Sample_dict[${id}]} ]]; then
+        RunID=$id 
         SampleID=${Sample_dict[$RunID]}
         Layout=${Layout_dict[$SampleID]}
         if [[ $SampleID == "" ]]; then
