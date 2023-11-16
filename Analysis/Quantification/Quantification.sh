@@ -10,7 +10,7 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("Rsubread" "edgeR" "Rsamtools" "data.table" "refGenome" "AnnotationDbi" "org.Hs.eg.db" "org.Mm.eg.db" "org.Mmu.eg.db" "org.Dm.eg.db")
+R_packages=("Rsubread" "edgeR" "Rsamtools" "data.table")
 
 all_installed=$(Rscript -e "installed.packages()" | awk '{print $1}')
 Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager',repos='https://cran.r-project.org/')"
@@ -18,11 +18,7 @@ Rscript -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('
 for package in "${R_packages[@]}"; do
   if ! echo "$all_installed" | grep -q "$package"; then
     color_echo "yellow" "Install the R package: '$package'.\n"
-    if [[ $package == "refGenome" ]]; then
-      Rscript -e "remotes::install_version('refGenome',repos='https://cran.r-project.org/')"
-    else
-      Rscript -e "BiocManager::install('$package')"
-    fi
+    Rscript -e "BiocManager::install('$package')"
   fi
 done
 

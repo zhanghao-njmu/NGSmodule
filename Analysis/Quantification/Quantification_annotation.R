@@ -1,9 +1,7 @@
 #!/usr/bin/env Rscript
 
-library(refGenome)
 library(data.table)
 library(dplyr)
-library(SCP)
 
 args <- commandArgs(trailingOnly = TRUE)
 work_dir <- args[1]
