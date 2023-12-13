@@ -11,9 +11,9 @@ fi
 grep_pattern="(${RunIDPattern}${SE_SufixPattern}$)|(${RunIDPattern}${R1_SufixPattern}$)|(${RunIDPattern}${R2_SufixPattern}$)"
 
 color_echo "green" ">>> Please make sure your file SufixPattern matched with the following pattern:\n"
-color_echo "green" "    SE_SufixPattern=$SE_SufixPattern"
 color_echo "green" "    R1_SufixPattern=$R1_SufixPattern"
-color_echo "green" "    R2_SufixPattern=$R2_SufixPattern\n"
+color_echo "green" "    R2_SufixPattern=$R2_SufixPattern"
+color_echo "green" "    SE_SufixPattern=$SE_SufixPattern\n"
 
 arr=($(find $rawdata_dir -type f | grep -P $grep_pattern | sort))
 if [[ ${#arr} == 0 ]]; then
@@ -23,13 +23,13 @@ fi
 
 for file in "${arr[@]}"; do
   file_sim=${file##*/}
-  SE_Sufix=($(echo "${file_sim}" | grep -oP "$SE_SufixPattern"))
   R1_Sufix=($(echo "${file_sim}" | grep -oP "$R1_SufixPattern"))
   R2_Sufix=($(echo "${file_sim}" | grep -oP "$R2_SufixPattern"))
+  SE_Sufix=($(echo "${file_sim}" | grep -oP "$SE_SufixPattern"))
 
   if [[ "${#Sample_dict[@]}" != 0 ]] && [[ "${#Layout_dict[@]}" != 0 ]]; then
     use_run="FALSE"
-    for map_Sufix in $SE_Sufix $R1_Sufix $R2_Sufix; do
+    for map_Sufix in $R1_Sufix $R2_Sufix $SE_Sufix; do
       id=$(echo "${file_sim%%$map_Sufix}" | grep -oP "$RunIDPattern")
       if [[ $map_Sufix ]] && [[ ${Sample_dict[${id}]} ]]; then
         RunID=$id 
@@ -41,6 +41,9 @@ for file in "${arr[@]}"; do
         fi
         use_run="TRUE"
       fi
+      if [[ $use_run == "TRUE" ]]; then
+        break 
+      fi
     done
   else
     color_echo "red" "Error! Cannot find the RunID-SampleID information(${#Sample_dict[@]}) or Layout information(${#Layout_dict[@]}) from the SampleInfoFile."
@@ -51,14 +54,13 @@ for file in "${arr[@]}"; do
     color_echo "yellow" "Warning! SampleInfoFile have no RunID-SampleID matching information for the file: $file "
     continue
   else
-
-    if [[ $Sufix == $R1_Sufix ]]; then
+    if [[ $map_Sufix == $R1_Sufix ]]; then
       fq=run1_${SampleID}_1.fq.gz
       fq_Layout="PE"
-    elif [[ $Sufix == $R2_Sufix ]]; then
+    elif [[ $map_Sufix == $R2_Sufix ]]; then
       fq=run1_${SampleID}_2.fq.gz
       fq_Layout="PE"
-    elif [[ $Sufix == $SE_Sufix ]]; then
+    elif [[ $map_Sufix == $SE_Sufix ]]; then
       fq=run1_${SampleID}.fq.gz
       fq_Layout="SE"
     fi
