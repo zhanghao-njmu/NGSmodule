@@ -1,0 +1,164 @@
+/**
+ * Main Layout - For authenticated pages
+ */
+import React, { useState } from 'react'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Layout, Menu, Avatar, Dropdown, Typography, Space, Badge } from 'antd'
+import {
+  DashboardOutlined,
+  FolderOutlined,
+  ExperimentOutlined,
+  BarChartOutlined,
+  SettingOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  BellOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+} from '@ant-design/icons'
+import { authStore } from '@/store/authStore'
+import styles from './MainLayout.module.css'
+
+const { Header, Sider, Content } = Layout
+const { Text } = Typography
+
+export const MainLayout: React.FC = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user, logout } = authStore()
+  const [collapsed, setCollapsed] = useState(false)
+
+  const menuItems = [
+    {
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
+    },
+    {
+      key: '/projects',
+      icon: <FolderOutlined />,
+      label: 'Projects',
+    },
+    {
+      key: '/pipelines',
+      icon: <ExperimentOutlined />,
+      label: 'Pipelines',
+    },
+    {
+      key: '/results',
+      icon: <BarChartOutlined />,
+      label: 'Results',
+    },
+    ...(user?.role === 'admin'
+      ? [
+          {
+            key: '/admin',
+            icon: <SettingOutlined />,
+            label: 'Admin',
+          },
+        ]
+      : []),
+  ]
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Profile',
+      onClick: () => navigate('/profile'),
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
+      onClick: () => navigate('/settings'),
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      onClick: () => {
+        logout()
+        navigate('/login')
+      },
+    },
+  ]
+
+  const handleMenuClick = ({ key }: { key: string }) => {
+    navigate(key)
+  }
+
+  return (
+    <Layout className={styles.layout}>
+      <Sider
+        trigger={null}
+        collapsible
+        collapsed={collapsed}
+        className={styles.sider}
+        width={240}
+      >
+        <div className={styles.logo}>
+          <ExperimentOutlined style={{ fontSize: 24, color: '#2196F3' }} />
+          {!collapsed && (
+            <Text strong style={{ color: '#fff', marginLeft: 12, fontSize: 16 }}>
+              NGSmodule
+            </Text>
+          )}
+        </div>
+
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={handleMenuClick}
+        />
+      </Sider>
+
+      <Layout>
+        <Header className={styles.header}>
+          <div className={styles.headerLeft}>
+            {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+              className: styles.trigger,
+              onClick: () => setCollapsed(!collapsed),
+            })}
+          </div>
+
+          <div className={styles.headerRight}>
+            <Space size="large">
+              <Badge count={0} showZero={false}>
+                <BellOutlined className={styles.headerIcon} />
+              </Badge>
+
+              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+                <Space className={styles.userInfo}>
+                  <Avatar
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: '#2196F3' }}
+                  />
+                  <div className={styles.userDetails}>
+                    <Text strong>{user?.username}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {user?.role === 'admin' ? 'Administrator' : 'User'}
+                    </Text>
+                  </div>
+                </Space>
+              </Dropdown>
+            </Space>
+          </div>
+        </Header>
+
+        <Content className={styles.content}>
+          <div className={styles.contentInner}>
+            <Outlet />
+          </div>
+        </Content>
+      </Layout>
+    </Layout>
+  )
+}
+
+export default MainLayout
