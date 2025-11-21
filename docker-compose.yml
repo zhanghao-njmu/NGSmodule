@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ngsmodule-postgres
+    environment:
+      POSTGRES_USER: ngsmodule
+      POSTGRES_PASSWORD: ngsmodule_dev_password
+      POSTGRES_DB: ngsmodule
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ngsmodule"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ngsmodule_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ngsmodule-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ngsmodule_network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: ngsmodule-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - ngsmodule_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ngsmodule-backend
+    environment:
+      - DATABASE_URL=postgresql://ngsmodule:ngsmodule_dev_password@postgres:5432/ngsmodule
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+      - DEBUG=True
+      - NGS_PIPELINE_DIR=/app/NGSmodule
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./:/app/NGSmodule  # Mount NGS pipeline scripts
+      - upload_data:/data/uploads
+      - work_data:/data/ngsmodule_work
+      - result_data:/data/ngsmodule_results
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ngsmodule_network
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ngsmodule-celery-worker
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - DATABASE_URL=postgresql://ngsmodule:ngsmodule_dev_password@postgres:5432/ngsmodule
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - NGS_PIPELINE_DIR=/app/NGSmodule
+    volumes:
+      - ./backend:/app
+      - ./:/app/NGSmodule
+      - work_data:/data/ngsmodule_work
+      - result_data:/data/ngsmodule_results
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ngsmodule_network
+
+  # Flower (Celery monitoring)
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ngsmodule-flower
+    command: celery -A app.workers.celery_app flower --port=5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - ngsmodule_network
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ngsmodule-frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - ngsmodule_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  upload_data:
+  work_data:
+  result_data:
+
+networks:
+  ngsmodule_network:
+    driver: bridge
