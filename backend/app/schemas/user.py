@@ -27,6 +27,16 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
 
 
+class UserAdminUpdate(BaseModel):
+    """Schema for admin updating user"""
+    full_name: Optional[str] = None
+    organization: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = Field(None, pattern="^(user|admin)$")
+    is_active: Optional[bool] = None
+    storage_quota: Optional[int] = Field(None, ge=0)
+
+
 class UserResponse(UserBase):
     """Schema for user response"""
     id: UUID
@@ -49,3 +59,31 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     """Schema for token payload"""
     sub: Optional[str] = None  # user_id
+
+
+class UserStats(BaseModel):
+    """Schema for user statistics"""
+    user_id: UUID
+    username: str
+    total_projects: int
+    total_samples: int
+    total_tasks: int
+    completed_tasks: int
+    failed_tasks: int
+    storage_used: int
+    storage_quota: int
+    storage_percent: float
+
+
+class SystemStats(BaseModel):
+    """Schema for system-wide statistics"""
+    total_users: int
+    active_users: int
+    total_projects: int
+    total_samples: int
+    total_tasks: int
+    running_tasks: int
+    completed_tasks: int
+    failed_tasks: int
+    total_storage_used: int
+    total_storage_quota: int
