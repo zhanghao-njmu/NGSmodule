@@ -4,10 +4,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   Card,
-  Row,
-  Col,
-  Statistic,
-  Table,
   Tag,
   Button,
   Space,
@@ -36,6 +32,8 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { adminService } from '../../services/admin.service'
+import { StatisticCard, DataTable, StatusTag } from '../../components/common'
+import type { StatisticItem } from '../../components/common'
 import type { User, UserAdminUpdate, SystemStats } from '../../types/admin'
 import dayjs from 'dayjs'
 
@@ -153,9 +151,7 @@ export const AdminDashboard: React.FC = () => {
       key: 'is_active',
       width: 100,
       render: (is_active) => (
-        <Tag color={is_active ? 'success' : 'default'}>
-          {is_active ? 'Active' : 'Inactive'}
-        </Tag>
+        <StatusTag status={is_active ? 'active' : 'inactive'} />
       ),
     },
     {
@@ -219,89 +215,83 @@ export const AdminDashboard: React.FC = () => {
     },
   ]
 
+  const statisticItems: StatisticItem[] = [
+    {
+      key: 'users',
+      title: 'Total Users',
+      value: stats?.total_users || 0,
+      prefix: <UserOutlined />,
+      valueStyle: { color: 'var(--color-primary)' },
+      suffix: <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{stats?.active_users || 0} active</div>,
+    },
+    {
+      key: 'projects',
+      title: 'Total Projects',
+      value: stats?.total_projects || 0,
+      prefix: <ProjectOutlined />,
+      valueStyle: { color: 'var(--color-success)' },
+    },
+    {
+      key: 'samples',
+      title: 'Total Samples',
+      value: stats?.total_samples || 0,
+      prefix: <ExperimentOutlined />,
+      valueStyle: { color: 'var(--color-warning)' },
+    },
+    {
+      key: 'tasks',
+      title: 'Total Tasks',
+      value: stats?.total_tasks || 0,
+      prefix: <ThunderboltOutlined />,
+      valueStyle: { color: '#722ed1' },
+      suffix: (
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          <CheckCircleOutlined style={{ color: 'var(--color-success)' }} /> {stats?.completed_tasks || 0}{' '}
+          | <CloseCircleOutlined style={{ color: 'var(--color-error)' }} /> {stats?.failed_tasks || 0}
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div>
       <h2>Admin Dashboard</h2>
 
       {/* System Statistics */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Users"
-              value={stats?.total_users || 0}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-              {stats?.active_users || 0} active
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Projects"
-              value={stats?.total_projects || 0}
-              prefix={<ProjectOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Samples"
-              value={stats?.total_samples || 0}
-              prefix={<ExperimentOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Tasks"
-              value={stats?.total_tasks || 0}
-              prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12 }}>
-              <CheckCircleOutlined style={{ color: '#52c41a' }} /> {stats?.completed_tasks || 0}{' '}
-              | <CloseCircleOutlined style={{ color: '#ff4d4f' }} /> {stats?.failed_tasks || 0}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <StatisticCard items={statisticItems} gutter={[16, 16]} />
 
       {/* Storage Statistics */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={24}>
-          <Card title={<><DatabaseOutlined /> Storage Usage</>}>
-            <Progress
-              percent={Math.round(
-                ((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100
-              )}
-              status="active"
-            />
-            <div style={{ marginTop: 8, fontSize: 14 }}>
-              {formatBytes(stats?.total_storage_used || 0)} /{' '}
-              {formatBytes(stats?.total_storage_quota || 0)}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <Card
+        title={
+          <>
+            <DatabaseOutlined /> Storage Usage
+          </>
+        }
+        style={{ marginBottom: 24 }}
+      >
+        <Progress
+          percent={Math.round(
+            ((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100
+          )}
+          status="active"
+        />
+        <div style={{ marginTop: 8, fontSize: 14 }}>
+          {formatBytes(stats?.total_storage_used || 0)} /{' '}
+          {formatBytes(stats?.total_storage_quota || 0)}
+        </div>
+      </Card>
 
       {/* User Management Table */}
-      <Card title="User Management">
-        <Table
-          columns={columns}
-          dataSource={users}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 20 }}
-        />
-      </Card>
+      <DataTable
+        title="User Management"
+        columns={columns}
+        dataSource={users}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 20 }}
+        emptyText="No Users"
+        emptyDescription="No users have been registered yet"
+      />
 
       {/* Edit User Modal */}
       <Modal

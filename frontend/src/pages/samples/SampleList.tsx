@@ -3,25 +3,22 @@
  */
 import React, { useEffect, useState } from 'react'
 import {
-  Card,
   Button,
-  Table,
   Space,
   Select,
   Upload,
   message,
   Tag,
-  Tooltip,
 } from 'antd'
 import {
   PlusOutlined,
   UploadOutlined,
   ExperimentOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useSampleStore } from '../../store/sampleStore'
 import { useProjectStore } from '../../store/projectStore'
+import { PageHeader, DataTable } from '../../components/common'
 import type { Sample } from '../../types/sample'
 import dayjs from 'dayjs'
 
@@ -58,7 +55,7 @@ export const SampleList: React.FC = () => {
       key: 'sample_name',
       render: (name) => (
         <Space>
-          <ExperimentOutlined style={{ color: '#52c41a' }} />
+          <ExperimentOutlined style={{ color: 'var(--color-success)' }} />
           <span style={{ fontWeight: 500 }}>{name}</span>
         </Space>
       ),
@@ -88,8 +85,8 @@ export const SampleList: React.FC = () => {
 
   return (
     <div>
-      <Card style={{ marginBottom: 16 }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+      <PageHeader
+        left={
           <Select
             placeholder="Select Project"
             style={{ width: 300 }}
@@ -102,26 +99,28 @@ export const SampleList: React.FC = () => {
               </Option>
             ))}
           </Select>
-          <Space>
+        }
+        right={
+          <>
             <Upload beforeUpload={handleCSVImport} accept=".csv" showUploadList={false}>
               <Button icon={<UploadOutlined />}>Import CSV</Button>
             </Upload>
             <Button type="primary" icon={<PlusOutlined />} disabled={!selectedProject}>
               New Sample
             </Button>
-          </Space>
-        </Space>
-      </Card>
+          </>
+        }
+      />
 
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={samples}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 20 }}
-        />
-      </Card>
+      <DataTable
+        columns={columns}
+        dataSource={samples}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 20 }}
+        emptyText="No Samples"
+        emptyDescription="Select a project and add samples or import from CSV"
+      />
     </div>
   )
 }

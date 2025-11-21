@@ -3,16 +3,11 @@
  */
 import React, { useEffect, useState } from 'react'
 import {
-  Card,
   Button,
-  Table,
   Tag,
   Progress,
   Space,
   Select,
-  Statistic,
-  Row,
-  Col,
 } from 'antd'
 import {
   PlusOutlined,
@@ -20,13 +15,14 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   ClockCircleOutlined,
-  PlayCircleOutlined,
   StopOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { websocketService } from '../../services/websocket.service'
+import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import type { StatisticItem } from '../../components/common'
 import type { Task, TaskStatus } from '../../types/task'
 import dayjs from 'dayjs'
 
@@ -69,17 +65,6 @@ export const TaskList: React.FC = () => {
     }
   }, [selectedProject])
 
-  const getStatusConfig = (status: TaskStatus) => {
-    const configs = {
-      pending: { color: 'default', icon: <ClockCircleOutlined /> },
-      running: { color: 'processing', icon: <SyncOutlined spin /> },
-      completed: { color: 'success', icon: <CheckCircleOutlined /> },
-      failed: { color: 'error', icon: <CloseCircleOutlined /> },
-      cancelled: { color: 'warning', icon: <StopOutlined /> },
-    }
-    return configs[status] || configs.pending
-  }
-
   const columns: ColumnsType<Task> = [
     {
       title: 'Task Name',
@@ -99,14 +84,7 @@ export const TaskList: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status: TaskStatus) => {
-        const config = getStatusConfig(status)
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {status.toUpperCase()}
-          </Tag>
-        )
-      },
+      render: (status: TaskStatus) => <StatusTag status={status} />,
     },
     {
       title: 'Progress',
@@ -149,53 +127,47 @@ export const TaskList: React.FC = () => {
     },
   ]
 
+  const statisticItems: StatisticItem[] = [
+    {
+      key: 'total',
+      title: 'Total',
+      value: stats?.total_tasks || 0,
+      valueStyle: { color: 'var(--color-primary)' },
+      colSpan: { xs: 24, sm: 12, lg: 6 },
+    },
+    {
+      key: 'running',
+      title: 'Running',
+      value: stats?.running_tasks || 0,
+      valueStyle: { color: 'var(--color-warning)' },
+      prefix: <SyncOutlined spin />,
+      colSpan: { xs: 24, sm: 12, lg: 6 },
+    },
+    {
+      key: 'completed',
+      title: 'Completed',
+      value: stats?.completed_tasks || 0,
+      valueStyle: { color: 'var(--color-success)' },
+      prefix: <CheckCircleOutlined />,
+      colSpan: { xs: 24, sm: 12, lg: 6 },
+    },
+    {
+      key: 'failed',
+      title: 'Failed',
+      value: stats?.failed_tasks || 0,
+      valueStyle: { color: 'var(--color-error)' },
+      prefix: <CloseCircleOutlined />,
+      colSpan: { xs: 24, sm: 12, lg: 6 },
+    },
+  ]
+
   return (
     <div>
       {/* Statistics */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8} lg={4}>
-          <Card>
-            <Statistic
-              title="Total"
-              value={stats?.total_tasks || 0}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8} lg={4}>
-          <Card>
-            <Statistic
-              title="Running"
-              value={stats?.running_tasks || 0}
-              valueStyle={{ color: '#fa8c16' }}
-              prefix={<SyncOutlined spin />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8} lg={4}>
-          <Card>
-            <Statistic
-              title="Completed"
-              value={stats?.completed_tasks || 0}
-              valueStyle={{ color: '#52c41a' }}
-              prefix={<CheckCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8} lg={4}>
-          <Card>
-            <Statistic
-              title="Failed"
-              value={stats?.failed_tasks || 0}
-              valueStyle={{ color: '#ff4d4f' }}
-              prefix={<CloseCircleOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <StatisticCard items={statisticItems} />
 
-      <Card style={{ marginBottom: 16 }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+      <PageHeader
+        left={
           <Select
             placeholder="All Projects"
             style={{ width: 300 }}
@@ -209,21 +181,23 @@ export const TaskList: React.FC = () => {
               </Option>
             ))}
           </Select>
+        }
+        right={
           <Button type="primary" icon={<PlusOutlined />}>
             New Task
           </Button>
-        </Space>
-      </Card>
+        }
+      />
 
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={tasks}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 20 }}
-        />
-      </Card>
+      <DataTable
+        columns={columns}
+        dataSource={tasks}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 20 }}
+        emptyText="No Tasks"
+        emptyDescription="No tasks have been created yet"
+      />
     </div>
   )
 }

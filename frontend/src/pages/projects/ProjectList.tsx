@@ -3,19 +3,12 @@
  */
 import React, { useEffect, useState } from 'react'
 import {
-  Card,
   Button,
-  Table,
-  Tag,
   Space,
   Modal,
   Dropdown,
-  Statistic,
-  Row,
-  Col,
   Input,
   Select,
-  message as antMessage,
 } from 'antd'
 import {
   PlusOutlined,
@@ -27,11 +20,12 @@ import {
   RestOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  FolderOpenOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useProjectStore } from '../../store/projectStore'
 import { ProjectFormModal } from './components/ProjectFormModal'
+import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import type { StatisticItem } from '../../components/common'
 import type { Project } from '../../types/project'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -110,9 +104,9 @@ export const ProjectList: React.FC = () => {
       key: 'name',
       render: (name, record) => (
         <Space>
-          <FolderOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+          <FolderOutlined style={{ fontSize: 18, color: 'var(--color-primary)' }} />
           <span style={{ fontWeight: 500 }}>{name}</span>
-          {record.status === 'archived' && <Tag color="default">Archived</Tag>}
+          {record.status === 'archived' && <StatusTag status="archived" />}
         </Space>
       ),
     },
@@ -127,19 +121,7 @@ export const ProjectList: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status) => {
-        const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
-          active: { color: 'success', icon: <CheckCircleOutlined /> },
-          archived: { color: 'default', icon: <InboxOutlined /> },
-          completed: { color: 'blue', icon: <FolderOpenOutlined /> },
-        }
-        const config = statusConfig[status] || statusConfig.active
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {status.toUpperCase()}
-          </Tag>
-        )
-      },
+      render: (status) => <StatusTag status={status} />,
     },
     {
       title: 'Samples',
@@ -204,56 +186,46 @@ export const ProjectList: React.FC = () => {
     },
   ]
 
+  const statisticItems: StatisticItem[] = [
+    {
+      key: 'total',
+      title: 'Total Projects',
+      value: stats?.total_projects || 0,
+      prefix: <FolderOutlined />,
+      valueStyle: { color: 'var(--color-primary)' },
+    },
+    {
+      key: 'active',
+      title: 'Active Projects',
+      value: stats?.active_projects || 0,
+      prefix: <CheckCircleOutlined />,
+      valueStyle: { color: 'var(--color-success)' },
+    },
+    {
+      key: 'total_tasks',
+      title: 'Total Tasks',
+      value: stats?.total_tasks || 0,
+      prefix: <ClockCircleOutlined />,
+      valueStyle: { color: '#722ed1' },
+    },
+    {
+      key: 'active_tasks',
+      title: 'Active Tasks',
+      value: stats?.active_tasks || 0,
+      prefix: <ClockCircleOutlined />,
+      valueStyle: { color: 'var(--color-warning)' },
+    },
+  ]
+
   return (
     <div>
       {/* Statistics Cards */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Projects"
-              value={stats?.total_projects || 0}
-              prefix={<FolderOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Active Projects"
-              value={stats?.active_projects || 0}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Tasks"
-              value={stats?.total_tasks || 0}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Active Tasks"
-              value={stats?.active_tasks || 0}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <StatisticCard items={statisticItems} />
 
       {/* Filters and Actions */}
-      <Card style={{ marginBottom: 16 }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space>
+      <PageHeader
+        left={
+          <>
             <Search
               placeholder="Search projects..."
               style={{ width: 300 }}
@@ -271,27 +243,29 @@ export const ProjectList: React.FC = () => {
               <Option value="archived">Archived</Option>
               <Option value="completed">Completed</Option>
             </Select>
-          </Space>
+          </>
+        }
+        right={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
             New Project
           </Button>
-        </Space>
-      </Card>
+        }
+      />
 
       {/* Projects Table */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={filteredProjects}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Total ${total} projects`,
-          }}
-        />
-      </Card>
+      <DataTable
+        columns={columns}
+        dataSource={filteredProjects}
+        rowKey="id"
+        loading={loading}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (total) => `Total ${total} projects`,
+        }}
+        emptyText="No Projects"
+        emptyDescription="Create your first project to get started"
+      />
 
       {/* Create/Edit Modal */}
       <ProjectFormModal

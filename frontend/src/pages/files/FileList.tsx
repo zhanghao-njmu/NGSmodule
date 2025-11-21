@@ -5,10 +5,7 @@ import React, { useEffect, useState } from 'react'
 import {
   Card,
   Button,
-  Table,
-  Upload,
   Progress,
-  Space,
   Select,
   Tag,
 } from 'antd'
@@ -20,6 +17,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useFileStore } from '../../store/fileStore'
 import { useProjectStore } from '../../store/projectStore'
+import { PageHeader, DataTable } from '../../components/common'
 import type { FileItem } from '../../types/file'
 import dayjs from 'dayjs'
 
@@ -54,10 +52,10 @@ export const FileList: React.FC = () => {
       dataIndex: 'filename',
       key: 'filename',
       render: (name) => (
-        <Space>
-          <FileOutlined style={{ color: '#1890ff' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <FileOutlined style={{ color: 'var(--color-primary)' }} />
           <span>{name}</span>
-        </Space>
+        </div>
       ),
     },
     {
@@ -99,8 +97,8 @@ export const FileList: React.FC = () => {
 
   return (
     <div>
-      <Card style={{ marginBottom: 16 }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+      <PageHeader
+        left={
           <Select
             placeholder="Select Project"
             style={{ width: 300 }}
@@ -113,24 +111,29 @@ export const FileList: React.FC = () => {
               </Option>
             ))}
           </Select>
+        }
+        right={
           <Button type="primary" icon={<UploadOutlined />} disabled={!selectedProject}>
             Upload Files
           </Button>
-        </Space>
-        {uploadProgress > 0 && uploadProgress < 100 && (
-          <Progress percent={uploadProgress} style={{ marginTop: 16 }} />
-        )}
-      </Card>
+        }
+      />
 
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={files}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 20 }}
-        />
-      </Card>
+      {uploadProgress > 0 && uploadProgress < 100 && (
+        <Card style={{ marginBottom: 16 }}>
+          <Progress percent={uploadProgress} />
+        </Card>
+      )}
+
+      <DataTable
+        columns={columns}
+        dataSource={files}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 20 }}
+        emptyText="No Files"
+        emptyDescription="Select a project and upload files to get started"
+      />
     </div>
   )
 }
