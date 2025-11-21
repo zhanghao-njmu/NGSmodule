@@ -1,88 +1,106 @@
-# NGSmodule - Enterprise Bioinformatics Workstation
+# 🧬 NGSmodule - 企业级生物信息学工作站
 
 <div align="center">
 
-![NGSmodule Logo](https://img.shields.io/badge/NGSmodule-v1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Python](https://img.shields.io/badge/python-3.11-blue)
-![React](https://img.shields.io/badge/react-18.2-blue)
-![FastAPI](https://img.shields.io/badge/fastapi-0.109-green)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/react-18.2+-61dafb.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/fastapi-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
 
-**A comprehensive, enterprise-grade platform for Next-Generation Sequencing data analysis**
+**现代化的NGS数据处理平台 | 为研究人员和学生设计**
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Architecture](#architecture)
+[快速开始](#-快速开始) •
+[功能特性](#-功能特性) •
+[技术栈](#-技术栈) •
+[文档](#-文档)
 
 </div>
 
 ---
 
-## 🎯 Overview
+## 📖 简介
 
-NGSmodule is a modern, full-stack bioinformatics workstation designed for researchers and scientists to manage, analyze, and visualize NGS data through both **command-line interface** and an intuitive **web platform**.
+NGSmodule 是一个企业级的生物信息学NGS数据处理平台，专为非编程背景的研究人员、学生和教师设计。
 
-### Key Highlights
+### 核心特性
 
-- 🧬 **Comprehensive NGS Support**: RNA-seq, DNA-seq, scRNA-seq, ATAC-seq, ChIP-seq
-- 🖥️ **Dual Interface**: Terminal CLI + Modern Web UI
-- 🤖 **AI-Powered**: Intelligent parameter recommendations and result interpretation
-- 🔐 **Enterprise Security**: JWT authentication, role-based access control
-- 📊 **Rich Visualization**: Interactive charts with Plotly and ECharts
-- 🐳 **Containerized**: Docker-based microservices architecture
-- ⚡ **High Performance**: Async task processing with Celery
-- 📱 **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
+- 🎯 **用户友好** - 现代化Web界面，无需编程经验
+- ⚡ **高性能** - 异步任务处理，支持大规模数据分析
+- 🔄 **实时监控** - WebSocket实时任务进度更新
+- 🎨 **美观设计** - 基于Ant Design 5的现代UI
+- 🚀 **易于部署** - Docker Compose一键启动
 
 ---
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Prerequisites
-- Docker & Docker Compose (recommended)
-
-### Installation
+### 一键启动
 
 ```bash
-# Clone repository
-git clone https://github.com/zhanghao-njmu/NGSmodule.git
+# 克隆项目
+git clone <repository-url>
 cd NGSmodule
 
-# Copy environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Start all services
-docker-compose up -d
-
-# Initialize database
-docker-compose exec backend alembic upgrade head
+# 运行快速启动脚本
+./start.sh
 ```
 
-### Access
+### 访问应用
 
-- **Web UI**: http://localhost:3000
-- **API Docs**: http://localhost:8000/api/v1/docs
-- **Flower**: http://localhost:5555
+- 🌐 **Web界面**: http://localhost:3000
+- 🔌 **API文档**: http://localhost:8000/api/v1/docs
 
-## 📖 Documentation
+默认登录: `admin` / `admin123`
 
-- [Implementation Roadmap](IMPLEMENTATION_ROADMAP.md) - 10-phase plan
-- [Progress Report](PROGRESS_REPORT.md) - Current status
-- [Development Plan](DEVELOPMENT_PLAN.md) - Technical specs
+详细部署说明: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
-## 📊 Status
+---
 
-**Overall Progress**: 15% (Phase 1 Complete)
+## ✨ 功能特性
 
-| Phase | Status |
-|-------|--------|
-| Phase 1: Architecture | ✅ Complete |
-| Phase 2: Backend Core | 🚧 Next |
-| Phase 3: Frontend Core | 🚧 Next |
+- ✅ **项目管理** - CRUD + 统计 + 归档
+- ✅ **样本管理** - CSV批量导入
+- ✅ **文件管理** - 50GB大文件 + MinIO存储
+- ✅ **任务监控** - WebSocket实时进度
 
-## 🤝 Contributing
+---
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+## 🏗️ 技术栈
 
-## 📝 License
+**后端**: FastAPI + PostgreSQL + Redis + Celery + MinIO  
+**前端**: React 18 + TypeScript + Ant Design + Zustand  
+**部署**: Docker + Docker Compose
 
-MIT License - see [LICENSE](LICENSE) for details.
+---
 
+## 📊 开发进度
+
+| 阶段 | 状态 | 完成度 |
+|------|------|--------|
+| Phase 1-3: 核心功能 | ✅ 完成 | 100% |
+| Phase 4: 集成测试 | 🔄 进行中 | 80% |
+| Phase 5-10: 高级功能 | 📋 计划中 | 0% |
+
+**整体进度**: 30%
+
+---
+
+## 📚 文档
+
+- [部署指南](DEPLOYMENT_GUIDE.md)
+- [项目进度](PROJECT_PROGRESS_SUMMARY.md)
+- [API文档](http://localhost:8000/api/v1/docs)
+
+---
+
+## 📄 许可证
+
+MIT License
+
+---
+
+<div align="center">
+
+**用 ❤️ 构建，为生物信息学研究服务**
+
+</div>
