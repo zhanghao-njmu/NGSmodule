@@ -13,6 +13,7 @@ from app.models.user import User
 from app.models.pipeline_template import PipelineTemplate
 from app.models.project import Project
 from app.models.task import PipelineTask
+from app.models.sample import Sample
 from app.schemas.pipeline import (
     PipelineTemplateCreate,
     PipelineTemplateUpdate,
@@ -20,6 +21,8 @@ from app.schemas.pipeline import (
     PipelineTemplateListResponse,
     PipelineExecuteRequest,
     PipelineTemplateCategory,
+    PipelineBatchExecuteRequest,
+    PipelineBatchExecuteResponse,
 )
 from app.schemas.task import TaskResponse
 from app.schemas.common import MessageResponse
@@ -339,3 +342,115 @@ async def toggle_pipeline_template(
 
     status_text = "activated" if template.is_active else "deactivated"
     return MessageResponse(message=f"Pipeline template {status_text} successfully")
+
+
+@router.post("/batch-execute", response_model=PipelineBatchExecuteResponse, status_code=status.HTTP_201_CREATED)
+async def batch_execute_pipeline(
+    execute_data: PipelineBatchExecuteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Execute a pipeline on multiple samples in batch
+
+    Creates one task per sample for parallel processing
+    """
+    # Verify template exists and is active
+    template = db.query(PipelineTemplate).filter(
+        PipelineTemplate.id == execute_data.template_id,
+        PipelineTemplate.is_active == True
+    ).first()
+
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pipeline template not found or inactive"
+        )
+
+    # Verify project belongs to user
+    project = db.query(Project).filter(
+        Project.id == execute_data.project_id,
+        Project.user_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    # Verify all samples belong to the project
+    samples = db.query(Sample).filter(
+        Sample.id.in_(execute_data.sample_ids),
+        Sample.project_id == execute_data.project_id
+    ).all()
+
+    if len(samples) != len(execute_data.sample_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some samples not found or don't belong to the project"
+        )
+
+    # Merge default parameters with user-provided parameters
+    merged_params = {**template.default_params, **execute_data.parameters}
+
+    created_tasks = []
+    failed_samples = []
+
+    # Create and execute task for each sample
+    for sample in samples:
+        try:
+            # Create task name with sample identifier
+            task_name = f"{execute_data.task_name_prefix} - {sample.name}"
+
+            # Add template and sample information to config
+            config = {
+                "template_id": str(execute_data.template_id),
+                "template_name": template.name,
+                "script_name": template.script_name,
+                "script_path": template.script_path,
+                "sample_ids": [str(sample.id)],
+                "sample_name": sample.name,
+                "parameters": merged_params
+            }
+
+            # Create task
+            task = PipelineTask(
+                project_id=execute_data.project_id,
+                task_name=task_name,
+                task_type=template.category,
+                config=config,
+                status="pending"
+            )
+
+            db.add(task)
+            db.flush()  # Get task ID without committing
+
+            # Submit to Celery for execution
+            celery_task = run_ngs_pipeline.delay(
+                task_id=str(task.id),
+                pipeline_script=template.script_name,
+                config=config
+            )
+
+            task.celery_task_id = celery_task.id
+            task.status = "pending"
+            task.started_at = datetime.utcnow()
+
+            created_tasks.append(task.id)
+
+        except Exception as e:
+            failed_samples.append({
+                "sample_id": str(sample.id),
+                "sample_name": sample.name,
+                "error": str(e)
+            })
+
+    # Commit all successful tasks
+    db.commit()
+
+    return PipelineBatchExecuteResponse(
+        total_tasks=len(created_tasks),
+        created_tasks=created_tasks,
+        failed_samples=failed_samples
+    )

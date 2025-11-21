@@ -49,3 +49,21 @@ export interface PipelineExecuteRequest {
   sample_ids: string[]
   parameters: Record<string, any>
 }
+
+export interface PipelineBatchExecuteRequest {
+  template_id: string
+  project_id: string
+  sample_ids: string[]
+  task_name_prefix: string
+  parameters: Record<string, any>
+}
+
+export interface PipelineBatchExecuteResponse {
+  total_tasks: number
+  created_tasks: string[]
+  failed_samples: Array<{
+    sample_id: string
+    sample_name: string
+    error: string
+  }>
+}

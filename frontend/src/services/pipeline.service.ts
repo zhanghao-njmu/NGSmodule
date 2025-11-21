@@ -7,6 +7,8 @@ import type {
   PipelineTemplateListResponse,
   PipelineTemplateCategory,
   PipelineExecuteRequest,
+  PipelineBatchExecuteRequest,
+  PipelineBatchExecuteResponse,
 } from '../types/pipeline'
 import type { Task } from '../types/task'
 
@@ -41,6 +43,13 @@ export const pipelineService = {
    */
   async executePipeline(data: PipelineExecuteRequest): Promise<Task> {
     return apiClient.post('/pipelines/execute', data)
+  },
+
+  /**
+   * Batch execute pipeline on multiple samples
+   */
+  async batchExecutePipeline(data: PipelineBatchExecuteRequest): Promise<PipelineBatchExecuteResponse> {
+    return apiClient.post('/pipelines/batch-execute', data)
   },
 
   /**

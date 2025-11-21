@@ -75,3 +75,19 @@ class PipelineTemplateCategory(BaseModel):
     category: str
     count: int
     templates: List[str]
+
+
+class PipelineBatchExecuteRequest(BaseModel):
+    """Schema for batch executing a pipeline on multiple samples"""
+    template_id: UUID = Field(..., description="Pipeline template ID")
+    project_id: UUID = Field(..., description="Project ID")
+    sample_ids: List[UUID] = Field(..., min_items=1, description="Sample IDs to process (one task per sample)")
+    task_name_prefix: str = Field(..., min_length=1, max_length=80, description="Task name prefix (will append sample name)")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Pipeline parameters (same for all samples)")
+
+
+class PipelineBatchExecuteResponse(BaseModel):
+    """Schema for batch execution response"""
+    total_tasks: int
+    created_tasks: List[UUID]
+    failed_samples: List[Dict[str, str]] = Field(default_factory=list)

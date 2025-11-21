@@ -45,6 +45,7 @@ export const PipelineList: React.FC = () => {
   const [searchText, setSearchText] = useState('')
   const [executeModalOpen, setExecuteModalOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<PipelineTemplate | null>(null)
+  const [batchMode, setBatchMode] = useState(false)
   const [form] = Form.useForm()
 
   const { projects, fetchProjects } = useProjectStore()
@@ -93,8 +94,10 @@ export const PipelineList: React.FC = () => {
 
   const handleExecute = (template: PipelineTemplate) => {
     setSelectedTemplate(template)
+    setBatchMode(false)
     form.setFieldsValue({
       task_name: `${template.display_name} - ${new Date().toLocaleDateString()}`,
+      task_name_prefix: template.display_name,
       parameters: template.default_params,
     })
     setExecuteModalOpen(true)
@@ -110,15 +113,41 @@ export const PipelineList: React.FC = () => {
     try {
       const values = await form.validateFields()
 
-      await pipelineService.executePipeline({
-        template_id: selectedTemplate.id,
-        task_name: values.task_name,
-        project_id: values.project_id,
-        sample_ids: values.sample_ids || [],
-        parameters: values.parameters || selectedTemplate.default_params,
-      })
+      if (batchMode) {
+        // Batch execution mode
+        if (!values.sample_ids || values.sample_ids.length === 0) {
+          message.error('Please select at least one sample for batch execution')
+          return
+        }
 
-      message.success('Pipeline execution started successfully!')
+        const result = await pipelineService.batchExecutePipeline({
+          template_id: selectedTemplate.id,
+          project_id: values.project_id,
+          sample_ids: values.sample_ids,
+          task_name_prefix: values.task_name_prefix,
+          parameters: values.parameters || selectedTemplate.default_params,
+        })
+
+        if (result.failed_samples.length > 0) {
+          message.warning(
+            `${result.total_tasks} tasks created, ${result.failed_samples.length} failed`
+          )
+        } else {
+          message.success(`Batch execution started! ${result.total_tasks} tasks created.`)
+        }
+      } else {
+        // Single execution mode
+        await pipelineService.executePipeline({
+          template_id: selectedTemplate.id,
+          task_name: values.task_name,
+          project_id: values.project_id,
+          sample_ids: values.sample_ids || [],
+          parameters: values.parameters || selectedTemplate.default_params,
+        })
+
+        message.success('Pipeline execution started successfully!')
+      }
+
       setExecuteModalOpen(false)
       form.resetFields()
     } catch (error: any) {
@@ -265,17 +294,46 @@ export const PipelineList: React.FC = () => {
         onCancel={() => setExecuteModalOpen(false)}
         onOk={handleExecuteSubmit}
         width={800}
-        okText="Execute"
+        okText={batchMode ? 'Batch Execute' : 'Execute'}
         confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="task_name"
-            label="Task Name"
-            rules={[{ required: true, message: 'Please enter task name' }]}
-          >
-            <Input placeholder="Enter task name" />
+          {/* Batch Mode Toggle */}
+          <Form.Item label="Execution Mode">
+            <Space>
+              <Switch
+                checked={batchMode}
+                onChange={setBatchMode}
+                checkedChildren="Batch"
+                unCheckedChildren="Single"
+              />
+              <span style={{ color: '#666' }}>
+                {batchMode
+                  ? 'Create one task per sample for parallel processing'
+                  : 'Create a single task for all selected samples'}
+              </span>
+            </Space>
           </Form.Item>
+
+          {/* Task Name / Task Name Prefix */}
+          {batchMode ? (
+            <Form.Item
+              name="task_name_prefix"
+              label="Task Name Prefix"
+              rules={[{ required: true, message: 'Please enter task name prefix' }]}
+              tooltip="Each task will be named: [Prefix] - [Sample Name]"
+            >
+              <Input placeholder="Enter task name prefix" />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              name="task_name"
+              label="Task Name"
+              rules={[{ required: true, message: 'Please enter task name' }]}
+            >
+              <Input placeholder="Enter task name" />
+            </Form.Item>
+          )}
 
           <Form.Item
             name="project_id"
@@ -296,10 +354,23 @@ export const PipelineList: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="sample_ids" label="Samples (Optional)">
+          <Form.Item
+            name="sample_ids"
+            label={batchMode ? 'Samples (Required)' : 'Samples (Optional)'}
+            rules={
+              batchMode
+                ? [{ required: true, message: 'Please select at least one sample' }]
+                : []
+            }
+            tooltip={
+              batchMode
+                ? 'One task will be created for each selected sample'
+                : 'Leave empty to process all samples in the project'
+            }
+          >
             <Select
               mode="multiple"
-              placeholder="Select samples (leave empty for all)"
+              placeholder={batchMode ? 'Select samples for batch processing' : 'Select samples (leave empty for all)'}
               showSearch
               optionFilterProp="children"
             >
