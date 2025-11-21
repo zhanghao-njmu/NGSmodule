@@ -79,3 +79,40 @@ async def get_current_admin(
         )
 
     return current_user
+
+
+async def get_current_user_ws(token: str) -> User:
+    """
+    Get current authenticated user for WebSocket connections
+
+    Args:
+        token: JWT access token from query parameter
+
+    Returns:
+        Current user
+
+    Raises:
+        Exception: If authentication fails
+    """
+    from app.core.database import SessionLocal
+
+    payload = verify_token(token)
+    if payload is None:
+        raise Exception("Invalid or expired token")
+
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise Exception("Invalid token payload")
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise Exception("User not found")
+
+        if not user.is_active:
+            raise Exception("User account is inactive")
+
+        return user
+    finally:
+        db.close()
