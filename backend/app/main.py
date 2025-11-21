@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db
-from app.api.v1 import auth, users, projects, samples, files, tasks, websocket
+from app.api.v1 import auth, users, projects, samples, files, tasks, websocket, pipelines
 
 # Create FastAPI application
 app = FastAPI(
@@ -100,6 +100,12 @@ app.include_router(
     websocket.router,
     prefix=f"{settings.API_V1_PREFIX}",
     tags=["WebSocket"]
+)
+
+app.include_router(
+    pipelines.router,
+    prefix=f"{settings.API_V1_PREFIX}/pipelines",
+    tags=["Pipelines"]
 )
 
 

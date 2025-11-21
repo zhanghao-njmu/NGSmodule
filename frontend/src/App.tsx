@@ -10,6 +10,7 @@ import { ProjectList } from '@/pages/projects/ProjectList'
 import { SampleList } from '@/pages/samples/SampleList'
 import { FileList } from '@/pages/files/FileList'
 import { TaskList } from '@/pages/tasks/TaskList'
+import { PipelineList } from '@/pages/pipelines/PipelineList'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,6 +51,7 @@ function App() {
         <Route path="/projects" element={<ProjectList />} />
         <Route path="/samples" element={<SampleList />} />
         <Route path="/files" element={<FileList />} />
+        <Route path="/pipelines" element={<PipelineList />} />
         <Route path="/tasks" element={<TaskList />} />
       </Route>
     </Routes>

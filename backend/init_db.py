@@ -11,6 +11,7 @@ from app.models.sample import Sample
 from app.models.file import File
 from app.models.task import PipelineTask
 from app.models.result import Result
+from app.models.pipeline_template import PipelineTemplate
 
 
 def init_db():

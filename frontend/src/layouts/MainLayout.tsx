@@ -17,6 +17,7 @@ import {
   MenuUnfoldOutlined,
   FileOutlined,
   ClockCircleOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import styles from './MainLayout.module.css'
@@ -50,6 +51,11 @@ export const MainLayout: React.FC = () => {
       key: '/files',
       icon: <FileOutlined />,
       label: 'Files',
+    },
+    {
+      key: '/pipelines',
+      icon: <ThunderboltOutlined />,
+      label: 'Pipelines',
     },
     {
       key: '/tasks',
