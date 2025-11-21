@@ -91,3 +91,11 @@ class PipelineBatchExecuteResponse(BaseModel):
     total_tasks: int
     created_tasks: List[UUID]
     failed_samples: List[Dict[str, str]] = Field(default_factory=list)
+
+
+class ParameterRecommendationResponse(BaseModel):
+    """Schema for parameter recommendation response"""
+    recommended_params: Dict[str, Any]
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0-1)")
+    based_on_tasks: int = Field(..., description="Number of historical tasks analyzed")
+    explanation: str = Field(..., description="Explanation of recommendation")

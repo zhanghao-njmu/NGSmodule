@@ -67,3 +67,10 @@ export interface PipelineBatchExecuteResponse {
     error: string
   }>
 }
+
+export interface ParameterRecommendationResponse {
+  recommended_params: Record<string, any>
+  confidence_score: number
+  based_on_tasks: number
+  explanation: string
+}

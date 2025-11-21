@@ -9,6 +9,7 @@ import type {
   PipelineExecuteRequest,
   PipelineBatchExecuteRequest,
   PipelineBatchExecuteResponse,
+  ParameterRecommendationResponse,
 } from '../types/pipeline'
 import type { Task } from '../types/task'
 
@@ -50,6 +51,17 @@ export const pipelineService = {
    */
   async batchExecutePipeline(data: PipelineBatchExecuteRequest): Promise<PipelineBatchExecuteResponse> {
     return apiClient.post('/pipelines/batch-execute', data)
+  },
+
+  /**
+   * Get AI-powered parameter recommendations
+   */
+  async getParameterRecommendations(
+    templateId: string,
+    projectId?: string
+  ): Promise<ParameterRecommendationResponse> {
+    const params = projectId ? { project_id: projectId } : {}
+    return apiClient.get(`/pipelines/${templateId}/recommend-parameters`, { params })
   },
 
   /**

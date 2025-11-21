@@ -23,6 +23,7 @@ from app.schemas.pipeline import (
     PipelineTemplateCategory,
     PipelineBatchExecuteRequest,
     PipelineBatchExecuteResponse,
+    ParameterRecommendationResponse,
 )
 from app.schemas.task import TaskResponse
 from app.schemas.common import MessageResponse
@@ -453,4 +454,142 @@ async def batch_execute_pipeline(
         total_tasks=len(created_tasks),
         created_tasks=created_tasks,
         failed_samples=failed_samples
+    )
+
+
+@router.get("/{template_id}/recommend-parameters", response_model=ParameterRecommendationResponse)
+async def recommend_parameters(
+    template_id: UUID,
+    project_id: Optional[UUID] = Query(None, description="Filter by project for personalized recommendations"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get AI-powered parameter recommendations based on historical successful tasks
+
+    Analyzes completed tasks using the same template to recommend optimal parameters
+    """
+    # Verify template exists
+    template = db.query(PipelineTemplate).filter(
+        PipelineTemplate.id == template_id,
+        PipelineTemplate.is_active == True
+    ).first()
+
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pipeline template not found or inactive"
+        )
+
+    # Query successful tasks for this template
+    query = db.query(PipelineTask).filter(
+        PipelineTask.config['template_id'].astext == str(template_id),
+        PipelineTask.status == 'completed'
+    )
+
+    # If project_id provided, prioritize tasks from the same project
+    if project_id:
+        # Verify user has access to the project
+        project = db.query(Project).filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        ).first()
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        # Get project-specific tasks first
+        project_tasks = query.filter(PipelineTask.project_id == project_id).limit(20).all()
+        if len(project_tasks) < 5:
+            # If not enough project-specific tasks, include all user's tasks
+            query = query.filter(PipelineTask.project_id.in_(
+                db.query(Project.id).filter(Project.user_id == current_user.id)
+            ))
+            all_tasks = query.limit(50).all()
+        else:
+            all_tasks = project_tasks
+    else:
+        # Get tasks from all user's projects
+        query = query.filter(PipelineTask.project_id.in_(
+            db.query(Project.id).filter(Project.user_id == current_user.id)
+        ))
+        all_tasks = query.limit(50).all()
+
+    # If no historical tasks found, return template defaults
+    if not all_tasks:
+        return ParameterRecommendationResponse(
+            recommended_params=template.default_params,
+            confidence_score=0.5,
+            based_on_tasks=0,
+            explanation="No historical tasks found. Using template default parameters."
+        )
+
+    # Analyze parameters from successful tasks
+    param_stats = defaultdict(lambda: defaultdict(int))
+    total_tasks = len(all_tasks)
+
+    for task in all_tasks:
+        if 'parameters' in task.config:
+            params = task.config['parameters']
+            for key, value in params.items():
+                # Count frequency of each parameter value
+                param_stats[key][str(value)] += 1
+
+    # Build recommended parameters
+    recommended_params = {}
+    for key, value_counts in param_stats.items():
+        # Get most common value
+        most_common_value = max(value_counts.items(), key=lambda x: x[1])
+        value_str, count = most_common_value
+
+        # Try to convert back to appropriate type
+        try:
+            if value_str.lower() in ['true', 'false']:
+                recommended_params[key] = value_str.lower() == 'true'
+            elif '.' in value_str:
+                recommended_params[key] = float(value_str)
+            elif value_str.isdigit():
+                recommended_params[key] = int(value_str)
+            else:
+                recommended_params[key] = value_str
+        except:
+            recommended_params[key] = value_str
+
+    # Merge with template defaults for missing parameters
+    final_params = {**template.default_params, **recommended_params}
+
+    # Calculate confidence score based on task count and parameter consistency
+    if total_tasks >= 20:
+        base_confidence = 0.9
+    elif total_tasks >= 10:
+        base_confidence = 0.8
+    elif total_tasks >= 5:
+        base_confidence = 0.7
+    else:
+        base_confidence = 0.6
+
+    # Adjust confidence based on parameter consistency
+    avg_consistency = sum(
+        max(counts.values()) / sum(counts.values())
+        for counts in param_stats.values()
+    ) / len(param_stats) if param_stats else 0.5
+
+    confidence_score = min(base_confidence * avg_consistency, 1.0)
+
+    # Generate explanation
+    if project_id and all_tasks[0].project_id == project_id:
+        explanation = f"Recommendations based on {total_tasks} successful tasks from this project. "
+    else:
+        explanation = f"Recommendations based on {total_tasks} successful tasks from your projects. "
+
+    explanation += f"These parameters were used in {int(avg_consistency * 100)}% of successful runs."
+
+    return ParameterRecommendationResponse(
+        recommended_params=final_params,
+        confidence_score=round(confidence_score, 2),
+        based_on_tasks=total_tasks,
+        explanation=explanation
     )

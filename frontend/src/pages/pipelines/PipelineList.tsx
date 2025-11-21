@@ -26,6 +26,7 @@ import {
   PlayCircleOutlined,
   InfoCircleOutlined,
   TagsOutlined,
+  BulbOutlined,
 } from '@ant-design/icons'
 import { pipelineService } from '../../services/pipeline.service'
 import { useProjectStore } from '../../store/projectStore'
@@ -46,6 +47,7 @@ export const PipelineList: React.FC = () => {
   const [executeModalOpen, setExecuteModalOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<PipelineTemplate | null>(null)
   const [batchMode, setBatchMode] = useState(false)
+  const [recommendLoading, setRecommendLoading] = useState(false)
   const [form] = Form.useForm()
 
   const { projects, fetchProjects } = useProjectStore()
@@ -105,6 +107,34 @@ export const PipelineList: React.FC = () => {
 
   const handleProjectChange = (projectId: string) => {
     fetchSamples({ project_id: projectId })
+  }
+
+  const handleGetRecommendations = async () => {
+    if (!selectedTemplate) return
+
+    setRecommendLoading(true)
+    try {
+      const projectId = form.getFieldValue('project_id')
+      const recommendations = await pipelineService.getParameterRecommendations(
+        selectedTemplate.id,
+        projectId
+      )
+
+      // Update form parameters with recommendations
+      form.setFieldsValue({
+        parameters: recommendations.recommended_params,
+      })
+
+      message.success(
+        `Parameters updated! ${recommendations.explanation} (Confidence: ${Math.round(
+          recommendations.confidence_score * 100
+        )}%)`
+      )
+    } catch (error: any) {
+      message.error(`Failed to get recommendations: ${error.message}`)
+    } finally {
+      setRecommendLoading(false)
+    }
   }
 
   const handleExecuteSubmit = async () => {
@@ -382,7 +412,22 @@ export const PipelineList: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Divider>Pipeline Parameters</Divider>
+          <Divider>
+            <Space>
+              Pipeline Parameters
+              <Tooltip title="Get AI-powered parameter recommendations based on your successful tasks">
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<BulbOutlined />}
+                  onClick={handleGetRecommendations}
+                  loading={recommendLoading}
+                >
+                  Get Recommendations
+                </Button>
+              </Tooltip>
+            </Space>
+          </Divider>
 
           {selectedTemplate &&
             Object.entries(selectedTemplate.param_schema).map(([key, schema]) => (
