@@ -7,6 +7,9 @@ import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
 import { Dashboard } from '@/pages/dashboard/Dashboard'
 import { ProjectList } from '@/pages/projects/ProjectList'
+import { SampleList } from '@/pages/samples/SampleList'
+import { FileList } from '@/pages/files/FileList'
+import { TaskList } from '@/pages/tasks/TaskList'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,7 +48,9 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<ProjectList />} />
-        {/* More routes will be added here */}
+        <Route path="/samples" element={<SampleList />} />
+        <Route path="/files" element={<FileList />} />
+        <Route path="/tasks" element={<TaskList />} />
       </Route>
     </Routes>
   )

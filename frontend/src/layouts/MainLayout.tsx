@@ -15,6 +15,8 @@ import {
   BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  FileOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import styles from './MainLayout.module.css'
@@ -40,9 +42,19 @@ export const MainLayout: React.FC = () => {
       label: 'Projects',
     },
     {
-      key: '/pipelines',
+      key: '/samples',
       icon: <ExperimentOutlined />,
-      label: 'Pipelines',
+      label: 'Samples',
+    },
+    {
+      key: '/files',
+      icon: <FileOutlined />,
+      label: 'Files',
+    },
+    {
+      key: '/tasks',
+      icon: <ClockCircleOutlined />,
+      label: 'Tasks',
     },
     {
       key: '/results',
