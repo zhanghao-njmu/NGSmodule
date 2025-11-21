@@ -12,6 +12,7 @@ import { FileList } from '@/pages/files/FileList'
 import { TaskList } from '@/pages/tasks/TaskList'
 import { PipelineList } from '@/pages/pipelines/PipelineList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
+import { ProgressBar } from '@/components/common'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -32,31 +33,34 @@ function App() {
   }, [checkAuth])
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Route>
+    <>
+      <ProgressBar />
+      <Routes>
+        {/* Public Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
 
-      {/* Protected Routes */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/projects" element={<ProjectList />} />
-        <Route path="/samples" element={<SampleList />} />
-        <Route path="/files" element={<FileList />} />
-        <Route path="/pipelines" element={<PipelineList />} />
-        <Route path="/tasks" element={<TaskList />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Route>
-    </Routes>
+        {/* Protected Routes */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects" element={<ProjectList />} />
+          <Route path="/samples" element={<SampleList />} />
+          <Route path="/files" element={<FileList />} />
+          <Route path="/pipelines" element={<PipelineList />} />
+          <Route path="/tasks" element={<TaskList />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+      </Routes>
+    </>
   )
 }
 
