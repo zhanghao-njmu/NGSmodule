@@ -22,6 +22,8 @@ import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { websocketService } from '../../services/websocket.service'
 import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import { confirm } from '../../components/common/ConfirmDialog'
+import { toast } from '../../utils/notification'
 import type { StatisticItem } from '../../components/common'
 import type { Task, TaskStatus } from '../../types/task'
 import dayjs from 'dayjs'
@@ -64,6 +66,29 @@ export const TaskList: React.FC = () => {
       fetchTasks()
     }
   }, [selectedProject])
+
+  const handleCancelTask = (task: Task) => {
+    confirm({
+      title: '取消任务',
+      content: `您确定要取消任务 "${task.task_name}" 吗？`,
+      okText: '取消任务',
+      cancelText: '保持运行',
+      okButtonProps: { danger: true },
+      onConfirm: async () => {
+        const loadingToast = toast.loading('取消中...')
+        try {
+          await cancelTask(task.id)
+          loadingToast()
+          toast.success('任务已取消')
+          fetchTasks()
+          fetchStats()
+        } catch (error) {
+          loadingToast()
+          toast.error('取消失败，请重试')
+        }
+      }
+    })
+  }
 
   const columns: ColumnsType<Task> = [
     {
@@ -117,7 +142,7 @@ export const TaskList: React.FC = () => {
               size="small"
               danger
               icon={<StopOutlined />}
-              onClick={() => cancelTask(record.id)}
+              onClick={() => handleCancelTask(record)}
             >
               Cancel
             </Button>

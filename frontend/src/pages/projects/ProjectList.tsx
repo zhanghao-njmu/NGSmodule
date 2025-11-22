@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react'
 import {
   Button,
   Space,
-  Modal,
   Dropdown,
   Input,
   Select,
@@ -25,6 +24,8 @@ import type { ColumnsType } from 'antd/es/table'
 import { useProjectStore } from '../../store/projectStore'
 import { ProjectFormModal } from './components/ProjectFormModal'
 import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import { confirmDelete, confirmDangerousAction } from '../../components/common/ConfirmDialog'
+import { toast, notifications } from '../../utils/notification'
 import type { StatisticItem } from '../../components/common'
 import type { Project } from '../../types/project'
 import dayjs from 'dayjs'
@@ -78,23 +79,52 @@ export const ProjectList: React.FC = () => {
   }
 
   const handleDelete = (project: Project) => {
-    Modal.confirm({
-      title: 'Delete Project',
-      content: `Are you sure you want to delete "${project.name}"? This will also delete all associated samples, files, and tasks.`,
-      okText: 'Delete',
-      okType: 'danger',
-      onOk: async () => {
-        await deleteProject(project.id)
-      },
-    })
+    // Use custom dangerous action confirmation for critical operations
+    confirmDangerousAction(
+      '删除项目',
+      `您确定要删除项目 "${project.name}" 吗？这将同时删除所有关联的样本、文件和任务。`,
+      async () => {
+        const loadingToast = toast.loading('删除中...')
+        try {
+          await deleteProject(project.id)
+          loadingToast()
+          notifications.deleteSuccess()
+          fetchProjects() // Refresh list
+          fetchStats() // Refresh stats
+        } catch (error) {
+          loadingToast()
+          notifications.deleteError()
+        }
+      }
+    )
   }
 
   const handleArchive = async (project: Project) => {
-    await archiveProject(project.id)
+    const loadingToast = toast.loading('归档中...')
+    try {
+      await archiveProject(project.id)
+      loadingToast()
+      toast.success('项目已归档')
+      fetchProjects()
+      fetchStats()
+    } catch (error) {
+      loadingToast()
+      toast.error('归档失败，请重试')
+    }
   }
 
   const handleRestore = async (project: Project) => {
-    await restoreProject(project.id)
+    const loadingToast = toast.loading('恢复中...')
+    try {
+      await restoreProject(project.id)
+      loadingToast()
+      toast.success('项目已恢复')
+      fetchProjects()
+      fetchStats()
+    } catch (error) {
+      loadingToast()
+      toast.error('恢复失败，请重试')
+    }
   }
 
   const columns: ColumnsType<Project> = [

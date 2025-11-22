@@ -7,7 +7,6 @@ import {
   Space,
   Select,
   Upload,
-  message,
   Tag,
 } from 'antd'
 import {
@@ -19,6 +18,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useSampleStore } from '../../store/sampleStore'
 import { useProjectStore } from '../../store/projectStore'
 import { PageHeader, DataTable } from '../../components/common'
+import { toast, notifications } from '../../utils/notification'
 import type { Sample } from '../../types/sample'
 import dayjs from 'dayjs'
 
@@ -39,11 +39,22 @@ export const SampleList: React.FC = () => {
     }
   }, [selectedProject])
 
-  const handleCSVImport = (file: File) => {
-    if (selectedProject) {
-      importFromCSV(selectedProject, file)
-    } else {
-      message.warning('Please select a project first')
+  const handleCSVImport = async (file: File) => {
+    if (!selectedProject) {
+      toast.warning('请先选择一个项目')
+      return false
+    }
+
+    const loadingToast = toast.loading('导入中...')
+    try {
+      await importFromCSV(selectedProject, file)
+      loadingToast()
+      notifications.uploadSuccess()
+      // Refresh samples list
+      fetchSamples({ project_id: selectedProject })
+    } catch (error) {
+      loadingToast()
+      notifications.uploadError()
     }
     return false // Prevent auto upload
   }
