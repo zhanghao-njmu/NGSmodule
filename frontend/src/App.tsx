@@ -20,6 +20,7 @@ import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
+import { AIDashboard } from '@/pages/ai/AIDashboard'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
@@ -163,6 +164,14 @@ function App() {
             element={
               <ErrorBoundary>
                 <NotificationsPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/ai"
+            element={
+              <ErrorBoundary>
+                <AIDashboard />
               </ErrorBoundary>
             }
           />

@@ -1,0 +1,114 @@
+/**
+ * AI Parameter Recommendation Styles
+ */
+
+.ai-recommendation-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--color-warning);
+}
+
+.ai-recommendation-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.1), rgba(250, 173, 20, 0.05));
+  border-bottom: 1px solid var(--border-color);
+}
+
+.recommendation-overview {
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.confidence-bar {
+  width: 100%;
+}
+
+.parameter-recommendations {
+  margin-top: var(--spacing-md);
+}
+
+.parameter-card {
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.parameter-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.parameter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.parameter-details {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.based-on {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.alternatives {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.alternative-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-xs);
+}
+
+.recommendation-feedback {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dark mode */
+[data-theme='dark'] .ai-recommendation-card {
+  background-color: var(--bg-elevated);
+  border-left-color: var(--color-warning);
+}
+
+[data-theme='dark'] .ai-recommendation-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.15), rgba(250, 173, 20, 0.08));
+}
+
+[data-theme='dark'] .recommendation-overview,
+[data-theme='dark'] .alternatives {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .parameter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .recommendation-feedback {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}

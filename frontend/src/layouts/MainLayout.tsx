@@ -18,6 +18,7 @@ import {
   FileOutlined,
   ClockCircleOutlined,
   ThunderboltOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/common'
@@ -38,6 +39,11 @@ export const MainLayout: React.FC = () => {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
+    },
+    {
+      key: '/ai',
+      icon: <RobotOutlined />,
+      label: 'AI Intelligence',
     },
     {
       key: '/projects',

@@ -1,0 +1,112 @@
+/**
+ * Auto QC Panel Styles
+ */
+
+.auto-qc-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--color-primary);
+}
+
+.auto-qc-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.05));
+  border-bottom: 1px solid var(--border-color);
+}
+
+.qc-overview {
+  margin-bottom: var(--spacing-lg);
+}
+
+.qc-stat-card {
+  height: 100%;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.qc-stat-card:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.qc-issues {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: rgba(255, 77, 79, 0.05);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-error);
+}
+
+[data-theme='dark'] .qc-issues {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+.qc-metrics {
+  margin-top: var(--spacing-lg);
+}
+
+.qc-metrics .ant-collapse {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.metric-details {
+  padding: var(--spacing-sm);
+}
+
+.metric-thresholds {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.threshold-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.qc-recommendations {
+  margin-top: var(--spacing-lg);
+}
+
+/* Dark mode */
+[data-theme='dark'] .auto-qc-card {
+  background-color: var(--bg-elevated);
+}
+
+[data-theme='dark'] .auto-qc-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.08));
+}
+
+[data-theme='dark'] .qc-stat-card {
+  background-color: var(--bg-elevated);
+}
+
+[data-theme='dark'] .metric-thresholds {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .qc-stat-card .ant-statistic-title {
+    font-size: 12px;
+  }
+
+  .qc-stat-card .ant-statistic-content {
+    font-size: 18px;
+  }
+}
+
+/* Animations */
+.qc-overview {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.qc-metrics {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.qc-recommendations {
+  animation: fadeInUp 0.6s ease-out;
+}
