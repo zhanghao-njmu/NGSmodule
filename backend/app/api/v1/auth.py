@@ -1,11 +1,12 @@
 """
 Authentication API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import create_access_token, verify_password, get_password_hash
+from app.core.rate_limit import limiter, RateLimits
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 
@@ -13,7 +14,9 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(RateLimits.REGISTER)
 async def register(
+    request: Request,
     user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
@@ -59,7 +62,9 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit(RateLimits.LOGIN)
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):

@@ -1,7 +1,7 @@
 """
 Sample management API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
@@ -11,6 +11,7 @@ import io
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter, RateLimits
 from app.models.user import User
 from app.models.project import Project
 from app.models.sample import Sample
@@ -211,7 +212,9 @@ async def create_samples_batch(
 
 
 @router.post("/import-csv", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(RateLimits.BATCH_IMPORT)
 async def import_samples_from_csv(
+    request: Request,
     project_id: UUID,
     file: UploadFile = File(..., description="CSV file with sample information"),
     current_user: User = Depends(get_current_user),

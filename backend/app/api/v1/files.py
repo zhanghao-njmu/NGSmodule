@@ -1,7 +1,7 @@
 """
 File management API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File as FileUpload
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File as FileUpload, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -10,6 +10,7 @@ import os
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter, RateLimits
 from app.models.user import User
 from app.models.project import Project
 from app.models.sample import Sample
@@ -64,7 +65,9 @@ async def list_files(
 
 
 @router.post("/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(RateLimits.FILE_UPLOAD)
 async def upload_file(
+    request: Request,
     sample_id: UUID,
     file: UploadFile = FileUpload(...),
     current_user: User = Depends(get_current_user),
@@ -187,7 +190,9 @@ async def get_file(
 
 
 @router.get("/{file_id}/download")
+@limiter.limit(RateLimits.FILE_DOWNLOAD)
 async def download_file(
+    request: Request,
     file_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -224,7 +229,9 @@ async def download_file(
 
 
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(RateLimits.FILE_DELETE)
 async def delete_file(
+    request: Request,
     file_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
