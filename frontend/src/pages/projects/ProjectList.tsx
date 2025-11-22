@@ -6,8 +6,6 @@ import {
   Button,
   Space,
   Dropdown,
-  Input,
-  Select,
 } from 'antd'
 import {
   PlusOutlined,
@@ -23,7 +21,18 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useProjectStore } from '../../store/projectStore'
 import { ProjectFormModal } from './components/ProjectFormModal'
-import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import {
+  PageHeader,
+  DataTable,
+  StatisticCard,
+  StatusTag,
+  FilterBar,
+  EnhancedEmptyState,
+  PageSkeleton,
+  FadeIn,
+  StaggeredList,
+} from '../../components/common'
+import type { FilterConfig } from '../../components/common'
 import { confirmDelete, confirmDangerousAction } from '../../components/common/ConfirmDialog'
 import { toast, notifications } from '../../utils/notification'
 import type { StatisticItem } from '../../components/common'
@@ -32,9 +41,6 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
 dayjs.extend(relativeTime)
-
-const { Search } = Input
-const { Option } = Select
 
 export const ProjectList: React.FC = () => {
   const {
@@ -50,21 +56,52 @@ export const ProjectList: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [searchText, setSearchText] = useState('')
+  const [filters, setFilters] = useState<Record<string, any>>({
+    search: '',
+    status: 'all',
+  })
 
   useEffect(() => {
     fetchProjects()
     fetchStats()
   }, [])
 
+  // Filter configuration for FilterBar
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      key: 'search',
+      placeholder: 'Search projects...',
+    },
+    {
+      type: 'select',
+      key: 'status',
+      label: 'Status',
+      options: [
+        { label: 'All Status', value: 'all' },
+        { label: 'Active', value: 'active' },
+        { label: 'Archived', value: 'archived' },
+        { label: 'Completed', value: 'completed' },
+      ],
+    },
+  ]
+
+  // Handle filter changes
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleFilterReset = () => {
+    setFilters({ search: '', status: 'all' })
+  }
+
   // Filter projects based on status and search
   const filteredProjects = projects.filter((project) => {
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter
+    const matchesStatus = filters.status === 'all' || project.status === filters.status
     const matchesSearch =
-      searchText === '' ||
-      project.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchText.toLowerCase())
+      filters.search === '' ||
+      project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      project.description?.toLowerCase().includes(filters.search.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -247,55 +284,71 @@ export const ProjectList: React.FC = () => {
     },
   ]
 
+  // Show skeleton while loading
+  if (loading && projects.length === 0) {
+    return <PageSkeleton hasHeader hasFilters rows={8} />
+  }
+
   return (
     <div>
-      {/* Statistics Cards */}
-      <StatisticCard items={statisticItems} />
+      {/* Statistics Cards with Fade In Animation */}
+      <FadeIn direction="up" delay={0} duration={300}>
+        <StatisticCard items={statisticItems} />
+      </FadeIn>
 
       {/* Filters and Actions */}
-      <PageHeader
-        left={
-          <>
-            <Search
-              placeholder="Search projects..."
-              style={{ width: 300 }}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              allowClear
+      <FadeIn direction="up" delay={100} duration={300}>
+        <PageHeader
+          left={
+            <FilterBar
+              filters={filterConfigs}
+              values={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleFilterReset}
             />
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: 150 }}
-            >
-              <Option value="all">All Status</Option>
-              <Option value="active">Active</Option>
-              <Option value="archived">Archived</Option>
-              <Option value="completed">Completed</Option>
-            </Select>
-          </>
-        }
-        right={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            New Project
-          </Button>
-        }
-      />
+          }
+          right={
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              New Project
+            </Button>
+          }
+        />
+      </FadeIn>
 
-      {/* Projects Table */}
-      <DataTable
-        columns={columns}
-        dataSource={filteredProjects}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showTotal: (total) => `Total ${total} projects`,
-        }}
-        emptyText="No Projects"
-        emptyDescription="Create your first project to get started"
-      />
+      {/* Projects Table with Fade In Animation */}
+      <FadeIn direction="up" delay={200} duration={300}>
+        {filteredProjects.length === 0 && !loading ? (
+          <EnhancedEmptyState
+            type={filters.search || filters.status !== 'all' ? 'noSearchResults' : 'noData'}
+            title={filters.search || filters.status !== 'all' ? 'No matching projects' : 'No projects yet'}
+            description={
+              filters.search || filters.status !== 'all'
+                ? 'Try adjusting your search criteria or filters'
+                : 'Create your first project to get started with NGS analysis'
+            }
+            action={{
+              text: 'Create Project',
+              onClick: handleCreate,
+              icon: <PlusOutlined />,
+            }}
+            size="default"
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            dataSource={filteredProjects}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} projects`,
+            }}
+            emptyText="No Projects"
+            emptyDescription="Create your first project to get started"
+          />
+        )}
+      </FadeIn>
 
       {/* Create/Edit Modal */}
       <ProjectFormModal

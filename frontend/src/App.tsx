@@ -12,7 +12,7 @@ import { FileList } from '@/pages/files/FileList'
 import { TaskList } from '@/pages/tasks/TaskList'
 import { PipelineList } from '@/pages/pipelines/PipelineList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
-import { ProgressBar } from '@/components/common'
+import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -33,7 +33,7 @@ function App() {
   }, [checkAuth])
 
   return (
-    <>
+    <ErrorBoundary onReset={() => window.location.reload()}>
       <ProgressBar />
       <Routes>
         {/* Public Routes */}
@@ -51,16 +51,65 @@ function App() {
           }
         >
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects" element={<ProjectList />} />
-          <Route path="/samples" element={<SampleList />} />
-          <Route path="/files" element={<FileList />} />
-          <Route path="/pipelines" element={<PipelineList />} />
-          <Route path="/tasks" element={<TaskList />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ErrorBoundary>
+                <Dashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ErrorBoundary>
+                <ProjectList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/samples"
+            element={
+              <ErrorBoundary>
+                <SampleList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/files"
+            element={
+              <ErrorBoundary>
+                <FileList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/pipelines"
+            element={
+              <ErrorBoundary>
+                <PipelineList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ErrorBoundary>
+                <TaskList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ErrorBoundary>
+                <AdminDashboard />
+              </ErrorBoundary>
+            }
+          />
         </Route>
       </Routes>
-    </>
+    </ErrorBoundary>
   )
 }
 

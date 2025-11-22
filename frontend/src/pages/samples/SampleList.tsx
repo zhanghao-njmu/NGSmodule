@@ -24,7 +24,15 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useSampleStore } from '../../store/sampleStore'
 import { useProjectStore } from '../../store/projectStore'
-import { PageHeader, DataTable } from '../../components/common'
+import {
+  PageHeader,
+  DataTable,
+  FilterBar,
+  EnhancedEmptyState,
+  PageSkeleton,
+  FadeIn,
+} from '../../components/common'
+import type { FilterConfig } from '../../components/common'
 import { toast, notifications } from '../../utils/notification'
 import type { Sample, SampleCreate, SampleUpdate } from '../../types/sample'
 import dayjs from 'dayjs'
@@ -39,6 +47,11 @@ export const SampleList: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingSample, setEditingSample] = useState<Sample | null>(null)
   const [form] = Form.useForm()
+  const [filters, setFilters] = useState<Record<string, any>>({
+    search: '',
+    group: 'all',
+    layout: 'all',
+  })
 
   useEffect(() => {
     fetchProjects()
@@ -49,6 +62,58 @@ export const SampleList: React.FC = () => {
       fetchSamples({ project_id: selectedProject })
     }
   }, [selectedProject])
+
+  // Filter configuration
+  const filterConfigs: FilterConfig[] = [
+    {
+      type: 'search',
+      key: 'search',
+      placeholder: 'Search samples by ID, run, or batch...',
+    },
+    {
+      type: 'select',
+      key: 'group',
+      label: 'Group',
+      options: [
+        { label: 'All Groups', value: 'all' },
+        { label: 'Control', value: 'Control' },
+        { label: 'Treatment', value: 'Treatment' },
+        { label: 'Case', value: 'Case' },
+        { label: 'Healthy', value: 'Healthy' },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'layout',
+      label: 'Layout',
+      options: [
+        { label: 'All Layouts', value: 'all' },
+        { label: 'Paired-End (PE)', value: 'PE' },
+        { label: 'Single-End (SE)', value: 'SE' },
+      ],
+    },
+  ]
+
+  // Handle filter changes
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleFilterReset = () => {
+    setFilters({ search: '', group: 'all', layout: 'all' })
+  }
+
+  // Filter samples
+  const filteredSamples = samples.filter((sample) => {
+    const matchesSearch =
+      filters.search === '' ||
+      sample.sample_id.toLowerCase().includes(filters.search.toLowerCase()) ||
+      sample.run_id?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      sample.batch_id?.toLowerCase().includes(filters.search.toLowerCase())
+    const matchesGroup = filters.group === 'all' || sample.group_name === filters.group
+    const matchesLayout = filters.layout === 'all' || sample.layout === filters.layout
+    return matchesSearch && matchesGroup && matchesLayout
+  })
 
   // 打开创建/编辑模态框
   const showModal = (sample?: Sample) => {
@@ -249,52 +314,106 @@ export const SampleList: React.FC = () => {
     },
   ]
 
+  // Show skeleton while loading
+  if (loading && samples.length === 0 && selectedProject) {
+    return <PageSkeleton hasHeader hasFilters rows={8} />
+  }
+
   return (
     <div>
-      <PageHeader
-        left={
-          <Select
-            placeholder="Select Project"
-            style={{ width: 300 }}
-            value={selectedProject || undefined}
-            onChange={setSelectedProject}
-            loading={projects.length === 0}
-          >
-            {projects.map((p) => (
-              <Option key={p.id} value={p.id}>
-                {p.name}
-              </Option>
-            ))}
-          </Select>
-        }
-        right={
-          <>
-            <Upload beforeUpload={handleCSVImport} accept=".csv" showUploadList={false}>
-              <Button icon={<UploadOutlined />} disabled={!selectedProject}>
-                Import CSV
+      {/* Project Selection and Actions */}
+      <FadeIn direction="up" delay={0} duration={300}>
+        <PageHeader
+          left={
+            <Space size="large">
+              <Select
+                placeholder="Select Project"
+                style={{ width: 300 }}
+                value={selectedProject || undefined}
+                onChange={setSelectedProject}
+                loading={projects.length === 0}
+              >
+                {projects.map((p) => (
+                  <Option key={p.id} value={p.id}>
+                    {p.name}
+                  </Option>
+                ))}
+              </Select>
+              {selectedProject && (
+                <FilterBar
+                  filters={filterConfigs}
+                  values={filters}
+                  onFilterChange={handleFilterChange}
+                  onReset={handleFilterReset}
+                />
+              )}
+            </Space>
+          }
+          right={
+            <>
+              <Upload beforeUpload={handleCSVImport} accept=".csv" showUploadList={false}>
+                <Button icon={<UploadOutlined />} disabled={!selectedProject}>
+                  Import CSV
+                </Button>
+              </Upload>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => showModal()}
+                disabled={!selectedProject}
+              >
+                New Sample
               </Button>
-            </Upload>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => showModal()}
-              disabled={!selectedProject}
-            >
-              New Sample
-            </Button>
-          </>
-        }
-      />
+            </>
+          }
+        />
+      </FadeIn>
 
-      <DataTable
-        columns={columns}
-        dataSource={samples}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 20 }}
-        emptyText="No Samples"
-        emptyDescription="Select a project and add samples or import from CSV"
-      />
+      {/* Samples Table or Empty State */}
+      <FadeIn direction="up" delay={100} duration={300}>
+        {!selectedProject ? (
+          <EnhancedEmptyState
+            type="noData"
+            title="Select a project"
+            description="Please select a project from the dropdown above to view and manage samples"
+            size="default"
+          />
+        ) : filteredSamples.length === 0 && !loading ? (
+          <EnhancedEmptyState
+            type={
+              filters.search || filters.group !== 'all' || filters.layout !== 'all'
+                ? 'noSearchResults'
+                : 'noData'
+            }
+            title={
+              filters.search || filters.group !== 'all' || filters.layout !== 'all'
+                ? 'No matching samples'
+                : 'No samples yet'
+            }
+            description={
+              filters.search || filters.group !== 'all' || filters.layout !== 'all'
+                ? 'Try adjusting your search criteria or filters'
+                : 'Add samples manually or import them from a CSV file'
+            }
+            action={{
+              text: 'Create Sample',
+              onClick: () => showModal(),
+              icon: <PlusOutlined />,
+            }}
+            size="default"
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            dataSource={filteredSamples}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 20 }}
+            emptyText="No Samples"
+            emptyDescription="Select a project and add samples or import from CSV"
+          />
+        )}
+      </FadeIn>
 
       {/* 创建/编辑样本模态框 */}
       <Modal
