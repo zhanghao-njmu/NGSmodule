@@ -1,5 +1,6 @@
 /**
  * File List Page - Complete file upload and management
+ * Modernized with animations and enhanced UI components
  */
 import React, { useEffect, useState } from 'react'
 import {
@@ -8,10 +9,10 @@ import {
   Tag,
   Modal,
   Upload,
-  message,
   Popconfirm,
   Tooltip,
   Space,
+  Typography,
 } from 'antd'
 import {
   UploadOutlined,
@@ -19,19 +20,26 @@ import {
   FileOutlined,
   InboxOutlined,
   DeleteOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { UploadProps } from 'antd'
 import { useFileStore } from '../../store/fileStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useSampleStore } from '../../store/sampleStore'
-import { PageHeader, DataTable } from '../../components/common'
+import {
+  PageHeader,
+  DataTable,
+  PageSkeleton,
+  FadeIn,
+  EnhancedEmptyState,
+} from '../../components/common'
 import { toast } from '../../utils/notification'
 import type { FileItem } from '../../types/file'
 import dayjs from 'dayjs'
 
 const { Option } = Select
-const { Dragger } = Upload
+const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
   const { files, loading, fetchFiles, uploadFile, deleteFile, downloadFile } = useFileStore()
@@ -41,9 +49,14 @@ export const FileList: React.FC = () => {
   const [selectedSample, setSelectedSample] = useState<string>('')
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
-    fetchProjects()
+    const loadData = async () => {
+      await fetchProjects()
+      setInitialLoad(false)
+    }
+    loadData()
   }, [])
 
   useEffect(() => {
@@ -224,45 +237,91 @@ export const FileList: React.FC = () => {
     },
   ]
 
+  // Show skeleton on initial load
+  if (initialLoad && loading) {
+    return <PageSkeleton hasHeader rows={8} />
+  }
+
   return (
     <div>
-      <PageHeader
-        left={
-          <Select
-            placeholder="Select Project"
-            style={{ width: 300 }}
-            value={selectedProject || undefined}
-            onChange={setSelectedProject}
-            loading={projects.length === 0}
-          >
-            {projects.map((p) => (
-              <Option key={p.id} value={p.id}>
-                {p.name}
-              </Option>
-            ))}
-          </Select>
-        }
-        right={
-          <Button
-            type="primary"
-            icon={<UploadOutlined />}
-            onClick={showUploadModal}
-            disabled={!selectedProject}
-          >
-            Upload Files
-          </Button>
-        }
-      />
+      {/* Header */}
+      <FadeIn direction="up" delay={0} duration={300}>
+        <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 24 }}>
+          <Space align="center">
+            <FolderOpenOutlined style={{ fontSize: 28, color: 'var(--color-primary)' }} />
+            <div>
+              <Title level={3} style={{ margin: 0 }}>
+                File Management
+              </Title>
+              <Text type="secondary">
+                Upload and manage sequencing data files
+              </Text>
+            </div>
+          </Space>
 
-      <DataTable
-        columns={columns}
-        dataSource={files}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 20 }}
-        emptyText="No Files"
-        emptyDescription="Select a project and upload files to get started"
-      />
+          <PageHeader
+            left={
+              <Select
+                placeholder="Select Project"
+                style={{ width: 300 }}
+                value={selectedProject || undefined}
+                onChange={setSelectedProject}
+                loading={projects.length === 0}
+              >
+                {projects.map((p) => (
+                  <Option key={p.id} value={p.id}>
+                    {p.name}
+                  </Option>
+                ))}
+              </Select>
+            }
+            right={
+              <Button
+                type="primary"
+                icon={<UploadOutlined />}
+                onClick={showUploadModal}
+                disabled={!selectedProject}
+              >
+                Upload Files
+              </Button>
+            }
+          />
+        </Space>
+      </FadeIn>
+
+      {/* File table with enhanced empty state */}
+      <FadeIn direction="up" delay={100} duration={300}>
+        {!selectedProject ? (
+          <EnhancedEmptyState
+            type="noData"
+            title="Select a project"
+            description="Please select a project from the dropdown above to view and manage files"
+            size="default"
+          />
+        ) : files.length === 0 && !loading ? (
+          <EnhancedEmptyState
+            type="noData"
+            title="No files uploaded yet"
+            description="Upload FASTQ, BAM, SAM, or VCF files to get started with analysis"
+            action={{
+              text: 'Upload Files',
+              onClick: showUploadModal,
+              icon: <UploadOutlined />,
+            }}
+            size="default"
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            dataSource={files}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `Total ${total} files` }}
+            emptyText="No Files"
+            emptyDescription="Select a project and upload files to get started"
+          />
+        )}
+      </FadeIn>
 
       {/* 文件上传模态框 */}
       <Modal

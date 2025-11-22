@@ -1,5 +1,6 @@
 /**
  * Task List Page - Task monitoring with real-time updates
+ * Modernized with animations and enhanced UI components
  */
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -10,21 +11,31 @@ import {
   Space,
   Select,
   Tooltip,
+  Typography,
 } from 'antd'
 import {
   PlusOutlined,
   SyncOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ClockCircleOutlined,
   StopOutlined,
   EyeOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { websocketService } from '../../services/websocket.service'
-import { PageHeader, DataTable, StatisticCard, StatusTag } from '../../components/common'
+import {
+  PageHeader,
+  DataTable,
+  StatisticCard,
+  StatusTag,
+  PageSkeleton,
+  FadeIn,
+  StaggeredList,
+  EnhancedEmptyState,
+} from '../../components/common'
 import { confirm } from '../../components/common/ConfirmDialog'
 import { toast } from '../../utils/notification'
 import type { StatisticItem } from '../../components/common'
@@ -32,6 +43,7 @@ import type { Task, TaskStatus } from '../../types/task'
 import dayjs from 'dayjs'
 
 const { Option } = Select
+const { Title, Text } = Typography
 
 export const TaskList: React.FC = () => {
   const navigate = useNavigate()
@@ -46,10 +58,17 @@ export const TaskList: React.FC = () => {
   } = useTaskStore()
   const { projects, fetchProjects } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
+  const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
-    fetchProjects()
-    fetchStats()
+    const loadData = async () => {
+      await fetchProjects()
+      await fetchStats()
+      await fetchTasks()
+      setInitialLoad(false)
+    }
+
+    loadData()
 
     // Setup WebSocket for real-time updates
     const token = localStorage.getItem('auth_token')
@@ -64,12 +83,14 @@ export const TaskList: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    if (selectedProject) {
-      fetchTasks({ project_id: selectedProject })
-    } else {
-      fetchTasks()
+    if (!initialLoad) {
+      if (selectedProject) {
+        fetchTasks({ project_id: selectedProject })
+      } else {
+        fetchTasks()
+      }
     }
-  }, [selectedProject])
+  }, [selectedProject, initialLoad])
 
   const handleCancelTask = (task: Task) => {
     confirm({
@@ -204,43 +225,96 @@ export const TaskList: React.FC = () => {
     },
   ]
 
+  // Show skeleton on initial load
+  if (initialLoad && loading) {
+    return <PageSkeleton hasHeader hasStats rows={8} />
+  }
+
   return (
     <div>
-      {/* Statistics */}
-      <StatisticCard items={statisticItems} />
+      {/* Statistics with animation */}
+      <FadeIn direction="up" delay={0} duration={300}>
+        <StatisticCard items={statisticItems} />
+      </FadeIn>
 
-      <PageHeader
-        left={
-          <Select
-            placeholder="All Projects"
-            style={{ width: 300 }}
-            value={selectedProject || undefined}
-            onChange={setSelectedProject}
-            allowClear
-          >
-            {projects.map((p) => (
-              <Option key={p.id} value={p.id}>
-                {p.name}
-              </Option>
-            ))}
-          </Select>
-        }
-        right={
-          <Button type="primary" icon={<PlusOutlined />}>
-            New Task
-          </Button>
-        }
-      />
+      {/* Header with filters */}
+      <FadeIn direction="up" delay={100} duration={300}>
+        <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: 24, marginBottom: 16 }}>
+          <Space align="center">
+            <ThunderboltOutlined style={{ fontSize: 28, color: 'var(--color-primary)' }} />
+            <div>
+              <Title level={3} style={{ margin: 0 }}>
+                Task Monitoring
+              </Title>
+              <Text type="secondary">
+                Real-time pipeline execution tracking
+              </Text>
+            </div>
+          </Space>
 
-      <DataTable
-        columns={columns}
-        dataSource={tasks}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 20 }}
-        emptyText="No Tasks"
-        emptyDescription="No tasks have been created yet"
-      />
+          <PageHeader
+            left={
+              <Select
+                placeholder="All Projects"
+                style={{ width: 300 }}
+                value={selectedProject || undefined}
+                onChange={setSelectedProject}
+                allowClear
+              >
+                {projects.map((p) => (
+                  <Option key={p.id} value={p.id}>
+                    {p.name}
+                  </Option>
+                ))}
+              </Select>
+            }
+            right={
+              <Button type="primary" icon={<PlusOutlined />}>
+                New Task
+              </Button>
+            }
+          />
+        </Space>
+      </FadeIn>
+
+      {/* Task table with enhanced empty state */}
+      <FadeIn direction="up" delay={200} duration={300}>
+        {tasks.length === 0 && !loading ? (
+          <EnhancedEmptyState
+            type="noData"
+            title="No tasks yet"
+            description={
+              selectedProject
+                ? 'No tasks have been created for this project. Start a pipeline execution to create tasks.'
+                : 'No tasks have been created yet. Select a project and execute a pipeline to get started.'
+            }
+            action={
+              selectedProject
+                ? {
+                    text: 'Execute Pipeline',
+                    onClick: () => navigate('/pipelines'),
+                    icon: <ThunderboltOutlined />,
+                  }
+                : {
+                    text: 'View Pipelines',
+                    onClick: () => navigate('/pipelines'),
+                    icon: <ThunderboltOutlined />,
+                  }
+            }
+            size="default"
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            dataSource={tasks}
+            rowKey="id"
+            loading={loading}
+            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `Total ${total} tasks` }}
+            emptyText="No Tasks"
+            emptyDescription="No tasks have been created yet"
+          />
+        )}
+      </FadeIn>
     </div>
   )
 }
