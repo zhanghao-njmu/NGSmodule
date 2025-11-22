@@ -15,3 +15,12 @@ export { FloatingActionButton } from './FloatingActionButton'
 export { AnimatedCard } from './AnimatedCard'
 export { ProgressBar } from './ProgressBar'
 export { Tooltip } from './Tooltip'
+
+// Phase 12: New Enhanced Components
+export { FilterBar } from './FilterBar'
+export type { FilterBarProps, FilterConfig } from './FilterBar'
+export { EnhancedEmptyState } from './EnhancedEmptyState'
+export type { EnhancedEmptyStateProps } from './EnhancedEmptyState'
+export { ErrorBoundary } from './ErrorBoundary'
+export { PageSkeleton, TableSkeleton } from './Skeleton'
+export type { PageSkeletonProps, TableSkeletonProps } from './Skeleton'
