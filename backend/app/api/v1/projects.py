@@ -107,10 +107,30 @@ async def list_projects(
     # Get paginated results
     projects = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
 
-    # Add computed fields
-    for project in projects:
-        project.sample_count = db.query(Sample).filter(Sample.project_id == project.id).count()
-        project.task_count = db.query(PipelineTask).filter(PipelineTask.project_id == project.id).count()
+    # Add computed fields - Optimized to avoid N+1 queries
+    if projects:
+        project_ids = [p.id for p in projects]
+
+        # Get sample counts in one query
+        sample_counts = dict(
+            db.query(Sample.project_id, func.count(Sample.id))
+            .filter(Sample.project_id.in_(project_ids))
+            .group_by(Sample.project_id)
+            .all()
+        )
+
+        # Get task counts in one query
+        task_counts = dict(
+            db.query(PipelineTask.project_id, func.count(PipelineTask.id))
+            .filter(PipelineTask.project_id.in_(project_ids))
+            .group_by(PipelineTask.project_id)
+            .all()
+        )
+
+        # Assign counts to projects
+        for project in projects:
+            project.sample_count = sample_counts.get(project.id, 0)
+            project.task_count = task_counts.get(project.id, 0)
 
     return ProjectListResponse(
         total=total,

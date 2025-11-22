@@ -3,6 +3,7 @@ Sample management API endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from uuid import UUID
 import csv
@@ -63,9 +64,21 @@ async def list_samples(
     # Get paginated results
     samples = query.order_by(Sample.created_at.desc()).offset(skip).limit(limit).all()
 
-    # Add computed fields
-    for sample in samples:
-        sample.file_count = db.query(FileModel).filter(FileModel.sample_id == sample.id).count()
+    # Add computed fields - Optimized to avoid N+1 queries
+    if samples:
+        sample_ids = [s.id for s in samples]
+
+        # Get file counts in one query
+        file_counts = dict(
+            db.query(FileModel.sample_id, func.count(FileModel.id))
+            .filter(FileModel.sample_id.in_(sample_ids))
+            .group_by(FileModel.sample_id)
+            .all()
+        )
+
+        # Assign counts to samples
+        for sample in samples:
+            sample.file_count = file_counts.get(sample.id, 0)
 
     return SampleListResponse(
         total=total,

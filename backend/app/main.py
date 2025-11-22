@@ -1,11 +1,23 @@
 """
 Main application entry point
 """
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy.exc import IntegrityError, DBAPIError
+from pydantic import ValidationError
 from app.core.config import settings
 from app.core.database import init_db
 from app.api.v1 import auth, users, projects, samples, files, tasks, websocket, pipelines
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
@@ -25,6 +37,81 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Global Exception Handlers
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    """Handle database integrity constraint violations"""
+    logger.error(f"Database integrity error: {str(exc)}")
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error": "Database constraint violation",
+            "detail": "A unique constraint was violated. The resource may already exist.",
+            "code": "INTEGRITY_ERROR"
+        }
+    )
+
+
+@app.exception_handler(DBAPIError)
+async def database_error_handler(request: Request, exc: DBAPIError):
+    """Handle database connection and query errors"""
+    logger.error(f"Database error: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "error": "Database error",
+            "detail": "Unable to connect to database or execute query. Please try again later.",
+            "code": "DATABASE_ERROR"
+        }
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle FastAPI request validation errors"""
+    logger.warning(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "Validation error",
+            "detail": exc.errors(),
+            "code": "VALIDATION_ERROR"
+        }
+    )
+
+
+@app.exception_handler(ValidationError)
+async def pydantic_validation_error_handler(request: Request, exc: ValidationError):
+    """Handle Pydantic validation errors"""
+    logger.warning(f"Pydantic validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "Validation error",
+            "detail": exc.errors(),
+            "code": "VALIDATION_ERROR"
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Catch all unhandled exceptions"""
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+
+    # Don't expose internal error details in production
+    detail = str(exc) if settings.DEBUG else "An unexpected error occurred"
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "Internal server error",
+            "detail": detail,
+            "code": "INTERNAL_ERROR"
+        }
+    )
 
 
 @app.on_event("startup")

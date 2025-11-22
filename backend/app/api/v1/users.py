@@ -3,6 +3,7 @@ User management API endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func, case
 from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_current_admin
@@ -12,7 +13,6 @@ from app.models.project import Project
 from app.models.sample import Sample
 from app.models.task import PipelineTask
 from app.schemas.common import MessageResponse
-from sqlalchemy import func
 
 router = APIRouter()
 
@@ -189,34 +189,28 @@ async def get_user_stats(
             detail="User not found"
         )
 
-    # Count projects
+    # Optimized: Count projects
     total_projects = db.query(func.count(Project.id)).filter(
         Project.user_id == user_id
     ).scalar() or 0
 
-    # Count samples
+    # Optimized: Count samples
     total_samples = db.query(func.count(Sample.id)).join(
         Project
     ).filter(Project.user_id == user_id).scalar() or 0
 
-    # Count tasks
-    total_tasks = db.query(func.count(PipelineTask.id)).join(
+    # Optimized: Count all task statistics in a single query using CASE
+    task_stats = db.query(
+        func.count(PipelineTask.id).label('total'),
+        func.sum(case((PipelineTask.status == 'completed', 1), else_=0)).label('completed'),
+        func.sum(case((PipelineTask.status == 'failed', 1), else_=0)).label('failed')
+    ).join(
         Project
-    ).filter(Project.user_id == user_id).scalar() or 0
+    ).filter(Project.user_id == user_id).first()
 
-    completed_tasks = db.query(func.count(PipelineTask.id)).join(
-        Project
-    ).filter(
-        Project.user_id == user_id,
-        PipelineTask.status == 'completed'
-    ).scalar() or 0
-
-    failed_tasks = db.query(func.count(PipelineTask.id)).join(
-        Project
-    ).filter(
-        Project.user_id == user_id,
-        PipelineTask.status == 'failed'
-    ).scalar() or 0
+    total_tasks = task_stats.total if task_stats else 0
+    completed_tasks = task_stats.completed if task_stats and task_stats.completed else 0
+    failed_tasks = task_stats.failed if task_stats and task_stats.failed else 0
 
     return UserStats(
         user_id=user.id,
