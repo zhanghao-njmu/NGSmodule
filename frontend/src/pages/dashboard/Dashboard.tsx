@@ -1,8 +1,8 @@
 /**
  * Dashboard Page
  */
-import React from 'react'
-import { Card, Row, Col, Statistic, Typography, Space, Tag } from 'antd'
+import React, { useEffect, useState } from 'react'
+import { Card, Row, Col, Statistic, Typography, Space, Tag, Spin, Alert } from 'antd'
 import {
   ProjectOutlined,
   ExperimentOutlined,
@@ -11,32 +11,91 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
+import statsService, { type DashboardStats } from '@/services/stats.service'
 import styles from './Dashboard.module.css'
 
 const { Title, Text, Paragraph } = Typography
 
 export const Dashboard: React.FC = () => {
   const { user } = authStore()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock data - will be replaced with real API calls
-  const stats = {
-    totalProjects: 0,
-    runningTasks: 0,
-    completedTasks: 0,
-    storageUsed: user?.storage_used || 0,
-    storageQuota: user?.storage_quota || 107374182400, // 100GB
+  // 加载统计数据
+  useEffect(() => {
+    loadStats()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await statsService.getDashboardStats()
+
+      // 将用户存储信息添加到统计数据
+      setStats({
+        ...data,
+        storageUsed: user?.storage_used || 0,
+        storageQuota: user?.storage_quota || 107374182400, // 100GB 默认配额
+      })
+    } catch (err) {
+      console.error('Failed to load dashboard stats:', err)
+      setError('Failed to load statistics. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const storagePercent = Math.round(
-    (stats.storageUsed / stats.storageQuota) * 100
-  )
+  const storagePercent = stats
+    ? Math.round((stats.storageUsed / stats.storageQuota) * 100)
+    : 0
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  // Loading 状态
+  if (loading) {
+    return (
+      <div className={styles.dashboard}>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <Spin size="large" tip="Loading dashboard..." />
+        </div>
+      </div>
+    )
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className={styles.dashboard}>
+        <Alert
+          message="Error Loading Dashboard"
+          description={error}
+          type="error"
+          showIcon
+          action={
+            <a onClick={loadStats} style={{ cursor: 'pointer' }}>
+              Retry
+            </a>
+          }
+        />
+      </div>
+    )
+  }
+
+  // 无数据状态
+  if (!stats) {
+    return (
+      <div className={styles.dashboard}>
+        <Alert message="No data available" type="info" />
+      </div>
+    )
   }
 
   return (
