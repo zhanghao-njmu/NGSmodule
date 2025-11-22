@@ -1,0 +1,181 @@
+/**
+ * Settings Page Styles
+ */
+
+.settings-page {
+  padding: var(--spacing-lg);
+  min-height: 100%;
+}
+
+/* Settings Card */
+.settings-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  height: 100%;
+}
+
+.settings-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.settings-card .ant-card-head {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.settings-card .ant-card-head-title {
+  padding: var(--spacing-md) 0;
+}
+
+/* Switch Item Layout */
+.switch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.switch-item:hover {
+  background-color: var(--bg-hover);
+  padding-left: var(--spacing-sm);
+  padding-right: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+/* Form Styling */
+.settings-card .ant-form-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-card .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+/* API Token Table */
+.settings-card .ant-table {
+  font-size: var(--font-size-sm);
+}
+
+.settings-card .ant-table-thead > tr > th {
+  background-color: var(--bg-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-card .ant-table-tbody > tr:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Alert Styling */
+.settings-card .ant-alert {
+  border-radius: var(--radius-md);
+}
+
+/* Dark Mode Adjustments */
+[data-theme='dark'] .settings-card {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .settings-card .ant-card-head {
+  border-bottom-color: var(--border-color);
+  background-color: var(--bg-elevated);
+}
+
+[data-theme='dark'] .settings-card .ant-table-thead > tr > th {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .switch-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .settings-card .ant-form-item-label > label {
+  color: var(--text-primary);
+}
+
+/* Section Headers */
+.settings-section-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-section-header .anticon {
+  margin-right: var(--spacing-sm);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: var(--spacing-md);
+  }
+
+  .switch-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .settings-card .ant-table {
+    font-size: var(--font-size-xs);
+  }
+
+  /* Make table scrollable on mobile */
+  .settings-card .ant-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+/* Animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-page .ant-col {
+  animation: fadeInUp var(--transition-base) ease-out;
+}
+
+.settings-page .ant-col:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.settings-page .ant-col:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.settings-page .ant-col:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.settings-page .ant-col:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* Token visibility animation */
+.ant-btn-icon-only {
+  transition: all var(--transition-fast);
+}
+
+.ant-btn-icon-only:hover {
+  transform: scale(1.1);
+}
+
+/* Form submit button */
+.settings-card .ant-form-item:last-child .ant-btn-primary {
+  height: 40px;
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.settings-card .ant-form-item:last-child .ant-btn-primary:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}

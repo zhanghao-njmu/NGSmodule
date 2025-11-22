@@ -18,6 +18,7 @@ import { ResultDetail } from '@/pages/results/ResultDetail'
 import { ResultList } from '@/pages/results/ResultList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
+import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
@@ -145,6 +146,14 @@ function App() {
             element={
               <ErrorBoundary>
                 <ProfilePage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ErrorBoundary>
+                <SettingsPage />
               </ErrorBoundary>
             }
           />
