@@ -4,6 +4,7 @@
  */
 
 @import './variables.css';
+@import './animations.css';
 
 /* ========== Reset & Base Styles ========== */
 *,
