@@ -1,0 +1,79 @@
+/**
+ * Knowledge Base Styles
+ */
+
+.knowledge-base {
+  padding: var(--spacing-lg);
+  min-height: 100%;
+}
+
+.search-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.category-card,
+.popular-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.category-card .ant-btn {
+  text-align: left;
+  margin-bottom: var(--spacing-xs);
+}
+
+.popular-item {
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.popular-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.article-card {
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.article-card:hover {
+  border-color: var(--color-primary);
+}
+
+.tutorial-card {
+  height: 100%;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+/* Dark mode */
+[data-theme='dark'] .search-card,
+[data-theme='dark'] .category-card,
+[data-theme='dark'] .popular-card,
+[data-theme='dark'] .article-card,
+[data-theme='dark'] .tutorial-card {
+  background-color: var(--bg-elevated);
+}
+
+[data-theme='dark'] .popular-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .knowledge-base {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Animations */
+.article-card,
+.tutorial-card {
+  animation: fadeInUp 0.3s ease-out;
+}

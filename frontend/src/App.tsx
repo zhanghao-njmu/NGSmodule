@@ -21,6 +21,8 @@ import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 import { AIDashboard } from '@/pages/ai/AIDashboard'
+import { AnalyticsDashboard } from '@/pages/analytics/AnalyticsDashboard'
+import { KnowledgeBase } from '@/pages/knowledge/KnowledgeBase'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
@@ -172,6 +174,22 @@ function App() {
             element={
               <ErrorBoundary>
                 <AIDashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ErrorBoundary>
+                <AnalyticsDashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/knowledge"
+            element={
+              <ErrorBoundary>
+                <KnowledgeBase />
               </ErrorBoundary>
             }
           />

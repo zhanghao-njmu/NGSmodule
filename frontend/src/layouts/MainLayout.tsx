@@ -19,6 +19,8 @@ import {
   ClockCircleOutlined,
   ThunderboltOutlined,
   RobotOutlined,
+  FundOutlined,
+  BookOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/common'
@@ -74,6 +76,16 @@ export const MainLayout: React.FC = () => {
       key: '/results',
       icon: <BarChartOutlined />,
       label: 'Results',
+    },
+    {
+      key: '/analytics',
+      icon: <FundOutlined />,
+      label: 'Analytics',
+    },
+    {
+      key: '/knowledge',
+      icon: <BookOutlined />,
+      label: 'Knowledge',
     },
     ...(user?.role === 'admin'
       ? [

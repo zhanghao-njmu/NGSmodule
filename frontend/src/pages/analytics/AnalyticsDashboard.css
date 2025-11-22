@@ -1,0 +1,44 @@
+/**
+ * Analytics Dashboard Styles
+ */
+
+.analytics-dashboard {
+  padding: var(--spacing-lg);
+  min-height: 100%;
+}
+
+.stat-card {
+  height: 100%;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.storage-card,
+.activity-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Dark mode */
+[data-theme='dark'] .stat-card,
+[data-theme='dark'] .storage-card,
+[data-theme='dark'] .activity-card {
+  background-color: var(--bg-elevated);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .analytics-dashboard {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Animations */
+.stat-card {
+  animation: fadeInUp 0.3s ease-out;
+}
