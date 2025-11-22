@@ -2,12 +2,14 @@
  * Task List Page - Task monitoring with real-time updates
  */
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Tag,
   Progress,
   Space,
   Select,
+  Tooltip,
 } from 'antd'
 import {
   PlusOutlined,
@@ -16,6 +18,7 @@ import {
   CloseCircleOutlined,
   ClockCircleOutlined,
   StopOutlined,
+  EyeOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTaskStore } from '../../store/taskStore'
@@ -31,6 +34,7 @@ import dayjs from 'dayjs'
 const { Option } = Select
 
 export const TaskList: React.FC = () => {
+  const navigate = useNavigate()
   const {
     tasks,
     stats,
@@ -134,18 +138,32 @@ export const TaskList: React.FC = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 100,
+      width: 150,
       render: (_, record) => (
         <Space>
+          {record.status === 'completed' && (
+            <Tooltip title="View Results">
+              <Button
+                type="primary"
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => navigate(`/results/${record.id}`)}
+              >
+                Results
+              </Button>
+            </Tooltip>
+          )}
           {record.status === 'running' && (
-            <Button
-              size="small"
-              danger
-              icon={<StopOutlined />}
-              onClick={() => handleCancelTask(record)}
-            >
-              Cancel
-            </Button>
+            <Tooltip title="Cancel Task">
+              <Button
+                size="small"
+                danger
+                icon={<StopOutlined />}
+                onClick={() => handleCancelTask(record)}
+              >
+                Cancel
+              </Button>
+            </Tooltip>
           )}
         </Space>
       ),
