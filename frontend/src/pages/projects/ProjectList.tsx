@@ -35,6 +35,7 @@ import {
 import type { FilterConfig } from '../../components/common'
 import { confirmDelete, confirmDangerousAction } from '../../components/common/ConfirmDialog'
 import { toast, notifications } from '../../utils/notification'
+import { useFilters } from '@/hooks'
 import type { StatisticItem } from '../../components/common'
 import type { Project } from '../../types/project'
 import dayjs from 'dayjs'
@@ -56,9 +57,13 @@ export const ProjectList: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [filters, setFilters] = useState<Record<string, any>>({
-    search: '',
-    status: 'all',
+
+  // Using useFilters hook eliminates repetitive filter state management
+  const { filters, setFilter, resetFilters: handleFilterReset } = useFilters({
+    initialFilters: {
+      search: '',
+      status: 'all',
+    },
   })
 
   useEffect(() => {
@@ -85,15 +90,6 @@ export const ProjectList: React.FC = () => {
       ],
     },
   ]
-
-  // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleFilterReset = () => {
-    setFilters({ search: '', status: 'all' })
-  }
 
   // Filter projects based on status and search
   const filteredProjects = projects.filter((project) => {
@@ -303,7 +299,7 @@ export const ProjectList: React.FC = () => {
             <FilterBar
               filters={filterConfigs}
               values={filters}
-              onFilterChange={handleFilterChange}
+              onFilterChange={setFilter}
               onReset={handleFilterReset}
             />
           }

@@ -34,6 +34,7 @@ import {
 } from '../../components/common'
 import type { FilterConfig } from '../../components/common'
 import { toast, notifications } from '../../utils/notification'
+import { useFilters } from '@/hooks'
 import type { Sample, SampleCreate, SampleUpdate } from '../../types/sample'
 import dayjs from 'dayjs'
 
@@ -47,10 +48,14 @@ export const SampleList: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingSample, setEditingSample] = useState<Sample | null>(null)
   const [form] = Form.useForm()
-  const [filters, setFilters] = useState<Record<string, any>>({
-    search: '',
-    group: 'all',
-    layout: 'all',
+
+  // Using useFilters hook eliminates repetitive filter state management
+  const { filters, setFilter, resetFilters: handleFilterReset } = useFilters({
+    initialFilters: {
+      search: '',
+      group: 'all',
+      layout: 'all',
+    },
   })
 
   useEffect(() => {
@@ -93,15 +98,6 @@ export const SampleList: React.FC = () => {
       ],
     },
   ]
-
-  // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleFilterReset = () => {
-    setFilters({ search: '', group: 'all', layout: 'all' })
-  }
 
   // Filter samples
   const filteredSamples = samples.filter((sample) => {
@@ -343,7 +339,7 @@ export const SampleList: React.FC = () => {
                 <FilterBar
                   filters={filterConfigs}
                   values={filters}
-                  onFilterChange={handleFilterChange}
+                  onFilterChange={setFilter}
                   onReset={handleFilterReset}
                 />
               )}

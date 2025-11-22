@@ -6,3 +6,6 @@ export type { AsyncState, UseAsyncOptions } from './useAsync'
 
 export { usePagination } from './usePagination'
 export type { PaginationState, UsePaginationOptions } from './usePagination'
+
+export { useFilters, createFilterChangeHandler } from './useFilters'
+export type { FilterValue, FiltersState, UseFiltersOptions, UseFiltersReturn } from './useFilters'
