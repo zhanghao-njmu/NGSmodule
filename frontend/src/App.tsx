@@ -19,6 +19,7 @@ import { ResultList } from '@/pages/results/ResultList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
@@ -154,6 +155,14 @@ function App() {
             element={
               <ErrorBoundary>
                 <SettingsPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ErrorBoundary>
+                <NotificationsPage />
               </ErrorBoundary>
             }
           />

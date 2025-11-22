@@ -21,6 +21,7 @@ import {
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/common'
+import { NotificationDropdown } from '@/components/notifications/NotificationDropdown'
 import styles from './MainLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -150,9 +151,7 @@ export const MainLayout: React.FC = () => {
             <Space size="large">
               <ThemeToggle mode="icon" size="default" />
 
-              <Badge count={0} showZero={false}>
-                <BellOutlined className={styles.headerIcon} />
-              </Badge>
+              <NotificationDropdown className={styles.headerIcon} />
 
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                 <Space className={styles.userInfo}>

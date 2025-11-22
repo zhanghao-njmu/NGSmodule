@@ -1,0 +1,148 @@
+/**
+ * Notification Dropdown Styles
+ */
+
+.notification-bell-icon {
+  font-size: 18px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.notification-bell-icon:hover {
+  color: var(--color-primary);
+  transform: rotate(15deg) scale(1.1);
+}
+
+.notification-dropdown-content {
+  width: 400px;
+  max-height: 600px;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.notification-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.notification-list-container {
+  max-height: 450px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: var(--spacing-md) var(--spacing-lg) !important;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notification-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.notification-item.unread {
+  background-color: rgba(33, 150, 243, 0.05);
+}
+
+[data-theme='dark'] .notification-item.unread {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.notification-item .ant-list-item-action {
+  margin-left: var(--spacing-sm);
+}
+
+.notification-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  display: inline-block;
+}
+
+.notification-description {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notification-footer {
+  padding: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.notification-footer .ant-btn-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .notification-dropdown-content {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme='dark'] .notification-header,
+[data-theme='dark'] .notification-footer {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme='dark'] .notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar styling */
+.notification-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list-container::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.notification-list-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.notification-list-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .notification-dropdown-content {
+    width: 90vw;
+    max-width: 400px;
+  }
+}
+
+/* Animation */
+.notification-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
