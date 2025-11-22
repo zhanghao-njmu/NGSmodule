@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
-from app.api.v1 import auth, users, projects, samples, files, tasks, websocket, pipelines
+from app.api.v1 import auth, users, projects, samples, files, tasks, websocket, pipelines, results
 
 # Configure logging
 logging.basicConfig(
@@ -200,6 +200,12 @@ app.include_router(
     pipelines.router,
     prefix=f"{settings.API_V1_PREFIX}/pipelines",
     tags=["Pipelines"]
+)
+
+app.include_router(
+    results.router,
+    prefix=f"{settings.API_V1_PREFIX}/results",
+    tags=["Results"]
 )
 
 
