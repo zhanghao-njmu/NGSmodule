@@ -1,7 +1,7 @@
 /**
  * Result Detail Page - Analysis results visualization
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Statistic, Tabs, Alert, Button, Space, Tag, Descriptions } from 'antd'
 import {
@@ -14,34 +14,25 @@ import {
 import resultService from '@/services/result.service'
 import { PageSkeleton, FadeIn, ErrorBoundary } from '@/components/common'
 import { LineChart, BarChart, PieChart, ScatterPlot } from '@/components/charts'
+import { useAsync } from '@/hooks'
 import type { ResultVisualizationData, ChartData } from '@/types/result'
 import dayjs from 'dayjs'
 
 export const ResultDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [vizData, setVizData] = useState<ResultVisualizationData | null>(null)
+
+  // Using useAsync hook eliminates 15+ lines of boilerplate
+  const { data: vizData, loading, error, execute: loadVisualizationData } = useAsync(
+    () => resultService.getVisualizationData(id!),
+    { immediate: false }
+  )
 
   useEffect(() => {
-    loadVisualizationData()
-  }, [id])
-
-  const loadVisualizationData = async () => {
-    if (!id) return
-
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await resultService.getVisualizationData(id)
-      setVizData(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to load result data')
-    } finally {
-      setLoading(false)
+    if (id) {
+      loadVisualizationData()
     }
-  }
+  }, [id])
 
   if (loading) {
     return <PageSkeleton hasHeader rows={6} />
@@ -52,7 +43,7 @@ export const ResultDetail: React.FC = () => {
       <FadeIn>
         <Alert
           message="Error Loading Results"
-          description={error || 'No data available'}
+          description={error?.message || 'No data available'}
           type="error"
           showIcon
           action={

@@ -1,7 +1,7 @@
 /**
  * Dashboard Page
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
 import {
   ProjectOutlined,
@@ -13,40 +13,30 @@ import {
 import { authStore } from '@/store/authStore'
 import statsService, { type DashboardStats } from '@/services/stats.service'
 import { PageSkeleton, FadeIn, StaggeredList } from '@/components/common'
+import { useAsync } from '@/hooks'
 import styles from './Dashboard.module.css'
 
 const { Title, Text, Paragraph } = Typography
 
 export const Dashboard: React.FC = () => {
   const { user } = authStore()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // 加载统计数据
-  useEffect(() => {
-    loadStats()
-  }, [])
-
-  const loadStats = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  // Using useAsync hook eliminates 20+ lines of boilerplate
+  const { data: stats, loading, error, execute: loadStats } = useAsync(
+    async () => {
       const data = await statsService.getDashboardStats()
-
       // 将用户存储信息添加到统计数据
-      setStats({
+      return {
         ...data,
         storageUsed: user?.storage_used || 0,
         storageQuota: user?.storage_quota || 107374182400, // 100GB 默认配额
-      })
-    } catch (err) {
-      console.error('Failed to load dashboard stats:', err)
-      setError('Failed to load statistics. Please try again later.')
-    } finally {
-      setLoading(false)
+      }
+    },
+    {
+      immediate: true,
+      onError: (err) => console.error('Failed to load dashboard stats:', err),
     }
-  }
+  )
 
   const storagePercent = stats
     ? Math.round((stats.storageUsed / stats.storageQuota) * 100)
@@ -72,7 +62,7 @@ export const Dashboard: React.FC = () => {
         <FadeIn>
           <Alert
             message="Error Loading Dashboard"
-            description={error}
+            description={error?.message || 'Failed to load statistics. Please try again later.'}
             type="error"
             showIcon
             action={
