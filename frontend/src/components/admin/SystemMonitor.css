@@ -1,0 +1,47 @@
+/**
+ * System Monitor Styles
+ */
+
+.system-monitor {
+  width: 100%;
+}
+
+.health-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.component-card {
+  text-align: center;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md);
+}
+
+.component-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.metric-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.metric-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Dark mode */
+[data-theme='dark'] .health-card,
+[data-theme='dark'] .component-card,
+[data-theme='dark'] .metric-card {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+/* Animations */
+.component-card,
+.metric-card {
+  animation: fadeInUp 0.3s ease-out;
+}
