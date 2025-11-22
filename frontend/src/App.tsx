@@ -12,6 +12,7 @@ import { FileList } from '@/pages/files/FileList'
 import { TaskList } from '@/pages/tasks/TaskList'
 import { PipelineList } from '@/pages/pipelines/PipelineList'
 import { ResultDetail } from '@/pages/results/ResultDetail'
+import { ResultList } from '@/pages/results/ResultList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
@@ -97,6 +98,14 @@ function App() {
             element={
               <ErrorBoundary>
                 <TaskList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/results"
+            element={
+              <ErrorBoundary>
+                <ResultList />
               </ErrorBoundary>
             }
           />
