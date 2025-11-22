@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import { authStore } from '@/store/authStore'
+import { useTheme } from '@/store/themeStore'
+import { lightTheme, darkTheme } from '@/styles/theme.config'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Login } from '@/pages/auth/Login'
@@ -29,15 +32,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { checkAuth } = authStore()
+  const { mode, isDark } = useTheme()
 
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
 
+  // Select theme based on mode
+  const currentTheme = isDark ? darkTheme : lightTheme
+
+  // Add dark mode algorithm if in dark mode
+  const themeConfig = {
+    ...currentTheme,
+    algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+  }
+
   return (
-    <ErrorBoundary onReset={() => window.location.reload()}>
-      <ProgressBar />
-      <Routes>
+    <ConfigProvider theme={themeConfig}>
+      <ErrorBoundary onReset={() => window.location.reload()}>
+        <ProgressBar />
+        <Routes>
         {/* Public Routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
@@ -128,6 +142,7 @@ function App() {
         </Route>
       </Routes>
     </ErrorBoundary>
+  </ConfigProvider>
   )
 }
 

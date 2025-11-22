@@ -20,6 +20,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
+import { ThemeToggle } from '@/components/common'
 import styles from './MainLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -147,6 +148,8 @@ export const MainLayout: React.FC = () => {
 
           <div className={styles.headerRight}>
             <Space size="large">
+              <ThemeToggle mode="icon" size="default" />
+
               <Badge count={0} showZero={false}>
                 <BellOutlined className={styles.headerIcon} />
               </Badge>

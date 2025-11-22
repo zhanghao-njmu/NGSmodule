@@ -28,3 +28,6 @@ export { FadeIn } from './FadeIn'
 export type { FadeInProps } from './FadeIn'
 export { StaggeredList } from './StaggeredList'
 export type { StaggeredListProps } from './StaggeredList'
+
+// Phase 18: Theme Support
+export { ThemeToggle } from './ThemeToggle'

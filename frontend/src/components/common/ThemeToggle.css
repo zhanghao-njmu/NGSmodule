@@ -1,0 +1,64 @@
+/* Theme Toggle Icon Mode */
+.theme-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.theme-toggle-icon:hover {
+  background-color: var(--bg-hover);
+}
+
+.theme-icon {
+  transition: all var(--transition-base);
+}
+
+.theme-icon-light {
+  color: #faad14;
+}
+
+.theme-icon-dark {
+  color: #1890ff;
+}
+
+.theme-icon:hover {
+  transform: rotate(20deg) scale(1.1);
+}
+
+/* Theme Toggle Full Mode */
+.theme-toggle-full {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.theme-toggle-full:hover {
+  background-color: var(--bg-hover);
+}
+
+.theme-icon-inline {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+}
+
+.theme-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Dark mode specific styles */
+[data-theme='dark'] .theme-icon-inline {
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .theme-label {
+  color: var(--text-primary);
+}
