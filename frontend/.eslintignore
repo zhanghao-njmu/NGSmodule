@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+.vite
+
+# Coverage
+coverage
+
+# Configuration files
+*.config.js
+*.config.ts
+vite.config.ts
+
+# Auto-generated
+*.min.js
+
+# IDE
+.vscode
+.idea

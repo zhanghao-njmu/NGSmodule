@@ -1,0 +1,64 @@
+[flake8]
+# Maximum line length
+max-line-length = 120
+
+# Maximum complexity
+max-complexity = 15
+
+# Ignore specific errors
+ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # E501: line too long (handled by black)
+    E501,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # F401: module imported but unused (handled by autoflake)
+    # F401,
+
+# Exclude patterns
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    .eggs,
+    *.egg,
+    dist,
+    build,
+    alembic,
+    migrations,
+    .mypy_cache,
+    .pytest_cache,
+    .tox,
+
+# Per-file ignores
+per-file-ignores =
+    # __init__.py files can have unused imports
+    __init__.py:F401,F403
+    # Test files can have long lines and unused imports
+    test_*.py:E501,F401
+    # Alembic migration files
+    alembic/versions/*.py:E501,F401
+
+# Enable specific warnings
+select =
+    # pycodestyle errors
+    E,
+    # pycodestyle warnings
+    W,
+    # pyflakes
+    F,
+    # mccabe complexity
+    C,
+    # naming conventions
+    N,
+    # docstring conventions
+    D,
+
+# Docstring conventions
+docstring-convention = google
+
+# Enable color output
+color = auto
