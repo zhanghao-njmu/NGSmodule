@@ -9,6 +9,7 @@ from jose import jwt, JWTError
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.security import verify_token
+from app.core.permissions import verify_resource_ownership
 from app.models.user import User
 from app.models.project import Project
 from app.models.sample import Sample
@@ -124,6 +125,7 @@ async def get_current_user_ws(token: str) -> User:
 
 
 # Resource Ownership Verification Dependencies
+# Refactored to use generic verify_resource_ownership function
 async def get_user_project(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -143,22 +145,14 @@ async def get_user_project(
     Raises:
         HTTPException: If project not found or access denied
     """
-    # Admin can access all projects
-    if current_user.is_admin:
-        project = db.query(Project).filter(Project.id == project_id).first()
-    else:
-        project = db.query(Project).filter(
-            Project.id == project_id,
-            Project.user_id == current_user.id
-        ).first()
-
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or access denied"
-        )
-
-    return project
+    return verify_resource_ownership(
+        db=db,
+        model=Project,
+        resource_id=project_id,
+        current_user=current_user,
+        resource_name="Project",
+        filter_field="user_id"
+    )
 
 
 async def get_user_sample(
@@ -180,22 +174,14 @@ async def get_user_sample(
     Raises:
         HTTPException: If sample not found or access denied
     """
-    # Admin can access all samples
-    if current_user.is_admin:
-        sample = db.query(Sample).filter(Sample.id == sample_id).first()
-    else:
-        sample = db.query(Sample).join(Project).filter(
-            Sample.id == sample_id,
-            Project.user_id == current_user.id
-        ).first()
-
-    if not sample:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sample not found or access denied"
-        )
-
-    return sample
+    return verify_resource_ownership(
+        db=db,
+        model=Sample,
+        resource_id=sample_id,
+        current_user=current_user,
+        resource_name="Sample",
+        join_models=[Project]
+    )
 
 
 async def get_user_task(
@@ -217,22 +203,14 @@ async def get_user_task(
     Raises:
         HTTPException: If task not found or access denied
     """
-    # Admin can access all tasks
-    if current_user.is_admin:
-        task = db.query(PipelineTask).filter(PipelineTask.id == task_id).first()
-    else:
-        task = db.query(PipelineTask).join(Project).filter(
-            PipelineTask.id == task_id,
-            Project.user_id == current_user.id
-        ).first()
-
-    if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found or access denied"
-        )
-
-    return task
+    return verify_resource_ownership(
+        db=db,
+        model=PipelineTask,
+        resource_id=task_id,
+        current_user=current_user,
+        resource_name="Task",
+        join_models=[Project]
+    )
 
 
 async def get_user_file(
@@ -254,19 +232,11 @@ async def get_user_file(
     Raises:
         HTTPException: If file not found or access denied
     """
-    # Admin can access all files
-    if current_user.is_admin:
-        file = db.query(FileModel).filter(FileModel.id == file_id).first()
-    else:
-        file = db.query(FileModel).join(Sample).join(Project).filter(
-            FileModel.id == file_id,
-            Project.user_id == current_user.id
-        ).first()
-
-    if not file:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found or access denied"
-        )
-
-    return file
+    return verify_resource_ownership(
+        db=db,
+        model=FileModel,
+        resource_id=file_id,
+        current_user=current_user,
+        resource_name="File",
+        join_models=[Sample, Project]
+    )
