@@ -2,6 +2,7 @@
  * Notification Utility - Unified toast notification system
  * 统一的消息通知系统
  */
+import React from 'react'
 import { message, notification } from 'antd'
 import type { ArgsProps as MessageArgsProps } from 'antd/es/message'
 import type { ArgsProps as NotificationArgsProps } from 'antd/es/notification'
