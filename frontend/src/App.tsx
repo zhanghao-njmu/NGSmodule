@@ -17,6 +17,7 @@ import { PipelineList } from '@/pages/pipelines/PipelineList'
 import { ResultDetail } from '@/pages/results/ResultDetail'
 import { ResultList } from '@/pages/results/ResultList'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
+import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { ProgressBar, ErrorBoundary } from '@/components/common'
 
 // Protected Route Component
@@ -136,6 +137,14 @@ function App() {
             element={
               <ErrorBoundary>
                 <AdminDashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ErrorBoundary>
+                <ProfilePage />
               </ErrorBoundary>
             }
           />
