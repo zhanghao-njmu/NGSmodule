@@ -49,7 +49,6 @@ export const antdTheme: ThemeConfig = {
 
     // ========== Line Height ==========
     lineHeight: designTokens.typography.lineHeight.normal,
-    lineHeightHeading: designTokens.typography.lineHeight.tight,
 
     // ========== Control Heights ==========
     controlHeight: 36,

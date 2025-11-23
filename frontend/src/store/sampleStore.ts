@@ -36,7 +36,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
   fetchSamples: async (params) => {
     set({ loading: true, error: null })
     try {
-      const response = await sampleService.getSamples(params)
+      const response = await sampleService.getAll(params)
       set({ samples: response.items, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -81,7 +81,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
       const response = await sampleService.batchCreateSamples(data)
       message.success(`${response.count} samples created successfully`)
       // Refresh samples list
-      await sampleService.getSamples({ project_id: data.project_id }).then((res) => {
+      await sampleService.getAll({ project_id: data.project_id }).then((res) => {
         set({ samples: res.items, loading: false })
       })
     } catch (error: any) {
@@ -97,7 +97,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
       const response = await sampleService.importFromCSV(projectId, file)
       message.success(`${response.count} samples imported successfully`)
       // Refresh samples list
-      await sampleService.getSamples({ project_id: projectId }).then((res) => {
+      await sampleService.getAll({ project_id: projectId }).then((res) => {
         set({ samples: res.items, loading: false })
       })
     } catch (error: any) {
@@ -113,8 +113,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
       const updatedSample = await sampleService.updateSample(id, data)
       set((state) => ({
         samples: state.samples.map((s) => (s.id === id ? updatedSample : s)),
-        currentSample:
-          state.currentSample?.id === id ? updatedSample : state.currentSample,
+        currentSample: state.currentSample?.id === id ? updatedSample : state.currentSample,
         loading: false,
       }))
       message.success('Sample updated successfully')

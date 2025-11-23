@@ -175,34 +175,34 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   // Handle WebSocket messages
-  handleWebSocketMessage: (message) => {
-    if (message.type === 'task_update' && message.task_id) {
+  handleWebSocketMessage: (msg) => {
+    if (msg.type === 'task_update' && msg.task_id) {
       // Update task in list
       set((state) => ({
         tasks: state.tasks.map((task) =>
-          task.id === message.task_id
+          task.id === msg.task_id
             ? {
                 ...task,
-                status: message.status || task.status,
-                progress: message.progress ?? task.progress,
+                status: msg.status || task.status,
+                progress: msg.progress ?? task.progress,
               }
-            : task
+            : task,
         ),
         currentTask:
-          state.currentTask?.id === message.task_id
+          state.currentTask?.id === msg.task_id
             ? {
                 ...state.currentTask,
-                status: message.status || state.currentTask.status,
-                progress: message.progress ?? state.currentTask.progress,
+                status: msg.status || state.currentTask.status,
+                progress: msg.progress ?? state.currentTask.progress,
               }
             : state.currentTask,
       }))
 
       // Show notification for completed/failed tasks
-      if (message.status === 'completed') {
-        message.success(`Task completed: ${message.message}`)
-      } else if (message.status === 'failed') {
-        message.error(`Task failed: ${message.message}`)
+      if (msg.status === 'completed') {
+        toast.success(`Task completed: ${msg.message}`)
+      } else if (msg.status === 'failed') {
+        toast.error(`Task failed: ${msg.message}`)
       }
     }
   },

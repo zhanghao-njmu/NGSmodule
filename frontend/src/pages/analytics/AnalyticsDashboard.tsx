@@ -28,7 +28,6 @@ import {
   DashboardOutlined,
 } from '@ant-design/icons'
 import { PageHeader, StatisticCard } from '@/components/common'
-import { analyticsService } from '@/services/analytics.service'
 import type { AnalyticsSummary, TrendAnalysis } from '@/types/analytics'
 import { DesignTokens } from '@/styles/design-tokens'
 import './AnalyticsDashboard.css'
@@ -133,8 +132,12 @@ export const AnalyticsDashboard: React.FC = () => {
   }
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    if (trend === 'up') return <RiseOutlined style={{ color: DesignTokens.colors.success.main }} />
-    if (trend === 'down') return <FallOutlined style={{ color: DesignTokens.colors.error.main }} />
+    if (trend === 'up') {
+      return <RiseOutlined style={{ color: DesignTokens.colors.success.main }} />
+    }
+    if (trend === 'down') {
+      return <FallOutlined style={{ color: DesignTokens.colors.error.main }} />
+    }
     return <SwapOutlined style={{ color: DesignTokens.colors.info.main }} />
   }
 
@@ -143,8 +146,12 @@ export const AnalyticsDashboard: React.FC = () => {
     const reverseMetrics = ['failures', 'cost', 'pending']
     const isReverse = reverseMetrics.some((m) => metric.toLowerCase().includes(m))
 
-    if (trend === 'up') return isReverse ? DesignTokens.colors.error.main : DesignTokens.colors.success.main
-    if (trend === 'down') return isReverse ? DesignTokens.colors.success.main : DesignTokens.colors.error.main
+    if (trend === 'up') {
+      return isReverse ? DesignTokens.colors.error.main : DesignTokens.colors.success.main
+    }
+    if (trend === 'down') {
+      return isReverse ? DesignTokens.colors.success.main : DesignTokens.colors.error.main
+    }
     return DesignTokens.colors.info.main
   }
 
@@ -162,7 +169,9 @@ export const AnalyticsDashboard: React.FC = () => {
     )
   }
 
-  if (!summary) return null
+  if (!summary) {
+    return null
+  }
 
   return (
     <div className="analytics-dashboard">
@@ -215,7 +224,15 @@ export const AnalyticsDashboard: React.FC = () => {
 
       {/* Main Stats */}
       <Tabs defaultActiveKey="overview" size="large">
-        <TabPane tab={<Space><FundOutlined />总览</Space>} key="overview">
+        <TabPane
+          tab={
+            <Space>
+              <FundOutlined />
+              总览
+            </Space>
+          }
+          key="overview"
+        >
           {/* Project Stats */}
           <Title level={4} style={{ marginTop: 0 }}>
             <LineChartOutlined /> 项目统计
@@ -326,11 +343,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <Row gutter={[16, 16]}>
             <Col xs={24} md={12} lg={6}>
               <Card className="stat-card">
-                <Statistic
-                  title="总运行次数"
-                  value={summary.pipelineStats.totalRuns}
-                  prefix={<FundOutlined />}
-                />
+                <Statistic title="总运行次数" value={summary.pipelineStats.totalRuns} prefix={<FundOutlined />} />
               </Card>
             </Col>
             <Col xs={24} md={12} lg={6}>
@@ -365,7 +378,15 @@ export const AnalyticsDashboard: React.FC = () => {
           </Row>
         </TabPane>
 
-        <TabPane tab={<Space><BarChartOutlined />存储分析</Space>} key="storage">
+        <TabPane
+          tab={
+            <Space>
+              <BarChartOutlined />
+              存储分析
+            </Space>
+          }
+          key="storage"
+        >
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="存储使用情况" className="storage-card">
@@ -395,10 +416,7 @@ export const AnalyticsDashboard: React.FC = () => {
                           <Text>{type.toUpperCase()}</Text>
                           <Text>{size} GB</Text>
                         </div>
-                        <Progress
-                          percent={(size / summary.storageStats.totalUsed) * 100}
-                          showInfo={false}
-                        />
+                        <Progress percent={(size / summary.storageStats.totalUsed) * 100} showInfo={false} />
                       </div>
                     ))}
                   </div>
@@ -409,11 +427,16 @@ export const AnalyticsDashboard: React.FC = () => {
                         summary.storageStats.trend === 'increasing'
                           ? 'orange'
                           : summary.storageStats.trend === 'decreasing'
-                          ? 'green'
-                          : 'blue'
+                            ? 'green'
+                            : 'blue'
                       }
                     >
-                      趋势: {summary.storageStats.trend === 'increasing' ? '增长中' : summary.storageStats.trend === 'decreasing' ? '下降中' : '稳定'}
+                      趋势:{' '}
+                      {summary.storageStats.trend === 'increasing'
+                        ? '增长中'
+                        : summary.storageStats.trend === 'decreasing'
+                          ? '下降中'
+                          : '稳定'}
                     </Tag>
                   </div>
                 </Space>
@@ -423,19 +446,9 @@ export const AnalyticsDashboard: React.FC = () => {
             <Col xs={24} lg={12}>
               <Card title="活动统计" className="activity-card">
                 <Space direction="vertical" style={{ width: '100%' }} size="large">
-                  <Statistic
-                    title="日活跃用户"
-                    value={summary.activityStats.dailyActiveUsers}
-                    suffix="人"
-                  />
-                  <Statistic
-                    title="总会话数"
-                    value={summary.activityStats.totalSessions}
-                  />
-                  <Statistic
-                    title="平均会话时长"
-                    value={summary.activityStats.avgSessionDuration}
-                  />
+                  <Statistic title="日活跃用户" value={summary.activityStats.dailyActiveUsers} suffix="人" />
+                  <Statistic title="总会话数" value={summary.activityStats.totalSessions} />
+                  <Statistic title="平均会话时长" value={summary.activityStats.avgSessionDuration} />
                   <div>
                     <Text type="secondary">使用高峰时段: </Text>
                     <Text strong>{summary.activityStats.peakUsageHour}:00</Text>
@@ -446,12 +459,16 @@ export const AnalyticsDashboard: React.FC = () => {
           </Row>
         </TabPane>
 
-        <TabPane tab={<Space><LineChartOutlined />趋势分析</Space>} key="trends">
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="趋势图表将在此显示"
-            style={{ padding: '48px' }}
-          >
+        <TabPane
+          tab={
+            <Space>
+              <LineChartOutlined />
+              趋势分析
+            </Space>
+          }
+          key="trends"
+        >
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="趋势图表将在此显示" style={{ padding: '48px' }}>
             <Button type="primary">查看详细趋势</Button>
           </Empty>
         </TabPane>

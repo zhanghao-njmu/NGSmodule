@@ -79,4 +79,6 @@ export interface WebSocketMessage {
   progress?: number
   message?: string
   timestamp?: string
+  success?: boolean
+  error?: string
 }

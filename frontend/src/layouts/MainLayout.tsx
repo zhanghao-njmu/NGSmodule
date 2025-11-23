@@ -3,7 +3,7 @@
  */
 import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Avatar, Dropdown, Typography, Space, Badge } from 'antd'
+import { Layout, Menu, Typography, Dropdown, Avatar, Space } from 'antd'
 import {
   DashboardOutlined,
   FolderOutlined,
@@ -12,7 +12,6 @@ import {
   SettingOutlined,
   UserOutlined,
   LogoutOutlined,
-  BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   FileOutlined,
@@ -131,13 +130,7 @@ export const MainLayout: React.FC = () => {
 
   return (
     <Layout className={styles.layout}>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        className={styles.sider}
-        width={240}
-      >
+      <Sider trigger={null} collapsible collapsed={collapsed} className={styles.sider} width={240}>
         <div className={styles.logo}>
           <ExperimentOutlined style={{ fontSize: 24, color: '#2196F3' }} />
           {!collapsed && (
@@ -173,10 +166,7 @@ export const MainLayout: React.FC = () => {
 
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                 <Space className={styles.userInfo}>
-                  <Avatar
-                    icon={<UserOutlined />}
-                    style={{ backgroundColor: '#2196F3' }}
-                  />
+                  <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#2196F3' }} />
                   <div className={styles.userDetails}>
                     <Text strong>{user?.username}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>

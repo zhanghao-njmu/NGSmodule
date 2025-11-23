@@ -2,7 +2,8 @@
  * StaggeredList - 交错动画列表
  * 列表项按顺序淡入，无需外部动画库
  */
-import React, { Children, cloneElement, isValidElement } from 'react'
+import type React from 'react'
+import { Children } from 'react'
 import { FadeIn } from './FadeIn'
 
 export interface StaggeredListProps {

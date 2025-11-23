@@ -15,6 +15,7 @@ import {
   Tabs,
   Badge,
   Spin,
+  Progress,
 } from 'antd'
 import {
   BookOutlined,
@@ -29,7 +30,6 @@ import {
   CodeOutlined,
 } from '@ant-design/icons'
 import { PageHeader } from '@/components/common'
-import { analyticsService } from '@/services/analytics.service'
 import type { KnowledgeArticle, KnowledgeCategory, Tutorial } from '@/types/analytics'
 import { DesignTokens } from '@/styles/design-tokens'
 import './KnowledgeBase.css'
@@ -65,7 +65,7 @@ const categoryNames: Record<KnowledgeCategory, string> = {
 export const KnowledgeBase: React.FC = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [_searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory | 'all'>('all')
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
   const [popularArticles, setPopularArticles] = useState<KnowledgeArticle[]>([])
@@ -224,11 +224,7 @@ export const KnowledgeBase: React.FC = () => {
 
   return (
     <div className="knowledge-base">
-      <PageHeader
-        title="知识库"
-        subtitle="教程、文档和最佳实践"
-        icon={<BookOutlined />}
-      />
+      <PageHeader title="知识库" subtitle="教程、文档和最佳实践" icon={<BookOutlined />} />
 
       {/* Search Bar */}
       <Card className="search-card" style={{ marginBottom: 24 }}>
@@ -282,12 +278,13 @@ export const KnowledgeBase: React.FC = () => {
             <List
               dataSource={popularArticles}
               renderItem={(item) => (
-                <List.Item
-                  className="popular-item"
-                  onClick={() => navigate(`/knowledge/articles/${item.id}`)}
-                >
+                <List.Item className="popular-item" onClick={() => navigate(`/knowledge/articles/${item.id}`)}>
                   <List.Item.Meta
-                    title={<Text strong style={{ fontSize: 13 }}>{item.title}</Text>}
+                    title={
+                      <Text strong style={{ fontSize: 13 }}>
+                        {item.title}
+                      </Text>
+                    }
                     description={
                       <Space size="small">
                         <Text type="secondary" style={{ fontSize: 11 }}>
@@ -344,7 +341,11 @@ export const KnowledgeBase: React.FC = () => {
                               {article.title}
                             </Text>
                             <Tag color={getDifficultyColor(article.difficulty)}>
-                              {article.difficulty === 'beginner' ? '初级' : article.difficulty === 'intermediate' ? '中级' : '高级'}
+                              {article.difficulty === 'beginner'
+                                ? '初级'
+                                : article.difficulty === 'intermediate'
+                                  ? '中级'
+                                  : '高级'}
                             </Tag>
                           </Space>
                         }
@@ -403,7 +404,11 @@ export const KnowledgeBase: React.FC = () => {
                           </Title>
                           <Space>
                             <Tag color={getDifficultyColor(tutorial.difficulty)}>
-                              {tutorial.difficulty === 'beginner' ? '初级' : tutorial.difficulty === 'intermediate' ? '中级' : '高级'}
+                              {tutorial.difficulty === 'beginner'
+                                ? '初级'
+                                : tutorial.difficulty === 'intermediate'
+                                  ? '中级'
+                                  : '高级'}
                             </Tag>
                             <Text type="secondary" style={{ fontSize: 12 }}>
                               <ClockCircleOutlined /> {tutorial.estimatedDuration} 分钟

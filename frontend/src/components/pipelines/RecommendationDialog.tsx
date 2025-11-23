@@ -2,7 +2,7 @@
  * AI Parameter Recommendation Dialog
  * Visualizes parameter recommendations with confidence scores
  */
-import React from 'react'
+import type React from 'react'
 import {
   Modal,
   Card,
@@ -27,13 +27,13 @@ import {
   RocketOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
-import type { ParameterRecommendation } from '@/types/pipeline'
+import type { ParameterRecommendationResponse } from '@/types/pipeline'
 
 const { Title, Text, Paragraph } = Typography
 
 interface RecommendationDialogProps {
   open: boolean
-  recommendation: ParameterRecommendation | null
+  recommendation: ParameterRecommendationResponse | null
   loading: boolean
   onClose: () => void
   onApply: (params: Record<string, any>) => void
@@ -52,8 +52,12 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
 
   // Calculate confidence level
   const getConfidenceLevel = (score: number) => {
-    if (score >= 0.8) return { level: 'High', color: 'success', status: 'active' }
-    if (score >= 0.6) return { level: 'Medium', color: 'normal', status: 'active' }
+    if (score >= 0.8) {
+      return { level: 'High', color: 'success', status: 'active' }
+    }
+    if (score >= 0.6) {
+      return { level: 'Medium', color: 'normal', status: 'active' }
+    }
     return { level: 'Low', color: 'exception', status: 'exception' }
   }
 
@@ -143,8 +147,8 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                       confidenceConfig.color === 'success'
                         ? '#52c41a'
                         : confidenceConfig.color === 'normal'
-                        ? '#1890ff'
-                        : '#faad14',
+                          ? '#1890ff'
+                          : '#faad14',
                   }}
                 />
                 <Progress
@@ -159,8 +163,8 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                     confidenceConfig.level === 'High'
                       ? 'success'
                       : confidenceConfig.level === 'Medium'
-                      ? 'processing'
-                      : 'warning'
+                        ? 'processing'
+                        : 'warning'
                   }
                   style={{ marginTop: 8 }}
                 >
@@ -218,12 +222,7 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                         children: (
                           <div>
                             <Text strong>Numeric Parameters</Text>
-                            <Descriptions
-                              column={2}
-                              size="small"
-                              bordered
-                              style={{ marginTop: 8 }}
-                            >
+                            <Descriptions column={2} size="small" bordered style={{ marginTop: 8 }}>
                               {paramGroups.numeric.map(({ key, value }) => (
                                 <Descriptions.Item label={key} key={key}>
                                   <Tag color="blue">{value}</Tag>
@@ -242,17 +241,10 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                         children: (
                           <div>
                             <Text strong>Boolean Flags</Text>
-                            <Descriptions
-                              column={2}
-                              size="small"
-                              bordered
-                              style={{ marginTop: 8 }}
-                            >
+                            <Descriptions column={2} size="small" bordered style={{ marginTop: 8 }}>
                               {paramGroups.boolean.map(({ key, value }) => (
                                 <Descriptions.Item label={key} key={key}>
-                                  <Tag color={value ? 'success' : 'default'}>
-                                    {value ? 'Enabled' : 'Disabled'}
-                                  </Tag>
+                                  <Tag color={value ? 'success' : 'default'}>{value ? 'Enabled' : 'Disabled'}</Tag>
                                 </Descriptions.Item>
                               ))}
                             </Descriptions>
@@ -268,12 +260,7 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                         children: (
                           <div>
                             <Text strong>Text Parameters</Text>
-                            <Descriptions
-                              column={1}
-                              size="small"
-                              bordered
-                              style={{ marginTop: 8 }}
-                            >
+                            <Descriptions column={1} size="small" bordered style={{ marginTop: 8 }}>
                               {paramGroups.string.map(({ key, value }) => (
                                 <Descriptions.Item label={key} key={key}>
                                   <Tag color="purple">{value}</Tag>

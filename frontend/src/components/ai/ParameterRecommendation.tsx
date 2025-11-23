@@ -40,7 +40,9 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
   }, [pipelineType, sampleType, organism])
 
   const fetchRecommendations = async () => {
-    if (!pipelineType) return
+    if (!pipelineType) {
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -61,7 +63,9 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
   }
 
   const handleApplyAll = () => {
-    if (!recommendation) return
+    if (!recommendation) {
+      return
+    }
 
     const parameters: Record<string, any> = {}
     recommendation.parameters.forEach((param) => {
@@ -86,14 +90,22 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
   }
 
   const getConfidenceColor = (confidence: number): string => {
-    if (confidence >= 0.8) return DesignTokens.colors.success.main
-    if (confidence >= 0.6) return DesignTokens.colors.warning.main
+    if (confidence >= 0.8) {
+      return DesignTokens.colors.success.main
+    }
+    if (confidence >= 0.6) {
+      return DesignTokens.colors.warning.main
+    }
     return DesignTokens.colors.error.main
   }
 
   const getConfidenceLabel = (confidence: number): string => {
-    if (confidence >= 0.8) return 'High Confidence'
-    if (confidence >= 0.6) return 'Medium Confidence'
+    if (confidence >= 0.8) {
+      return 'High Confidence'
+    }
+    if (confidence >= 0.6) {
+      return 'Medium Confidence'
+    }
     return 'Low Confidence'
   }
 
@@ -206,9 +218,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
             >
               <div className="parameter-header">
                 <Space style={{ flex: 1 }}>
-                  <CheckCircleOutlined
-                    style={{ color: getConfidenceColor(param.confidence) }}
-                  />
+                  <CheckCircleOutlined style={{ color: getConfidenceColor(param.confidence) }} />
                   <div>
                     <Text strong>{param.parameter}</Text>
                     <br />
@@ -218,9 +228,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
 
                 <Space>
                   <Tooltip title={getConfidenceLabel(param.confidence)}>
-                    <Tag color={getConfidenceColor(param.confidence)}>
-                      {(param.confidence * 100).toFixed(0)}%
-                    </Tag>
+                    <Tag color={getConfidenceColor(param.confidence)}>{(param.confidence * 100).toFixed(0)}%</Tag>
                   </Tooltip>
                   <Button
                     type="primary"
@@ -244,13 +252,9 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         Based on:{' '}
                       </Text>
-                      {param.basedOn.similarProjects && (
-                        <Tag>{param.basedOn.similarProjects} similar items</Tag>
-                      )}
+                      {param.basedOn.similarProjects && <Tag>{param.basedOn.similarProjects} similar items</Tag>}
                       {param.basedOn.bestPractices && <Tag>Best practices</Tag>}
-                      {param.basedOn.publicDatasets && (
-                        <Tag>{param.basedOn.publicDatasets} public datasets</Tag>
-                      )}
+                      {param.basedOn.publicDatasets && <Tag>{param.basedOn.publicDatasets} public datasets</Tag>}
                     </div>
                   )}
 
@@ -264,9 +268,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
                           <div key={idx} className="alternative-option">
                             <Space>
                               <Text code>{String(alt.value)}</Text>
-                              <Tag size="small">
-                                {(alt.confidence * 100).toFixed(0)}%
-                              </Tag>
+                              <Tag style={{ fontSize: '12px' }}>{(alt.confidence * 100).toFixed(0)}%</Tag>
                             </Space>
                             <Text type="secondary" style={{ fontSize: 11 }}>
                               {alt.reason}

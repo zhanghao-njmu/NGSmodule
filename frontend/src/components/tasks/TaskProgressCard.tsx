@@ -1,20 +1,9 @@
 /**
  * Task Progress Card - Real-time task progress tracking
  */
-import React, { useEffect, useState } from 'react'
-import {
-  Card,
-  Progress,
-  Space,
-  Typography,
-  Tag,
-  Button,
-  Tooltip,
-  Alert,
-  Statistic,
-  Descriptions,
-  Badge,
-} from 'antd'
+import type React from 'react'
+import { useEffect, useState } from 'react'
+import { Card, Progress, Space, Typography, Tag, Button, Tooltip, Alert, Statistic, Descriptions, Badge } from 'antd'
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -27,7 +16,7 @@ import {
 } from '@ant-design/icons'
 import { taskService } from '@/services/task.service'
 import { toast } from '@/utils/notification'
-import type { PipelineTask } from '@/types/task'
+import type { Task } from '@/types/task'
 import dayjs from 'dayjs'
 import duration from 'dayjs/plugin/duration'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -52,7 +41,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
   autoRefresh = true,
   refreshInterval = 3000, // 3 seconds
 }) => {
-  const [task, setTask] = useState<PipelineTask | null>(null)
+  const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
   const [cancelling, setCancelling] = useState(false)
@@ -60,15 +49,11 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
   // Load task details
   const loadTask = async () => {
     try {
-      const data = await taskService.getTask(taskId)
+      const data = await taskService.getById(taskId)
       setTask(data)
 
       // Call onComplete callback if task completed
-      if (
-        data.status === 'completed' &&
-        task?.status !== 'completed' &&
-        onComplete
-      ) {
+      if (data.status === 'completed' && task?.status !== 'completed' && onComplete) {
         onComplete()
       }
     } catch (error: any) {
@@ -90,7 +75,9 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
 
   // Calculate elapsed time
   useEffect(() => {
-    if (!task?.started_at) return
+    if (!task?.started_at) {
+      return
+    }
 
     const updateElapsed = () => {
       const start = dayjs(task.started_at)
@@ -104,14 +91,18 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
   }, [task?.started_at])
 
   const handleCancel = async () => {
-    if (!task) return
+    if (!task) {
+      return
+    }
 
     setCancelling(true)
     try {
       await taskService.cancelTask(task.id)
       toast.success('Task cancelled successfully')
       await loadTask()
-      if (onCancel) onCancel()
+      if (onCancel) {
+        onCancel()
+      }
     } catch (error: any) {
       toast.error(`Failed to cancel task: ${error.message}`)
     } finally {
@@ -121,10 +112,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
 
   // Status configuration
   const getStatusConfig = (status: string) => {
-    const configs: Record<
-      string,
-      { color: string; icon: React.ReactNode; label: string; badge: string }
-    > = {
+    const configs: Record<string, { color: string; icon: React.ReactNode; label: string; badge: string }> = {
       pending: {
         color: 'default',
         icon: <ClockCircleOutlined />,
@@ -172,8 +160,12 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
     const m = Math.floor((seconds % 3600) / 60)
     const s = seconds % 60
 
-    if (h > 0) return `${h}h ${m}m ${s}s`
-    if (m > 0) return `${m}m ${s}s`
+    if (h > 0) {
+      return `${h}h ${m}m ${s}s`
+    }
+    if (m > 0) {
+      return `${m}m ${s}s`
+    }
     return `${s}s`
   }
 
@@ -185,10 +177,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
 
   // Calculate estimated time remaining (mock calculation)
   const estimatedTotal = task.config?.estimated_time || 3600 // Default 1 hour
-  const estimatedRemaining =
-    task.status === 'running'
-      ? Math.max(0, estimatedTotal - elapsed)
-      : 0
+  const estimatedRemaining = task.status === 'running' ? Math.max(0, estimatedTotal - elapsed) : 0
 
   return (
     <Badge.Ribbon text={statusConfig.label} color={statusConfig.badge}>
@@ -203,13 +192,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
         extra={
           <Space>
             {task.status === 'running' && (
-              <Button
-                size="small"
-                danger
-                icon={<StopOutlined />}
-                onClick={handleCancel}
-                loading={cancelling}
-              >
+              <Button size="small" danger icon={<StopOutlined />} onClick={handleCancel} loading={cancelling}>
                 Cancel
               </Button>
             )}
@@ -263,9 +246,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
           {task.status === 'completed' && task.completed_at && (
             <Alert
               message="Task Completed Successfully"
-              description={`Finished at ${dayjs(task.completed_at).format(
-                'YYYY-MM-DD HH:mm:ss'
-              )}`}
+              description={`Finished at ${dayjs(task.completed_at).format('YYYY-MM-DD HH:mm:ss')}`}
               type="success"
               showIcon
               icon={<CheckCircleOutlined />}
@@ -291,17 +272,12 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Started">
-              {task.started_at
-                ? dayjs(task.started_at).format('YYYY-MM-DD HH:mm:ss')
-                : 'Not started'}
+              {task.started_at ? dayjs(task.started_at).format('YYYY-MM-DD HH:mm:ss') : 'Not started'}
             </Descriptions.Item>
             {task.celery_task_id && (
               <Descriptions.Item label="Celery ID" span={2}>
                 <Tooltip title={task.celery_task_id}>
-                  <Text
-                    copyable={{ text: task.celery_task_id }}
-                    style={{ fontSize: 12, fontFamily: 'monospace' }}
-                  >
+                  <Text copyable={{ text: task.celery_task_id }} style={{ fontSize: 12, fontFamily: 'monospace' }}>
                     {task.celery_task_id.slice(0, 16)}...
                   </Text>
                 </Tooltip>

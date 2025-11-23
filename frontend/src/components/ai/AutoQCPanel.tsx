@@ -1,19 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  Card,
-  Space,
-  Typography,
-  Tag,
-  Button,
-  Progress,
-  Alert,
-  Spin,
-  Collapse,
-  Statistic,
-  Row,
-  Col,
-  Tooltip,
-} from 'antd'
+import { Card, Space, Typography, Tag, Button, Progress, Alert, Spin, Collapse, Statistic, Row, Col } from 'antd'
 import {
   CheckCircleOutlined,
   WarningOutlined,
@@ -23,7 +9,6 @@ import {
   ExperimentOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
-import type { QCReport, QCMetric, QCStatus } from '@/types/ai'
 import { aiService } from '@/services/ai.service'
 import { DesignTokens } from '@/styles/design-tokens'
 import './AutoQCPanel.css'
@@ -39,13 +24,7 @@ interface AutoQCPanelProps {
   onRerun?: () => void
 }
 
-export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({
-  sampleId,
-  sampleName,
-  fastqFiles,
-  bamFile,
-  onRerun,
-}) => {
+export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({ sampleId, sampleName, fastqFiles, bamFile, onRerun }) => {
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState<QCReport | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -217,11 +196,7 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({
 
           <Col xs={24} sm={12} md={6}>
             <Card className="qc-stat-card">
-              <Statistic
-                title="Sample"
-                value={sampleName || report.sampleName}
-                valueStyle={{ fontSize: 16 }}
-              />
+              <Statistic title="Sample" value={sampleName || report.sampleName} valueStyle={{ fontSize: 16 }} />
               <Text type="secondary" style={{ fontSize: 12 }}>
                 ID: {report.sampleId}
               </Text>
@@ -288,9 +263,7 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({
                     <Text code>
                       {metric.value} {metric.unit || ''}
                     </Text>
-                    <Tag color={getStatusColor(metric.status)}>
-                      {metric.status.toUpperCase()}
-                    </Tag>
+                    <Tag color={getStatusColor(metric.status)}>{metric.status.toUpperCase()}</Tag>
                   </Space>
                 </Space>
               }
@@ -321,11 +294,7 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({
                 )}
 
                 <Progress
-                  percent={
-                    metric.threshold
-                      ? Math.min((metric.value / metric.threshold.excellent) * 100, 100)
-                      : 0
-                  }
+                  percent={metric.threshold ? Math.min((metric.value / metric.threshold.excellent) * 100, 100) : 0}
                   strokeColor={getStatusColor(metric.status)}
                   style={{ marginTop: 12 }}
                 />

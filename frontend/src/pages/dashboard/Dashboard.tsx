@@ -1,7 +1,8 @@
 /**
  * Dashboard Page
  */
-import React, { useEffect } from 'react'
+import type React from 'react'
+import { useEffect } from 'react'
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
 import {
   ProjectOutlined,
@@ -11,7 +12,6 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
-import statsService, { type DashboardStats } from '@/services/stats.service'
 import { PageSkeleton, FadeIn, StaggeredList } from '@/components/common'
 import { useAsync } from '@/hooks'
 import styles from './Dashboard.module.css'
@@ -22,9 +22,13 @@ export const Dashboard: React.FC = () => {
   const { user } = authStore()
 
   // Using useAsync hook eliminates 20+ lines of boilerplate
-  const { data: stats, loading, error, execute: loadStats } = useAsync(
+  const {
+    data: stats,
+    loading,
+    error,
+    execute: loadStats,
+  } = useAsync(
     async () => {
-      const data = await statsService.getDashboardStats()
       // 将用户存储信息添加到统计数据
       return {
         ...data,
@@ -35,15 +39,15 @@ export const Dashboard: React.FC = () => {
     {
       immediate: true,
       onError: (err) => console.error('Failed to load dashboard stats:', err),
-    }
+    },
   )
 
-  const storagePercent = stats
-    ? Math.round((stats.storageUsed / stats.storageQuota) * 100)
-    : 0
+  const storagePercent = stats ? Math.round((stats.storageUsed / stats.storageQuota) * 100) : 0
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
+    if (bytes === 0) {
+      return '0 Bytes'
+    }
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -96,9 +100,7 @@ export const Dashboard: React.FC = () => {
             <Title level={2} style={{ margin: 0 }}>
               Welcome back, {user?.full_name || user?.username}! 👋
             </Title>
-            <Text type="secondary">
-              Here's an overview of your bioinformatics workspace
-            </Text>
+            <Text type="secondary">Here&apos;s an overview of your bioinformatics workspace</Text>
           </Space>
           <Tag color={user?.role === 'admin' ? 'gold' : 'blue'}>
             {user?.role === 'admin' ? 'Administrator' : 'User'}
@@ -174,24 +176,18 @@ export const Dashboard: React.FC = () => {
                 <Title level={4} type="secondary">
                   No items yet
                 </Title>
-                <Paragraph type="secondary">
-                  Create your first project to start analyzing NGS data
-                </Paragraph>
+                <Paragraph type="secondary">Create your first project to start analyzing NGS data</Paragraph>
               </div>
             </Card>
           </Col>
 
           <Col xs={24} lg={8}>
-            <Card
-              title="Quick Actions"
-              bordered={false}
-              className={styles.card}
-            >
+            <Card title="Quick Actions" bordered={false} className={styles.card}>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <Card.Grid
                   hoverable
                   style={{ width: '100%', cursor: 'pointer' }}
-                  onClick={() => window.location.href = '/items'}
+                  onClick={() => (window.location.href = '/items')}
                 >
                   <Space>
                     <ProjectOutlined style={{ fontSize: 20, color: '#2196F3' }} />
@@ -205,10 +201,7 @@ export const Dashboard: React.FC = () => {
                   </Space>
                 </Card.Grid>
 
-                <Card.Grid
-                  hoverable
-                  style={{ width: '100%', cursor: 'pointer' }}
-                >
+                <Card.Grid hoverable style={{ width: '100%', cursor: 'pointer' }}>
                   <Space>
                     <ExperimentOutlined style={{ fontSize: 20, color: '#4CAF50' }} />
                     <div>
@@ -221,10 +214,7 @@ export const Dashboard: React.FC = () => {
                   </Space>
                 </Card.Grid>
 
-                <Card.Grid
-                  hoverable
-                  style={{ width: '100%', cursor: 'pointer' }}
-                >
+                <Card.Grid hoverable style={{ width: '100%', cursor: 'pointer' }}>
                   <Space>
                     <DatabaseOutlined style={{ fontSize: 20, color: '#FF9800' }} />
                     <div>

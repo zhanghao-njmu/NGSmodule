@@ -2,9 +2,7 @@
  * Notification Utility - Unified toast notification system
  * 统一的消息通知系统
  */
-import React from 'react'
 import { message, notification } from 'antd'
-import type { ArgsProps as MessageArgsProps } from 'antd/es/message'
 import type { ArgsProps as NotificationArgsProps } from 'antd/es/notification'
 import {
   CheckCircleOutlined,
@@ -73,8 +71,10 @@ export const toast = {
 /**
  * Notifications - Detailed messages with title and description
  */
+type NotifyOptions = Omit<NotificationArgsProps, 'message' | 'description' | 'icon'>
+
 export const notify = {
-  success: (title: string, description?: string, options?: NotificationArgsProps) => {
+  success: (title: string, description?: string, options?: NotifyOptions) => {
     notification.success({
       message: title,
       description,
@@ -83,7 +83,7 @@ export const notify = {
     })
   },
 
-  error: (title: string, description?: string, options?: NotificationArgsProps) => {
+  error: (title: string, description?: string, options?: NotifyOptions) => {
     notification.error({
       message: title,
       description,
@@ -92,7 +92,7 @@ export const notify = {
     })
   },
 
-  warning: (title: string, description?: string, options?: NotificationArgsProps) => {
+  warning: (title: string, description?: string, options?: NotifyOptions) => {
     notification.warning({
       message: title,
       description,
@@ -101,7 +101,7 @@ export const notify = {
     })
   },
 
-  info: (title: string, description?: string, options?: NotificationArgsProps) => {
+  info: (title: string, description?: string, options?: NotifyOptions) => {
     notification.info({
       message: title,
       description,
@@ -143,42 +143,27 @@ export const notifications = {
   processing: () => toast.loading('处理中...'),
 
   // Task execution notifications
-  taskStarted: (taskName: string) =>
-    notify.info('任务已启动', `${taskName}已开始执行，您可以在任务列表中查看进度`),
-  taskCompleted: (taskName: string) =>
-    notify.success('任务完成', `${taskName}已成功完成`),
+  taskStarted: (taskName: string) => notify.info('任务已启动', `${taskName}已开始执行，您可以在任务列表中查看进度`),
+  taskCompleted: (taskName: string) => notify.success('任务完成', `${taskName}已成功完成`),
   taskFailed: (taskName: string, error?: string) =>
     notify.error('任务失败', error || `${taskName}执行失败，请查看日志`),
 
   // Pipeline execution notifications
   pipelineStarted: (pipelineName: string) =>
-    notify.info(
-      '管道已启动',
-      `${pipelineName}已开始运行，预计需要几分钟到几小时`,
-      { duration: 6 }
-    ),
-  pipelineCompleted: (pipelineName: string) =>
-    notify.success('管道完成', `${pipelineName}已成功完成，可以查看结果`),
-  pipelineFailed: (pipelineName: string) =>
-    notify.error('管道失败', `${pipelineName}运行失败，请检查参数和输入文件`),
+    notify.info('管道已启动', `${pipelineName}已开始运行，预计需要几分钟到几小时`, { duration: 6 }),
+  pipelineCompleted: (pipelineName: string) => notify.success('管道完成', `${pipelineName}已成功完成，可以查看结果`),
+  pipelineFailed: (pipelineName: string) => notify.error('管道失败', `${pipelineName}运行失败，请检查参数和输入文件`),
 
   // File management notifications
-  fileUploaded: (filename: string) =>
-    toast.success(`文件 "${filename}" 上传成功`),
-  fileDeleted: (filename: string) =>
-    toast.success(`文件 "${filename}" 已删除`),
-  fileDownloaded: (filename: string) =>
-    toast.success(`文件 "${filename}" 开始下载`),
+  fileUploaded: (filename: string) => toast.success(`文件 "${filename}" 上传成功`),
+  fileDeleted: (filename: string) => toast.success(`文件 "${filename}" 已删除`),
+  fileDownloaded: (filename: string) => toast.success(`文件 "${filename}" 开始下载`),
 
   // Form validation
   fillRequired: () => toast.warning('请填写所有必填项'),
   invalidFormat: (field: string) => toast.warning(`${field}格式不正确`),
   confirmDelete: (itemName: string) =>
-    notify.warning(
-      '确认删除',
-      `您确定要删除 "${itemName}" 吗？此操作不可撤销`,
-      { duration: 0 }
-    ),
+    notify.warning('确认删除', `您确定要删除 "${itemName}" 吗？此操作不可撤销`, { duration: 0 }),
 }
 
 /**

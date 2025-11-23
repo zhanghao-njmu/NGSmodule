@@ -4,7 +4,7 @@
  * Eliminates code duplication across list pages
  */
 
-import React from 'react'
+import type React from 'react'
 import { Space, Button, Tooltip, Popconfirm, Tag, Typography } from 'antd'
 import {
   EditOutlined,
@@ -74,7 +74,7 @@ export function createActionColumn<T extends { id: string }>(
     showEdit?: boolean
     showDelete?: boolean
     showView?: boolean
-  }
+  },
 ): ColumnType<T> {
   const {
     width = 120,
@@ -96,23 +96,13 @@ export function createActionColumn<T extends { id: string }>(
       <Space size="small">
         {showView && onView && (
           <Tooltip title="View">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => onView(record)}
-            />
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
           </Tooltip>
         )}
 
         {showEdit && onEdit && (
           <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-            />
+            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
           </Tooltip>
         )}
 
@@ -124,12 +114,7 @@ export function createActionColumn<T extends { id: string }>(
             cancelText={deleteCancelText}
           >
             <Tooltip title="Delete">
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-              />
+              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
         )}
@@ -161,7 +146,7 @@ export function createActionColumn<T extends { id: string }>(
  */
 export function createCustomActionColumn<T>(
   buttons: ActionButton<T>[],
-  options?: { width?: number; fixed?: 'left' | 'right' }
+  options?: { width?: number; fixed?: 'left' | 'right' },
 ): ColumnType<T> {
   const { width = 150, fixed = 'right' } = options || {}
 
@@ -237,15 +222,9 @@ export function createDateColumn<T>(
     width?: number
     sorter?: boolean
     defaultSortOrder?: 'ascend' | 'descend'
-  }
+  },
 ): ColumnType<T> {
-  const {
-    format = 'full',
-    customFormat,
-    width = 180,
-    sorter = false,
-    defaultSortOrder,
-  } = options || {}
+  const { format = 'full', customFormat, width = 180, sorter = false, defaultSortOrder } = options || {}
 
   return {
     title,
@@ -261,7 +240,9 @@ export function createDateColumn<T>(
       : undefined,
     defaultSortOrder,
     render: (date: string) => {
-      if (!date) return <Text type="secondary">-</Text>
+      if (!date) {
+        return <Text type="secondary">-</Text>
+      }
 
       if (format === 'relative') {
         return formatDateRelative(date)
@@ -299,7 +280,7 @@ export function createStatusColumn<T>(
   options?: {
     width?: number
     filters?: boolean
-  }
+  },
 ): ColumnType<T> {
   const { width = 120, filters = false } = options || {}
 
@@ -317,16 +298,10 @@ export function createStatusColumn<T>(
     key: dataIndex as string,
     width,
     filters: columnFilters,
-    onFilter: filters
-      ? (value: any, record: any) => record[dataIndex] === value
-      : undefined,
+    onFilter: filters ? (value: any, record: any) => record[dataIndex] === value : undefined,
     render: (status: string) => {
       const config = statusConfig[status] || { color: 'default', label: status }
-      return (
-        <Tag color={config.color}>
-          {config.label || status?.toUpperCase() || 'UNKNOWN'}
-        </Tag>
-      )
+      return <Tag color={config.color}>{config.label || status?.toUpperCase() || 'UNKNOWN'}</Tag>
     },
   }
 }
@@ -348,7 +323,7 @@ export function createFileSizeColumn<T>(
   options?: {
     width?: number
     sorter?: boolean
-  }
+  },
 ): ColumnType<T> {
   const { width = 120, sorter = false } = options || {}
 
@@ -357,11 +332,8 @@ export function createFileSizeColumn<T>(
     dataIndex: dataIndex as string,
     key: dataIndex as string,
     width,
-    sorter: sorter
-      ? (a: any, b: any) => a[dataIndex] - b[dataIndex]
-      : undefined,
-    render: (bytes: number) =>
-      bytes ? formatFileSize(bytes) : <Text type="secondary">-</Text>,
+    sorter: sorter ? (a: any, b: any) => a[dataIndex] - b[dataIndex] : undefined,
+    render: (bytes: number) => (bytes ? formatFileSize(bytes) : <Text type="secondary">-</Text>),
   }
 }
 
@@ -384,7 +356,7 @@ export function createPercentColumn<T>(
     decimals?: number
     sorter?: boolean
     colorize?: boolean // Color based on value (green > 80%, yellow > 60%, red < 60%)
-  }
+  },
 ): ColumnType<T> {
   const { width = 100, decimals = 1, sorter = false, colorize = false } = options || {}
 
@@ -393,9 +365,7 @@ export function createPercentColumn<T>(
     dataIndex: dataIndex as string,
     key: dataIndex as string,
     width,
-    sorter: sorter
-      ? (a: any, b: any) => a[dataIndex] - b[dataIndex]
-      : undefined,
+    sorter: sorter ? (a: any, b: any) => a[dataIndex] - b[dataIndex] : undefined,
     render: (value: number) => {
       if (value === null || value === undefined) {
         return <Text type="secondary">-</Text>
@@ -448,7 +418,7 @@ export function createLinkColumn<T>(
     width?: number
     ellipsis?: boolean
     maxLength?: number
-  }
+  },
 ): ColumnType<T> {
   const { width, ellipsis = true, maxLength } = options || {}
 
@@ -461,11 +431,7 @@ export function createLinkColumn<T>(
     render: (text: string, record: T) => {
       const displayText = maxLength ? truncate(text, maxLength) : text
 
-      return (
-        <Link onClick={() => onClick(record)}>
-          {displayText || <Text type="secondary">-</Text>}
-        </Link>
-      )
+      return <Link onClick={() => onClick(record)}>{displayText || <Text type="secondary">-</Text>}</Link>
     },
   }
 }
@@ -488,10 +454,10 @@ export function createTextColumn<T>(
     width?: number
     ellipsis?: boolean
     maxLength?: number
-    type?: 'default' | 'secondary' | 'success' | 'warning' | 'danger'
-  }
+    type?: 'secondary' | 'success' | 'warning' | 'danger'
+  },
 ): ColumnType<T> {
-  const { width, ellipsis = false, maxLength, type = 'default' } = options || {}
+  const { width, ellipsis = false, maxLength, type } = options || {}
 
   return {
     title,
@@ -500,11 +466,13 @@ export function createTextColumn<T>(
     width,
     ellipsis,
     render: (text: string) => {
-      if (!text) return <Text type="secondary">-</Text>
+      if (!text) {
+        return <Text type="secondary">-</Text>
+      }
 
       const displayText = maxLength ? truncate(text, maxLength) : text
 
-      return <Text type={type}>{displayText}</Text>
+      return type ? <Text type={type}>{displayText}</Text> : <Text>{displayText}</Text>
     },
   }
 }
@@ -528,13 +496,9 @@ export function createBooleanColumn<T>(
     width?: number
     labels?: [string, string] // [true label, false label]
     colors?: [string, string] // [true color, false color]
-  }
+  },
 ): ColumnType<T> {
-  const {
-    width = 100,
-    labels = ['Yes', 'No'],
-    colors = ['green', 'default'],
-  } = options || {}
+  const { width = 100, labels = ['Yes', 'No'], colors = ['green', 'default'] } = options || {}
 
   return {
     title,
@@ -574,7 +538,7 @@ export function createNumberColumn<T>(
     sorter?: boolean
     prefix?: string
     suffix?: string
-  }
+  },
 ): ColumnType<T> {
   const { width = 120, decimals = 0, sorter = false, prefix, suffix } = options || {}
 
@@ -583,9 +547,7 @@ export function createNumberColumn<T>(
     dataIndex: dataIndex as string,
     key: dataIndex as string,
     width,
-    sorter: sorter
-      ? (a: any, b: any) => a[dataIndex] - b[dataIndex]
-      : undefined,
+    sorter: sorter ? (a: any, b: any) => a[dataIndex] - b[dataIndex] : undefined,
     render: (value: number) => {
       if (value === null || value === undefined) {
         return <Text type="secondary">-</Text>
@@ -615,7 +577,7 @@ export function createTagsColumn<T>(
     width?: number
     color?: string
     maxTags?: number
-  }
+  },
 ): ColumnType<T> {
   const { width = 200, color = 'blue', maxTags } = options || {}
 

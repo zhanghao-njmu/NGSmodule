@@ -35,7 +35,6 @@ export const lightTheme: ThemeConfig = {
     fontSizeHeading5: DesignTokens.typography.fontSize.md,
 
     lineHeight: DesignTokens.typography.lineHeight.normal,
-    lineHeightHeading: DesignTokens.typography.lineHeight.tight,
 
     // ===== Border Radius =====
     borderRadius: DesignTokens.radius.md,
@@ -112,7 +111,6 @@ export const lightTheme: ThemeConfig = {
       headerBg: DesignTokens.colors.background.primary,
       contentBg: DesignTokens.colors.background.primary,
       footerBg: DesignTokens.colors.background.primary,
-      headerPadding: DesignTokens.spacing.lg,
       bodyPadding: DesignTokens.spacing.lg,
       footerPadding: `${DesignTokens.spacing.md}px ${DesignTokens.spacing.lg}px`,
     },
@@ -181,7 +179,6 @@ export const lightTheme: ThemeConfig = {
       dotSize: 6,
       textFontSize: DesignTokens.typography.fontSize.xs,
       textFontSizeSM: DesignTokens.typography.fontSize.xs,
-      fontWeight: DesignTokens.typography.fontWeight.medium,
     },
 
     // ===== Dropdown =====

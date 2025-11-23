@@ -2,7 +2,8 @@
  * ErrorBoundary - React 错误边界组件
  * 捕获子组件错误并显示友好的错误界面
  */
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component } from 'react'
+import type { ErrorInfo, ReactNode } from 'react'
 import { Result, Button, Typography, Card } from 'antd'
 import { ExclamationCircleOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons'
 
@@ -83,12 +84,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               title="Oops! Something went wrong"
               subTitle="An unexpected error occurred. Please try again or contact support if the problem persists."
               extra={[
-                <Button
-                  type="primary"
-                  icon={<ReloadOutlined />}
-                  onClick={this.handleReset}
-                  key="reset"
-                >
+                <Button type="primary" icon={<ReloadOutlined />} onClick={this.handleReset} key="reset">
                   Try Again
                 </Button>,
                 <Button icon={<HomeOutlined />} onClick={this.handleGoHome} key="home">

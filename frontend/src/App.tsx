@@ -38,7 +38,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { checkAuth } = authStore()
-  const { mode, isDark } = useTheme()
+  const { isDark } = useTheme()
 
   useEffect(() => {
     checkAuth()
@@ -58,145 +58,145 @@ function App() {
       <ErrorBoundary onReset={() => window.location.reload()}>
         <ProgressBar />
         <Routes>
-        {/* Public Routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
+          {/* Public Routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
 
-        {/* Protected Routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Protected Routes */}
           <Route
-            path="/dashboard"
             element={
-              <ErrorBoundary>
-                <Dashboard />
-              </ErrorBoundary>
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
             }
-          />
-          <Route
-            path="/items"
-            element={
-              <ErrorBoundary>
-                <ProjectList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/samples"
-            element={
-              <ErrorBoundary>
-                <SampleList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/files"
-            element={
-              <ErrorBoundary>
-                <FileList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/pipelines"
-            element={
-              <ErrorBoundary>
-                <PipelineList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/tasks"
-            element={
-              <ErrorBoundary>
-                <TaskList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/results"
-            element={
-              <ErrorBoundary>
-                <ResultList />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/results/:id"
-            element={
-              <ErrorBoundary>
-                <ResultDetail />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ErrorBoundary>
-                <AdminDashboard />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ErrorBoundary>
-                <ProfilePage />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ErrorBoundary>
-                <SettingsPage />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ErrorBoundary>
-                <NotificationsPage />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/ai"
-            element={
-              <ErrorBoundary>
-                <AIDashboard />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ErrorBoundary>
-                <AnalyticsDashboard />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="/knowledge"
-            element={
-              <ErrorBoundary>
-                <KnowledgeBase />
-              </ErrorBoundary>
-            }
-          />
-        </Route>
-      </Routes>
-    </ErrorBoundary>
-  </ConfigProvider>
+          >
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ErrorBoundary>
+                  <Dashboard />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/items"
+              element={
+                <ErrorBoundary>
+                  <ProjectList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/samples"
+              element={
+                <ErrorBoundary>
+                  <SampleList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/files"
+              element={
+                <ErrorBoundary>
+                  <FileList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/pipelines"
+              element={
+                <ErrorBoundary>
+                  <PipelineList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <ErrorBoundary>
+                  <TaskList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/results"
+              element={
+                <ErrorBoundary>
+                  <ResultList />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/results/:id"
+              element={
+                <ErrorBoundary>
+                  <ResultDetail />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ErrorBoundary>
+                  <ProfilePage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ErrorBoundary>
+                  <SettingsPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ErrorBoundary>
+                  <NotificationsPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/ai"
+              element={
+                <ErrorBoundary>
+                  <AIDashboard />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ErrorBoundary>
+                  <AnalyticsDashboard />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/knowledge"
+              element={
+                <ErrorBoundary>
+                  <KnowledgeBase />
+                </ErrorBoundary>
+              }
+            />
+          </Route>
+        </Routes>
+      </ErrorBoundary>
+    </ConfigProvider>
   )
 }
 

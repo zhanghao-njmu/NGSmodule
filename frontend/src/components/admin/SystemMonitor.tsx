@@ -1,19 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  Card,
-  Row,
-  Col,
-  Typography,
-  Statistic,
-  Progress,
-  Tag,
-  Space,
-  Button,
-  Alert,
-  List,
-  Badge,
-  Spin,
-} from 'antd'
+import { Card, Row, Col, Typography, Statistic, Progress, Tag, Space, Button, Alert, List, Badge, Spin } from 'antd'
 import {
   CheckCircleOutlined,
   WarningOutlined,
@@ -24,7 +10,6 @@ import {
   CloudOutlined,
   ApiOutlined,
 } from '@ant-design/icons'
-import { enhancedAdminService, SystemHealth, SystemMetrics, Alert as SystemAlert } from '@/services/admin.enhanced.service'
 import { DesignTokens } from '@/styles/design-tokens'
 import './SystemMonitor.css'
 
@@ -95,14 +80,22 @@ export const SystemMonitor: React.FC = () => {
   }
 
   const getHealthColor = (status: string): string => {
-    if (status === 'healthy' || status === 'operational') return DesignTokens.colors.success.main
-    if (status === 'degraded') return DesignTokens.colors.warning.main
+    if (status === 'healthy' || status === 'operational') {
+      return DesignTokens.colors.success.main
+    }
+    if (status === 'degraded') {
+      return DesignTokens.colors.warning.main
+    }
     return DesignTokens.colors.error.main
   }
 
   const getHealthIcon = (status: string) => {
-    if (status === 'healthy' || status === 'operational') return <CheckCircleOutlined />
-    if (status === 'degraded') return <WarningOutlined />
+    if (status === 'healthy' || status === 'operational') {
+      return <CheckCircleOutlined />
+    }
+    if (status === 'degraded') {
+      return <WarningOutlined />
+    }
     return <CloseCircleOutlined />
   }
 
@@ -127,7 +120,9 @@ export const SystemMonitor: React.FC = () => {
     )
   }
 
-  if (!health || !metrics) return null
+  if (!health || !metrics) {
+    return null
+  }
 
   return (
     <div className="system-monitor">
@@ -141,9 +136,7 @@ export const SystemMonitor: React.FC = () => {
         }
         extra={
           <Space>
-            <Tag color={getHealthColor(health.overall)}>
-              {health.overall.toUpperCase()}
-            </Tag>
+            <Tag color={getHealthColor(health.overall)}>{health.overall.toUpperCase()}</Tag>
             <Button icon={<ReloadOutlined />} onClick={fetchSystemData} loading={loading}>
               Refresh
             </Button>
@@ -163,10 +156,10 @@ export const SystemMonitor: React.FC = () => {
                     {name === 'storage' && <CloudOutlined />}
                     {name === 'queue' && <DesktopOutlined />}
                   </div>
-                  <Text strong style={{ textTransform: 'capitalize' }}>{name}</Text>
-                  <Tag color={getHealthColor(component.status)}>
-                    {component.status}
-                  </Tag>
+                  <Text strong style={{ textTransform: 'capitalize' }}>
+                    {name}
+                  </Text>
+                  <Tag color={getHealthColor(component.status)}>{component.status}</Tag>
                   {component.latency && (
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {component.latency}ms
@@ -197,8 +190,8 @@ export const SystemMonitor: React.FC = () => {
                 metrics.cpu.usage > 80
                   ? DesignTokens.colors.error.main
                   : metrics.cpu.usage > 60
-                  ? DesignTokens.colors.warning.main
-                  : DesignTokens.colors.success.main
+                    ? DesignTokens.colors.warning.main
+                    : DesignTokens.colors.success.main
               }
               style={{ marginTop: 12 }}
             />
@@ -215,7 +208,8 @@ export const SystemMonitor: React.FC = () => {
               value={metrics.memory.usagePercent}
               suffix="%"
               valueStyle={{
-                color: metrics.memory.usagePercent > 80 ? DesignTokens.colors.error.main : DesignTokens.colors.success.main,
+                color:
+                  metrics.memory.usagePercent > 80 ? DesignTokens.colors.error.main : DesignTokens.colors.success.main,
               }}
             />
             <Progress
@@ -224,8 +218,8 @@ export const SystemMonitor: React.FC = () => {
                 metrics.memory.usagePercent > 80
                   ? DesignTokens.colors.error.main
                   : metrics.memory.usagePercent > 60
-                  ? DesignTokens.colors.warning.main
-                  : DesignTokens.colors.success.main
+                    ? DesignTokens.colors.warning.main
+                    : DesignTokens.colors.success.main
               }
               style={{ marginTop: 12 }}
             />
@@ -242,7 +236,8 @@ export const SystemMonitor: React.FC = () => {
               value={metrics.disk.usagePercent}
               suffix="%"
               valueStyle={{
-                color: metrics.disk.usagePercent > 80 ? DesignTokens.colors.error.main : DesignTokens.colors.success.main,
+                color:
+                  metrics.disk.usagePercent > 80 ? DesignTokens.colors.error.main : DesignTokens.colors.success.main,
               }}
             />
             <Progress
@@ -251,8 +246,8 @@ export const SystemMonitor: React.FC = () => {
                 metrics.disk.usagePercent > 80
                   ? DesignTokens.colors.error.main
                   : metrics.disk.usagePercent > 60
-                  ? DesignTokens.colors.warning.main
-                  : DesignTokens.colors.success.main
+                    ? DesignTokens.colors.warning.main
+                    : DesignTokens.colors.success.main
               }
               style={{ marginTop: 12 }}
             />
@@ -282,9 +277,7 @@ export const SystemMonitor: React.FC = () => {
                 message={
                   <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                     <Space>
-                      <Tag color={getSeverityColor(alert.severity)}>
-                        {alert.severity.toUpperCase()}
-                      </Tag>
+                      <Tag color={getSeverityColor(alert.severity)}>{alert.severity.toUpperCase()}</Tag>
                       <Text strong>{alert.title}</Text>
                     </Space>
                     <Text type="secondary" style={{ fontSize: 12 }}>
