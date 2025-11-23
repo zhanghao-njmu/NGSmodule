@@ -11,9 +11,10 @@ import {
   ApiOutlined,
 } from '@ant-design/icons'
 import { DesignTokens } from '@/styles/design-tokens'
+import type { SystemHealth, SystemMetrics, SystemAlert } from '@/types/admin'
 import './SystemMonitor.css'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export const SystemMonitor: React.FC = () => {
   const [loading, setLoading] = useState(false)

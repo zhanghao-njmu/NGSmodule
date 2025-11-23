@@ -1,12 +1,9 @@
 /**
  * Project List Page - Complete project management interface
  */
-import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Space,
-  Dropdown,
-} from 'antd'
+import type React from 'react'
+import { useEffect, useState } from 'react'
+import { Button, Space, Dropdown } from 'antd'
 import {
   PlusOutlined,
   FolderOutlined,
@@ -30,10 +27,8 @@ import {
   EnhancedEmptyState,
   PageSkeleton,
   FadeIn,
-  StaggeredList,
 } from '../../components/common'
 import type { FilterConfig } from '../../components/common'
-import { confirmDelete, confirmDangerousAction } from '../../components/common/ConfirmDialog'
 import { toast, notifications } from '../../utils/notification'
 import { useFilters } from '@/hooks'
 import type { StatisticItem } from '../../components/common'
@@ -44,22 +39,18 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
 
 export const ProjectList: React.FC = () => {
-  const {
-    items,
-    stats,
-    loading,
-    fetchItems,
-    fetchStats,
-    deleteItem,
-    archiveProject,
-    restoreProject,
-  } = useProjectStore()
+  const { items, stats, loading, fetchItems, fetchStats, deleteItem, archiveProject, restoreProject } =
+    useProjectStore()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   // Using useFilters hook eliminates repetitive filter state management
-  const { filters, setFilter, resetFilters: handleFilterReset } = useFilters({
+  const {
+    filters,
+    setFilter,
+    resetFilters: handleFilterReset,
+  } = useFilters({
     initialFilters: {
       search: '',
       status: 'all',
@@ -128,7 +119,7 @@ export const ProjectList: React.FC = () => {
           loadingToast()
           notifications.deleteError()
         }
-      }
+      },
     )
   }
 
@@ -225,10 +216,7 @@ export const ProjectList: React.FC = () => {
                 key: 'archive',
                 label: record.status === 'archived' ? 'Restore' : 'Archive',
                 icon: record.status === 'archived' ? <RestOutlined /> : <InboxOutlined />,
-                onClick: () =>
-                  record.status === 'archived'
-                    ? handleRestore(record)
-                    : handleArchive(record),
+                onClick: () => (record.status === 'archived' ? handleRestore(record) : handleArchive(record)),
               },
               {
                 type: 'divider',

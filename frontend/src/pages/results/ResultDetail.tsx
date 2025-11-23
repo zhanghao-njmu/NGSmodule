@@ -1,32 +1,28 @@
 /**
  * Result Detail Page - Analysis results visualization
  */
-import React, { useEffect } from 'react'
+import type React from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Statistic, Tabs, Alert, Button, Space, Tag, Descriptions } from 'antd'
-import {
-  ArrowLeftOutlined,
-  DownloadOutlined,
-  CheckCircleOutlined,
-  WarningOutlined,
-  CloseCircleOutlined,
-} from '@ant-design/icons'
+import { ArrowLeftOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import resultService from '@/services/result.service'
 import { PageSkeleton, FadeIn, ErrorBoundary } from '@/components/common'
 import { LineChart, BarChart, PieChart, ScatterPlot } from '@/components/charts'
 import { useAsync } from '@/hooks'
 import type { ResultVisualizationData, ChartData } from '@/types/result'
-import dayjs from 'dayjs'
 
 export const ResultDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
   // Using useAsync hook eliminates 15+ lines of boilerplate
-  const { data: vizData, loading, error, execute: loadVisualizationData } = useAsync(
-    () => resultService.getVisualizationData(id!),
-    { immediate: false }
-  )
+  const {
+    data: vizData,
+    loading,
+    error,
+    execute: loadVisualizationData,
+  } = useAsync(() => resultService.getVisualizationData(id!), { immediate: false })
 
   useEffect(() => {
     if (id) {
@@ -46,9 +42,7 @@ export const ResultDetail: React.FC = () => {
           description={error?.message || 'No data available'}
           type="error"
           showIcon
-          action={
-            <Button onClick={loadVisualizationData}>Retry</Button>
-          }
+          action={<Button onClick={loadVisualizationData}>Retry</Button>}
         />
       </FadeIn>
     )
@@ -70,15 +64,10 @@ export const ResultDetail: React.FC = () => {
         <Card bordered={false} style={{ marginBottom: 24 }}>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <Space>
-              <Button
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(-1)}
-              >
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
                 Back
               </Button>
-              <h2 style={{ margin: 0 }}>
-                {vizData.type.replace('_', ' ').toUpperCase()} Results
-              </h2>
+              <h2 style={{ margin: 0 }}>{vizData.type.replace('_', ' ').toUpperCase()} Results</h2>
               {vizData.status && (
                 <Tag icon={status.icon} color={status.color}>
                   {status.text}
@@ -136,9 +125,7 @@ export const ResultDetail: React.FC = () => {
               label: 'Raw Data',
               children: (
                 <Card>
-                  <pre style={{ maxHeight: 600, overflow: 'auto' }}>
-                    {JSON.stringify(vizData, null, 2)}
-                  </pre>
+                  <pre style={{ maxHeight: 600, overflow: 'auto' }}>{JSON.stringify(vizData, null, 2)}</pre>
                 </Card>
               ),
             },
@@ -154,13 +141,7 @@ function renderChart(name: string, data: ChartData) {
 
   switch (data.type) {
     case 'line':
-      return (
-        <LineChart
-          data={[{ x: data.x || [], y: data.y || [], name: title }]}
-          title={title}
-          smooth
-        />
-      )
+      return <LineChart data={[{ x: data.x || [], y: data.y || [], name: title }]} title={title} smooth />
 
     case 'bar':
       return (
@@ -198,23 +179,11 @@ function renderChart(name: string, data: ChartData) {
       )
 
     case 'area':
-      return (
-        <LineChart
-          data={[{ x: data.x || [], y: data.y || [], name: title }]}
-          title={title}
-          smooth
-          showArea
-        />
-      )
+      return <LineChart data={[{ x: data.x || [], y: data.y || [], name: title }]} title={title} smooth showArea />
 
     case 'histogram':
       // For histogram, we can use bar chart
-      return (
-        <BarChart
-          data={[{ categories: data.x?.map(String) || [], values: data.y || [] }]}
-          title={title}
-        />
-      )
+      return <BarChart data={[{ categories: data.x?.map(String) || [], values: data.y || [] }]} title={title} />
 
     default:
       return <Card title={title}>Unsupported chart type: {data.type}</Card>
@@ -228,13 +197,9 @@ function renderGeneTable(vizData: ResultVisualizationData) {
     <Card>
       <Descriptions title="Gene Information" column={1} bordered size="small">
         {genes.slice(0, 20).map((gene, index) => (
-          <Descriptions.Item
-            key={index}
-            label={gene.gene}
-          >
+          <Descriptions.Item key={index} label={gene.gene}>
             {gene.expression !== undefined && `Expression: ${gene.expression.toFixed(2)} | `}
-            {gene.log2_fold_change !== undefined &&
-              `Log2FC: ${gene.log2_fold_change.toFixed(2)} | `}
+            {gene.log2_fold_change !== undefined && `Log2FC: ${gene.log2_fold_change.toFixed(2)} | `}
             {gene.p_value !== undefined && `P-value: ${gene.p_value.toExponential(2)}`}
             {gene.significant && (
               <Tag color="red" style={{ marginLeft: 8 }}>

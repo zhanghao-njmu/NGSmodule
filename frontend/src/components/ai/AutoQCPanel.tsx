@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons'
 import { aiService } from '@/services/ai.service'
 import { DesignTokens } from '@/styles/design-tokens'
+import type { QCReport, QCStatus, QCMetric, QCIssue } from '@/types/ai'
 import './AutoQCPanel.css'
 
 const { Text, Paragraph, Title } = Typography
@@ -222,7 +223,7 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({ sampleId, sampleName, 
             <WarningOutlined /> Issues Detected
           </Title>
           <Space direction="vertical" style={{ width: '100%' }} size="small">
-            {report.issues.map((issue, idx) => (
+            {report.issues.map((issue: QCIssue, idx: number) => (
               <Alert
                 key={idx}
                 message={issue.message}
@@ -249,8 +250,12 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({ sampleId, sampleName, 
       {/* QC Metrics */}
       <div className="qc-metrics">
         <Title level={5}>Quality Metrics</Title>
-        <Collapse defaultActiveKey={report.metrics.filter((m) => m.status !== 'excellent').map((m) => m.name)}>
-          {report.metrics.map((metric) => (
+        <Collapse
+          defaultActiveKey={report.metrics
+            .filter((m: QCMetric) => m.status !== 'excellent')
+            .map((m: QCMetric) => m.name)}
+        >
+          {report.metrics.map((metric: QCMetric) => (
             <Panel
               key={metric.name}
               header={
@@ -316,7 +321,7 @@ export const AutoQCPanel: React.FC<AutoQCPanelProps> = ({ sampleId, sampleName, 
             }
             description={
               <ul style={{ margin: 0, paddingLeft: 20 }}>
-                {report.recommendations.map((rec, idx) => (
+                {report.recommendations.map((rec: string, idx: number) => (
                   <li key={idx}>{rec}</li>
                 ))}
               </ul>

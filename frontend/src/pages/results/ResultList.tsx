@@ -1,7 +1,8 @@
 /**
  * Result List Page - Browse all analysis results
  */
-import React, { useEffect, useMemo, useState } from 'react'
+import type React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -14,7 +15,6 @@ import {
   Row,
   Col,
   Statistic,
-  Badge,
   Dropdown,
   type MenuProps,
 } from 'antd'
@@ -31,14 +31,7 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import resultService from '@/services/result.service'
-import {
-  FilterBar,
-  EnhancedEmptyState,
-  PageSkeleton,
-  FadeIn,
-  StaggeredList,
-  StatusTag,
-} from '@/components/common'
+import { FilterBar, EnhancedEmptyState, PageSkeleton, FadeIn, StaggeredList, StatusTag } from '@/components/common'
 import type { FilterConfig } from '@/components/common'
 import { useAsync, useFilters, usePagination } from '@/hooks'
 import { toast } from '@/utils/notification'
@@ -94,7 +87,7 @@ export const ResultList: React.FC = () => {
     {
       immediate: false,
       onError: (err) => toast.error(`Failed to load results: ${err.message}`),
-    }
+    },
   )
 
   // Load results when filters or pagination changes
@@ -104,15 +97,17 @@ export const ResultList: React.FC = () => {
 
   // Filter results by search term (client-side)
   const filteredResults = useMemo(() => {
-    if (!resultsData?.results) return []
+    if (!resultsData?.results) {
+      return []
+    }
 
-    if (!filters.search) return resultsData.results
+    if (!filters.search) {
+      return resultsData.results
+    }
 
     const searchLower = filters.search.toLowerCase()
     return resultsData.results.filter(
-      (result) =>
-        result.result_type.toLowerCase().includes(searchLower) ||
-        result.id.toString().includes(searchLower)
+      (result) => result.result_type.toLowerCase().includes(searchLower) || result.id.toString().includes(searchLower),
     )
   }, [resultsData, filters.search])
 
@@ -151,10 +146,7 @@ export const ResultList: React.FC = () => {
 
   // Result type tag colors and icons
   const getResultTypeConfig = (type: string) => {
-    const configs: Record<
-      string,
-      { color: string; icon: React.ReactNode; label: string }
-    > = {
+    const configs: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
       qc_report: {
         color: 'blue',
         icon: <CheckCircleOutlined />,

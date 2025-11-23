@@ -68,7 +68,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
     }
 
     const parameters: Record<string, any> = {}
-    recommendation.parameters.forEach((param) => {
+    recommendation.parameters.forEach((param: ParameterRecommendation) => {
       parameters[param.parameter] = param.recommendedValue
     })
 
@@ -190,7 +190,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
           message="Warnings"
           description={
             <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {recommendation.warnings.map((warning, idx) => (
+              {recommendation.warnings.map((warning: string, idx: number) => (
                 <li key={idx}>{warning}</li>
               ))}
             </ul>
@@ -208,7 +208,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
         </Title>
 
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          {recommendation.parameters.map((param) => (
+          {recommendation.parameters.map((param: ParameterRecommendation) => (
             <Card
               key={param.parameter}
               size="small"
@@ -264,7 +264,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
                         Alternatives:
                       </Text>
                       <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                        {param.alternatives.map((alt, idx) => (
+                        {param.alternatives.map((alt: any, idx: number) => (
                           <div key={idx} className="alternative-option">
                             <Space>
                               <Text code>{String(alt.value)}</Text>
@@ -291,7 +291,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
           message="Suggestions"
           description={
             <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {recommendation.suggestions.map((suggestion, idx) => (
+              {recommendation.suggestions.map((suggestion: string, idx: number) => (
                 <li key={idx}>{suggestion}</li>
               ))}
             </ul>
