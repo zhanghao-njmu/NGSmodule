@@ -372,7 +372,7 @@ export const validationRules = {
    */
   futureDate: {
     type: 'date' as const,
-    validator: (_, value) => {
+    validator: (_: unknown, value: unknown) => {
       if (!value || value > new Date()) {
         return Promise.resolve()
       }
@@ -385,7 +385,7 @@ export const validationRules = {
    */
   pastDate: {
     type: 'date' as const,
-    validator: (_, value) => {
+    validator: (_: unknown, value: unknown) => {
       if (!value || value < new Date()) {
         return Promise.resolve()
       }
@@ -397,12 +397,12 @@ export const validationRules = {
    * JSON validation
    */
   json: {
-    validator: (_, value) => {
+    validator: (_: unknown, value: unknown) => {
       if (!value) {
         return Promise.resolve()
       }
       try {
-        JSON.parse(value)
+        JSON.parse(value as string)
         return Promise.resolve()
       } catch {
         return Promise.reject(new Error('Must be valid JSON!'))

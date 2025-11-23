@@ -3,7 +3,7 @@
  */
 import type React from 'react'
 import { useEffect, useState } from 'react'
-import { Button, Space, Dropdown } from 'antd'
+import { Button, Space, Dropdown, Modal } from 'antd'
 import {
   PlusOutlined,
   FolderOutlined,
@@ -104,10 +104,13 @@ export const ProjectList: React.FC = () => {
 
   const handleDelete = (project: Project) => {
     // Use custom dangerous action confirmation for critical operations
-    window.confirm(
-      '删除项目',
-      `您确定要删除项目 "${project.name}" 吗？这将同时删除所有关联的样本、文件和任务。`,
-      async () => {
+    Modal.confirm({
+      title: '删除项目',
+      content: `您确定要删除项目 "${project.name}" 吗？这将同时删除所有关联的样本、文件和任务。`,
+      okText: '确认',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
         const loadingToast = toast.loading('删除中...')
         try {
           await deleteItem(project.id)
@@ -120,7 +123,7 @@ export const ProjectList: React.FC = () => {
           notifications.deleteError()
         }
       },
-    )
+    })
   }
 
   const handleArchive = async (project: Project) => {
@@ -287,7 +290,7 @@ export const ProjectList: React.FC = () => {
             <FilterBar
               filters={filterConfigs}
               values={filters}
-              onFilterChange={setFilter}
+              onFilterChange={(key, value) => setFilter(key as 'search' | 'status', value)}
               onReset={handleFilterReset}
             />
           }

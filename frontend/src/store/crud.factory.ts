@@ -6,8 +6,8 @@
 
 import { create } from 'zustand'
 import { message } from 'antd'
-import { CrudService } from '@/services/crud.factory'
-import { ListParams } from '@/types/common'
+import type { CrudService } from '@/services/crud.factory'
+import type { ListParams } from '@/types/common'
 
 /**
  * Generic CRUD store state
@@ -183,7 +183,7 @@ const createInitialState = <T>(config?: CrudStoreConfig): CrudStoreState<T> => (
  */
 export function createCrudStore<T extends { id: string }, CreateT = Partial<T>, UpdateT = Partial<T>>(
   service: CrudService<T, CreateT, UpdateT>,
-  config: CrudStoreConfig
+  config: CrudStoreConfig,
 ) {
   const {
     entityName,
@@ -428,7 +428,7 @@ export function createCrudStore<T extends { id: string }, CreateT = Partial<T>, 
  * const useProjectStore = extendCrudStore(
  *   baseCrudStore,
  *   { filters: { status: 'active' } },
- *   (set, get) => ({
+ *   (set, _get) => ({
  *     setFilter: (status: string) => set({ filters: { status } }),
  *     async getStats(projectId: string) {
  *       const stats = await projectService.getStats(projectId)
@@ -441,14 +441,14 @@ export function extendCrudStore<
   BaseState,
   BaseActions,
   CustomState extends Record<string, any>,
-  CustomActions extends Record<string, any>
+  CustomActions extends Record<string, any>,
 >(
   baseStore: () => BaseState & BaseActions,
   customState: CustomState,
   customActions: (
     set: (partial: Partial<BaseState & CustomState>) => void,
-    get: () => BaseState & BaseActions & CustomState & CustomActions
-  ) => CustomActions
+    get: () => BaseState & BaseActions & CustomState & CustomActions,
+  ) => CustomActions,
 ) {
   return create<BaseState & BaseActions & CustomState & CustomActions>((set, get) => ({
     ...(baseStore() as any),
@@ -469,14 +469,14 @@ export function extendCrudStore<
  * export const useUIStore = createSimpleStore(
  *   { sidebarOpen: true, theme: 'light' },
  *   (set) => ({
- *     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+ *     toggleSidebar: () => set((_state) => ({ sidebarOpen: !state.sidebarOpen })),
  *     setTheme: (theme: string) => set({ theme })
  *   })
  * )
  */
 export function createSimpleStore<State extends Record<string, any>, Actions extends Record<string, any>>(
   initialState: State,
-  actions: (set: (partial: Partial<State>) => void, get: () => State & Actions) => Actions
+  actions: (set: (partial: Partial<State>) => void, get: () => State & Actions) => Actions,
 ) {
   return create<State & Actions>((set, get) => ({
     ...initialState,

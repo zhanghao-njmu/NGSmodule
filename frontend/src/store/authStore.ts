@@ -53,7 +53,7 @@ export const authStore = create<AuthState>()(
       register: async (userData: RegisterRequest) => {
         set({ isLoading: true, error: null })
         try {
-          const user = await authService.register(userData)
+          await authService.register(userData)
 
           // Auto login after registration
           await get().login({
@@ -110,8 +110,8 @@ export const authStore = create<AuthState>()(
         token: state.token,
         user: state.user,
       }),
-    }
-  )
+    },
+  ),
 )
 
 export default authStore

@@ -7,7 +7,6 @@
 import { createCrudService, extendService } from './crud.factory'
 import apiClient from './api'
 import type { Project, ProjectCreate, ProjectUpdate, ProjectStats } from '@/types/project'
-import type { PaginatedResponse } from '@/types/common'
 
 /**
  * Base CRUD service for items
@@ -57,15 +56,17 @@ export const projectService = extendService(baseCrudService, {
    * @param id - Project ID
    * @returns Project with detailed information
    */
-  async getProjectDetails(id: string): Promise<Project & {
-    samples?: any[]
-    tasks?: any[]
-    stats?: {
-      sample_count: number
-      task_count: number
-      storage_used: number
+  async getProjectDetails(id: string): Promise<
+    Project & {
+      samples?: any[]
+      tasks?: any[]
+      stats?: {
+        sample_count: number
+        task_count: number
+        storage_used: number
+      }
     }
-  }> {
+  > {
     return apiClient.get(`/items/${id}/details`)
   },
 })

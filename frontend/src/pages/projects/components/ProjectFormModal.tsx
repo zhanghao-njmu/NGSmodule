@@ -1,8 +1,9 @@
 /**
  * Project Form Modal - Create/Edit Project
  */
-import React, { useEffect } from 'react'
-import { Modal, Form, Input, Select, message } from 'antd'
+import type React from 'react'
+import { useEffect } from 'react'
+import { Modal, Form, Input, Select } from 'antd'
 import { useProjectStore } from '../../../store/projectStore'
 import type { Project } from '../../../types/project'
 
@@ -16,12 +17,7 @@ interface ProjectFormModalProps {
   onSuccess: () => void
 }
 
-export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
-  open,
-  project,
-  onClose,
-  onSuccess,
-}) => {
+export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ open, project, onClose, onSuccess }) => {
   const [form] = Form.useForm()
   const { createItem, updateItem, loading } = useProjectStore()
 
@@ -94,20 +90,11 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           label="Description"
           rules={[{ max: 500, message: 'Description must not exceed 500 characters' }]}
         >
-          <TextArea
-            rows={4}
-            placeholder="Enter project description (optional)"
-            showCount
-            maxLength={500}
-          />
+          <TextArea rows={4} placeholder="Enter project description (optional)" showCount maxLength={500} />
         </Form.Item>
 
         {project && (
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: 'Please select status' }]}
-          >
+          <Form.Item name="status" label="Status" rules={[{ required: true, message: 'Please select status' }]}>
             <Select>
               <Option value="active">Active</Option>
               <Option value="completed">Completed</Option>

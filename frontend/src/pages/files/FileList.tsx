@@ -27,13 +27,13 @@ const { Option } = Select
 const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
-  const { files, loading, fetchFiles, uploadFile, deleteFile, downloadFile } = useFileStore()
+  const { files, loading, fetchFiles, _uploadFile, deleteFile, downloadFile } = useFileStore()
   const { items, fetchItems } = useProjectStore()
   const { samples, fetchSamples } = useSampleStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedSample, setSelectedSample] = useState<string>('')
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploading, _setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
@@ -73,45 +73,9 @@ export const FileList: React.FC = () => {
     accept: '.fastq,.fq,.fastq.gz,.fq.gz,.bam,.sam,.vcf,.vcf.gz',
     showUploadList: true,
     beforeUpload: () => false, // 阻止自动上传
-    onChange(info) {
+    onChange(_info) {
       // 处理文件选择变化
     },
-  }
-
-  // 手动上传文件
-  const handleUpload = async (fileList: any[]) => {
-    if (fileList.length === 0) {
-      toast.warning('Please select at least one file')
-      return
-    }
-
-    if (!selectedSample) {
-      toast.warning('Please select a sample for the files')
-      return
-    }
-
-    setUploading(true)
-
-    try {
-      // 逐个上传文件
-      for (const fileItem of fileList) {
-        const file = fileItem.originFileObj || fileItem
-        await uploadFile(selectedSample, file)
-      }
-
-      toast.success(`Successfully uploaded ${fileList.length} file(s)`)
-      handleCancelUpload()
-
-      // 刷新文件列表
-      if (selectedProject) {
-        fetchFiles({ project_id: selectedProject })
-      }
-    } catch (error) {
-      console.error('Upload failed:', error)
-      toast.error('Failed to upload files')
-    } finally {
-      setUploading(false)
-    }
   }
 
   // 删除文件

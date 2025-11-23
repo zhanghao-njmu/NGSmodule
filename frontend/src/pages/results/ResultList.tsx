@@ -71,9 +71,7 @@ export const ResultList: React.FC = () => {
   const {
     data: resultsData,
     loading,
-    error,
     execute: loadResults,
-    error,
   } = useAsync(
     async () => {
       const params: any = {
@@ -121,7 +119,7 @@ export const ResultList: React.FC = () => {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const results = resultsData?.results || []
+    const results = resultsData?.items || []
     return {
       total: resultsData?.total || 0,
       qc: results.filter((r: Result) => r.result_type === 'qc_report').length,
@@ -242,7 +240,7 @@ export const ResultList: React.FC = () => {
           unknown: { color: 'default', icon: null },
         }
         const config = statusConfig[status]
-        return <StatusTag status={config.color} icon={config.icon} label={status} />
+        return <StatusTag status={config.color} text={status} />
       },
     },
     {
@@ -294,7 +292,7 @@ export const ResultList: React.FC = () => {
     },
   ]
 
-  const handleDownload = async (result: Result) => {
+  const handleDownload = async (_result: Result) => {
     try {
       toast.info('Download functionality coming soon!')
       // TODO: Implement result download
@@ -385,10 +383,10 @@ export const ResultList: React.FC = () => {
       {/* Filters */}
       <FadeIn direction="up" delay={100}>
         <FilterBar
-          configs={filterConfigs}
-          filters={filters}
+          filters={filterConfigs}
+          values={filters}
           onFilterChange={(key, value) => {
-            setFilter(key, value)
+            setFilter(key as 'search' | 'task_id' | 'result_type', value)
             resetPagination()
           }}
           onReset={() => {
@@ -422,8 +420,10 @@ export const ResultList: React.FC = () => {
                 <EnhancedEmptyState
                   title="No Results Found"
                   description="No analysis results match your current filters. Try adjusting your search criteria or run a new analysis."
-                  actionText="Reset Filters"
-                  onAction={resetFilters}
+                  action={{
+                    text: 'Reset Filters',
+                    onClick: resetFilters,
+                  }}
                 />
               ),
             }}

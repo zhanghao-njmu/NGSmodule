@@ -202,7 +202,7 @@ export const TaskList: React.FC = () => {
 
   // Show skeleton on initial load
   if (initialLoad && loading) {
-    return <PageSkeleton hasHeader hasStats rows={8} />
+    return <PageSkeleton hasHeader rows={8} />
   }
 
   return (

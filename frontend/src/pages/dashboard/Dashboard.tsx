@@ -1,7 +1,6 @@
 /**
  * Dashboard Page
  */
-import { useState } from 'react'
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
 import {
   ProjectOutlined,

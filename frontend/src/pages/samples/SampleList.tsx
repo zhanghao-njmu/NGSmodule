@@ -1,37 +1,14 @@
 /**
  * Sample List Page - Complete CRUD for sample management
  */
-import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Space,
-  Select,
-  Upload,
-  Tag,
-  Modal,
-  Form,
-  Input,
-  Popconfirm,
-  Tooltip,
-} from 'antd'
-import {
-  PlusOutlined,
-  UploadOutlined,
-  ExperimentOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons'
+import type React from 'react'
+import { useEffect, useState } from 'react'
+import { Button, Space, Select, Upload, Tag, Modal, Form, Input, Popconfirm, Tooltip } from 'antd'
+import { PlusOutlined, UploadOutlined, ExperimentOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useSampleStore } from '../../store/sampleStore'
 import { useProjectStore } from '../../store/projectStore'
-import {
-  PageHeader,
-  DataTable,
-  FilterBar,
-  EnhancedEmptyState,
-  PageSkeleton,
-  FadeIn,
-} from '../../components/common'
+import { PageHeader, DataTable, FilterBar, EnhancedEmptyState, PageSkeleton, FadeIn } from '../../components/common'
 import type { FilterConfig } from '../../components/common'
 import { toast, notifications } from '../../utils/notification'
 import { useFilters } from '@/hooks'
@@ -41,8 +18,7 @@ import dayjs from 'dayjs'
 const { Option } = Select
 
 export const SampleList: React.FC = () => {
-  const { samples, loading, fetchSamples, createSample, updateSample, deleteSample, importFromCSV } =
-    useSampleStore()
+  const { samples, loading, fetchSamples, createSample, updateSample, deleteSample, importFromCSV } = useSampleStore()
   const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -50,7 +26,11 @@ export const SampleList: React.FC = () => {
   const [form] = Form.useForm()
 
   // Using useFilters hook eliminates repetitive filter state management
-  const { filters, setFilter, resetFilters: handleFilterReset } = useFilters({
+  const {
+    filters,
+    setFilter,
+    resetFilters: handleFilterReset,
+  } = useFilters({
     initialFilters: {
       search: '',
       group: 'all',
@@ -242,19 +222,14 @@ export const SampleList: React.FC = () => {
       key: 'group_name',
       width: 120,
       render: (group) =>
-        group ? (
-          <Tag color={group.toLowerCase() === 'control' ? 'blue' : 'green'}>{group}</Tag>
-        ) : (
-          '-'
-        ),
+        group ? <Tag color={group.toLowerCase() === 'control' ? 'blue' : 'green'}>{group}</Tag> : '-',
     },
     {
       title: 'Layout',
       dataIndex: 'layout',
       key: 'layout',
       width: 100,
-      render: (layout) =>
-        layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-',
+      render: (layout) => (layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-'),
     },
     {
       title: 'Batch',
@@ -286,12 +261,7 @@ export const SampleList: React.FC = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => showModal(record)}
-            />
+            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => showModal(record)} />
           </Tooltip>
           <Popconfirm
             title="Delete Sample"
@@ -339,7 +309,7 @@ export const SampleList: React.FC = () => {
                 <FilterBar
                   filters={filterConfigs}
                   values={filters}
-                  onFilterChange={setFilter}
+                  onFilterChange={(key, value) => setFilter(key as 'search' | 'layout' | 'group', value)}
                   onReset={handleFilterReset}
                 />
               )}
@@ -352,12 +322,7 @@ export const SampleList: React.FC = () => {
                   Import CSV
                 </Button>
               </Upload>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => showModal()}
-                disabled={!selectedProject}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()} disabled={!selectedProject}>
                 New Sample
               </Button>
             </>
@@ -376,11 +341,7 @@ export const SampleList: React.FC = () => {
           />
         ) : filteredSamples.length === 0 && !loading ? (
           <EnhancedEmptyState
-            type={
-              filters.search || filters.group !== 'all' || filters.layout !== 'all'
-                ? 'noSearchResults'
-                : 'noData'
-            }
+            type={filters.search || filters.group !== 'all' || filters.layout !== 'all' ? 'noSearchResults' : 'noData'}
             title={
               filters.search || filters.group !== 'all' || filters.layout !== 'all'
                 ? 'No matching samples'
@@ -421,11 +382,7 @@ export const SampleList: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="sample_id"
-            label="Sample ID"
-            rules={[{ required: true, message: 'Please enter sample ID' }]}
-          >
+          <Form.Item name="sample_id" label="Sample ID" rules={[{ required: true, message: 'Please enter sample ID' }]}>
             <Input placeholder="e.g., Sample001" />
           </Form.Item>
 

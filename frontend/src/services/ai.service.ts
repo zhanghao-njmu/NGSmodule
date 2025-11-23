@@ -31,13 +31,8 @@ class AIService {
   /**
    * Get pipeline parameter recommendations based on context
    */
-  async getParameterRecommendations(
-    request: RecommendationRequest
-  ): Promise<PipelineRecommendation> {
-    const recommendation = await apiClient.post<PipelineRecommendation>(
-      '/ai/recommendations/parameters',
-      request
-    )
+  async getParameterRecommendations(request: RecommendationRequest): Promise<PipelineRecommendation> {
+    const recommendation = await apiClient.post<PipelineRecommendation>('/ai/recommendations/parameters', request)
     return recommendation
   }
 
@@ -47,11 +42,11 @@ class AIService {
   async getParameterOptions(
     pipelineType: string,
     parameterName: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<ParameterRecommendation> {
     const recommendation = await apiClient.post<ParameterRecommendation>(
       `/ai/recommendations/parameters/${pipelineType}/${parameterName}`,
-      { context }
+      { context },
     )
     return recommendation
   }
@@ -59,9 +54,7 @@ class AIService {
   /**
    * Get similar successful pipeline runs
    */
-  async getSimilarRuns(
-    request: RecommendationRequest
-  ): Promise<
+  async getSimilarRuns(request: RecommendationRequest): Promise<
     Array<{
       id: string
       similarity: number
@@ -89,9 +82,7 @@ class AIService {
    * Get QC recommendations for a sample
    */
   async getQCRecommendations(sampleId: string): Promise<string[]> {
-    const recommendations = await apiClient.get<string[]>(
-      `/ai/qc/recommendations/${sampleId}`
-    )
+    const recommendations = await apiClient.get<string[]>(`/ai/qc/recommendations/${sampleId}`)
     return recommendations
   }
 
@@ -109,7 +100,7 @@ class AIService {
    * Predict QC issues before sequencing
    */
   async predictQCIssues(
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Array<{ issue: string; probability: number; prevention: string }>> {
     const predictions = await apiClient.post('/ai/qc/predict-issues', { metadata })
     return predictions
@@ -122,13 +113,8 @@ class AIService {
   /**
    * Detect anomalies in samples or project
    */
-  async detectAnomalies(
-    request: AnomalyDetectionRequest
-  ): Promise<AnomalyDetectionReport> {
-    const report = await apiClient.post<AnomalyDetectionReport>(
-      '/ai/anomaly/detect',
-      request
-    )
+  async detectAnomalies(request: AnomalyDetectionRequest): Promise<AnomalyDetectionReport> {
+    const report = await apiClient.post<AnomalyDetectionReport>('/ai/anomaly/detect', request)
     return report
   }
 
@@ -143,10 +129,7 @@ class AIService {
   /**
    * Apply automatic fix for anomaly
    */
-  async applyAnomalyFix(
-    anomalyId: string,
-    fixAction: string
-  ): Promise<{ success: boolean; message: string }> {
+  async applyAnomalyFix(anomalyId: string, fixAction: string): Promise<{ success: boolean; message: string }> {
     const result = await apiClient.post(`/ai/anomaly/${anomalyId}/fix`, {
       action: fixAction,
     })
@@ -156,10 +139,7 @@ class AIService {
   /**
    * Monitor for real-time anomalies
    */
-  async monitorAnomalies(
-    projectId: string,
-    callback: (anomaly: Anomaly) => void
-  ): Promise<void> {
+  async monitorAnomalies(projectId: string, _callback: (anomaly: Anomaly) => void): Promise<void> {
     // TODO: Implement WebSocket connection for real-time monitoring
     console.log('Monitoring anomalies for project:', projectId)
     // Placeholder for WebSocket implementation
@@ -172,22 +152,15 @@ class AIService {
   /**
    * Perform smart sample grouping
    */
-  async smartGroupSamples(
-    request: SmartGroupingRequest
-  ): Promise<SmartGroupingResult> {
-    const result = await apiClient.post<SmartGroupingResult>(
-      '/ai/grouping/smart-group',
-      request
-    )
+  async smartGroupSamples(request: SmartGroupingRequest): Promise<SmartGroupingResult> {
+    const result = await apiClient.post<SmartGroupingResult>('/ai/grouping/smart-group', request)
     return result
   }
 
   /**
    * Suggest comparison groups
    */
-  async suggestComparisons(
-    projectId: string
-  ): Promise<
+  async suggestComparisons(projectId: string): Promise<
     Array<{
       group1: string
       group2: string
@@ -203,9 +176,7 @@ class AIService {
   /**
    * Validate sample grouping
    */
-  async validateGrouping(
-    groups: Array<{ name: string; sampleIds: string[] }>
-  ): Promise<{
+  async validateGrouping(groups: Array<{ name: string; sampleIds: string[] }>): Promise<{
     valid: boolean
     issues: string[]
     suggestions: string[]
@@ -224,11 +195,11 @@ class AIService {
   async sendAssistantMessage(
     conversationId: string,
     message: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<AIAssistantMessage> {
     const response = await apiClient.post<AIAssistantMessage>(
       `/ai/assistant/conversations/${conversationId}/messages`,
-      { message, context }
+      { message, context },
     )
     return response
   }
@@ -236,14 +207,11 @@ class AIService {
   /**
    * Create new conversation
    */
-  async createConversation(
-    title: string,
-    context?: Record<string, any>
-  ): Promise<AIAssistantConversation> {
-    const conversation = await apiClient.post<AIAssistantConversation>(
-      '/ai/assistant/conversations',
-      { title, context }
-    )
+  async createConversation(title: string, context?: Record<string, any>): Promise<AIAssistantConversation> {
+    const conversation = await apiClient.post<AIAssistantConversation>('/ai/assistant/conversations', {
+      title,
+      context,
+    })
     return conversation
   }
 
@@ -251,9 +219,7 @@ class AIService {
    * Get conversation history
    */
   async getConversation(conversationId: string): Promise<AIAssistantConversation> {
-    const conversation = await apiClient.get<AIAssistantConversation>(
-      `/ai/assistant/conversations/${conversationId}`
-    )
+    const conversation = await apiClient.get<AIAssistantConversation>(`/ai/assistant/conversations/${conversationId}`)
     return conversation
   }
 
@@ -261,9 +227,7 @@ class AIService {
    * List all conversations
    */
   async listConversations(): Promise<AIAssistantConversation[]> {
-    const conversations = await apiClient.get<AIAssistantConversation[]>(
-      '/ai/assistant/conversations'
-    )
+    const conversations = await apiClient.get<AIAssistantConversation[]>('/ai/assistant/conversations')
     return conversations
   }
 
@@ -275,19 +239,14 @@ class AIService {
    * Get AI-generated insights for a project
    */
   async getProjectInsights(projectId: string): Promise<InsightsReport> {
-    const insights = await apiClient.get<InsightsReport>(
-      `/ai/insights/project/${projectId}`
-    )
+    const insights = await apiClient.get<InsightsReport>(`/ai/insights/project/${projectId}`)
     return insights
   }
 
   /**
    * Get insights for specific analysis
    */
-  async getAnalysisInsights(
-    analysisType: string,
-    data: any
-  ): Promise<AnalysisInsight[]> {
+  async getAnalysisInsights(analysisType: string, data: any): Promise<AnalysisInsight[]> {
     const insights = await apiClient.post<AnalysisInsight[]>('/ai/insights/analyze', {
       type: analysisType,
       data,
@@ -313,39 +272,29 @@ class AIService {
     pipelineType: string,
     sampleCount: number,
     dataSize: number,
-    parameters?: Record<string, any>
+    parameters?: Record<string, any>,
   ): Promise<ResourcePrediction> {
-    const prediction = await apiClient.post<ResourcePrediction>(
-      '/ai/predictions/resources',
-      {
-        pipelineType,
-        sampleCount,
-        dataSize,
-        parameters,
-      }
-    )
+    const prediction = await apiClient.post<ResourcePrediction>('/ai/predictions/resources', {
+      pipelineType,
+      sampleCount,
+      dataSize,
+      parameters,
+    })
     return prediction
   }
 
   /**
    * Predict success probability for analysis
    */
-  async predictSuccess(
-    analysisConfig: Record<string, any>
-  ): Promise<SuccessPrediction> {
-    const prediction = await apiClient.post<SuccessPrediction>(
-      '/ai/predictions/success',
-      analysisConfig
-    )
+  async predictSuccess(analysisConfig: Record<string, any>): Promise<SuccessPrediction> {
+    const prediction = await apiClient.post<SuccessPrediction>('/ai/predictions/success', analysisConfig)
     return prediction
   }
 
   /**
    * Predict optimal analysis timeline
    */
-  async predictTimeline(
-    projectId: string
-  ): Promise<{
+  async predictTimeline(projectId: string): Promise<{
     totalDuration: string
     milestones: Array<{ name: string; date: string; confidence: number }>
   }> {
@@ -391,7 +340,7 @@ class AIService {
       helpful: boolean
       accuracy?: number
       comments?: string
-    }
+    },
   ): Promise<void> {
     await apiClient.post(`/ai/feedback/${recommendationId}`, feedback)
   }
@@ -399,11 +348,7 @@ class AIService {
   /**
    * Report incorrect prediction
    */
-  async reportIncorrectPrediction(
-    predictionId: string,
-    actualOutcome: any,
-    comments?: string
-  ): Promise<void> {
+  async reportIncorrectPrediction(predictionId: string, actualOutcome: any, comments?: string): Promise<void> {
     await apiClient.post(`/ai/feedback/prediction/${predictionId}`, {
       actualOutcome,
       comments,
