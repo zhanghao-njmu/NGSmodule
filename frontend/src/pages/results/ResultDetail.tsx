@@ -4,10 +4,10 @@
 import type React from 'react'
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Statistic, Tabs, Alert, Button, Space, Tag, Descriptions } from 'antd'
+import { Card, Row, Col, Statistic, Tabs, Space, Tag, Descriptions, Button } from 'antd'
 import { ArrowLeftOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import resultService from '@/services/result.service'
-import { PageSkeleton, FadeIn } from '@/components/common'
+import { PageSkeleton, FadeIn, EnhancedEmptyState, StaggeredList } from '@/components/common'
 import { LineChart, BarChart, PieChart, ScatterPlot } from '@/components/charts'
 import { useAsync } from '@/hooks'
 import type { ResultVisualizationData, ChartData } from '@/types/result'
@@ -37,12 +37,15 @@ export const ResultDetail: React.FC = () => {
   if (error || !vizData) {
     return (
       <FadeIn>
-        <Alert
-          message="Error Loading Results"
-          description={error?.message || 'No data available'}
+        <EnhancedEmptyState
           type="error"
-          showIcon
-          action={<Button onClick={loadVisualizationData}>Retry</Button>}
+          title="Error Loading Results"
+          description={error?.message || 'No data available'}
+          action={{
+            text: 'Retry',
+            onClick: loadVisualizationData,
+          }}
+          size="default"
         />
       </FadeIn>
     )
@@ -76,19 +79,21 @@ export const ResultDetail: React.FC = () => {
             </Space>
 
             {/* Key Metrics */}
-            <Row gutter={[16, 16]}>
-              {Object.entries(vizData.metrics).map(([key, value]) => (
-                <Col xs={24} sm={12} md={6} key={key}>
-                  <Card size="small">
-                    <Statistic
-                      title={key.replace(/_/g, ' ').toUpperCase()}
-                      value={typeof value === 'number' ? value : String(value)}
-                      precision={typeof value === 'number' && value % 1 !== 0 ? 2 : 0}
-                    />
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+            <StaggeredList staggerDelay={60} baseDelay={0} direction="up">
+              <Row gutter={[16, 16]}>
+                {Object.entries(vizData.metrics).map(([key, value]) => (
+                  <Col xs={24} sm={12} md={6} key={key}>
+                    <Card size="small">
+                      <Statistic
+                        title={key.replace(/_/g, ' ').toUpperCase()}
+                        value={typeof value === 'number' ? value : String(value)}
+                        precision={typeof value === 'number' && value % 1 !== 0 ? 2 : 0}
+                      />
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </StaggeredList>
           </Space>
         </Card>
       </FadeIn>

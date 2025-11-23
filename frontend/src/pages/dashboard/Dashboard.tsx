@@ -2,7 +2,7 @@
  * Dashboard Page
  * Refactored: Unified color usage with CSS variables
  */
-import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert, Progress } from 'antd'
+import { Card, Row, Col, Statistic, Typography, Space, Tag, Progress } from 'antd'
 import {
   ProjectOutlined,
   ExperimentOutlined,
@@ -11,12 +11,12 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
-import { PageSkeleton, FadeIn, StaggeredList } from '@/components/common'
+import { PageSkeleton, FadeIn, StaggeredList, EnhancedEmptyState } from '@/components/common'
 import { useAsync } from '@/hooks'
 import { statsService } from '@/services/stats.service'
 import styles from './Dashboard.module.css'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
 export const Dashboard: React.FC = () => {
   const { user } = authStore()
@@ -65,16 +65,15 @@ export const Dashboard: React.FC = () => {
     return (
       <div className={styles.dashboard}>
         <FadeIn>
-          <Alert
-            message="Error Loading Dashboard"
-            description={error?.message || 'Failed to load statistics. Please try again later.'}
+          <EnhancedEmptyState
             type="error"
-            showIcon
-            action={
-              <a onClick={loadStats} style={{ cursor: 'pointer' }}>
-                Retry
-              </a>
-            }
+            title="Error Loading Dashboard"
+            description={error?.message || 'Failed to load statistics. Please try again later.'}
+            action={{
+              text: 'Retry',
+              onClick: loadStats,
+            }}
+            size="default"
           />
         </FadeIn>
       </div>
@@ -86,7 +85,12 @@ export const Dashboard: React.FC = () => {
     return (
       <div className={styles.dashboard}>
         <FadeIn>
-          <Alert message="No data available" type="info" />
+          <EnhancedEmptyState
+            type="noData"
+            title="No data available"
+            description="Dashboard statistics are not available at this moment"
+            size="default"
+          />
         </FadeIn>
       </div>
     )
@@ -180,13 +184,16 @@ export const Dashboard: React.FC = () => {
               extra={<a href="/items">View All</a>}
               className={styles.card}
             >
-              <div className={styles.emptyState}>
-                <ExperimentOutlined style={{ fontSize: 48, color: 'var(--color-gray-300)' }} />
-                <Title level={4} type="secondary">
-                  No items yet
-                </Title>
-                <Paragraph type="secondary">Create your first project to start analyzing NGS data</Paragraph>
-              </div>
+              <EnhancedEmptyState
+                type="noData"
+                title="No items yet"
+                description="Create your first project to start analyzing NGS data"
+                action={{
+                  text: 'Create Project',
+                  onClick: () => (window.location.href = '/items'),
+                }}
+                size="small"
+              />
             </Card>
           </Col>
 
