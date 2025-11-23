@@ -2,6 +2,8 @@
  * Project types and interfaces
  */
 
+import type { PaginatedResponse } from './common'
+
 export interface Project {
   id: string
   name: string
@@ -28,10 +30,11 @@ export interface ProjectUpdate {
   config?: Record<string, any>
 }
 
-export interface ProjectListResponse {
-  total: number
-  items: Project[]
-}
+/**
+ * @deprecated Use PaginatedResponse<Project> instead
+ * Kept for backward compatibility during migration
+ */
+export type ProjectListResponse = PaginatedResponse<Project>
 
 export interface ProjectStats {
   total_projects: number

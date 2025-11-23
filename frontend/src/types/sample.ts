@@ -3,6 +3,8 @@
  * 与后端API保持一致
  */
 
+import type { PaginatedResponse } from './common'
+
 export interface Sample {
   id: string
   project_id: string
@@ -47,9 +49,8 @@ export interface SampleBatchCreate {
   }>
 }
 
-export interface SampleListResponse {
-  total: number
-  items: Sample[]
-  page: number
-  page_size: number
-}
+/**
+ * @deprecated Use PaginatedResponse<Sample> instead
+ * Kept for backward compatibility during migration
+ */
+export type SampleListResponse = PaginatedResponse<Sample>
