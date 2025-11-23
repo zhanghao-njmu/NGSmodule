@@ -100,47 +100,6 @@ export const taskService = extendService(baseCrudService, {
       project_id: projectId,
     })
   },
-
-  // Backward compatibility aliases
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  getTasks(params?: {
-    project_id?: string
-    status?: string
-    task_type?: string
-  }): Promise<PaginatedResponse<Task>> {
-    return baseCrudService.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  getTask(id: string): Promise<Task> {
-    return baseCrudService.getById(id)
-  },
-
-  /**
-   * @deprecated Use create instead
-   */
-  createTask(data: TaskCreate): Promise<Task> {
-    return baseCrudService.create(data)
-  },
-
-  /**
-   * @deprecated Use update instead
-   */
-  updateTask(id: string, data: TaskUpdate): Promise<Task> {
-    return baseCrudService.update(id, data)
-  },
-
-  /**
-   * @deprecated Use delete instead
-   */
-  deleteTask(id: string): Promise<void> {
-    return baseCrudService.delete(id)
-  },
 })
 
 export default taskService

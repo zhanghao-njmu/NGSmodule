@@ -42,16 +42,6 @@ interface ProjectStoreState {
   fetchStats: () => Promise<void>
   archiveProject: (id: string) => Promise<void>
   restoreProject: (id: string) => Promise<void>
-
-  // Backward compatibility
-  projects: Project[]
-  currentProject: Project | null
-  fetchProjects: (params?: { status?: string; skip?: number; limit?: number }) => Promise<void>
-  fetchProjectById: (id: string) => Promise<void>
-  createProject: (data: ProjectCreate) => Promise<Project | null>
-  updateProject: (id: string, data: ProjectUpdate) => Promise<void>
-  deleteProject: (id: string) => Promise<void>
-  setCurrentProject: (project: Project | null) => void
 }
 
 /**
@@ -220,41 +210,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ error: errorMessage, loading: false })
       message.error(errorMessage)
     }
-  },
-
-  // Backward compatibility getters and aliases
-
-  get projects() {
-    return get().items
-  },
-
-  get currentProject() {
-    return get().current
-  },
-
-  fetchProjects: async (params) => {
-    return get().fetchItems(params)
-  },
-
-  fetchProjectById: async (id) => {
-    return get().fetchById(id)
-  },
-
-  createProject: async (data) => {
-    await get().createItem(data)
-    return get().items[0] || null
-  },
-
-  updateProject: async (id, data) => {
-    return get().updateItem(id, data)
-  },
-
-  deleteProject: async (id) => {
-    return get().deleteItem(id)
-  },
-
-  setCurrentProject: (project) => {
-    get().setCurrent(project)
   },
 }))
 

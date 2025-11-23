@@ -84,44 +84,6 @@ export const sampleService = extendService(baseCrudService, {
       project_id: projectId,
     })
   },
-
-  // Backward compatibility aliases
-  // These can be removed after all components are migrated
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  getSamples(params?: { project_id?: string; skip?: number; limit?: number }): Promise<PaginatedResponse<Sample>> {
-    return baseCrudService.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  getSample(id: string): Promise<Sample> {
-    return baseCrudService.getById(id)
-  },
-
-  /**
-   * @deprecated Use create instead
-   */
-  createSample(data: SampleCreate): Promise<Sample> {
-    return baseCrudService.create(data)
-  },
-
-  /**
-   * @deprecated Use update instead
-   */
-  updateSample(id: string, data: SampleUpdate): Promise<Sample> {
-    return baseCrudService.update(id, data)
-  },
-
-  /**
-   * @deprecated Use delete instead
-   */
-  deleteSample(id: string): Promise<void> {
-    return baseCrudService.delete(id)
-  },
 })
 
 export default sampleService

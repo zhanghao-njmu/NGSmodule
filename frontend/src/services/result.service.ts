@@ -121,27 +121,6 @@ export const resultService = {
       params: { format },
     })
   },
-
-  // Backward compatibility aliases
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  async listResults(params?: {
-    task_id?: string
-    result_type?: string
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<Result>> {
-    return this.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  async getResult(resultId: string): Promise<Result> {
-    return this.getById(resultId)
-  },
 }
 
 export default resultService

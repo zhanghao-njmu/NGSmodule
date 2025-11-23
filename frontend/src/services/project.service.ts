@@ -68,44 +68,6 @@ export const projectService = extendService(baseCrudService, {
   }> {
     return apiClient.get(`/projects/${id}/details`)
   },
-
-  // Backward compatibility aliases
-  // These can be removed after all components are migrated
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  getProjects(params?: { status?: string; skip?: number; limit?: number }): Promise<PaginatedResponse<Project>> {
-    return baseCrudService.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  getProject(id: string): Promise<Project> {
-    return baseCrudService.getById(id)
-  },
-
-  /**
-   * @deprecated Use create instead
-   */
-  createProject(data: ProjectCreate): Promise<Project> {
-    return baseCrudService.create(data)
-  },
-
-  /**
-   * @deprecated Use update instead
-   */
-  updateProject(id: string, data: ProjectUpdate): Promise<Project> {
-    return baseCrudService.update(id, data)
-  },
-
-  /**
-   * @deprecated Use delete instead
-   */
-  deleteProject(id: string): Promise<void> {
-    return baseCrudService.delete(id)
-  },
 })
 
 export default projectService

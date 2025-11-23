@@ -179,35 +179,6 @@ export const fileService = {
   async verifyChecksum(id: string): Promise<{ valid: boolean; message: string }> {
     return apiClient.post<{ valid: boolean; message: string }>(`/files/${id}/verify`)
   },
-
-  // Backward compatibility aliases
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  getFiles(params?: {
-    sample_id?: string
-    project_id?: string
-    file_type?: string
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<FileItem>> {
-    return this.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  getFile(id: string): Promise<FileItem> {
-    return this.getById(id)
-  },
-
-  /**
-   * @deprecated Use delete instead
-   */
-  deleteFile(id: string): Promise<void> {
-    return this.delete(id)
-  },
 }
 
 export default fileService

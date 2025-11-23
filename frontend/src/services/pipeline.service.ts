@@ -138,26 +138,6 @@ export const pipelineService = {
   async search(query: string): Promise<PaginatedResponse<PipelineTemplate>> {
     return this.getAll({ search: query })
   },
-
-  // Backward compatibility aliases
-
-  /**
-   * @deprecated Use getAll instead
-   */
-  getTemplates(params?: {
-    category?: string
-    is_active?: boolean
-    search?: string
-  }): Promise<PaginatedResponse<PipelineTemplate>> {
-    return this.getAll(params)
-  },
-
-  /**
-   * @deprecated Use getById instead
-   */
-  getTemplate(id: string): Promise<PipelineTemplate> {
-    return this.getById(id)
-  },
 }
 
 export default pipelineService
