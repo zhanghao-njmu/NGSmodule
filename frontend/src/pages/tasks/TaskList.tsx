@@ -5,7 +5,7 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Tag, Progress, Space, Select, Tooltip, Typography } from 'antd'
+import { Button, Tag, Progress, Space, Select, Tooltip, Typography, Drawer, Alert, Spin } from 'antd'
 import {
   PlusOutlined,
   SyncOutlined,
@@ -14,11 +14,14 @@ import {
   StopOutlined,
   EyeOutlined,
   ThunderboltOutlined,
+  FileTextOutlined,
+  CopyOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { websocketService } from '../../services/websocket.service'
+import { taskService } from '../../services/task.service'
 import {
   PageHeader,
   DataTable,
@@ -43,6 +46,12 @@ export const TaskList: React.FC = () => {
   const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [initialLoad, setInitialLoad] = useState(true)
+
+  // Log viewer state
+  const [logDrawerVisible, setLogDrawerVisible] = useState(false)
+  const [currentTask, setCurrentTask] = useState<Task | null>(null)
+  const [taskLogs, setTaskLogs] = useState<string>('')
+  const [loadingLogs, setLoadingLogs] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -99,6 +108,28 @@ export const TaskList: React.FC = () => {
     })
   }
 
+  const handleViewLogs = async (task: Task) => {
+    setCurrentTask(task)
+    setLogDrawerVisible(true)
+    setTaskLogs('')
+    setLoadingLogs(true)
+
+    try {
+      const response = await taskService.getTaskLogs(task.id)
+      setTaskLogs(response.log_content || 'No logs available')
+    } catch (error: any) {
+      setTaskLogs(`Failed to load logs: ${error.message}`)
+      toast.error('Failed to load task logs')
+    } finally {
+      setLoadingLogs(false)
+    }
+  }
+
+  const handleCopyLogs = () => {
+    navigator.clipboard.writeText(taskLogs)
+    toast.success('Logs copied to clipboard')
+  }
+
   const columns: ColumnsType<Task> = [
     {
       title: 'Task Name',
@@ -139,9 +170,20 @@ export const TaskList: React.FC = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 150,
+      width: 200,
       render: (_, record) => (
         <Space>
+          <Tooltip title="View Logs">
+            <Button
+              type={record.status === 'failed' ? 'default' : 'text'}
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => handleViewLogs(record)}
+              danger={record.status === 'failed'}
+            >
+              Logs
+            </Button>
+          </Tooltip>
           {record.status === 'completed' && (
             <Tooltip title="View Results">
               <Button
@@ -288,6 +330,94 @@ export const TaskList: React.FC = () => {
           />
         )}
       </FadeIn>
+
+      {/* Task Logs Drawer */}
+      <Drawer
+        title={
+          <Space>
+            <FileTextOutlined />
+            <span>Task Logs: {currentTask?.task_name}</span>
+          </Space>
+        }
+        placement="right"
+        width={720}
+        open={logDrawerVisible}
+        onClose={() => setLogDrawerVisible(false)}
+        extra={
+          <Button icon={<CopyOutlined />} onClick={handleCopyLogs} disabled={!taskLogs || loadingLogs}>
+            Copy
+          </Button>
+        }
+      >
+        {/* Error message for failed tasks */}
+        {currentTask?.status === 'failed' && currentTask?.error_message && (
+          <Alert
+            message="Task Failed"
+            description={currentTask.error_message}
+            type="error"
+            showIcon
+            icon={<CloseCircleOutlined />}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
+        {/* Task metadata */}
+        <div style={{ marginBottom: 16, padding: 12, background: 'var(--color-gray-50)', borderRadius: 8 }}>
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <div>
+              <Text type="secondary">Task ID: </Text>
+              <Text copyable={{ text: currentTask?.id || '' }} style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                {currentTask?.id}
+              </Text>
+            </div>
+            <div>
+              <Text type="secondary">Status: </Text>
+              {currentTask && <StatusTag status={currentTask.status} />}
+            </div>
+            <div>
+              <Text type="secondary">Progress: </Text>
+              <Text strong>{Math.round(currentTask?.progress || 0)}%</Text>
+            </div>
+            {currentTask?.started_at && (
+              <div>
+                <Text type="secondary">Started: </Text>
+                <Text>{dayjs(currentTask.started_at).format('YYYY-MM-DD HH:mm:ss')}</Text>
+              </div>
+            )}
+            {currentTask?.completed_at && (
+              <div>
+                <Text type="secondary">Completed: </Text>
+                <Text>{dayjs(currentTask.completed_at).format('YYYY-MM-DD HH:mm:ss')}</Text>
+              </div>
+            )}
+          </Space>
+        </div>
+
+        {/* Log content */}
+        <div
+          style={{
+            background: '#1e1e1e',
+            color: '#d4d4d4',
+            padding: 16,
+            borderRadius: 8,
+            fontFamily: 'monospace',
+            fontSize: 13,
+            lineHeight: 1.6,
+            maxHeight: 'calc(100vh - 400px)',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {loadingLogs ? (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Spin tip="Loading logs..." />
+            </div>
+          ) : (
+            taskLogs || 'No logs available'
+          )}
+        </div>
+      </Drawer>
     </div>
   )
 }
