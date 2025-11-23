@@ -15,8 +15,8 @@ import {
   InputNumber,
   Switch,
   Progress,
-  message,
   Popconfirm,
+  Typography,
 } from 'antd'
 import {
   UserOutlined,
@@ -33,17 +33,28 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { adminService } from '../../services/admin.service'
-import { StatisticCard, DataTable, StatusTag } from '../../components/common'
+import {
+  StatisticCard,
+  DataTable,
+  StatusTag,
+  PageSkeleton,
+  FadeIn,
+  StaggeredList,
+  EnhancedEmptyState,
+} from '../../components/common'
+import { toast } from '../../utils/notification'
 import type { StatisticItem } from '../../components/common'
 import type { User, UserAdminUpdate, SystemStats } from '../../types/admin'
 import dayjs from 'dayjs'
 
 const { Option } = Select
+const { Title, Text } = Typography
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<SystemStats | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [form] = Form.useForm()
@@ -62,9 +73,10 @@ export const AdminDashboard: React.FC = () => {
       setStats(systemStats)
       setUsers(userList)
     } catch (error: any) {
-      message.error(`Failed to load data: ${error.message}`)
+      toast.error(`Failed to load data: ${error.message}`)
     } finally {
       setLoading(false)
+      setInitialLoad(false)
     }
   }
 
@@ -94,31 +106,31 @@ export const AdminDashboard: React.FC = () => {
       }
 
       await adminService.updateUser(selectedUser.id, updateData)
-      message.success('User updated successfully')
+      toast.success('User updated successfully')
       setEditModalOpen(false)
       loadData()
     } catch (error: any) {
-      message.error(`Failed to update user: ${error.message}`)
+      toast.error(`Failed to update user: ${error.message}`)
     }
   }
 
   const handleToggleStatus = async (user: User) => {
     try {
       await adminService.toggleUserStatus(user.id)
-      message.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`)
+      toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`)
       loadData()
     } catch (error: any) {
-      message.error(`Failed to toggle user status: ${error.message}`)
+      toast.error(`Failed to toggle user status: ${error.message}`)
     }
   }
 
   const handleDelete = async (userId: string) => {
     try {
       await adminService.deleteUser(userId)
-      message.success('User deleted successfully')
+      toast.success('User deleted successfully')
       loadData()
     } catch (error: any) {
-      message.error(`Failed to delete user: ${error.message}`)
+      toast.error(`Failed to delete user: ${error.message}`)
     }
   }
 
@@ -248,42 +260,72 @@ export const AdminDashboard: React.FC = () => {
     },
   ]
 
+  // Show skeleton on initial load
+  if (initialLoad && loading) {
+    return <PageSkeleton hasHeader rows={8} />
+  }
+
   return (
     <div>
-      <h2>Admin Dashboard</h2>
+      {/* Header with animation */}
+      <FadeIn direction="up" delay={0} duration={300}>
+        <Space align="center" style={{ marginBottom: 24 }}>
+          <UserOutlined style={{ fontSize: 28, color: 'var(--color-primary)' }} />
+          <div>
+            <Title level={2} style={{ margin: 0 }}>
+              Admin Dashboard
+            </Title>
+            <Text type="secondary">System overview and user management</Text>
+          </div>
+        </Space>
+      </FadeIn>
 
-      {/* System Statistics */}
-      <StatisticCard items={statisticItems} gutter={[16, 16]} />
+      {/* System Statistics with staggered animation */}
+      <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
+        <StatisticCard items={statisticItems} gutter={[16, 16]} />
+      </StaggeredList>
 
-      {/* Storage Statistics */}
-      <Card
-        title={
-          <>
-            <DatabaseOutlined /> Storage Usage
-          </>
-        }
-        style={{ marginBottom: 24 }}
-      >
-        <Progress
-          percent={Math.round(((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100)}
-          status="active"
+      {/* Storage Statistics with animation */}
+      <FadeIn direction="up" delay={100} duration={300}>
+        <Card
+          title={
+            <>
+              <DatabaseOutlined /> Storage Usage
+            </>
+          }
+          style={{ marginTop: 24, marginBottom: 24 }}
+        >
+          <Progress
+            percent={Math.round(((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100)}
+            status="active"
+          />
+          <div style={{ marginTop: 8, fontSize: 14 }}>
+            {formatBytes(stats?.total_storage_used || 0)} / {formatBytes(stats?.total_storage_quota || 0)}
+          </div>
+        </Card>
+      </FadeIn>
+
+      {/* User Management Table with animation */}
+      <FadeIn direction="up" delay={200} duration={300}>
+        <DataTable
+          title="User Management"
+          columns={columns}
+          dataSource={users}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `Total ${total} users` }}
+          locale={{
+            emptyText: (
+              <EnhancedEmptyState
+                type="noData"
+                title="No users yet"
+                description="No users have been registered yet. Users will appear here after registration."
+                size="default"
+              />
+            ),
+          }}
         />
-        <div style={{ marginTop: 8, fontSize: 14 }}>
-          {formatBytes(stats?.total_storage_used || 0)} / {formatBytes(stats?.total_storage_quota || 0)}
-        </div>
-      </Card>
-
-      {/* User Management Table */}
-      <DataTable
-        title="User Management"
-        columns={columns}
-        dataSource={users}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 20 }}
-        emptyText="No Users"
-        emptyDescription="No users have been registered yet"
-      />
+      </FadeIn>
 
       {/* Edit User Modal */}
       <Modal
