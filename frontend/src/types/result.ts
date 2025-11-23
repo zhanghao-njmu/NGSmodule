@@ -2,6 +2,8 @@
  * Result types for analysis results
  */
 
+import type { PaginatedResponse } from './common'
+
 export type ResultType = 'qc_report' | 'alignment' | 'quantification' | 'de_analysis'
 
 export type ChartType = 'line' | 'bar' | 'pie' | 'scatter' | 'histogram' | 'area'
@@ -15,12 +17,10 @@ export interface Result {
   created_at: string
 }
 
-export interface ResultListResponse {
-  results: Result[]
-  total: number
-  skip: number
-  limit: number
-}
+/**
+ * @deprecated Use PaginatedResponse<Result> instead
+ */
+export type ResultListResponse = PaginatedResponse<Result>
 
 // Chart data structures
 export interface ChartData {

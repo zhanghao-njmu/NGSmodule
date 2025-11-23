@@ -2,6 +2,8 @@
  * Task types and interfaces
  */
 
+import type { PaginatedResponse } from './common'
+
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
 export interface Task {
@@ -41,10 +43,10 @@ export interface TaskExecuteRequest {
   config?: Record<string, any>
 }
 
-export interface TaskListResponse {
-  total: number
-  items: Task[]
-}
+/**
+ * @deprecated Use PaginatedResponse<Task> instead
+ */
+export type TaskListResponse = PaginatedResponse<Task>
 
 export interface TaskStats {
   total_tasks: number

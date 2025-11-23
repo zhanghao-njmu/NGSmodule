@@ -1,62 +1,147 @@
 /**
- * Results Service - API calls for analysis results
+ * Result Service
+ * API calls for analysis results
+ * Refactored to use standardized pattern
  */
-import api from './api'
-import type { Result, ResultListResponse, ResultVisualizationData, ResultSummary } from '../types/result'
 
-class ResultService {
-  private baseURL = '/results'
+import apiClient from './api'
+import type {
+  Result,
+  ResultVisualizationData,
+  ResultSummary,
+} from '@/types/result'
+import type { PaginatedResponse } from '@/types/common'
 
+/**
+ * Result service
+ * Handles analysis results and visualizations
+ */
+export const resultService = {
   /**
-   * List results with filtering and pagination
+   * Get all results with optional filters
+   *
+   * @param params - Query parameters
+   * @returns Paginated list of results
    */
-  async listResults(params?: {
+  async getAll(params?: {
     task_id?: string
     result_type?: string
     skip?: number
     limit?: number
-  }): Promise<ResultListResponse> {
-    const response = await api.get<ResultListResponse>(this.baseURL, { params })
-    return response.data
-  }
+  }): Promise<PaginatedResponse<Result>> {
+    return apiClient.get<PaginatedResponse<Result>>('/results', { params })
+  },
 
   /**
-   * Get a specific result by ID
+   * Get result by ID
+   *
+   * @param id - Result ID
+   * @returns Result details
    */
-  async getResult(resultId: string): Promise<Result> {
-    const response = await api.get<Result>(`${this.baseURL}/${resultId}`)
-    return response.data
-  }
+  async getById(id: string): Promise<Result> {
+    return apiClient.get<Result>(`/results/${id}`)
+  },
 
   /**
    * Get visualization data for a result
+   * Returns processed data for charts and visualizations
+   *
+   * @param resultId - Result ID
+   * @returns Visualization data with charts and metrics
    */
   async getVisualizationData(resultId: string): Promise<ResultVisualizationData> {
-    const response = await api.get<ResultVisualizationData>(
-      `${this.baseURL}/${resultId}/visualization`
-    )
-    return response.data
-  }
+    return apiClient.get<ResultVisualizationData>(`/results/${resultId}/visualization`)
+  },
 
   /**
    * Get summary of all results for a task
+   * Aggregates all results for a specific task
+   *
+   * @param taskId - Task ID
+   * @returns Result summary with counts and types
    */
   async getTaskResultsSummary(taskId: string): Promise<ResultSummary> {
-    const response = await api.get<ResultSummary>(`${this.baseURL}/task/${taskId}/summary`)
-    return response.data
-  }
+    return apiClient.get<ResultSummary>(`/results/task/${taskId}/summary`)
+  },
 
   /**
    * Download result file
+   * Triggers browser download for result file
+   *
+   * @param result - Result object with result_path
    */
   async downloadResult(result: Result): Promise<void> {
     if (!result.result_path) {
       throw new Error('Result has no downloadable file')
     }
 
-    // In a real implementation, this would trigger file download
+    // Trigger browser download
     window.open(result.result_path, '_blank')
-  }
+  },
+
+  /**
+   * Get results by task ID
+   * Convenience method to filter results by task
+   *
+   * @param taskId - Task ID
+   * @param params - Additional query parameters
+   * @returns Paginated list of results
+   */
+  async getResultsByTask(
+    taskId: string,
+    params?: { result_type?: string }
+  ): Promise<PaginatedResponse<Result>> {
+    return this.getAll({
+      ...params,
+      task_id: taskId,
+    })
+  },
+
+  /**
+   * Get results by type
+   * Convenience method to filter by result type
+   *
+   * @param resultType - Result type
+   * @returns Paginated list of results
+   */
+  async getResultsByType(resultType: string): Promise<PaginatedResponse<Result>> {
+    return this.getAll({ result_type: resultType })
+  },
+
+  /**
+   * Export result data
+   * Downloads result in specified format
+   *
+   * @param resultId - Result ID
+   * @param format - Export format (csv, json, etc.)
+   * @returns Download URL
+   */
+  async exportResult(resultId: string, format: 'csv' | 'json' | 'tsv' = 'csv'): Promise<{ download_url: string }> {
+    return apiClient.get<{ download_url: string }>(`/results/${resultId}/export`, {
+      params: { format },
+    })
+  },
+
+  // Backward compatibility aliases
+
+  /**
+   * @deprecated Use getAll instead
+   */
+  async listResults(params?: {
+    task_id?: string
+    result_type?: string
+    skip?: number
+    limit?: number
+  }): Promise<PaginatedResponse<Result>> {
+    return this.getAll(params)
+  },
+
+  /**
+   * @deprecated Use getById instead
+   */
+  async getResult(resultId: string): Promise<Result> {
+    return this.getById(resultId)
+  },
 }
 
-export default new ResultService()
+export default resultService

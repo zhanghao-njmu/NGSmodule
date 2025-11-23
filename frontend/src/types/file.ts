@@ -2,6 +2,8 @@
  * File types and interfaces
  */
 
+import type { PaginatedResponse } from './common'
+
 export interface FileItem {
   id: string
   sample_id: string
@@ -20,10 +22,10 @@ export interface FileUploadRequest {
   onProgress?: (percent: number) => void
 }
 
-export interface FileListResponse {
-  total: number
-  items: FileItem[]
-}
+/**
+ * @deprecated Use PaginatedResponse<FileItem> instead
+ */
+export type FileListResponse = PaginatedResponse<FileItem>
 
 export interface FileDownloadResponse {
   download_url: string

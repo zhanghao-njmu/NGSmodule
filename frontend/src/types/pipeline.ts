@@ -2,6 +2,8 @@
  * Pipeline types and interfaces
  */
 
+import type { PaginatedResponse } from './common'
+
 export interface PipelineTemplate {
   id: string
   name: string
@@ -31,10 +33,10 @@ export interface ParamSchema {
   options?: Array<string | { value: any; label: string }>
 }
 
-export interface PipelineTemplateListResponse {
-  total: number
-  items: PipelineTemplate[]
-}
+/**
+ * @deprecated Use PaginatedResponse<PipelineTemplate> instead
+ */
+export type PipelineTemplateListResponse = PaginatedResponse<PipelineTemplate>
 
 export interface PipelineTemplateCategory {
   category: string
