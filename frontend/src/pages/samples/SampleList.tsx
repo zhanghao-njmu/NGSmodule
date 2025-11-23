@@ -3,12 +3,42 @@
  */
 import type React from 'react'
 import { useEffect, useState } from 'react'
-import { Button, Space, Select, Upload, Tag, Modal, Form, Input, Popconfirm, Tooltip } from 'antd'
-import { PlusOutlined, UploadOutlined, ExperimentOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import {
+  Button,
+  Space,
+  Select,
+  Upload,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  Popconfirm,
+  Tooltip,
+  Row,
+  Col,
+  Card,
+  Statistic,
+} from 'antd'
+import {
+  PlusOutlined,
+  UploadOutlined,
+  ExperimentOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  TeamOutlined,
+} from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useSampleStore } from '../../store/sampleStore'
 import { useProjectStore } from '../../store/projectStore'
-import { PageHeader, DataTable, FilterBar, EnhancedEmptyState, PageSkeleton, FadeIn } from '../../components/common'
+import {
+  PageHeader,
+  DataTable,
+  FilterBar,
+  EnhancedEmptyState,
+  PageSkeleton,
+  FadeIn,
+  StaggeredList,
+} from '../../components/common'
 import type { FilterConfig } from '../../components/common'
 import { toast, notifications } from '../../utils/notification'
 import { useFilters } from '@/hooks'
@@ -90,6 +120,27 @@ export const SampleList: React.FC = () => {
     const matchesLayout = filters.layout === 'all' || sample.layout === filters.layout
     return matchesSearch && matchesGroup && matchesLayout
   })
+
+  // Calculate statistics
+  const groupStats = samples.reduce(
+    (acc, sample) => {
+      const group = sample.group_name || 'Unknown'
+      acc[group] = (acc[group] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
+
+  const layoutStats = samples.reduce(
+    (acc, sample) => {
+      const layout = sample.layout || 'Unknown'
+      acc[layout] = (acc[layout] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
+
+  const totalFiles = samples.reduce((sum, sample) => sum + (sample.file_count || 0), 0)
 
   // 打开创建/编辑模态框
   const showModal = (sample?: Sample) => {
@@ -287,6 +338,60 @@ export const SampleList: React.FC = () => {
 
   return (
     <div>
+      {/* Statistics Cards - Only show when project selected and has samples */}
+      {selectedProject && samples.length > 0 && (
+        <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
+          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Col xs={24} sm={12} md={6}>
+              <Card bordered={false}>
+                <Statistic
+                  title="Total Samples"
+                  value={samples.length}
+                  prefix={<TeamOutlined />}
+                  valueStyle={{ color: 'var(--color-primary)' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card bordered={false}>
+                <Statistic
+                  title="Total Files"
+                  value={totalFiles}
+                  prefix={<ExperimentOutlined />}
+                  valueStyle={{ color: 'var(--color-success)' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card bordered={false}>
+                <Statistic
+                  title="PE Samples"
+                  value={layoutStats['PE'] || 0}
+                  suffix={`/ ${layoutStats['SE'] || 0} SE`}
+                  valueStyle={{ color: 'var(--color-info)' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card bordered={false}>
+                <div>
+                  <div style={{ fontSize: 14, color: 'var(--color-gray-500)', marginBottom: 8 }}>
+                    Groups Distribution
+                  </div>
+                  <Space wrap>
+                    {Object.entries(groupStats).map(([group, count]) => (
+                      <Tag key={group} color={group.toLowerCase() === 'control' ? 'blue' : 'green'}>
+                        {group}: {count}
+                      </Tag>
+                    ))}
+                  </Space>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        </StaggeredList>
+      )}
+
       {/* Project Selection and Actions */}
       <FadeIn direction="up" delay={0} duration={300}>
         <PageHeader

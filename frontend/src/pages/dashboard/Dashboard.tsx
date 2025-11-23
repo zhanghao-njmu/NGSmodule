@@ -1,7 +1,8 @@
 /**
  * Dashboard Page
+ * Refactored: Unified color usage with CSS variables
  */
-import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
+import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert, Progress } from 'antd'
 import {
   ProjectOutlined,
   ExperimentOutlined,
@@ -117,7 +118,7 @@ export const Dashboard: React.FC = () => {
                 title="Total Projects"
                 value={stats.totalProjects}
                 prefix={<ProjectOutlined />}
-                valueStyle={{ color: '#2196F3' }}
+                valueStyle={{ color: 'var(--color-primary)' }}
               />
             </Card>
           </Col>
@@ -128,7 +129,7 @@ export const Dashboard: React.FC = () => {
                 title="Running Tasks"
                 value={stats.runningTasks}
                 prefix={<ClockCircleOutlined />}
-                valueStyle={{ color: '#FF9800' }}
+                valueStyle={{ color: 'var(--color-warning)' }}
               />
             </Card>
           </Col>
@@ -139,7 +140,7 @@ export const Dashboard: React.FC = () => {
                 title="Completed Tasks"
                 value={stats.completedTasks}
                 prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#4CAF50' }}
+                valueStyle={{ color: 'var(--color-success)' }}
               />
             </Card>
           </Col>
@@ -151,11 +152,19 @@ export const Dashboard: React.FC = () => {
                 value={storagePercent}
                 suffix="%"
                 prefix={<DatabaseOutlined />}
-                valueStyle={{ color: storagePercent > 80 ? '#F44336' : '#2196F3' }}
+                valueStyle={{ color: storagePercent > 80 ? 'var(--color-error)' : 'var(--color-primary)' }}
               />
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {formatBytes(stats.storageUsed)} / {formatBytes(stats.storageQuota)}
-              </Text>
+              <div style={{ marginTop: 12 }}>
+                <Progress
+                  percent={storagePercent}
+                  strokeColor={storagePercent > 80 ? 'var(--color-error)' : 'var(--color-primary)'}
+                  showInfo={false}
+                  size="small"
+                />
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                  {formatBytes(stats.storageUsed)} / {formatBytes(stats.storageQuota)}
+                </Text>
+              </div>
             </Card>
           </Col>
         </Row>
@@ -172,7 +181,7 @@ export const Dashboard: React.FC = () => {
               className={styles.card}
             >
               <div className={styles.emptyState}>
-                <ExperimentOutlined style={{ fontSize: 48, color: '#ccc' }} />
+                <ExperimentOutlined style={{ fontSize: 48, color: 'var(--color-gray-300)' }} />
                 <Title level={4} type="secondary">
                   No items yet
                 </Title>
@@ -190,7 +199,7 @@ export const Dashboard: React.FC = () => {
                   onClick={() => (window.location.href = '/items')}
                 >
                   <Space>
-                    <ProjectOutlined style={{ fontSize: 20, color: '#2196F3' }} />
+                    <ProjectOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />
                     <div>
                       <Text strong>Create Project</Text>
                       <br />
@@ -203,7 +212,7 @@ export const Dashboard: React.FC = () => {
 
                 <Card.Grid hoverable style={{ width: '100%', cursor: 'pointer' }}>
                   <Space>
-                    <ExperimentOutlined style={{ fontSize: 20, color: '#4CAF50' }} />
+                    <ExperimentOutlined style={{ fontSize: 20, color: 'var(--color-success)' }} />
                     <div>
                       <Text strong>Run Pipeline</Text>
                       <br />
@@ -216,7 +225,7 @@ export const Dashboard: React.FC = () => {
 
                 <Card.Grid hoverable style={{ width: '100%', cursor: 'pointer' }}>
                   <Space>
-                    <DatabaseOutlined style={{ fontSize: 20, color: '#FF9800' }} />
+                    <DatabaseOutlined style={{ fontSize: 20, color: 'var(--color-warning)' }} />
                     <div>
                       <Text strong>Upload Data</Text>
                       <br />
