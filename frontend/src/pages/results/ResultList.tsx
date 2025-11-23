@@ -267,9 +267,55 @@ export const ResultList: React.FC = () => {
           },
           {
             key: 'download',
-            label: 'Download',
+            label: 'Download Raw',
             icon: <DownloadOutlined />,
             onClick: () => handleDownload(record),
+          },
+          {
+            key: 'export',
+            label: 'Export As',
+            icon: <DownloadOutlined />,
+            children: [
+              {
+                key: 'export-csv',
+                label: 'CSV Format',
+                onClick: async () => {
+                  try {
+                    const { download_url } = await resultService.exportResult(record.id, 'csv')
+                    window.open(download_url, '_blank')
+                    toast.success('CSV export started')
+                  } catch (error: any) {
+                    toast.error(`Export failed: ${error.message}`)
+                  }
+                },
+              },
+              {
+                key: 'export-json',
+                label: 'JSON Format',
+                onClick: async () => {
+                  try {
+                    const { download_url } = await resultService.exportResult(record.id, 'json')
+                    window.open(download_url, '_blank')
+                    toast.success('JSON export started')
+                  } catch (error: any) {
+                    toast.error(`Export failed: ${error.message}`)
+                  }
+                },
+              },
+              {
+                key: 'export-tsv',
+                label: 'TSV Format',
+                onClick: async () => {
+                  try {
+                    const { download_url } = await resultService.exportResult(record.id, 'tsv')
+                    window.open(download_url, '_blank')
+                    toast.success('TSV export started')
+                  } catch (error: any) {
+                    toast.error(`Export failed: ${error.message}`)
+                  }
+                },
+              },
+            ],
           },
         ]
 
@@ -292,10 +338,11 @@ export const ResultList: React.FC = () => {
     },
   ]
 
-  const handleDownload = async (_result: Result) => {
+  const handleDownload = async (result: Result) => {
     try {
-      toast.info('Download functionality coming soon!')
-      // TODO: Implement result download
+      // Use the downloadResult method from result service
+      await resultService.downloadResult(result)
+      toast.success('Download started')
     } catch (error: any) {
       toast.error(`Download failed: ${error.message}`)
     }
@@ -454,7 +501,29 @@ export const ResultList: React.FC = () => {
               type="primary"
               size="small"
               icon={<DownloadOutlined />}
-              onClick={() => toast.info('Bulk download coming soon!')}
+              onClick={async () => {
+                try {
+                  const selectedResults = filteredResults.filter((r) => selectedRowKeys.includes(r.id))
+                  if (selectedResults.length === 0) {
+                    toast.warning('No results selected')
+                    return
+                  }
+
+                  toast.info(`Downloading ${selectedResults.length} result(s)...`)
+
+                  // Download each result sequentially
+                  for (const result of selectedResults) {
+                    await resultService.downloadResult(result)
+                    // Small delay between downloads
+                    await new Promise((resolve) => setTimeout(resolve, 500))
+                  }
+
+                  toast.success(`Downloaded ${selectedResults.length} result(s)`)
+                  setSelectedRowKeys([])
+                } catch (error: any) {
+                  toast.error(`Bulk download failed: ${error.message}`)
+                }
+              }}
             >
               Download Selected
             </Button>

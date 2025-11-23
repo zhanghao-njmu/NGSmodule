@@ -4,7 +4,7 @@
  */
 import type React from 'react'
 import { useEffect, useState } from 'react'
-import { Button, Select, Tag, Modal, Upload, Popconfirm, Tooltip, Space, Typography, message } from 'antd'
+import { Button, Select, Tag, Modal, Upload, Popconfirm, Tooltip, Space, Typography, Progress } from 'antd'
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -14,7 +14,7 @@ import {
   FolderOpenOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { UploadProps } from 'antd'
+import type { UploadFile, UploadProps } from 'antd'
 import { useFileStore } from '../../store/fileStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useSampleStore } from '../../store/sampleStore'
@@ -27,13 +27,14 @@ const { Option } = Select
 const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
-  const { files, loading, fetchFiles, deleteFile, downloadFile } = useFileStore()
+  const { files, loading, uploadProgress, fetchFiles, deleteFile, downloadFile, batchUploadFiles } = useFileStore()
   const { items, fetchItems } = useProjectStore()
   const { samples, fetchSamples } = useSampleStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedSample, setSelectedSample] = useState<string>('')
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false)
-  const [uploading, _setUploading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [fileList, setFileList] = useState<UploadFile[]>([])
   const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export const FileList: React.FC = () => {
   const handleCancelUpload = () => {
     setIsUploadModalVisible(false)
     setSelectedSample('')
+    setFileList([])
   }
 
   // 文件上传配置
@@ -71,10 +73,15 @@ export const FileList: React.FC = () => {
     name: 'file',
     multiple: true,
     accept: '.fastq,.fq,.fastq.gz,.fq.gz,.bam,.sam,.vcf,.vcf.gz',
-    showUploadList: true,
+    fileList,
     beforeUpload: () => false, // 阻止自动上传
-    onChange(_info) {
-      // 处理文件选择变化
+    onChange(info) {
+      // 更新文件列表
+      setFileList(info.fileList)
+    },
+    onRemove(file) {
+      // 从文件列表中移除
+      setFileList((prev) => prev.filter((f) => f.uid !== file.uid))
     },
   }
 
@@ -297,24 +304,73 @@ export const FileList: React.FC = () => {
           </p>
         </Upload.Dragger>
 
+        {/* Upload Progress */}
+        {uploading && uploadProgress > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Progress percent={uploadProgress} status="active" strokeColor="var(--color-primary)" />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Uploading files... {uploadProgress}%
+            </Text>
+          </div>
+        )}
+
         <div style={{ marginTop: 16, textAlign: 'right' }}>
           <Space>
-            <Button onClick={handleCancelUpload}>Cancel</Button>
+            <Button onClick={handleCancelUpload} disabled={uploading}>
+              Cancel
+            </Button>
             <Button
               type="primary"
               loading={uploading}
-              onClick={() => {
-                const fileList = (document.querySelector('.ant-upload-list') as any)?.querySelectorAll(
-                  '.ant-upload-list-item',
-                )
-                if (fileList && fileList.length > 0) {
-                  // 获取文件列表并上传
-                  // 这里需要从 Upload 组件获取文件
-                  message.info('Upload functionality in progress')
+              disabled={!selectedSample || fileList.length === 0}
+              onClick={async () => {
+                if (!selectedSample) {
+                  toast.warning('Please select a sample first')
+                  return
+                }
+
+                if (fileList.length === 0) {
+                  toast.warning('Please select at least one file to upload')
+                  return
+                }
+
+                try {
+                  setUploading(true)
+
+                  // Convert UploadFile[] to File[]
+                  const filesToUpload: File[] = []
+                  for (const f of fileList) {
+                    if (f.originFileObj) {
+                      filesToUpload.push(f.originFileObj as File)
+                    }
+                  }
+
+                  if (filesToUpload.length === 0) {
+                    toast.error('No valid files to upload')
+                    setUploading(false)
+                    return
+                  }
+
+                  // Upload files
+                  await batchUploadFiles(selectedSample, filesToUpload)
+
+                  // Success - close modal and refresh
+                  setIsUploadModalVisible(false)
+                  setSelectedSample('')
+                  setFileList([])
+
+                  // Refresh file list
+                  if (selectedProject) {
+                    await fetchFiles({ project_id: selectedProject })
+                  }
+                } catch (error) {
+                  console.error('Upload error:', error)
+                } finally {
+                  setUploading(false)
                 }
               }}
             >
-              Upload
+              Upload {fileList.length > 0 && `(${fileList.length})`}
             </Button>
           </Space>
         </div>

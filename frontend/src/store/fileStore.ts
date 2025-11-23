@@ -18,6 +18,7 @@ interface FileStore {
   fetchFiles: (params?: { sample_id?: string; project_id?: string; file_type?: string }) => Promise<void>
   fetchFileById: (id: string) => Promise<void>
   uploadFile: (sampleId: string, file: File) => Promise<FileItem | null>
+  batchUploadFiles: (sampleId: string, files: File[]) => Promise<FileItem[]>
   downloadFile: (id: string, filename: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   setCurrentFile: (file: FileItem | null) => void
@@ -80,6 +81,29 @@ export const useFileStore = create<FileStore>((set) => ({
       set({ error: error.message, loading: false, uploadProgress: 0 })
       message.error(`Failed to upload file: ${error.message}`)
       return null
+    }
+  },
+
+  // Batch upload files
+  batchUploadFiles: async (sampleId, files) => {
+    set({ loading: true, error: null, uploadProgress: 0 })
+    try {
+      const uploadedFiles = await fileService.batchUpload(sampleId, files, (percent) => {
+        set({ uploadProgress: percent })
+      })
+
+      set((state) => ({
+        files: [...uploadedFiles, ...state.files],
+        loading: false,
+        uploadProgress: 0,
+      }))
+
+      message.success(`Successfully uploaded ${uploadedFiles.length} file(s)`)
+      return uploadedFiles
+    } catch (error: any) {
+      set({ error: error.message, loading: false, uploadProgress: 0 })
+      message.error(`Failed to upload files: ${error.message}`)
+      return []
     }
   },
 
