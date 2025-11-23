@@ -1,44 +1,27 @@
 /**
  * File Service
  * API calls for file management
- * Refactored with specialized file operations
+ * Refactored to use CRUD factory pattern with specialized file operations
  */
 
+import { createCrudService, extendService } from './crud.factory'
 import apiClient from './api'
 import type { FileItem, FileDownloadResponse, FileUploadRequest } from '@/types/file'
 import type { PaginatedResponse } from '@/types/common'
 
 /**
- * File service
- * Note: Files don't use standard CRUD as they're managed via upload/download
+ * Base CRUD service for files
+ * Provides getAll, getById, delete operations
+ * Note: Files don't use create/update as they're managed via upload
  */
-export const fileService = {
-  /**
-   * Get all files with optional filters
-   *
-   * @param params - Query parameters
-   * @returns Paginated list of files
-   */
-  async getAll(params?: {
-    sample_id?: string
-    project_id?: string
-    file_type?: string
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<FileItem>> {
-    return apiClient.get<PaginatedResponse<FileItem>>('/files', { params })
-  },
+const baseCrudService = createCrudService<FileItem>({
+  endpoint: 'files',
+})
 
-  /**
-   * Get file by ID
-   *
-   * @param id - File ID
-   * @returns File item
-   */
-  async getById(id: string): Promise<FileItem> {
-    return apiClient.get<FileItem>(`/files/${id}`)
-  },
-
+/**
+ * Extended file service with specialized file operations
+ */
+export const fileService = extendService(baseCrudService, {
   /**
    * Upload a file
    * Creates a new file entry and uploads content to storage
@@ -72,11 +55,7 @@ export const fileService = {
    * @param onProgress - Progress callback (optional)
    * @returns Array of uploaded file items
    */
-  async batchUpload(
-    sampleId: string,
-    files: File[],
-    onProgress?: (percent: number) => void
-  ): Promise<FileItem[]> {
+  async batchUpload(sampleId: string, files: File[], onProgress?: (percent: number) => void): Promise<FileItem[]> {
     const formData = new FormData()
     files.forEach((file) => formData.append('files', file))
 
@@ -124,16 +103,6 @@ export const fileService = {
   },
 
   /**
-   * Delete a file
-   * Removes file entry and deletes from storage
-   *
-   * @param id - File ID
-   */
-  async delete(id: string): Promise<void> {
-    return apiClient.delete(`/files/${id}`)
-  },
-
-  /**
    * Get files by sample ID
    * Convenience method to filter files by sample
    *
@@ -143,9 +112,9 @@ export const fileService = {
    */
   async getFilesBySample(
     sampleId: string,
-    params?: { file_type?: string }
+    params?: { file_type?: string; skip?: number; limit?: number },
   ): Promise<PaginatedResponse<FileItem>> {
-    return this.getAll({
+    return baseCrudService.getAll({
       ...params,
       sample_id: sampleId,
     })
@@ -161,9 +130,9 @@ export const fileService = {
    */
   async getFilesByProject(
     projectId: string,
-    params?: { file_type?: string }
+    params?: { file_type?: string; skip?: number; limit?: number },
   ): Promise<PaginatedResponse<FileItem>> {
-    return this.getAll({
+    return baseCrudService.getAll({
       ...params,
       project_id: projectId,
     })
@@ -179,6 +148,6 @@ export const fileService = {
   async verifyChecksum(id: string): Promise<{ valid: boolean; message: string }> {
     return apiClient.post<{ valid: boolean; message: string }>(`/files/${id}/verify`)
   },
-}
+})
 
 export default fileService
