@@ -47,7 +47,7 @@ export const ProfilePage: React.FC = () => {
 
   // Mock statistics data - replace with API calls
   const stats = {
-    projects: 12,
+    items: 12,
     samples: 145,
     tasks: 89,
     storageUsed: 45.8,
@@ -237,7 +237,7 @@ export const ProfilePage: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <StatisticCard
                 title="项目数"
-                value={stats.projects}
+                value={stats.items}
                 icon={<FolderOutlined />}
                 color={DesignTokens.colors.primary.main}
               />

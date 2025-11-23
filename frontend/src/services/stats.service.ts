@@ -65,7 +65,7 @@ class StatsService {
    * 获取项目统计
    */
   async getProjectStats(): Promise<ProjectStats> {
-    const response = await apiClient.get<ProjectStats>('/projects/stats')
+    const response = await apiClient.get<ProjectStats>('/items/stats')
     return response.data
   }
 

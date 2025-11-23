@@ -43,7 +43,7 @@ const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
   const { files, loading, fetchFiles, uploadFile, deleteFile, downloadFile } = useFileStore()
-  const { projects, fetchProjects } = useProjectStore()
+  const { items, fetchItems } = useProjectStore()
   const { samples, fetchSamples } = useSampleStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedSample, setSelectedSample] = useState<string>('')
@@ -53,7 +53,7 @@ export const FileList: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchProjects()
+      await fetchItems()
       setInitialLoad(false)
     }
     loadData()
@@ -266,9 +266,9 @@ export const FileList: React.FC = () => {
                 style={{ width: 300 }}
                 value={selectedProject || undefined}
                 onChange={setSelectedProject}
-                loading={projects.length === 0}
+                loading={items.length === 0}
               >
-                {projects.map((p) => (
+                {items.map((p) => (
                   <Option key={p.id} value={p.id}>
                     {p.name}
                   </Option>

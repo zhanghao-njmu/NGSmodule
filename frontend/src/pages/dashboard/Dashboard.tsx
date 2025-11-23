@@ -166,13 +166,13 @@ export const Dashboard: React.FC = () => {
             <Card
               title="Recent Projects"
               bordered={false}
-              extra={<a href="/projects">View All</a>}
+              extra={<a href="/items">View All</a>}
               className={styles.card}
             >
               <div className={styles.emptyState}>
                 <ExperimentOutlined style={{ fontSize: 48, color: '#ccc' }} />
                 <Title level={4} type="secondary">
-                  No projects yet
+                  No items yet
                 </Title>
                 <Paragraph type="secondary">
                   Create your first project to start analyzing NGS data
@@ -191,7 +191,7 @@ export const Dashboard: React.FC = () => {
                 <Card.Grid
                   hoverable
                   style={{ width: '100%', cursor: 'pointer' }}
-                  onClick={() => window.location.href = '/projects'}
+                  onClick={() => window.location.href = '/items'}
                 >
                   <Space>
                     <ProjectOutlined style={{ fontSize: 20, color: '#2196F3' }} />

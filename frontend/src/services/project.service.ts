@@ -10,10 +10,10 @@ import type { Project, ProjectCreate, ProjectUpdate, ProjectStats } from '@/type
 import type { PaginatedResponse } from '@/types/common'
 
 /**
- * Base CRUD service for projects
+ * Base CRUD service for items
  */
 const baseCrudService = createCrudService<Project, ProjectCreate, ProjectUpdate>({
-  endpoint: 'projects',
+  endpoint: 'items',
 })
 
 /**
@@ -22,10 +22,10 @@ const baseCrudService = createCrudService<Project, ProjectCreate, ProjectUpdate>
 export const projectService = extendService(baseCrudService, {
   /**
    * Get project statistics
-   * Returns aggregated stats for all projects
+   * Returns aggregated stats for all items
    */
   async getStats(): Promise<ProjectStats> {
-    return apiClient.get<ProjectStats>('/projects/stats')
+    return apiClient.get<ProjectStats>('/items/stats')
   },
 
   /**
@@ -36,7 +36,7 @@ export const projectService = extendService(baseCrudService, {
    * @returns Success message
    */
   async archiveProject(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/projects/${id}/archive`)
+    return apiClient.post<{ message: string }>(`/items/${id}/archive`)
   },
 
   /**
@@ -47,7 +47,7 @@ export const projectService = extendService(baseCrudService, {
    * @returns Success message
    */
   async restoreProject(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/projects/${id}/restore`)
+    return apiClient.post<{ message: string }>(`/items/${id}/restore`)
   },
 
   /**
@@ -66,7 +66,7 @@ export const projectService = extendService(baseCrudService, {
       storage_used: number
     }
   }> {
-    return apiClient.get(`/projects/${id}/details`)
+    return apiClient.get(`/items/${id}/details`)
   },
 })
 

@@ -111,7 +111,7 @@ export interface TrendAnalysis {
 // ============================================================
 
 export interface ProjectComparison {
-  projects: string[]
+  items: string[]
   metrics: ComparisonMetric[]
   summary: {
     bestPerforming: string

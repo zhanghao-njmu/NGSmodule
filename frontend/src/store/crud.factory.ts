@@ -110,7 +110,7 @@ export interface CrudStoreConfig {
 
   /**
    * Plural form of entity name for messages
-   * @example 'projects', 'samples', 'tasks'
+   * @example 'items', 'samples', 'tasks'
    * If not provided, will append 's' to entityName
    */
   entityNamePlural?: string
@@ -170,7 +170,7 @@ const createInitialState = <T>(config?: CrudStoreConfig): CrudStoreState<T> => (
  *
  * @example
  * // Create service
- * const projectService = createCrudService<Project>({ endpoint: 'projects' })
+ * const projectService = createCrudService<Project>({ endpoint: 'items' })
  *
  * // Create store
  * export const useProjectStore = createCrudStore(

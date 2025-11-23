@@ -45,12 +45,12 @@ dayjs.extend(relativeTime)
 
 export const ProjectList: React.FC = () => {
   const {
-    projects,
+    items,
     stats,
     loading,
-    fetchProjects,
+    fetchItems,
     fetchStats,
-    deleteProject,
+    deleteItem,
     archiveProject,
     restoreProject,
   } = useProjectStore()
@@ -67,7 +67,7 @@ export const ProjectList: React.FC = () => {
   })
 
   useEffect(() => {
-    fetchProjects()
+    fetchItems()
     fetchStats()
   }, [])
 
@@ -76,7 +76,7 @@ export const ProjectList: React.FC = () => {
     {
       type: 'search',
       key: 'search',
-      placeholder: 'Search projects...',
+      placeholder: 'Search items...',
     },
     {
       type: 'select',
@@ -91,8 +91,8 @@ export const ProjectList: React.FC = () => {
     },
   ]
 
-  // Filter projects based on status and search
-  const filteredProjects = projects.filter((project) => {
+  // Filter items based on status and search
+  const filteredProjects = items.filter((project) => {
     const matchesStatus = filters.status === 'all' || project.status === filters.status
     const matchesSearch =
       filters.search === '' ||
@@ -119,10 +119,10 @@ export const ProjectList: React.FC = () => {
       async () => {
         const loadingToast = toast.loading('删除中...')
         try {
-          await deleteProject(project.id)
+          await deleteItem(project.id)
           loadingToast()
           notifications.deleteSuccess()
-          fetchProjects() // Refresh list
+          fetchItems() // Refresh list
           fetchStats() // Refresh stats
         } catch (error) {
           loadingToast()
@@ -138,7 +138,7 @@ export const ProjectList: React.FC = () => {
       await archiveProject(project.id)
       loadingToast()
       toast.success('项目已归档')
-      fetchProjects()
+      fetchItems()
       fetchStats()
     } catch (error) {
       loadingToast()
@@ -152,7 +152,7 @@ export const ProjectList: React.FC = () => {
       await restoreProject(project.id)
       loadingToast()
       toast.success('项目已恢复')
-      fetchProjects()
+      fetchItems()
       fetchStats()
     } catch (error) {
       loadingToast()
@@ -281,7 +281,7 @@ export const ProjectList: React.FC = () => {
   ]
 
   // Show skeleton while loading
-  if (loading && projects.length === 0) {
+  if (loading && items.length === 0) {
     return <PageSkeleton hasHeader hasFilters rows={8} />
   }
 
@@ -316,7 +316,7 @@ export const ProjectList: React.FC = () => {
         {filteredProjects.length === 0 && !loading ? (
           <EnhancedEmptyState
             type={filters.search || filters.status !== 'all' ? 'noSearchResults' : 'noData'}
-            title={filters.search || filters.status !== 'all' ? 'No matching projects' : 'No projects yet'}
+            title={filters.search || filters.status !== 'all' ? 'No matching items' : 'No items yet'}
             description={
               filters.search || filters.status !== 'all'
                 ? 'Try adjusting your search criteria or filters'
@@ -338,7 +338,7 @@ export const ProjectList: React.FC = () => {
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total) => `Total ${total} projects`,
+              showTotal: (total) => `Total ${total} items`,
             }}
             emptyText="No Projects"
             emptyDescription="Create your first project to get started"
@@ -357,7 +357,7 @@ export const ProjectList: React.FC = () => {
         onSuccess={() => {
           setModalOpen(false)
           setEditingProject(null)
-          fetchProjects()
+          fetchItems()
           fetchStats()
         }}
       />

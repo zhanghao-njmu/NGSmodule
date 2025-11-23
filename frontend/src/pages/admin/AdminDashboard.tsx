@@ -225,7 +225,7 @@ export const AdminDashboard: React.FC = () => {
       suffix: <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{stats?.active_users || 0} active</div>,
     },
     {
-      key: 'projects',
+      key: 'items',
       title: 'Total Projects',
       value: stats?.total_projects || 0,
       prefix: <ProjectOutlined />,

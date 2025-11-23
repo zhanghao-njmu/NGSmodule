@@ -58,7 +58,7 @@ export interface ActionButton<T> {
  * createActionColumn(
  *   (record) => showEditModal(record),
  *   (record) => handleDelete(record.id),
- *   (record) => navigate(`/projects/${record.id}`)
+ *   (record) => navigate(`/items/${record.id}`)
  * )
  */
 export function createActionColumn<T extends { id: string }>(
@@ -437,7 +437,7 @@ export function createPercentColumn<T>(
  * createLinkColumn(
  *   'Project Name',
  *   'name',
- *   (record) => navigate(`/projects/${record.id}`)
+ *   (record) => navigate(`/items/${record.id}`)
  * )
  */
 export function createLinkColumn<T>(

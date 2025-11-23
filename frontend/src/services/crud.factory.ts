@@ -73,7 +73,7 @@ export interface ExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Partial<
  */
 export interface CrudServiceConfig {
   /**
-   * API endpoint (e.g., 'projects', 'samples')
+   * API endpoint (e.g., 'items', 'samples')
    * Will be prefixed with '/' automatically
    */
   endpoint: string
@@ -110,7 +110,7 @@ export interface CrudServiceConfig {
  *
  * @example
  * // Basic usage
- * const projectService = createCrudService<Project>({ endpoint: 'projects' })
+ * const projectService = createCrudService<Project>({ endpoint: 'items' })
  *
  * // With custom types
  * const sampleService = createCrudService<Sample, SampleCreate, SampleUpdate>({
@@ -217,7 +217,7 @@ export function createCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>>
  *
  * @example
  * const projectService = createExtendedCrudService<Project>({
- *   endpoint: 'projects'
+ *   endpoint: 'items'
  * })
  *
  * // Now supports batch delete, duplicate, export, import
@@ -308,14 +308,14 @@ export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Par
  * @returns Extended service with custom methods
  *
  * @example
- * const baseService = createCrudService<Project>({ endpoint: 'projects' })
+ * const baseService = createCrudService<Project>({ endpoint: 'items' })
  *
  * const projectService = extendService(baseService, {
  *   async getStats(projectId: string) {
- *     return apiClient.get(`/projects/${projectId}/stats`)
+ *     return apiClient.get(`/items/${projectId}/stats`)
  *   },
  *   async archive(projectId: string) {
- *     return apiClient.post(`/projects/${projectId}/archive`)
+ *     return apiClient.post(`/items/${projectId}/archive`)
  *   }
  * })
  */
@@ -388,7 +388,7 @@ export async function batchUpdate<T, UpdateT = Partial<T>>(
  * @returns Paginated search results
  *
  * @example
- * const results = await searchItems('/projects', 'RNA-seq', { status: 'active' })
+ * const results = await searchItems('/items', 'RNA-seq', { status: 'active' })
  */
 export async function searchItems<T>(
   endpoint: string,

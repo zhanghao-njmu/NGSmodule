@@ -48,7 +48,7 @@ export const MainLayout: React.FC = () => {
       label: 'AI Intelligence',
     },
     {
-      key: '/projects',
+      key: '/items',
       icon: <FolderOutlined />,
       label: 'Projects',
     },

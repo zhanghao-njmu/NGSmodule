@@ -245,7 +245,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
                         Based on:{' '}
                       </Text>
                       {param.basedOn.similarProjects && (
-                        <Tag>{param.basedOn.similarProjects} similar projects</Tag>
+                        <Tag>{param.basedOn.similarProjects} similar items</Tag>
                       )}
                       {param.basedOn.bestPractices && <Tag>Best practices</Tag>}
                       {param.basedOn.publicDatasets && (

@@ -68,11 +68,11 @@ class AnalyticsService {
   // ============================================================
 
   /**
-   * Compare multiple projects
+   * Compare multiple items
    */
   async compareProjects(projectIds: string[]): Promise<ProjectComparison> {
     const comparison = await apiClient.post<ProjectComparison>(
-      '/analytics/projects/compare',
+      '/analytics/items/compare',
       { projectIds }
     )
     return comparison
@@ -83,7 +83,7 @@ class AnalyticsService {
    */
   async getProjectPerformance(projectId: string): Promise<ProjectPerformance> {
     const performance = await apiClient.get<ProjectPerformance>(
-      `/analytics/projects/${projectId}/performance`
+      `/analytics/items/${projectId}/performance`
     )
     return performance
   }
@@ -98,7 +98,7 @@ class AnalyticsService {
     quality: StatisticalAnalysis
     runtime: StatisticalAnalysis
   }> {
-    const stats = await apiClient.get(`/analytics/projects/${projectId}/statistics`)
+    const stats = await apiClient.get(`/analytics/items/${projectId}/statistics`)
     return stats
   }
 
@@ -140,7 +140,7 @@ class AnalyticsService {
     variables: string[]
   ): Promise<CorrelationMatrix> {
     const matrix = await apiClient.post<CorrelationMatrix>(
-      `/analytics/projects/${projectId}/correlation`,
+      `/analytics/items/${projectId}/correlation`,
       { variables }
     )
     return matrix

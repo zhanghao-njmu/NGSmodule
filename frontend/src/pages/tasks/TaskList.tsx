@@ -56,13 +56,13 @@ export const TaskList: React.FC = () => {
     cancelTask,
     handleWebSocketMessage,
   } = useTaskStore()
-  const { projects, fetchProjects } = useProjectStore()
+  const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchProjects()
+      await fetchItems()
       await fetchStats()
       await fetchTasks()
       setInitialLoad(false)
@@ -261,7 +261,7 @@ export const TaskList: React.FC = () => {
                 onChange={setSelectedProject}
                 allowClear
               >
-                {projects.map((p) => (
+                {items.map((p) => (
                   <Option key={p.id} value={p.id}>
                     {p.name}
                   </Option>

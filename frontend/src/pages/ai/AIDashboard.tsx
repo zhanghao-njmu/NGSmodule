@@ -368,7 +368,7 @@ export const AIDashboard: React.FC = () => {
           >
             <Alert
               message="Anomaly Detection Active"
-              description="Real-time monitoring is enabled for all active projects. You will be notified of any detected anomalies."
+              description="Real-time monitoring is enabled for all active items. You will be notified of any detected anomalies."
               type="info"
               showIcon
               style={{ marginBottom: 16 }}
@@ -395,7 +395,7 @@ export const AIDashboard: React.FC = () => {
                 <Space direction="vertical">
                   <Text>Smart grouping suggestions are available in project analysis</Text>
                   <Button type="primary" onClick={() => {
-/* navigate to projects */
+/* navigate to items */
 }}>
                     Go to Projects
                   </Button>

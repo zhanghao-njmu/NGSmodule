@@ -8,7 +8,7 @@
  * Used for list endpoints that return paginated data
  *
  * @example
- * const response: PaginatedResponse<Project> = await api.get('/projects')
+ * const response: PaginatedResponse<Project> = await api.get('/items')
  * console.log(response.total, response.items)
  */
 export interface PaginatedResponse<T> {
@@ -32,7 +32,7 @@ export interface PaginatedResponse<T> {
  *
  * @example
  * const params: ListParams = { page: 1, page_size: 20, search: 'RNA-seq' }
- * const projects = await projectService.getAll(params)
+ * const items = await projectService.getAll(params)
  */
 export interface ListParams {
   /** Page number (1-indexed) */

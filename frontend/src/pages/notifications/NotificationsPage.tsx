@@ -118,7 +118,7 @@ export const NotificationsPage: React.FC = () => {
           message: 'Project "Cancer Genomics" storage is 85% full',
           timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           read: true,
-          actionUrl: '/projects/789',
+          actionUrl: '/items/789',
           actionText: 'Manage Storage',
         },
         {

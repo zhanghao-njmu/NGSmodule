@@ -72,11 +72,11 @@ export const PipelineList: React.FC = () => {
   const [recommendLoading, setRecommendLoading] = useState(false)
   const [form] = Form.useForm()
 
-  const { projects, fetchProjects } = useProjectStore()
+  const { items, fetchItems } = useProjectStore()
   const { samples, fetchSamples } = useSampleStore()
 
   useEffect(() => {
-    fetchProjects()
+    fetchItems()
   }, [])
 
   // Filter templates using useMemo for performance
@@ -518,7 +518,7 @@ export const PipelineList: React.FC = () => {
               showSearch
               optionFilterProp="children"
             >
-              {projects.map((p) => (
+              {items.map((p) => (
                 <Option key={p.id} value={p.id}>
                   {p.name}
                 </Option>

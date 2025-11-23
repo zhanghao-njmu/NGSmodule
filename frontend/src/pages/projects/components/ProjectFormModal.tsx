@@ -23,7 +23,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   onSuccess,
 }) => {
   const [form] = Form.useForm()
-  const { createProject, updateProject, loading } = useProjectStore()
+  const { createItem, updateItem, loading } = useProjectStore()
 
   useEffect(() => {
     if (open) {
@@ -47,10 +47,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
       if (project) {
         // Update existing project
-        await updateProject(project.id, values)
+        await updateItem(project.id, values)
       } else {
         // Create new project
-        await createProject(values)
+        await createItem(values)
       }
 
       onSuccess()

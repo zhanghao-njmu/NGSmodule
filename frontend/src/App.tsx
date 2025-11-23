@@ -82,7 +82,7 @@ function App() {
             }
           />
           <Route
-            path="/projects"
+            path="/items"
             element={
               <ErrorBoundary>
                 <ProjectList />

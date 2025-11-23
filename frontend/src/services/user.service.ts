@@ -13,7 +13,7 @@ export interface UserProfile {
 }
 
 export interface UserStats {
-  projects: number
+  items: number
   samples: number
   tasks: number
   storageUsed: number

@@ -81,7 +81,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
           message: 'Project storage is 85% full',
           timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           read: true,
-          actionUrl: '/projects',
+          actionUrl: '/items',
           actionText: 'Manage Storage',
         },
       ]

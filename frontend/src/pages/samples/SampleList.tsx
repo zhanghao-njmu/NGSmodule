@@ -43,7 +43,7 @@ const { Option } = Select
 export const SampleList: React.FC = () => {
   const { samples, loading, fetchSamples, createSample, updateSample, deleteSample, importFromCSV } =
     useSampleStore()
-  const { projects, fetchProjects } = useProjectStore()
+  const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingSample, setEditingSample] = useState<Sample | null>(null)
@@ -59,7 +59,7 @@ export const SampleList: React.FC = () => {
   })
 
   useEffect(() => {
-    fetchProjects()
+    fetchItems()
   }, [])
 
   useEffect(() => {
@@ -327,9 +327,9 @@ export const SampleList: React.FC = () => {
                 style={{ width: 300 }}
                 value={selectedProject || undefined}
                 onChange={setSelectedProject}
-                loading={projects.length === 0}
+                loading={items.length === 0}
               >
-                {projects.map((p) => (
+                {items.map((p) => (
                   <Option key={p.id} value={p.id}>
                     {p.name}
                   </Option>
