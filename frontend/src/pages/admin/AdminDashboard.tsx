@@ -1,7 +1,8 @@
 /**
  * Admin Dashboard - System overview and user management
  */
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 import {
   Card,
   Tag,
@@ -75,13 +76,15 @@ export const AdminDashboard: React.FC = () => {
       organization: user.organization,
       role: user.role,
       is_active: user.is_active,
-      storage_quota: Math.round(user.storage_quota / (1024 * 1024 * 1024)), // Convert to GB
+      storage_quota: Math.round(user?.storage_quota ?? 0 / (1024 * 1024 * 1024)), // Convert to GB
     })
     setEditModalOpen(true)
   }
 
   const handleEditSubmit = async () => {
-    if (!selectedUser) return
+    if (!selectedUser) {
+      return
+    }
 
     try {
       const values = await form.validateFields()
@@ -141,34 +144,26 @@ export const AdminDashboard: React.FC = () => {
       dataIndex: 'role',
       key: 'role',
       width: 100,
-      render: (role) => (
-        <Tag color={role === 'admin' ? 'red' : 'blue'}>{role.toUpperCase()}</Tag>
-      ),
+      render: (role) => <Tag color={role === 'admin' ? 'red' : 'blue'}>{role.toUpperCase()}</Tag>,
     },
     {
       title: 'Status',
       dataIndex: 'is_active',
       key: 'is_active',
       width: 100,
-      render: (is_active) => (
-        <StatusTag status={is_active ? 'active' : 'inactive'} />
-      ),
+      render: (is_active) => <StatusTag status={is_active ? 'active' : 'inactive'} />,
     },
     {
       title: 'Storage',
       key: 'storage',
       width: 200,
       render: (_, record) => {
-        const percent = (record.storage_used / record.storage_quota) * 100
+        const percent = (record?.storage_used ?? 0 / record?.storage_quota ?? 0) * 100
         return (
           <div>
-            <Progress
-              percent={Math.round(percent)}
-              size="small"
-              status={percent > 90 ? 'exception' : 'normal'}
-            />
+            <Progress percent={Math.round(percent)} size="small" status={percent > 90 ? 'exception' : 'normal'} />
             <div style={{ fontSize: 12, color: '#666' }}>
-              {formatBytes(record.storage_used)} / {formatBytes(record.storage_quota)}
+              {formatBytes(record?.storage_used ?? 0)} / {formatBytes(record?.storage_quota ?? 0)}
             </div>
           </div>
         )
@@ -187,11 +182,7 @@ export const AdminDashboard: React.FC = () => {
       width: 180,
       render: (_, record) => (
         <Space>
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
+          <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             Edit
           </Button>
           <Button
@@ -222,7 +213,11 @@ export const AdminDashboard: React.FC = () => {
       value: stats?.total_users || 0,
       prefix: <UserOutlined />,
       valueStyle: { color: 'var(--color-primary)' },
-      suffix: <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{stats?.active_users || 0} active</div>,
+      suffix: (
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
+          {stats?.active_users || 0} active
+        </div>
+      ),
     },
     {
       key: 'items',
@@ -246,8 +241,8 @@ export const AdminDashboard: React.FC = () => {
       valueStyle: { color: '#722ed1' },
       suffix: (
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          <CheckCircleOutlined style={{ color: 'var(--color-success)' }} /> {stats?.completed_tasks || 0}{' '}
-          | <CloseCircleOutlined style={{ color: 'var(--color-error)' }} /> {stats?.failed_tasks || 0}
+          <CheckCircleOutlined style={{ color: 'var(--color-success)' }} /> {stats?.completed_tasks || 0} |{' '}
+          <CloseCircleOutlined style={{ color: 'var(--color-error)' }} /> {stats?.failed_tasks || 0}
         </div>
       ),
     },
@@ -270,14 +265,11 @@ export const AdminDashboard: React.FC = () => {
         style={{ marginBottom: 24 }}
       >
         <Progress
-          percent={Math.round(
-            ((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100
-          )}
+          percent={Math.round(((stats?.total_storage_used || 0) / (stats?.total_storage_quota || 1)) * 100)}
           status="active"
         />
         <div style={{ marginTop: 8, fontSize: 14 }}>
-          {formatBytes(stats?.total_storage_used || 0)} /{' '}
-          {formatBytes(stats?.total_storage_quota || 0)}
+          {formatBytes(stats?.total_storage_used || 0)} / {formatBytes(stats?.total_storage_quota || 0)}
         </div>
       </Card>
 

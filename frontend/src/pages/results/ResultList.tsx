@@ -57,8 +57,14 @@ export const ResultList: React.FC = () => {
   })
 
   // Pagination using custom hook
-  const { page, pageSize, handlePageChange, resetPagination } = usePagination({
-    defaultPageSize: 20,
+  const {
+    pagination,
+    onChange: handlePageChange,
+    reset: resetPagination,
+    skip,
+    limit,
+  } = usePagination({
+    initialPageSize: 20,
   })
 
   // Load results with filters and pagination
@@ -67,11 +73,12 @@ export const ResultList: React.FC = () => {
     loading,
     error,
     execute: loadResults,
+    error,
   } = useAsync(
     async () => {
       const params: any = {
-        skip: (page - 1) * pageSize,
-        limit: pageSize,
+        skip,
+        limit,
       }
 
       if (filters.result_type && filters.result_type !== 'all') {
@@ -82,7 +89,7 @@ export const ResultList: React.FC = () => {
         params.task_id = filters.task_id
       }
 
-      return resultService.getResults(params)
+      return resultService.getAll(params)
     },
     {
       immediate: false,
@@ -93,7 +100,7 @@ export const ResultList: React.FC = () => {
   // Load results when filters or pagination changes
   useEffect(() => {
     loadResults()
-  }, [filters, page, pageSize])
+  }, [filters, pagination.current, pagination.pageSize])
 
   // Filter results by search term (client-side)
   const filteredResults = useMemo(() => {
@@ -102,12 +109,13 @@ export const ResultList: React.FC = () => {
     }
 
     if (!filters.search) {
-      return resultsData.results
+      return resultsData.items
     }
 
     const searchLower = filters.search.toLowerCase()
-    return resultsData.results.filter(
-      (result) => result.result_type.toLowerCase().includes(searchLower) || result.id.toString().includes(searchLower),
+    return resultsData.items.filter(
+      (result: Result) =>
+        result.result_type.toLowerCase().includes(searchLower) || result.id.toString().includes(searchLower),
     )
   }, [resultsData, filters.search])
 
@@ -116,10 +124,10 @@ export const ResultList: React.FC = () => {
     const results = resultsData?.results || []
     return {
       total: resultsData?.total || 0,
-      qc: results.filter((r) => r.result_type === 'qc_report').length,
-      alignment: results.filter((r) => r.result_type === 'alignment').length,
-      quantification: results.filter((r) => r.result_type === 'quantification').length,
-      de: results.filter((r) => r.result_type === 'de_analysis').length,
+      qc: results.filter((r: Result) => r.result_type === 'qc_report').length,
+      alignment: results.filter((r: Result) => r.result_type === 'alignment').length,
+      quantification: results.filter((r: Result) => r.result_type === 'quantification').length,
+      de: results.filter((r: Result) => r.result_type === 'de_analysis').length,
     }
   }, [resultsData])
 
@@ -401,8 +409,8 @@ export const ResultList: React.FC = () => {
             rowKey="id"
             loading={loading}
             pagination={{
-              current: page,
-              pageSize: pageSize,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
               total: resultsData?.total || 0,
               showSizeChanger: true,
               showQuickJumper: true,

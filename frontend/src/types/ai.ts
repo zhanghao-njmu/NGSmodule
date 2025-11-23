@@ -60,6 +60,9 @@ export interface ParameterRecommendation {
     samples: number
     successRate: number
     averageQuality: number
+    similarProjects?: number
+    bestPractices?: boolean
+    publicDatasets?: number
   }
   alternatives?: {
     value: unknown
@@ -105,5 +108,58 @@ export interface AIInsight {
     label: string
     callback: () => void
   }
+  timestamp: string
+}
+
+export interface RecommendationRequest {
+  pipelineType: string
+  sampleType?: string
+  organism?: string
+  existingParameters?: Record<string, unknown>
+}
+
+export interface Anomaly {
+  id: string
+  type: 'outlier' | 'pattern' | 'drift' | 'missing'
+  severity: 'critical' | 'warning' | 'info'
+  description: string
+  affectedSamples?: string[]
+  suggestedAction?: string
+  detectedAt: string
+}
+
+export interface AnomalyDetectionRequest {
+  projectId?: string
+  sampleIds?: string[]
+  metrics?: string[]
+  sensitivity?: 'low' | 'medium' | 'high'
+}
+
+export interface AnomalyDetectionReport {
+  requestId: string
+  projectId?: string
+  totalSamples: number
+  anomaliesDetected: number
+  anomalies: Anomaly[]
+  summary: string
+  timestamp: string
+}
+
+export interface SmartGroupingRequest {
+  sampleIds: string[]
+  strategy?: 'similarity' | 'metadata' | 'quality' | 'automatic'
+  minGroupSize?: number
+  maxGroups?: number
+}
+
+export interface SmartGroupingResult {
+  groups: {
+    id: string
+    name: string
+    samples: string[]
+    characteristics: Record<string, unknown>
+    confidence: number
+  }[]
+  strategy: string
   timestamp: string
 }

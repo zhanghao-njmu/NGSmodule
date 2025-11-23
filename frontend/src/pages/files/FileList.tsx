@@ -2,18 +2,9 @@
  * File List Page - Complete file upload and management
  * Modernized with animations and enhanced UI components
  */
-import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Select,
-  Tag,
-  Modal,
-  Upload,
-  Popconfirm,
-  Tooltip,
-  Space,
-  Typography,
-} from 'antd'
+import type React from 'react'
+import { useEffect, useState } from 'react'
+import { Button, Select, Tag, Modal, Upload, Popconfirm, Tooltip, Space, Typography, message } from 'antd'
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -27,13 +18,7 @@ import type { UploadProps } from 'antd'
 import { useFileStore } from '../../store/fileStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useSampleStore } from '../../store/sampleStore'
-import {
-  PageHeader,
-  DataTable,
-  PageSkeleton,
-  FadeIn,
-  EnhancedEmptyState,
-} from '../../components/common'
+import { PageHeader, DataTable, PageSkeleton, FadeIn, EnhancedEmptyState } from '../../components/common'
 import { toast } from '../../utils/notification'
 import type { FileItem } from '../../types/file'
 import dayjs from 'dayjs'
@@ -146,7 +131,9 @@ export const FileList: React.FC = () => {
   }
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B'
+    if (bytes === 0) {
+      return '0 B'
+    }
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -253,9 +240,7 @@ export const FileList: React.FC = () => {
               <Title level={3} style={{ margin: 0 }}>
                 File Management
               </Title>
-              <Text type="secondary">
-                Upload and manage sequencing data files
-              </Text>
+              <Text type="secondary">Upload and manage sequencing data files</Text>
             </div>
           </Space>
 
@@ -276,12 +261,7 @@ export const FileList: React.FC = () => {
               </Select>
             }
             right={
-              <Button
-                type="primary"
-                icon={<UploadOutlined />}
-                onClick={showUploadModal}
-                disabled={!selectedProject}
-              >
+              <Button type="primary" icon={<UploadOutlined />} onClick={showUploadModal} disabled={!selectedProject}>
                 Upload Files
               </Button>
             }
@@ -324,17 +304,9 @@ export const FileList: React.FC = () => {
       </FadeIn>
 
       {/* 文件上传模态框 */}
-      <Modal
-        title="Upload Files"
-        open={isUploadModalVisible}
-        onCancel={handleCancelUpload}
-        footer={null}
-        width={700}
-      >
+      <Modal title="Upload Files" open={isUploadModalVisible} onCancel={handleCancelUpload} footer={null} width={700}>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
-            Select Sample *
-          </label>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Select Sample *</label>
           <Select
             placeholder="Choose a sample for the files"
             style={{ width: '100%' }}
@@ -349,10 +321,7 @@ export const FileList: React.FC = () => {
           </Select>
         </div>
 
-        <Upload.Dragger
-          {...uploadProps}
-          disabled={!selectedSample}
-        >
+        <Upload.Dragger {...uploadProps} disabled={!selectedSample}>
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
@@ -371,8 +340,9 @@ export const FileList: React.FC = () => {
               type="primary"
               loading={uploading}
               onClick={() => {
-                const fileList = (document.querySelector('.ant-upload-list') as any)
-                  ?.querySelectorAll('.ant-upload-list-item')
+                const fileList = (document.querySelector('.ant-upload-list') as any)?.querySelectorAll(
+                  '.ant-upload-list-item',
+                )
                 if (fileList && fileList.length > 0) {
                   // 获取文件列表并上传
                   // 这里需要从 Upload 组件获取文件

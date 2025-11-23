@@ -38,7 +38,7 @@ import { useTheme } from '@/store/themeStore'
 import { DesignTokens } from '@/styles/design-tokens'
 import './SettingsPage.css'
 
-const { Title, Text, Paragraph } = Typography
+const { Text, Paragraph } = Typography
 const { Option } = Select
 
 interface ApiToken {
@@ -215,12 +215,7 @@ export const SettingsPage: React.FC = () => {
               />
             </Tooltip>
             <Tooltip title="Copy">
-              <Button
-                type="text"
-                size="small"
-                icon={<CopyOutlined />}
-                onClick={() => handleCopyToken(token)}
-              />
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => handleCopyToken(token)} />
             </Tooltip>
           </Space>
         )
@@ -241,23 +236,13 @@ export const SettingsPage: React.FC = () => {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'success' : 'error'}>
-          {status.toUpperCase()}
-        </Tag>
-      ),
+      render: (status: string) => <Tag color={status === 'active' ? 'success' : 'error'}>{status.toUpperCase()}</Tag>,
     },
     {
       title: 'Action',
       key: 'action',
       render: (_: any, record: ApiToken) => (
-        <Button
-          type="text"
-          danger
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={() => handleDeleteToken(record.id)}
-        >
+        <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleDeleteToken(record.id)}>
           Delete
         </Button>
       ),
@@ -266,11 +251,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="settings-page">
-      <PageHeader
-        title="设置"
-        subtitle="管理您的偏好和应用程序配置"
-        icon={<SettingOutlined />}
-      />
+      <PageHeader title="设置" subtitle="管理您的偏好和应用程序配置" icon={<SettingOutlined />} />
 
       <Row gutter={[24, 24]}>
         {/* Account Settings */}
@@ -328,9 +309,7 @@ export const SettingsPage: React.FC = () => {
                     checkedChildren="暗色"
                     unCheckedChildren="亮色"
                   />
-                  <Text type="secondary">
-                    {mode === 'dark' ? '暗色模式已启用' : '亮色模式已启用'}
-                  </Text>
+                  <Text type="secondary">{mode === 'dark' ? '暗色模式已启用' : '亮色模式已启用'}</Text>
                 </Space>
               </Form.Item>
 
@@ -555,11 +534,7 @@ export const SettingsPage: React.FC = () => {
               </Space>
             }
             extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setNewTokenModalVisible(true)}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setNewTokenModalVisible(true)}>
                 创建新令牌
               </Button>
             }
@@ -573,12 +548,7 @@ export const SettingsPage: React.FC = () => {
               style={{ marginBottom: 16 }}
             />
 
-            <Table
-              columns={tokenColumns}
-              dataSource={apiTokens}
-              rowKey="id"
-              pagination={false}
-            />
+            <Table columns={tokenColumns} dataSource={apiTokens} rowKey="id" pagination={false} />
           </Card>
         </Col>
       </Row>
@@ -596,26 +566,15 @@ export const SettingsPage: React.FC = () => {
         cancelText="取消"
       >
         <Form form={tokenForm} layout="vertical" onFinish={handleCreateToken}>
-          <Form.Item
-            label="令牌名称"
-            name="name"
-            rules={[{ required: true, message: '请输入令牌名称' }]}
-          >
+          <Form.Item label="令牌名称" name="name" rules={[{ required: true, message: '请输入令牌名称' }]}>
             <Input placeholder="例如：Pipeline Automation" />
           </Form.Item>
 
           <Form.Item label="描述（可选）" name="description">
-            <Input.TextArea
-              rows={3}
-              placeholder="描述此令牌的用途..."
-            />
+            <Input.TextArea rows={3} placeholder="描述此令牌的用途..." />
           </Form.Item>
 
-          <Alert
-            message="创建后您将只能看到一次完整的令牌，请务必保存"
-            type="warning"
-            showIcon
-          />
+          <Alert message="创建后您将只能看到一次完整的令牌，请务必保存" type="warning" showIcon />
         </Form>
       </Modal>
     </div>

@@ -1,8 +1,8 @@
+import type React from 'react'
 /**
  * Dashboard Page
  */
 import type React from 'react'
-import { useEffect } from 'react'
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
 import {
   ProjectOutlined,
@@ -14,6 +14,7 @@ import {
 import { authStore } from '@/store/authStore'
 import { PageSkeleton, FadeIn, StaggeredList } from '@/components/common'
 import { useAsync } from '@/hooks'
+import { statsService } from '@/services/stats.service'
 import styles from './Dashboard.module.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -29,9 +30,10 @@ export const Dashboard: React.FC = () => {
     execute: loadStats,
   } = useAsync(
     async () => {
-      // 将用户存储信息添加到统计数据
+      // 获取仪表板统计数据并添加用户存储信息
+      const dashboardStats = await statsService.getDashboardStats()
       return {
-        ...data,
+        ...dashboardStats,
         storageUsed: user?.storage_used || 0,
         storageQuota: user?.storage_quota || 107374182400, // 100GB 默认配额
       }

@@ -170,8 +170,8 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
           <div className="confidence-bar">
             <Text type="secondary">Overall Confidence</Text>
             <Progress
-              percent={recommendation.overallConfidence * 100}
-              strokeColor={getConfidenceColor(recommendation.overallConfidence)}
+              percent={recommendation?.overallConfidence ?? recommendation.confidence * 100}
+              strokeColor={getConfidenceColor(recommendation?.overallConfidence ?? recommendation.confidence)}
               format={(percent) => `${percent?.toFixed(0)}%`}
             />
           </div>

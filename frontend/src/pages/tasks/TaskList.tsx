@@ -2,17 +2,10 @@
  * Task List Page - Task monitoring with real-time updates
  * Modernized with animations and enhanced UI components
  */
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Button,
-  Tag,
-  Progress,
-  Space,
-  Select,
-  Tooltip,
-  Typography,
-} from 'antd'
+import { Button, Tag, Progress, Space, Select, Tooltip, Typography } from 'antd'
 import {
   PlusOutlined,
   SyncOutlined,
@@ -33,7 +26,6 @@ import {
   StatusTag,
   PageSkeleton,
   FadeIn,
-  StaggeredList,
   EnhancedEmptyState,
 } from '../../components/common'
 import { confirm } from '../../components/common/ConfirmDialog'
@@ -47,15 +39,7 @@ const { Title, Text } = Typography
 
 export const TaskList: React.FC = () => {
   const navigate = useNavigate()
-  const {
-    tasks,
-    stats,
-    loading,
-    fetchTasks,
-    fetchStats,
-    cancelTask,
-    handleWebSocketMessage,
-  } = useTaskStore()
+  const { tasks, stats, loading, fetchTasks, fetchStats, cancelTask, handleWebSocketMessage } = useTaskStore()
   const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [initialLoad, setInitialLoad] = useState(true)
@@ -111,7 +95,7 @@ export const TaskList: React.FC = () => {
           loadingToast()
           toast.error('取消失败，请重试')
         }
-      }
+      },
     })
   }
 
@@ -142,11 +126,7 @@ export const TaskList: React.FC = () => {
       key: 'progress',
       width: 150,
       render: (progress) => (
-        <Progress
-          percent={Math.round(progress)}
-          size="small"
-          status={progress === 100 ? 'success' : 'active'}
-        />
+        <Progress percent={Math.round(progress)} size="small" status={progress === 100 ? 'success' : 'active'} />
       ),
     },
     {
@@ -176,12 +156,7 @@ export const TaskList: React.FC = () => {
           )}
           {record.status === 'running' && (
             <Tooltip title="Cancel Task">
-              <Button
-                size="small"
-                danger
-                icon={<StopOutlined />}
-                onClick={() => handleCancelTask(record)}
-              >
+              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleCancelTask(record)}>
                 Cancel
               </Button>
             </Tooltip>
@@ -246,9 +221,7 @@ export const TaskList: React.FC = () => {
               <Title level={3} style={{ margin: 0 }}>
                 Task Monitoring
               </Title>
-              <Text type="secondary">
-                Real-time pipeline execution tracking
-              </Text>
+              <Text type="secondary">Real-time pipeline execution tracking</Text>
             </div>
           </Space>
 

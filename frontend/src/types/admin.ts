@@ -122,8 +122,12 @@ export interface SystemStats {
   total_samples: number
   total_tasks: number
   running_tasks: number
+  completed_tasks?: number
+  failed_tasks?: number
   storage_used: number
   storage_total: number
+  total_storage_used?: number
+  total_storage_quota?: number
   cpu_usage?: number
   memory_usage?: number
 }
@@ -137,4 +141,16 @@ export interface AdminStats {
   runningTasks: number
   storageUsed: number
   storageTotal: number
+}
+
+export interface UserStats {
+  userId: string
+  username: string
+  totalProjects: number
+  totalSamples: number
+  totalTasks: number
+  storageUsed: number
+  storageQuota: number
+  lastActive?: string
+  createdAt: string
 }
