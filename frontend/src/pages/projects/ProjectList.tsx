@@ -27,6 +27,7 @@ import {
   EnhancedEmptyState,
   PageSkeleton,
   FadeIn,
+  StaggeredList,
 } from '../../components/common'
 import type { FilterConfig } from '../../components/common'
 import { toast, notifications } from '../../utils/notification'
@@ -278,10 +279,10 @@ export const ProjectList: React.FC = () => {
 
   return (
     <div>
-      {/* Statistics Cards with Fade In Animation */}
-      <FadeIn direction="up" delay={0} duration={300}>
+      {/* Statistics Cards with Staggered Animation */}
+      <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
         <StatisticCard items={statisticItems} />
-      </FadeIn>
+      </StaggeredList>
 
       {/* Filters and Actions */}
       <FadeIn direction="up" delay={100} duration={300}>

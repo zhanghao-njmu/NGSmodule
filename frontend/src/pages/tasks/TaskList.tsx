@@ -30,6 +30,7 @@ import {
   PageSkeleton,
   FadeIn,
   EnhancedEmptyState,
+  StaggeredList,
 } from '../../components/common'
 import { confirm } from '../../components/common/ConfirmDialog'
 import { toast } from '../../utils/notification'
@@ -249,10 +250,10 @@ export const TaskList: React.FC = () => {
 
   return (
     <div>
-      {/* Statistics with animation */}
-      <FadeIn direction="up" delay={0} duration={300}>
+      {/* Statistics with staggered animation */}
+      <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
         <StatisticCard items={statisticItems} />
-      </FadeIn>
+      </StaggeredList>
 
       {/* Header with filters */}
       <FadeIn direction="up" delay={100} duration={300}>
