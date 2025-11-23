@@ -43,6 +43,7 @@ import {
   EnhancedEmptyState,
 } from '../../components/common'
 import { toast } from '../../utils/notification'
+import { formatFileSize } from '../../utils/format'
 import type { StatisticItem } from '../../components/common'
 import type { User, UserAdminUpdate, SystemStats } from '../../types/admin'
 import dayjs from 'dayjs'
@@ -134,11 +135,6 @@ export const AdminDashboard: React.FC = () => {
     }
   }
 
-  const formatBytes = (bytes: number) => {
-    const gb = bytes / (1024 * 1024 * 1024)
-    return `${gb.toFixed(2)} GB`
-  }
-
   const columns: ColumnsType<User> = [
     {
       title: 'Username',
@@ -175,7 +171,7 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <Progress percent={Math.round(percent)} size="small" status={percent > 90 ? 'exception' : 'normal'} />
             <div style={{ fontSize: 12, color: '#666' }}>
-              {formatBytes(record?.storage_used ?? 0)} / {formatBytes(record?.storage_quota ?? 0)}
+              {formatFileSize(record?.storage_used ?? 0)} / {formatFileSize(record?.storage_quota ?? 0)}
             </div>
           </div>
         )
@@ -300,7 +296,7 @@ export const AdminDashboard: React.FC = () => {
             status="active"
           />
           <div style={{ marginTop: 8, fontSize: 14 }}>
-            {formatBytes(stats?.total_storage_used || 0)} / {formatBytes(stats?.total_storage_quota || 0)}
+            {formatFileSize(stats?.total_storage_used || 0)} / {formatFileSize(stats?.total_storage_quota || 0)}
           </div>
         </Card>
       </FadeIn>

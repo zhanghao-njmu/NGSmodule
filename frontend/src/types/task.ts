@@ -2,8 +2,6 @@
  * Task types and interfaces
  */
 
-import type { PaginatedResponse } from './common'
-
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
 export interface Task {
@@ -42,11 +40,6 @@ export interface TaskExecuteRequest {
   pipeline_script: string
   config?: Record<string, any>
 }
-
-/**
- * @deprecated Use PaginatedResponse<Task> instead
- */
-export type TaskListResponse = PaginatedResponse<Task>
 
 export interface TaskStats {
   total_tasks: number

@@ -14,6 +14,7 @@ import { authStore } from '@/store/authStore'
 import { PageSkeleton, FadeIn, StaggeredList, EnhancedEmptyState } from '@/components/common'
 import { useAsync } from '@/hooks'
 import { statsService } from '@/services/stats.service'
+import { formatFileSize } from '@/utils/format'
 import styles from './Dashboard.module.css'
 
 const { Title, Text } = Typography
@@ -44,16 +45,6 @@ export const Dashboard: React.FC = () => {
   )
 
   const storagePercent = stats ? Math.round((stats.storageUsed / stats.storageQuota) * 100) : 0
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) {
-      return '0 Bytes'
-    }
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-  }
 
   // Loading 状态 - Use PageSkeleton
   if (loading) {
@@ -166,7 +157,7 @@ export const Dashboard: React.FC = () => {
                   size="small"
                 />
                 <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
-                  {formatBytes(stats.storageUsed)} / {formatBytes(stats.storageQuota)}
+                  {formatFileSize(stats.storageUsed)} / {formatFileSize(stats.storageQuota)}
                 </Text>
               </div>
             </Card>
