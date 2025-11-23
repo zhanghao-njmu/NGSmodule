@@ -1,7 +1,7 @@
 /**
  * Scatter Plot Component
  */
-import React from 'react'
+import type React from 'react'
 import { Chart } from './Chart'
 import type { EChartsOption } from 'echarts'
 import { designTokens } from '@/config'
@@ -27,7 +27,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   xAxisLabel,
   yAxisLabel,
   height = 400,
-  showRegression = false,
+  showRegression: _showRegression = false,
   loading = false,
 }) => {
   const option: EChartsOption = {

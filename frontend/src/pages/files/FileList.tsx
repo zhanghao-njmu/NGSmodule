@@ -27,7 +27,7 @@ const { Option } = Select
 const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
-  const { files, loading, fetchFiles, _uploadFile, deleteFile, downloadFile } = useFileStore()
+  const { files, loading, fetchFiles, deleteFile, downloadFile } = useFileStore()
   const { items, fetchItems } = useProjectStore()
   const { samples, fetchSamples } = useSampleStore()
   const [selectedProject, setSelectedProject] = useState<string>('')

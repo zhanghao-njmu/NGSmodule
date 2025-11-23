@@ -2,7 +2,7 @@
  * PageSkeleton - 页面级骨架屏
  * 用于页面加载时的占位显示
  */
-import React from 'react'
+import type React from 'react'
 import { Card, Skeleton, Space } from 'antd'
 
 export interface PageSkeletonProps {
@@ -16,7 +16,7 @@ export const PageSkeleton: React.FC<PageSkeletonProps> = ({
   hasHeader = true,
   hasFilters = true,
   rows = 5,
-  columns = 4,
+  columns: _columns = 4,
 }) => {
   return (
     <div style={{ padding: '24px' }}>

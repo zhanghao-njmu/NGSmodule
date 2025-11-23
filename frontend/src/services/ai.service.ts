@@ -320,7 +320,7 @@ class AIService {
   async isAvailable(): Promise<boolean> {
     try {
       const status = await this.getSystemStatus()
-      return status.available
+      return status.status === 'operational'
     } catch (error) {
       console.error('Failed to check AI availability:', error)
       return false

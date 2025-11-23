@@ -195,7 +195,7 @@ export function createCrudStore<T extends { id: string }, CreateT = Partial<T>, 
 
   const initialState = createInitialState<T>(config)
 
-  return create<CrudStore<T, CreateT, UpdateT>>((set, get) => ({
+  return create<CrudStore<T, CreateT, UpdateT>>((set, _get) => ({
     // ========== State ==========
     ...initialState,
 
@@ -409,7 +409,7 @@ export function createCrudStore<T extends { id: string }, CreateT = Partial<T>, 
      * Set pagination
      */
     setPagination: (page: number, pageSize: number) => {
-      set((state) => ({
+      set((_state) => ({
         pagination: { page, pageSize },
       }))
     },
@@ -480,7 +480,7 @@ export function createSimpleStore<State extends Record<string, any>, Actions ext
 ) {
   return create<State & Actions>((set, get) => ({
     ...initialState,
-    ...actions(set, get as () => State & Actions),
+    ...actions(set as (partial: Partial<State>) => void, get as () => State & Actions),
   }))
 }
 

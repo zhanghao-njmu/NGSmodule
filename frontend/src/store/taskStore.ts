@@ -190,7 +190,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
             : task,
         ),
         currentTask:
-          state.currentTask?.id === msg.task_id
+          state.currentTask?.id === msg.task_id && state.currentTask
             ? {
                 ...state.currentTask,
                 status: msg.status || state.currentTask.status,

@@ -24,7 +24,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(duration)
 dayjs.extend(relativeTime)
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 
 interface TaskProgressCardProps {
   taskId: string
@@ -213,7 +213,7 @@ export const TaskProgressCard: React.FC<TaskProgressCardProps> = ({
               </div>
               <Progress
                 percent={Math.round(task.progress || 0)}
-                status={task.status === 'failed' ? 'exception' : 'active'}
+                status="active"
                 strokeColor={{
                   '0%': '#108ee9',
                   '100%': '#87d068',

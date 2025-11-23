@@ -1,21 +1,9 @@
 /**
  * Batch Import Modal - Import multiple samples from CSV
  */
-import React, { useState } from 'react'
-import {
-  Modal,
-  Upload,
-  Button,
-  Steps,
-  Table,
-  Alert,
-  Typography,
-  Space,
-  Tag,
-  Progress,
-  Card,
-  message,
-} from 'antd'
+import type React from 'react'
+import { useState } from 'react'
+import { Modal, Upload, Button, Steps, Table, Alert, Typography, Space, Tag, Progress, Card, message } from 'antd'
 import {
   InboxOutlined,
   CloudUploadOutlined,
@@ -48,12 +36,7 @@ interface ParsedSample {
   error?: string
 }
 
-export const BatchImportModal: React.FC<BatchImportModalProps> = ({
-  open,
-  projectId,
-  onClose,
-  onSuccess,
-}) => {
+export const BatchImportModal: React.FC<BatchImportModalProps> = ({ open, projectId, onClose, onSuccess }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [parsedSamples, setParsedSamples] = useState<ParsedSample[]>([])
@@ -110,10 +93,18 @@ export const BatchImportModal: React.FC<BatchImportModalProps> = ({
             const layoutIndex = headers.indexOf('layout')
             const batchIndex = headers.indexOf('batch_id')
 
-            if (runIdIndex !== -1) sample.run_id = values[runIdIndex] || undefined
-            if (groupIndex !== -1) sample.group_name = values[groupIndex] || undefined
-            if (layoutIndex !== -1) sample.layout = values[layoutIndex] || undefined
-            if (batchIndex !== -1) sample.batch_id = values[batchIndex] || undefined
+            if (runIdIndex !== -1) {
+              sample.run_id = values[runIdIndex] || undefined
+            }
+            if (groupIndex !== -1) {
+              sample.group_name = values[groupIndex] || undefined
+            }
+            if (layoutIndex !== -1) {
+              sample.layout = values[layoutIndex] || undefined
+            }
+            if (batchIndex !== -1) {
+              sample.batch_id = values[batchIndex] || undefined
+            }
 
             return sample
           })
@@ -175,9 +166,9 @@ export const BatchImportModal: React.FC<BatchImportModalProps> = ({
       // Create CSV content from parsed samples
       const csvContent = [
         'sample_id,run_id,group_name,layout,batch_id',
-        ...parsedSamples.map(s =>
-          `${s.sample_id},${s.run_id || ''},${s.group_name || ''},${s.layout || ''},${s.batch_id || ''}`
-        )
+        ...parsedSamples.map(
+          (s) => `${s.sample_id},${s.run_id || ''},${s.group_name || ''},${s.layout || ''},${s.batch_id || ''}`,
+        ),
       ].join('\n')
 
       const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -281,9 +272,13 @@ Sample003,Run002,Control,SE,Batch2`
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status?: string, record?: ParsedSample) => {
+      render: (status?: string, _record?: ParsedSample) => {
         if (status === 'success') {
-          return <Tag icon={<CheckCircleOutlined />} color="success">Success</Tag>
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="success">
+              Success
+            </Tag>
+          )
         }
         if (status === 'error') {
           return (
@@ -298,14 +293,7 @@ Sample003,Run002,Control,SE,Batch2`
   ]
 
   return (
-    <Modal
-      title="Batch Import Samples"
-      open={open}
-      onCancel={handleClose}
-      width={900}
-      footer={null}
-      destroyOnClose
-    >
+    <Modal title="Batch Import Samples" open={open} onCancel={handleClose} width={900} footer={null} destroyOnClose>
       <Steps
         current={currentStep}
         items={[
@@ -327,17 +315,20 @@ Sample003,Run002,Control,SE,Batch2`
                   Your CSV file must include a <Text code>sample_id</Text> column. Optional columns:
                 </Paragraph>
                 <ul style={{ marginBottom: 8 }}>
-                  <li><Text code>run_id</Text> - Sequencing run identifier</li>
-                  <li><Text code>group_name</Text> - Sample group (e.g., Control, Treatment)</li>
-                  <li><Text code>layout</Text> - Sequencing layout (PE or SE)</li>
-                  <li><Text code>batch_id</Text> - Batch identifier</li>
+                  <li>
+                    <Text code>run_id</Text> - Sequencing run identifier
+                  </li>
+                  <li>
+                    <Text code>group_name</Text> - Sample group (e.g., Control, Treatment)
+                  </li>
+                  <li>
+                    <Text code>layout</Text> - Sequencing layout (PE or SE)
+                  </li>
+                  <li>
+                    <Text code>batch_id</Text> - Batch identifier
+                  </li>
                 </ul>
-                <Button
-                  type="link"
-                  icon={<DownloadOutlined />}
-                  onClick={downloadTemplate}
-                  style={{ padding: 0 }}
-                >
+                <Button type="link" icon={<DownloadOutlined />} onClick={downloadTemplate} style={{ padding: 0 }}>
                   Download Template CSV
                 </Button>
               </div>

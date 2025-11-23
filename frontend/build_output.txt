@@ -1,0 +1,6 @@
+
+> ngsmodule-frontend@1.0.0 build
+> tsc && vite build
+
+src/services/websocket.service.ts(15,11): error TS6133: '_url' is declared but its value is never read.
+src/services/websocket.service.ts(25,10): error TS2551: Property 'url' does not exist on type 'WebSocketService'. Did you mean '_url'?

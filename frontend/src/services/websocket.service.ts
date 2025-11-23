@@ -12,17 +12,13 @@ class WebSocketService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 2000
   private pingInterval: number | null = null
-  private url: string = ''
 
   /**
    * Connect to WebSocket server
    */
   connect(token: string): void {
-    const wsUrl =
-      import.meta.env.VITE_WS_URL ||
-      `ws://${window.location.hostname}:8000/api/v1/ws?token=${token}`
+    const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000/api/v1/ws?token=${token}`
 
-    this.url = wsUrl
     this.ws = new WebSocket(wsUrl)
 
     this.ws.onopen = () => {

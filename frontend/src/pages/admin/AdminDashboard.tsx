@@ -158,7 +158,7 @@ export const AdminDashboard: React.FC = () => {
       key: 'storage',
       width: 200,
       render: (_, record) => {
-        const percent = (record?.storage_used ?? 0 / record?.storage_quota ?? 0) * 100
+        const percent = ((record?.storage_used ?? 0) / (record?.storage_quota ?? 1)) * 100
         return (
           <div>
             <Progress percent={Math.round(percent)} size="small" status={percent > 90 ? 'exception' : 'normal'} />

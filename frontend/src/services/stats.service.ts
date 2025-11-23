@@ -100,7 +100,7 @@ class StatsService {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
       // 并行请求项目和任务统计
-      const [projectStats, taskStats] = await Promise.all([this.getProjectStats(), this.getTaskStats()])
+      const [projectStats, _taskStats] = await Promise.all([this.getProjectStats(), this.getTaskStats()])
 
       return {
         totalProjects: projectStats.total_projects,
