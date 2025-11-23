@@ -104,7 +104,7 @@ export const ResultList: React.FC = () => {
 
   // Filter results by search term (client-side)
   const filteredResults = useMemo(() => {
-    if (!resultsData?.results) {
+    if (!resultsData?.items) {
       return []
     }
 

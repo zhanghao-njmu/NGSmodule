@@ -6,15 +6,7 @@
 
 import type React from 'react'
 import { Space, Button, Tooltip, Popconfirm, Tag, Typography } from 'antd'
-import {
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  CopyOutlined,
-  DownloadOutlined,
-  PlayCircleOutlined,
-  StopOutlined,
-} from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnType } from 'antd/es/table'
 import { formatDateTime, formatDateRelative, formatFileSize, formatPercent, truncate } from './format'
 

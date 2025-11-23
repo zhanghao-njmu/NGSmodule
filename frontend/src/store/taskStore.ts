@@ -2,6 +2,7 @@
  * Task Store - Global state management for tasks
  */
 import { create } from 'zustand'
+import { toast } from '@/utils/notification'
 import { taskService } from '../services/task.service'
 import { websocketService } from '../services/websocket.service'
 import type { Task, TaskStats, TaskCreate, TaskExecuteRequest, WebSocketMessage } from '../types/task'
@@ -45,7 +46,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   fetchTasks: async (params) => {
     set({ loading: true, error: null })
     try {
-      const response = await taskService.getTasks(params)
+      const response = await taskService.getAll(params)
       set({ tasks: response.items, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -57,7 +58,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   fetchTaskById: async (id) => {
     set({ loading: true, error: null })
     try {
-      const task = await taskService.getTask(id)
+      const task = await taskService.getById(id)
       set({ currentTask: task, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -81,7 +82,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   createTask: async (data) => {
     set({ loading: true, error: null })
     try {
-      const task = await taskService.createTask(data)
+      const task = await taskService.create(data)
       set((state) => ({
         tasks: [task, ...state.tasks],
         loading: false,
@@ -129,7 +130,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   deleteTask: async (id) => {
     set({ loading: true, error: null })
     try {
-      await taskService.deleteTask(id)
+      await taskService.delete(id)
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== id),
         currentTask: state.currentTask?.id === id ? null : state.currentTask,

@@ -240,10 +240,7 @@ export const validationRules = {
    *   rules={[validationRules.confirmPassword(form.getFieldValue)]}
    * >
    */
-  confirmPassword: (
-    getFieldValue: (field: string) => any,
-    passwordField: string = 'password'
-  ): Rule => ({
+  confirmPassword: (getFieldValue: (field: string) => any, passwordField: string = 'password'): Rule => ({
     validator: (_, value) => {
       if (!value || getFieldValue(passwordField) === value) {
         return Promise.resolve()
@@ -301,9 +298,7 @@ export const validationRules = {
    * @returns Validation rule
    */
   decimal: (decimals?: number): Rule => {
-    const pattern = decimals
-      ? new RegExp(`^\\d+(\\.\\d{1,${decimals}})?$`)
-      : /^\d+(\.\d+)?$/
+    const pattern = decimals ? new RegExp(`^\\d+(\\.\\d{1,${decimals}})?$`) : /^\d+(\.\d+)?$/
 
     return {
       pattern,
@@ -403,7 +398,9 @@ export const validationRules = {
    */
   json: {
     validator: (_, value) => {
-      if (!value) return Promise.resolve()
+      if (!value) {
+        return Promise.resolve()
+      }
       try {
         JSON.parse(value)
         return Promise.resolve()
@@ -477,7 +474,9 @@ export const validationRules = {
    */
   fileSize: (maxSizeMB: number): Rule => ({
     validator: (_, file) => {
-      if (!file) return Promise.resolve()
+      if (!file) {
+        return Promise.resolve()
+      }
 
       const fileSizeMB = file.size / 1024 / 1024
 
@@ -500,7 +499,9 @@ export const validationRules = {
    */
   fileType: (allowedTypes: string[]): Rule => ({
     validator: (_, file) => {
-      if (!file) return Promise.resolve()
+      if (!file) {
+        return Promise.resolve()
+      }
 
       const fileType = file.type
       const fileName = file.name
@@ -514,9 +515,7 @@ export const validationRules = {
         return Promise.resolve()
       }
 
-      return Promise.reject(
-        new Error(`Only ${allowedTypes.join(', ')} files are allowed!`)
-      )
+      return Promise.reject(new Error(`Only ${allowedTypes.join(', ')} files are allowed!`))
     },
   }),
 
@@ -537,12 +536,11 @@ export const validationRules = {
    *   'Username already exists!'
    * )
    */
-  asyncValidator: (
-    validateFn: (value: any) => Promise<boolean>,
-    errorMessage: string
-  ): Rule => ({
-    validator: async (_, value) => {
-      if (!value) return Promise.resolve()
+  asyncValidator: (validateFn: (value: any) => Promise<boolean>, errorMessage: string): Rule => ({
+    validator: async (_: unknown, value) => {
+      if (!value) {
+        return Promise.resolve()
+      }
 
       try {
         const isValid = await validateFn(value)
@@ -571,10 +569,7 @@ export const fieldPresets = {
   fullName: [
     validationRules.required('full name'),
     validationRules.lengthRange(2, 100),
-    validationRules.pattern(
-      /^[a-zA-Z\s'-]+$/,
-      "Only letters, spaces, hyphens, and apostrophes are allowed!"
-    ),
+    validationRules.pattern(/^[a-zA-Z\s'-]+$/, 'Only letters, spaces, hyphens, and apostrophes are allowed!'),
   ],
 
   /**

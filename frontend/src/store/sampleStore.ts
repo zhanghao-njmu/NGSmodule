@@ -48,7 +48,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
   fetchSampleById: async (id) => {
     set({ loading: true, error: null })
     try {
-      const sample = await sampleService.getSample(id)
+      const sample = await sampleService.getById(id)
       set({ currentSample: sample, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -60,7 +60,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
   createSample: async (data) => {
     set({ loading: true, error: null })
     try {
-      const sample = await sampleService.createSample(data)
+      const sample = await sampleService.create(data)
       set((state) => ({
         samples: [sample, ...state.samples],
         loading: false,
@@ -110,7 +110,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
   updateSample: async (id, data) => {
     set({ loading: true, error: null })
     try {
-      const updatedSample = await sampleService.updateSample(id, data)
+      const updatedSample = await sampleService.update(id, data)
       set((state) => ({
         samples: state.samples.map((s) => (s.id === id ? updatedSample : s)),
         currentSample: state.currentSample?.id === id ? updatedSample : state.currentSample,
@@ -127,7 +127,7 @@ export const useSampleStore = create<SampleStore>((set) => ({
   deleteSample: async (id) => {
     set({ loading: true, error: null })
     try {
-      await sampleService.deleteSample(id)
+      await sampleService.delete(id)
       set((state) => ({
         samples: state.samples.filter((s) => s.id !== id),
         currentSample: state.currentSample?.id === id ? null : state.currentSample,

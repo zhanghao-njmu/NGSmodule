@@ -15,11 +15,7 @@ interface FileStore {
   uploadProgress: number
 
   // Actions
-  fetchFiles: (params?: {
-    sample_id?: string
-    project_id?: string
-    file_type?: string
-  }) => Promise<void>
+  fetchFiles: (params?: { sample_id?: string; project_id?: string; file_type?: string }) => Promise<void>
   fetchFileById: (id: string) => Promise<void>
   uploadFile: (sampleId: string, file: File) => Promise<FileItem | null>
   downloadFile: (id: string, filename: string) => Promise<void>
@@ -40,7 +36,7 @@ export const useFileStore = create<FileStore>((set) => ({
   fetchFiles: async (params) => {
     set({ loading: true, error: null })
     try {
-      const response = await fileService.getFiles(params)
+      const response = await fileService.getAll(params)
       set({ files: response.items, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -52,7 +48,7 @@ export const useFileStore = create<FileStore>((set) => ({
   fetchFileById: async (id) => {
     set({ loading: true, error: null })
     try {
-      const file = await fileService.getFile(id)
+      const file = await fileService.getById(id)
       set({ currentFile: file, loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -104,7 +100,7 @@ export const useFileStore = create<FileStore>((set) => ({
   deleteFile: async (id) => {
     set({ loading: true, error: null })
     try {
-      await fileService.deleteFile(id)
+      await fileService.delete(id)
       set((state) => ({
         files: state.files.filter((f) => f.id !== id),
         currentFile: state.currentFile?.id === id ? null : state.currentFile,

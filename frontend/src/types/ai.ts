@@ -163,3 +163,73 @@ export interface SmartGroupingResult {
   strategy: string
   timestamp: string
 }
+
+export interface AIAssistantMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: string
+  metadata?: Record<string, unknown>
+}
+
+export interface AIAssistantConversation {
+  id: string
+  userId: string
+  projectId?: string
+  messages: AIAssistantMessage[]
+  title?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AnalysisInsight {
+  id: string
+  type: 'optimization' | 'warning' | 'tip' | 'best_practice'
+  category: string
+  title: string
+  description: string
+  impact: 'high' | 'medium' | 'low'
+  actionable: boolean
+  recommendation?: string
+  relatedEntities?: string[]
+}
+
+export interface InsightsReport {
+  projectId?: string
+  timestamp: string
+  totalInsights: number
+  insights: AnalysisInsight[]
+  summary: string
+  categories: Record<string, number>
+}
+
+export interface ResourcePrediction {
+  estimatedDuration: number
+  estimatedMemory: number
+  estimatedCPU: number
+  estimatedStorage: number
+  confidence: number
+  basedOn: {
+    samples: number
+    similarPipelines: number
+  }
+}
+
+export interface SuccessPrediction {
+  successProbability: number
+  failureRisks: {
+    factor: string
+    probability: number
+    mitigation?: string
+  }[]
+  recommendations: string[]
+  confidence: number
+}
+
+export interface AISystemStatus {
+  status: 'operational' | 'degraded' | 'offline'
+  availableFeatures: string[]
+  queueSize: number
+  averageResponseTime: number
+  lastUpdate: string
+}

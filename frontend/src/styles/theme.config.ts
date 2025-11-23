@@ -66,7 +66,6 @@ export const lightTheme: ThemeConfig = {
 
     motionEaseInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
     motionEaseOut: 'cubic-bezier(0, 0, 0.2, 1)',
-    motionEaseIn: 'cubic-bezier(0.4, 0, 1, 1)',
 
     // ===== Z-Index =====
     zIndexPopupBase: DesignTokens.zIndex.dropdown,
@@ -111,8 +110,6 @@ export const lightTheme: ThemeConfig = {
       headerBg: DesignTokens.colors.background.primary,
       contentBg: DesignTokens.colors.background.primary,
       footerBg: DesignTokens.colors.background.primary,
-      bodyPadding: DesignTokens.spacing.lg,
-      footerPadding: `${DesignTokens.spacing.md}px ${DesignTokens.spacing.lg}px`,
     },
 
     // ===== Input =====

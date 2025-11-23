@@ -1,8 +1,7 @@
-import type React from 'react'
 /**
  * Dashboard Page
  */
-import type React from 'react'
+import { useState } from 'react'
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Alert } from 'antd'
 import {
   ProjectOutlined,

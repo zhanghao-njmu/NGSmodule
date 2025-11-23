@@ -66,7 +66,7 @@ class StatsService {
    */
   async getProjectStats(): Promise<ProjectStats> {
     const response = await apiClient.get<ProjectStats>('/items/stats')
-    return response.data
+    return response
   }
 
   /**
@@ -75,7 +75,7 @@ class StatsService {
   async getTaskStats(projectId?: string): Promise<TaskStats> {
     const params = projectId ? { project_id: projectId } : {}
     const response = await apiClient.get<TaskStats>('/tasks/stats', { params })
-    return response.data
+    return response
   }
 
   /**
@@ -83,7 +83,7 @@ class StatsService {
    */
   async getUserStats(userId: string): Promise<UserStats> {
     const response = await apiClient.get<UserStats>(`/users/${userId}/stats`)
-    return response.data
+    return response
   }
 
   /**
@@ -91,7 +91,7 @@ class StatsService {
    */
   async getSystemStats(): Promise<SystemStats> {
     const response = await apiClient.get<SystemStats>('/users/stats/system')
-    return response.data
+    return response
   }
 
   /**
@@ -100,10 +100,7 @@ class StatsService {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
       // 并行请求项目和任务统计
-      const [projectStats, taskStats] = await Promise.all([
-        this.getProjectStats(),
-        this.getTaskStats()
-      ])
+      const [projectStats, taskStats] = await Promise.all([this.getProjectStats(), this.getTaskStats()])
 
       return {
         totalProjects: projectStats.total_projects,
@@ -114,7 +111,7 @@ class StatsService {
         failedTasks: projectStats.failed_tasks,
         // 存储信息从用户对象中获取
         storageUsed: 0, // 将由组件从authStore获取
-        storageQuota: 0 // 将由组件从authStore获取
+        storageQuota: 0, // 将由组件从authStore获取
       }
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error)

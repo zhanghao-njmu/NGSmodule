@@ -104,7 +104,7 @@ export const ProjectList: React.FC = () => {
 
   const handleDelete = (project: Project) => {
     // Use custom dangerous action confirmation for critical operations
-    confirmDangerousAction(
+    window.confirm(
       '删除项目',
       `您确定要删除项目 "${project.name}" 吗？这将同时删除所有关联的样本、文件和任务。`,
       async () => {
