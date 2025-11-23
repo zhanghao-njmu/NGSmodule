@@ -1,29 +1,44 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { ConfigProvider, theme as antdTheme } from 'antd'
+import { ConfigProvider, theme as antdTheme, Spin } from 'antd'
 import { authStore } from '@/store/authStore'
 import { useTheme } from '@/store/themeStore'
 import { lightTheme, darkTheme } from '@/styles/theme.config'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
+import { ProgressBar, ErrorBoundary } from '@/components/common'
+
+// Eager load: Auth pages (needed for initial load)
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
 import { Dashboard } from '@/pages/dashboard/Dashboard'
-import { ProjectList } from '@/pages/projects/ProjectList'
-import { SampleList } from '@/pages/samples/SampleList'
-import { FileList } from '@/pages/files/FileList'
-import { TaskList } from '@/pages/tasks/TaskList'
-import { PipelineList } from '@/pages/pipelines/PipelineList'
-import { ResultDetail } from '@/pages/results/ResultDetail'
-import { ResultList } from '@/pages/results/ResultList'
-import { AdminDashboard } from '@/pages/admin/AdminDashboard'
-import { ProfilePage } from '@/pages/profile/ProfilePage'
-import { SettingsPage } from '@/pages/settings/SettingsPage'
-import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
-import { AIDashboard } from '@/pages/ai/AIDashboard'
-import { AnalyticsDashboard } from '@/pages/analytics/AnalyticsDashboard'
-import { KnowledgeBase } from '@/pages/knowledge/KnowledgeBase'
-import { ProgressBar, ErrorBoundary } from '@/components/common'
+
+// Lazy load: All other pages (code splitting for better performance)
+const ProjectList = lazy(() => import('@/pages/projects/ProjectList').then((m) => ({ default: m.ProjectList })))
+const SampleList = lazy(() => import('@/pages/samples/SampleList').then((m) => ({ default: m.SampleList })))
+const FileList = lazy(() => import('@/pages/files/FileList').then((m) => ({ default: m.FileList })))
+const TaskList = lazy(() => import('@/pages/tasks/TaskList').then((m) => ({ default: m.TaskList })))
+const PipelineList = lazy(() => import('@/pages/pipelines/PipelineList').then((m) => ({ default: m.PipelineList })))
+const ResultDetail = lazy(() => import('@/pages/results/ResultDetail').then((m) => ({ default: m.ResultDetail })))
+const ResultList = lazy(() => import('@/pages/results/ResultList').then((m) => ({ default: m.ResultList })))
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })))
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const NotificationsPage = lazy(() =>
+  import('@/pages/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
+)
+const AIDashboard = lazy(() => import('@/pages/ai/AIDashboard').then((m) => ({ default: m.AIDashboard })))
+const AnalyticsDashboard = lazy(() =>
+  import('@/pages/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })),
+)
+const KnowledgeBase = lazy(() => import('@/pages/knowledge/KnowledgeBase').then((m) => ({ default: m.KnowledgeBase })))
+
+// Loading fallback component
+const PageLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+    <Spin size="large" tip="Loading..." />
+  </div>
+)
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -85,7 +100,9 @@ function App() {
               path="/items"
               element={
                 <ErrorBoundary>
-                  <ProjectList />
+                  <Suspense fallback={<PageLoader />}>
+                    <ProjectList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -93,7 +110,9 @@ function App() {
               path="/samples"
               element={
                 <ErrorBoundary>
-                  <SampleList />
+                  <Suspense fallback={<PageLoader />}>
+                    <SampleList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -101,7 +120,9 @@ function App() {
               path="/files"
               element={
                 <ErrorBoundary>
-                  <FileList />
+                  <Suspense fallback={<PageLoader />}>
+                    <FileList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -109,7 +130,9 @@ function App() {
               path="/pipelines"
               element={
                 <ErrorBoundary>
-                  <PipelineList />
+                  <Suspense fallback={<PageLoader />}>
+                    <PipelineList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -117,7 +140,9 @@ function App() {
               path="/tasks"
               element={
                 <ErrorBoundary>
-                  <TaskList />
+                  <Suspense fallback={<PageLoader />}>
+                    <TaskList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -125,7 +150,9 @@ function App() {
               path="/results"
               element={
                 <ErrorBoundary>
-                  <ResultList />
+                  <Suspense fallback={<PageLoader />}>
+                    <ResultList />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -133,7 +160,9 @@ function App() {
               path="/results/:id"
               element={
                 <ErrorBoundary>
-                  <ResultDetail />
+                  <Suspense fallback={<PageLoader />}>
+                    <ResultDetail />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -141,7 +170,9 @@ function App() {
               path="/admin"
               element={
                 <ErrorBoundary>
-                  <AdminDashboard />
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminDashboard />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -149,7 +180,9 @@ function App() {
               path="/profile"
               element={
                 <ErrorBoundary>
-                  <ProfilePage />
+                  <Suspense fallback={<PageLoader />}>
+                    <ProfilePage />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -157,7 +190,9 @@ function App() {
               path="/settings"
               element={
                 <ErrorBoundary>
-                  <SettingsPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <SettingsPage />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -165,7 +200,9 @@ function App() {
               path="/notifications"
               element={
                 <ErrorBoundary>
-                  <NotificationsPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <NotificationsPage />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -173,7 +210,9 @@ function App() {
               path="/ai"
               element={
                 <ErrorBoundary>
-                  <AIDashboard />
+                  <Suspense fallback={<PageLoader />}>
+                    <AIDashboard />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -181,7 +220,9 @@ function App() {
               path="/analytics"
               element={
                 <ErrorBoundary>
-                  <AnalyticsDashboard />
+                  <Suspense fallback={<PageLoader />}>
+                    <AnalyticsDashboard />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
@@ -189,7 +230,9 @@ function App() {
               path="/knowledge"
               element={
                 <ErrorBoundary>
-                  <KnowledgeBase />
+                  <Suspense fallback={<PageLoader />}>
+                    <KnowledgeBase />
+                  </Suspense>
                 </ErrorBoundary>
               }
             />
