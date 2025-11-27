@@ -8,8 +8,9 @@
 4. [API Testing](#api-testing)
 5. [Stats API Endpoints](#stats-api-endpoints)
 6. [Notifications API Endpoints](#notifications-api-endpoints)
-7. [Production Deployment](#production-deployment)
-8. [Troubleshooting](#troubleshooting)
+7. [Admin API Endpoints](#admin-api-endpoints)
+8. [Production Deployment](#production-deployment)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -589,6 +590,484 @@ notification_service.create_system_notification(
     message="Scheduled maintenance will occur tonight at 10 PM",
     priority="high"
 )
+```
+
+---
+
+## 👨‍💼 Admin API Endpoints
+
+### Admin Authentication
+
+Admin endpoints require admin role. First, create an admin user or promote existing user to admin.
+
+#### Promote User to Admin (via database)
+
+```bash
+psql -U ngsmodule -d ngsmodule -c "UPDATE users SET role='admin' WHERE username='testuser';"
+```
+
+### 1. Get All Users (Paginated)
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/admin/users?skip=0&limit=50" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Query Parameters:**
+- `skip`: Pagination offset (default: 0)
+- `limit`: Page size (default: 50, max: 100)
+- `role`: Filter by role (user, admin)
+- `is_active`: Filter by status (true, false)
+- `search`: Search in username, email, name, org
+- `sort_by`: Sort field (created_at, username, email, role, storage_used)
+- `sort_order`: Sort order (asc, desc)
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "username": "testuser",
+      "email": "test@example.com",
+      "full_name": "Test User",
+      "role": "user",
+      "organization": "Test Org",
+      "is_active": true,
+      "storage_used": 52428800,
+      "storage_quota": 107374182400,
+      "storage_percent": 0.05,
+      "last_login": "2024-01-01T12:00:00Z",
+      "created_at": "2024-01-01T10:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  ],
+  "total": 10,
+  "page": 1,
+  "page_size": 50,
+  "total_pages": 1
+}
+```
+
+### 2. Get User Details
+
+```bash
+curl -X GET http://localhost:8000/api/v1/admin/users/USER_ID \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "username": "testuser",
+  "email": "test@example.com",
+  "total_projects": 5,
+  "total_samples": 20,
+  "total_tasks": 50,
+  "total_files": 100,
+  "last_activity": "2024-01-01T15:00:00Z",
+  "login_count": 25
+}
+```
+
+### 3. Update User Information
+
+```bash
+curl -X PUT http://localhost:8000/api/v1/admin/users/USER_ID \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Updated Name",
+    "storage_quota": 214748364800,
+    "organization": "New Org"
+  }'
+```
+
+### 4. Change User Role
+
+```bash
+# Promote to admin
+curl -X PUT http://localhost:8000/api/v1/admin/users/USER_ID/role \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "admin"
+  }'
+
+# Demote to user
+curl -X PUT http://localhost:8000/api/v1/admin/users/USER_ID/role \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "user"
+  }'
+```
+
+**Note:** Admins cannot change their own role.
+
+### 5. Activate/Deactivate User
+
+```bash
+# Deactivate user
+curl -X PUT http://localhost:8000/api/v1/admin/users/USER_ID/activate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_active": false,
+    "reason": "Account suspended for policy violation"
+  }'
+
+# Activate user
+curl -X PUT http://localhost:8000/api/v1/admin/users/USER_ID/activate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_active": true,
+    "reason": "Reinstatement after review"
+  }'
+```
+
+**Note:** Admins cannot deactivate themselves.
+
+### 6. Reset User Password
+
+```bash
+curl -X POST http://localhost:8000/api/v1/admin/users/USER_ID/reset-password \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "new_password": "NewSecure123!",
+    "notify_user": true
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Password reset successfully",
+  "details": {
+    "notify_user": true
+  },
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+### 7. Delete User
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/admin/users/USER_ID \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "confirm": true,
+    "transfer_data_to": "OTHER_USER_ID",
+    "reason": "User requested account deletion"
+  }'
+```
+
+**Warning:** This action is irreversible! Use `transfer_data_to` to transfer user's data to another user before deletion.
+
+### 8. Get System Configuration
+
+```bash
+curl -X GET http://localhost:8000/api/v1/admin/config \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "general": {
+    "app_name": "NGSmodule",
+    "app_version": "1.0.0",
+    "maintenance_mode": false,
+    "allow_registration": true,
+    "default_user_quota": 107374182400,
+    "max_upload_size": 524288000,
+    "session_timeout": 3600
+  },
+  "security": {
+    "jwt_expiry": 1800,
+    "refresh_token_expiry": 604800,
+    "password_min_length": 8,
+    "require_email_verification": false,
+    "enable_2fa": false,
+    "max_login_attempts": 5,
+    "lockout_duration": 900
+  },
+  "storage": {
+    "storage_backend": "minio",
+    "storage_path": "/data/storage",
+    "enable_compression": true,
+    "retention_policy_days": 365
+  },
+  "last_updated": "2024-01-01T12:00:00Z"
+}
+```
+
+### 9. Update System Configuration
+
+```bash
+curl -X PUT http://localhost:8000/api/v1/admin/config \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "general",
+    "updates": {
+      "default_user_quota": 214748364800,
+      "max_upload_size": 1048576000
+    },
+    "reason": "Increased user quotas and upload limits"
+  }'
+```
+
+### 10. Reset System Configuration
+
+```bash
+# Reset all configuration
+curl -X POST http://localhost:8000/api/v1/admin/config/reset \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "confirm": true
+  }'
+
+# Reset specific categories
+curl -X POST http://localhost:8000/api/v1/admin/config/reset \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "categories": ["security", "performance"],
+    "confirm": true
+  }'
+```
+
+**Warning:** This will reset configuration to factory defaults!
+
+### 11. Query System Logs
+
+```bash
+# Get recent logs
+curl -X GET "http://localhost:8000/api/v1/admin/logs?limit=100" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Filter by level
+curl -X GET "http://localhost:8000/api/v1/admin/logs?levels=error&levels=critical" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Filter by source
+curl -X GET "http://localhost:8000/api/v1/admin/logs?sources=api&sources=database" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Search logs
+curl -X GET "http://localhost:8000/api/v1/admin/logs?search=authentication&limit=50" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Date range
+curl -X GET "http://localhost:8000/api/v1/admin/logs?start_date=2024-01-01T00:00:00Z&end_date=2024-01-02T00:00:00Z" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "logs": [
+    {
+      "timestamp": "2024-01-01T12:00:00Z",
+      "level": "error",
+      "source": "api",
+      "message": "Failed to connect to external service",
+      "details": {
+        "request_id": "req_123",
+        "duration_ms": 150
+      },
+      "user_id": null,
+      "ip_address": "192.168.1.1"
+    }
+  ],
+  "total": 1,
+  "has_more": false
+}
+```
+
+### 12. Download System Logs
+
+```bash
+# Download as JSON
+curl -X GET "http://localhost:8000/api/v1/admin/logs/download?format=json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o logs.json
+
+# Download as CSV
+curl -X GET "http://localhost:8000/api/v1/admin/logs/download?format=csv" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o logs.csv
+
+# Download as text
+curl -X GET "http://localhost:8000/api/v1/admin/logs/download?format=txt" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o logs.txt
+
+# Download with filters
+curl -X GET "http://localhost:8000/api/v1/admin/logs/download?format=json&levels=error&start_date=2024-01-01T00:00:00Z" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o error_logs.json
+```
+
+### 13. Get System Health
+
+```bash
+curl -X GET http://localhost:8000/api/v1/admin/system/health \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "services": [
+    {
+      "name": "PostgreSQL",
+      "status": "healthy",
+      "response_time": 5.2,
+      "last_check": "2024-01-01T12:00:00Z",
+      "message": "Database is responsive"
+    },
+    {
+      "name": "Redis",
+      "status": "healthy",
+      "response_time": 1.5,
+      "last_check": "2024-01-01T12:00:00Z",
+      "message": "Cache is operational"
+    },
+    {
+      "name": "MinIO",
+      "status": "healthy",
+      "response_time": 8.3,
+      "last_check": "2024-01-01T12:00:00Z",
+      "message": "Object storage is available"
+    },
+    {
+      "name": "Celery",
+      "status": "healthy",
+      "response_time": 3.1,
+      "last_check": "2024-01-01T12:00:00Z",
+      "message": "Task queue is processing"
+    }
+  ],
+  "timestamp": "2024-01-01T12:00:00Z",
+  "uptime": 86400.0,
+  "version": "1.0.0"
+}
+```
+
+### 14. System Cleanup
+
+```bash
+# Dry run (preview what would be deleted)
+curl -X POST http://localhost:8000/api/v1/admin/system/cleanup \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "old_logs": true,
+    "temp_files": true,
+    "failed_tasks": true,
+    "old_notifications": true,
+    "days_to_keep": 30,
+    "dry_run": true
+  }'
+
+# Actual cleanup
+curl -X POST http://localhost:8000/api/v1/admin/system/cleanup \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "old_logs": true,
+    "temp_files": true,
+    "failed_tasks": true,
+    "orphaned_files": false,
+    "old_notifications": true,
+    "days_to_keep": 30,
+    "dry_run": false
+  }'
+```
+
+**Response:**
+```json
+{
+  "total_items_deleted": 150,
+  "total_space_freed": 524288000,
+  "total_duration": 2.5,
+  "results": [
+    {
+      "operation": "old_logs",
+      "items_deleted": 50,
+      "space_freed": 104857600,
+      "duration": 0.5,
+      "errors": []
+    },
+    {
+      "operation": "temp_files",
+      "items_deleted": 30,
+      "space_freed": 209715200,
+      "duration": 0.3,
+      "errors": []
+    },
+    {
+      "operation": "failed_tasks",
+      "items_deleted": 20,
+      "space_freed": 0,
+      "duration": 0.8,
+      "errors": []
+    },
+    {
+      "operation": "old_notifications",
+      "items_deleted": 50,
+      "space_freed": 0,
+      "duration": 0.4,
+      "errors": []
+    }
+  ],
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+**Recommendation:** Always run with `dry_run: true` first to preview changes!
+
+### 15. Get System Statistics (Admin)
+
+```bash
+curl -X GET http://localhost:8000/api/v1/admin/system/stats \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "total_users": 100,
+  "active_users": 85,
+  "admin_users": 5,
+  "total_projects": 250,
+  "total_samples": 1500,
+  "total_tasks": 5000,
+  "total_files": 10000,
+  "total_storage_used": 5497558138880,
+  "total_storage_allocated": 10737418240000,
+  "avg_storage_per_user": 54975581388,
+  "tasks_today": 50,
+  "tasks_this_week": 350,
+  "tasks_this_month": 1200,
+  "success_rate_today": 92.5,
+  "success_rate_this_week": 94.2,
+  "success_rate_this_month": 93.8,
+  "active_sessions": 15,
+  "cpu_usage": 45.2,
+  "memory_usage": 68.5,
+  "disk_usage": 72.3,
+  "generated_at": "2024-01-01T12:00:00Z"
+}
 ```
 
 ---

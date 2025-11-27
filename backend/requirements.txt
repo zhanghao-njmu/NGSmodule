@@ -29,6 +29,7 @@ python-dotenv==1.0.0
 aiofiles==23.2.1
 httpx==0.26.0
 slowapi==0.1.9
+psutil==5.9.8
 
 # Development
 pytest==7.4.4
