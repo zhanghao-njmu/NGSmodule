@@ -24,11 +24,14 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     storage_quota = Column(BigInteger, default=107374182400)  # 100GB in bytes
     storage_used = Column(BigInteger, default=0)
+    last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    notification_settings = relationship("NotificationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.username}>"

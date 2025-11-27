@@ -12,6 +12,7 @@ from app.models.file import File
 from app.models.task import PipelineTask
 from app.models.result import Result
 from app.models.pipeline_template import PipelineTemplate
+from app.models.notification import Notification, NotificationSettings
 
 
 def init_db():
