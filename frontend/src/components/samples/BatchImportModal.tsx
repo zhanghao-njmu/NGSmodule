@@ -134,7 +134,7 @@ export const BatchImportModal: React.FC<BatchImportModalProps> = ({ open, projec
         // Parse the CSV file
         const samples = await parseCSV(file)
         setParsedSamples(samples)
-        setFileList([file as any])
+        setFileList([file as UploadFile])
         setCurrentStep(1)
         message.success(`Parsed ${samples.length} samples from CSV`)
       } catch (error: any) {
@@ -179,7 +179,7 @@ export const BatchImportModal: React.FC<BatchImportModalProps> = ({ open, projec
         setUploadProgress((prev) => Math.min(prev + 10, 90))
       }, 200)
 
-      const result = await sampleService.importFromCSV(projectId, fileList[0] as any)
+      const result = await sampleService.importFromCSV(projectId, fileList[0] as unknown as File)
 
       clearInterval(progressInterval)
       setUploadProgress(100)

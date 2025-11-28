@@ -1,6 +1,7 @@
 """
 Celery tasks for NGS pipeline execution
 """
+import logging
 import subprocess
 import os
 from pathlib import Path
@@ -12,6 +13,8 @@ from app.workers.celery_app import celery_app
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.task import PipelineTask
+
+logger = logging.getLogger(__name__)
 
 
 def send_websocket_update(task_id: str, status: str, progress: float, message: str = ""):
@@ -34,7 +37,7 @@ def send_websocket_update(task_id: str, status: str, progress: float, message: s
         finally:
             loop.close()
     except Exception as e:
-        print(f"Error sending WebSocket update: {e}")
+        logger.warning(f"Error sending WebSocket update: {e}")
 
 
 @celery_app.task(bind=True)
@@ -176,7 +179,7 @@ def cleanup_old_files(days: int = 30):
                     file_path.unlink()
                     deleted_count += 1
                 except Exception as e:
-                    print(f"Error deleting {file_path}: {e}")
+                    logger.warning(f"Error deleting {file_path}: {e}")
 
     return {
         "deleted_files": deleted_count,

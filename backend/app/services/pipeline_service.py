@@ -592,7 +592,7 @@ class PipelineService:
                     recommended_params[key] = int(value_str)
                 else:
                     recommended_params[key] = value_str
-            except:
+            except (ValueError, AttributeError) as e:
                 recommended_params[key] = value_str
 
         # Merge with template defaults for missing parameters

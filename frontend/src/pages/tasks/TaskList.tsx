@@ -22,6 +22,7 @@ import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { websocketService } from '../../services/websocket.service'
 import { taskService } from '../../services/task.service'
+import { tokenManager } from '@/utils/tokenManager'
 import {
   PageHeader,
   DataTable,
@@ -65,7 +66,7 @@ export const TaskList: React.FC = () => {
     loadData()
 
     // Setup WebSocket for real-time updates
-    const token = localStorage.getItem('auth_token')
+    const token = tokenManager.getToken()
     if (token) {
       websocketService.connect(token)
       websocketService.addMessageHandler(handleWebSocketMessage)

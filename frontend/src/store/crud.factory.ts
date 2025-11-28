@@ -451,9 +451,10 @@ export function extendCrudStore<
   ) => CustomActions,
 ) {
   return create<BaseState & BaseActions & CustomState & CustomActions>((set, get) => ({
-    ...(baseStore() as any),
+    // Type assertion needed due to Zustand's complex type inference
+    ...(baseStore() as BaseState & BaseActions),
     ...customState,
-    ...customActions(set as any, get),
+    ...customActions(set as (partial: Partial<BaseState & CustomState>) => void, get),
   }))
 }
 

@@ -3,6 +3,7 @@ Rate limiting configuration for API endpoints
 
 Uses slowapi for rate limiting with Redis storage
 """
+import os
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -12,12 +13,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Initialize limiter
+# Get Redis URL from environment for production, fallback to memory for development
+# In production, set REDIS_URL environment variable (e.g., redis://localhost:6379/0)
+RATE_LIMIT_STORAGE = os.getenv("REDIS_URL", "memory://")
+
+# Initialize limiter with appropriate storage backend
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["100/minute"],  # Global default: 100 requests per minute
-    storage_uri="memory://",  # Use in-memory storage (switch to redis:// for production)
+    storage_uri=RATE_LIMIT_STORAGE,
 )
+
+if RATE_LIMIT_STORAGE != "memory://":
+    logger.info(f"Rate limiter using Redis storage")
+else:
+    logger.warning("Rate limiter using in-memory storage (not suitable for multi-instance deployment)")
 
 
 # Rate limit configurations for different endpoint types

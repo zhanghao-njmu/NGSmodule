@@ -246,7 +246,8 @@ class AdminService:
 
         logger.info(f"Password reset for user {user.username}")
 
-        # TODO: Send email notification if notify_user is True
+        # Note: Email notification feature is not yet implemented
+        # When implemented, this should send notification if notify_user is True
 
         return True
 
@@ -358,7 +359,8 @@ class AdminService:
         # In production, this would update a config table or file
         logger.info(f"System config {category.value} updated by admin {admin_id}: {updates}")
 
-        # TODO: Implement actual config persistence
+        # Note: Config persistence using database or file storage is not yet implemented
+        # Currently returns in-memory defaults; updates are logged but not persisted
 
         return self.get_system_config()
 
@@ -373,7 +375,7 @@ class AdminService:
         else:
             logger.info("Resetting all config to defaults")
 
-        # TODO: Implement actual config reset
+        # Note: Config reset functionality returns defaults; not yet connected to persistence layer
 
         return self.get_system_config()
 

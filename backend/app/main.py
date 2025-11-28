@@ -126,14 +126,14 @@ async def startup_event():
     """Initialize application on startup"""
     # Initialize database
     init_db()
-    print(f"✅ {settings.APP_NAME} v{settings.APP_VERSION} started successfully")
-    print(f"📚 API documentation: http://localhost:8000{settings.API_V1_PREFIX}/docs")
+    logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} started successfully")
+    logger.info(f"API documentation: http://localhost:8000{settings.API_V1_PREFIX}/docs")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    print(f"👋 {settings.APP_NAME} shutting down...")
+    logger.info(f"{settings.APP_NAME} shutting down...")
 
 
 @app.get("/")

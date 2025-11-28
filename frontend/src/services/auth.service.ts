@@ -2,6 +2,7 @@
  * Authentication Service
  */
 import apiClient from './api'
+import { tokenManager } from '@/utils/tokenManager'
 import type { LoginRequest, RegisterRequest, TokenResponse, User } from '@/types/user'
 
 class AuthService {
@@ -22,8 +23,8 @@ class AuthService {
 
     const token = tokenResponse.access_token
 
-    // Store token
-    localStorage.setItem('auth_token', token)
+    // Store token using secure token manager
+    tokenManager.setToken(token)
 
     // Get user info
     const user = await this.getCurrentUser()
@@ -46,7 +47,7 @@ class AuthService {
     try {
       await apiClient.post('/auth/logout')
     } finally {
-      localStorage.removeItem('auth_token')
+      tokenManager.clearToken()
     }
   }
 
@@ -62,14 +63,14 @@ class AuthService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('auth_token')
+    return tokenManager.hasValidToken()
   }
 
   /**
    * Get stored token
    */
   getToken(): string | null {
-    return localStorage.getItem('auth_token')
+    return tokenManager.getToken()
   }
 }
 

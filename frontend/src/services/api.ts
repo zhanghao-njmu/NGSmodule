@@ -1,9 +1,14 @@
 /**
  * API Client - Axios wrapper with interceptors
  */
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios from 'axios'
+import { tokenManager } from '@/utils/tokenManager'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+
+// Flag to prevent multiple redirects
+let isRedirecting = false
 
 class ApiClient {
   private client: AxiosInstance
@@ -24,7 +29,7 @@ class ApiClient {
     // Request interceptor - add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token')
+        const token = tokenManager.getToken()
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
@@ -32,7 +37,7 @@ class ApiClient {
       },
       (error) => {
         return Promise.reject(error)
-      }
+      },
     )
 
     // Response interceptor - handle errors
@@ -45,9 +50,17 @@ class ApiClient {
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true
 
-          // Clear token and redirect to login
-          localStorage.removeItem('auth_token')
-          window.location.href = '/login'
+          // Clear token
+          tokenManager.clearToken()
+
+          // Redirect to login (prevent multiple redirects)
+          if (!isRedirecting) {
+            isRedirecting = true
+            // Use a small delay to allow any pending operations to complete
+            setTimeout(() => {
+              window.location.href = '/login'
+            }, 100)
+          }
 
           return Promise.reject(error)
         }
@@ -60,7 +73,7 @@ class ApiClient {
           message,
           data: error.response?.data,
         })
-      }
+      },
     )
   }
 

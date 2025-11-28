@@ -51,9 +51,15 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
   }
 
   // Calculate confidence level
-  const getConfidenceLevel = (score: number) => {
+  const getConfidenceLevel = (
+    score: number,
+  ): {
+    level: string
+    color: string
+    status: 'success' | 'exception' | 'normal' | 'active'
+  } => {
     if (score >= 0.8) {
-      return { level: 'High', color: 'success', status: 'active' }
+      return { level: 'High', color: 'success', status: 'success' }
     }
     if (score >= 0.6) {
       return { level: 'Medium', color: 'normal', status: 'active' }
@@ -63,7 +69,7 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
 
   const confidenceConfig = recommendation
     ? getConfidenceLevel(recommendation.confidence_score)
-    : { level: 'Unknown', color: 'normal', status: 'active' }
+    : { level: 'Unknown', color: 'normal', status: 'active' as const }
 
   // Group parameters by type
   const groupParametersByType = (params: Record<string, any>) => {
@@ -154,7 +160,7 @@ export const RecommendationDialog: React.FC<RecommendationDialogProps> = ({
                 <Progress
                   percent={Math.round(recommendation.confidence_score * 100)}
                   size="small"
-                  status={confidenceConfig.status as any}
+                  status={confidenceConfig.status}
                   showInfo={false}
                   style={{ marginTop: 8 }}
                 />

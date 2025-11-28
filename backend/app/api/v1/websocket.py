@@ -1,6 +1,7 @@
 """
 WebSocket endpoints for real-time updates
 """
+import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from typing import Dict, Set, Optional
 from uuid import UUID
@@ -13,6 +14,8 @@ from app.core.database import SessionLocal
 from app.models.user import User
 from app.models.task import PipelineTask
 from app.models.project import Project
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -32,7 +35,7 @@ class ConnectionManager:
         if user_id not in self.active_connections:
             self.active_connections[user_id] = set()
         self.active_connections[user_id].add(websocket)
-        print(f"✅ WebSocket connected: user={user_id}")
+        logger.info(f"WebSocket connected: user={user_id}")
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         """Disconnect a WebSocket client"""
@@ -40,7 +43,7 @@ class ConnectionManager:
             self.active_connections[user_id].discard(websocket)
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
-        print(f"❌ WebSocket disconnected: user={user_id}")
+        logger.info(f"WebSocket disconnected: user={user_id}")
 
     def subscribe_to_task(self, task_id: str, user_id: str):
         """Subscribe user to task updates"""
@@ -63,7 +66,7 @@ class ConnectionManager:
                 try:
                     await websocket.send_json(message)
                 except Exception as e:
-                    print(f"Error sending to websocket: {e}")
+                    logger.warning(f"Error sending to websocket: {e}")
                     disconnected.add(websocket)
 
             # Clean up disconnected websockets
@@ -185,5 +188,5 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket, user_id)

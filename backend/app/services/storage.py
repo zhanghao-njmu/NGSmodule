@@ -2,6 +2,7 @@
 File storage service for MinIO/S3
 """
 import hashlib
+import logging
 import os
 from pathlib import Path
 from typing import BinaryIO, Optional
@@ -10,6 +11,8 @@ from minio import Minio
 from minio.error import S3Error
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class StorageService:
@@ -31,7 +34,7 @@ class StorageService:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
         except S3Error as e:
-            print(f"Error ensuring bucket: {e}")
+            logger.error(f"Error ensuring bucket: {e}")
 
     async def save_upload_file(
         self,

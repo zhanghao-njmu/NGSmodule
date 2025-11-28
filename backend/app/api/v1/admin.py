@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from app.core.database import get_db
-from app.core.security import get_current_admin_user
+from app.core.deps import get_current_admin
 from app.models.user import User
 from app.services.admin_service import AdminService
 from app.schemas.admin import *
@@ -29,7 +29,7 @@ async def get_all_users(
     search: Optional[str] = None,
     sort_by: str = Query("created_at", regex="^(created_at|username|email|role|storage_used)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -63,7 +63,7 @@ async def get_all_users(
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
 async def get_user_by_id(
     user_id: str,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -88,7 +88,7 @@ async def get_user_by_id(
 async def update_user_by_admin(
     user_id: str,
     update_data: UserUpdateRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -124,7 +124,7 @@ async def update_user_by_admin(
 async def change_user_role(
     user_id: str,
     role_update: UserRoleUpdate,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -162,7 +162,7 @@ async def change_user_role(
 async def activate_deactivate_user(
     user_id: str,
     activation: UserActivationRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -201,7 +201,7 @@ async def activate_deactivate_user(
 async def reset_user_password(
     user_id: str,
     password_reset: PasswordResetRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -243,7 +243,7 @@ async def reset_user_password(
 async def delete_user_by_admin(
     user_id: str,
     deletion: UserDeletionRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -306,7 +306,7 @@ async def delete_user_by_admin(
 
 @router.get("/config", response_model=SystemConfig)
 async def get_system_configuration(
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -330,7 +330,7 @@ async def get_system_configuration(
 @router.put("/config", response_model=SystemConfig)
 async def update_system_configuration(
     config_update: ConfigUpdateRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -359,7 +359,7 @@ async def update_system_configuration(
 @router.post("/config/reset", response_model=SystemConfig)
 async def reset_system_configuration(
     reset_request: ConfigResetRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -399,7 +399,7 @@ async def get_system_logs(
     search: Optional[str] = None,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -437,7 +437,7 @@ async def download_system_logs(
     levels: Optional[List[LogLevel]] = Query(None),
     sources: Optional[List[LogSource]] = Query(None),
     format: str = Query("json", regex="^(json|csv|txt)$"),
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -476,7 +476,7 @@ async def download_system_logs(
 
 @router.get("/system/health", response_model=SystemHealth)
 async def get_system_health(
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -506,7 +506,7 @@ async def get_system_health(
 @router.post("/system/cleanup", response_model=CleanupResponse)
 async def cleanup_system(
     cleanup_options: CleanupOptions,
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -541,7 +541,7 @@ async def cleanup_system(
 
 @router.get("/system/stats", response_model=AdminSystemStats)
 async def get_admin_system_statistics(
-    current_admin: User = Depends(get_current_admin_user),
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -572,7 +572,7 @@ async def get_admin_system_statistics(
 
 @router.get("/health")
 async def admin_health_check(
-    current_admin: User = Depends(get_current_admin_user)
+    current_admin: User = Depends(get_current_admin)
 ):
     """
     Health check endpoint for admin service

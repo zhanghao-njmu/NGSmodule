@@ -25,16 +25,14 @@ export const Tooltip: React.FC<TooltipProps> = ({ variant = 'default', overlayIn
       overlayStyle={{
         ...overlayStyle,
       }}
-      overlayInnerStyle={
-        {
-          backgroundColor: variantColors[variant],
-          borderRadius: 6,
-          padding: '6px 12px',
-          fontSize: 13,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          ...overlayInnerStyle,
-        } as any
-      }
+      overlayInnerStyle={{
+        backgroundColor: variantColors[variant],
+        borderRadius: 6,
+        padding: '6px 12px',
+        fontSize: 13,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        ...overlayInnerStyle,
+      }}
       {...props}
     />
   )

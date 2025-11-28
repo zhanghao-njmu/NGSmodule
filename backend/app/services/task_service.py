@@ -1,6 +1,7 @@
 """
 Task Service - Business logic for pipeline task management
 """
+import logging
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
 from sqlalchemy.orm import Session
@@ -17,6 +18,8 @@ from app.schemas.task import (
     TaskExecuteRequest,
 )
 from app.workers.pipeline_tasks import run_ngs_pipeline
+
+logger = logging.getLogger(__name__)
 
 
 class TaskService:
@@ -316,7 +319,7 @@ class TaskService:
                 from app.workers.celery_app import celery_app
                 celery_app.control.revoke(task.celery_task_id, terminate=True)
             except Exception as e:
-                print(f"Error revoking Celery task: {e}")
+                logger.warning(f"Error revoking Celery task: {e}")
 
         # Update task status
         task.status = "cancelled"
@@ -391,7 +394,7 @@ class TaskService:
                 if log_path.exists():
                     log_path.unlink()
             except Exception as e:
-                print(f"Error deleting log file: {e}")
+                logger.warning(f"Error deleting log file: {e}")
 
         # Delete task
         self.db.delete(task)
