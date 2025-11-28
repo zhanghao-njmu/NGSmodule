@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class Sample(Base):
@@ -22,7 +22,7 @@ class Sample(Base):
     layout = Column(String(10))  # 'PE' or 'SE'
     batch_id = Column(String(50))
     metadata = Column(JSONB, default={})  # Additional sample metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships
     project = relationship("Project", back_populates="samples")

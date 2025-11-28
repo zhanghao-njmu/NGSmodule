@@ -94,7 +94,7 @@ export const Dashboard: React.FC = () => {
         <div className={styles.header}>
           <Space direction="vertical" size={4}>
             <Title level={2} style={{ margin: 0 }}>
-              Welcome back, {user?.full_name || user?.username}! 👋
+              Welcome back, {user?.full_name || user?.username}!
             </Title>
             <Text type="secondary">Here&apos;s an overview of your bioinformatics workspace</Text>
           </Space>

@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, DateTime, BigInteger, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class File(Base):
@@ -22,7 +22,7 @@ class File(Base):
     file_size = Column(BigInteger)
     md5_checksum = Column(String(32))
     upload_status = Column(String(20), default="pending")  # 'pending', 'uploading', 'completed', 'failed'
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships
     sample = relationship("Sample", back_populates="files")

@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class PipelineTask(Base):
@@ -26,7 +26,7 @@ class PipelineTask(Base):
     config = Column(JSONB, default={})  # Task configuration
     celery_task_id = Column(String(255))  # Celery task ID for tracking
     log_file_path = Column(String(512))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships
     project = relationship("Project", back_populates="tasks")

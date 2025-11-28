@@ -3,9 +3,13 @@ Initialize built-in pipeline templates
 
 This script creates default pipeline templates based on existing NGS analysis scripts.
 """
+import logging
 from app.core.database import SessionLocal
 from app.models.pipeline_template import PipelineTemplate
 import uuid
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 BUILTIN_TEMPLATES = [
@@ -215,7 +219,7 @@ def init_pipeline_templates():
     db = SessionLocal()
 
     try:
-        print("Initializing pipeline templates...")
+        logger.info("Initializing pipeline templates...")
 
         for template_data in BUILTIN_TEMPLATES:
             # Check if template already exists
@@ -224,7 +228,7 @@ def init_pipeline_templates():
             ).first()
 
             if existing:
-                print(f"  ℹ️  Template '{template_data['name']}' already exists, skipping...")
+                logger.info("  [SKIP] Template '%s' already exists, skipping...", template_data['name'])
                 continue
 
             # Create new template
@@ -236,13 +240,13 @@ def init_pipeline_templates():
             )
 
             db.add(template)
-            print(f"  ✅ Created template: {template_data['display_name']}")
+            logger.info("  [OK] Created template: %s", template_data['display_name'])
 
         db.commit()
-        print(f"\n✅ Pipeline templates initialized successfully! ({len(BUILTIN_TEMPLATES)} templates)")
+        logger.info("[OK] Pipeline templates initialized successfully! (%d templates)", len(BUILTIN_TEMPLATES))
 
     except Exception as e:
-        print(f"❌ Error initializing templates: {e}")
+        logger.error("[ERROR] Error initializing templates: %s", e)
         db.rollback()
     finally:
         db.close()

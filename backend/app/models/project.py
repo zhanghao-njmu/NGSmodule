@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class Project(Base):
@@ -21,8 +21,8 @@ class Project(Base):
     project_type = Column(String(20))  # 'rna-seq', 'dna-seq', 'sc-rna-seq', etc.
     status = Column(String(20), default="active")  # 'active', 'archived', 'deleted'
     config = Column(JSONB, default={})  # Project configuration
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
 
     # Relationships
     owner = relationship("User", back_populates="projects")

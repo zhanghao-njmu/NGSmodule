@@ -22,7 +22,7 @@ class WebSocketService {
     this.ws = new WebSocket(wsUrl)
 
     this.ws.onopen = () => {
-      console.log('✅ WebSocket connected')
+      console.log('[WebSocket] Connected')
       this.reconnectAttempts = 0
 
       // Start ping interval to keep connection alive
@@ -34,22 +34,22 @@ class WebSocketService {
         const message: WebSocketMessage = JSON.parse(event.data)
         this.notifyHandlers(message)
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error)
+        console.error('[WebSocket] Error parsing message:', error)
       }
     }
 
     this.ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error)
+      console.error('[WebSocket] Error:', error)
     }
 
     this.ws.onclose = () => {
-      console.log('👋 WebSocket disconnected')
+      console.log('[WebSocket] Disconnected')
       this.stopPing()
 
       // Attempt to reconnect
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++
-        console.log(`🔄 Reconnecting... (attempt ${this.reconnectAttempts})`)
+        console.log(`[WebSocket] Reconnecting... (attempt ${this.reconnectAttempts})`)
         setTimeout(() => {
           if (token) {
             this.connect(token)

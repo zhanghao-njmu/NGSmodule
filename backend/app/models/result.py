@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class Result(Base):
@@ -19,7 +19,7 @@ class Result(Base):
     result_type = Column(String(50))  # 'qc_report', 'alignment', 'quantification', 'de_analysis'
     result_path = Column(Text)
     metadata = Column(JSONB, default={})  # Result metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships
     task = relationship("PipelineTask", back_populates="results")

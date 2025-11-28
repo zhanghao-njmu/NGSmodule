@@ -5,8 +5,8 @@ from sqlalchemy import Column, String, Boolean, DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class User(Base):
@@ -25,8 +25,8 @@ class User(Base):
     storage_quota = Column(BigInteger, default=107374182400)  # 100GB in bytes
     storage_used = Column(BigInteger, default=0)
     last_login = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now_naive)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
 
     # Relationships
     projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")

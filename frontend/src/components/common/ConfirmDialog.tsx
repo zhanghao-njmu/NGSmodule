@@ -112,7 +112,7 @@ export const confirmDangerousAction = (
     content: (
       <div>
         <p>{description}</p>
-        <p style={{ color: '#ef4444', fontSize: 13, marginTop: 8 }}>⚠️ 警告：此操作具有危险性，请谨慎操作！</p>
+        <p style={{ color: '#ef4444', fontSize: 13, marginTop: 8 }}>警告：此操作具有危险性，请谨慎操作！</p>
       </div>
     ),
     icon: <WarningOutlined style={{ color: '#ef4444' }} />,

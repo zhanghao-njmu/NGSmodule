@@ -4,10 +4,10 @@ Notification database model
 from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
 import uuid
 
 from app.core.database import Base
+from app.core.datetime_utils import utc_now_naive
 
 
 class Notification(Base):
@@ -28,7 +28,7 @@ class Notification(Base):
     action_url = Column(String(500), nullable=True)  # Optional link to related resource
     priority = Column(String(20), default="normal")  # low, normal, high, urgent
     expires_at = Column(DateTime, nullable=True)  # Optional expiration date
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now_naive, index=True)
     read_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -81,7 +81,7 @@ class NotificationSettings(Base):
     # Push notifications (future feature)
     push_enabled = Column(Boolean, default=False)
 
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
 
     # Relationships
     user = relationship("User", back_populates="notification_settings")
