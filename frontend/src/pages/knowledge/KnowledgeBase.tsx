@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Typography, Input, Space, Button, Tag, List, Avatar, Tabs, Badge, Progress } from 'antd'
 import {
@@ -15,7 +15,9 @@ import {
 } from '@ant-design/icons'
 import { PageHeader, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import type { KnowledgeArticle, KnowledgeCategory, Tutorial } from '@/types/analytics'
+import { analyticsService } from '@/services/analytics.service'
 import { DesignTokens } from '@/styles/design-tokens'
+import { logger } from '@/utils/logger'
 import './KnowledgeBase.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -56,139 +58,49 @@ export const KnowledgeBase: React.FC = () => {
   const [popularArticles, setPopularArticles] = useState<KnowledgeArticle[]>([])
   const [tutorials, setTutorials] = useState<Tutorial[]>([])
 
-  useEffect(() => {
-    fetchKnowledgeContent()
-  }, [selectedCategory])
-
-  const fetchKnowledgeContent = async () => {
+  const fetchKnowledgeContent = useCallback(async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API calls
-      // const articles = await analyticsService.getArticlesByCategory(selectedCategory)
-      // const popular = await analyticsService.getPopularArticles()
-      // const tutorials = await analyticsService.getTutorials()
+      // Fetch articles based on selected category
+      const articlesPromise =
+        selectedCategory === 'all'
+          ? analyticsService.getPopularArticles(20)
+          : analyticsService.getArticlesByCategory(selectedCategory)
 
-      // Mock data
-      const mockArticles: KnowledgeArticle[] = [
-        {
-          id: '1',
-          title: 'NGSmodule 快速入门指南',
-          category: 'getting-started',
-          tags: ['新手', '教程', '基础'],
-          content: '详细的快速入门指南...',
-          summary: '了解如何快速开始使用NGSmodule平台进行生物信息学分析',
-          author: 'Admin',
-          createdAt: '2024-01-15',
-          updatedAt: '2024-03-20',
-          views: 1245,
-          helpful: 98,
-          notHelpful: 2,
-          difficulty: 'beginner',
-          estimatedReadTime: 10,
-          relatedArticles: ['2', '3'],
-        },
-        {
-          id: '2',
-          title: '如何配置RNA-seq分析流程',
-          category: 'pipelines',
-          tags: ['RNA-seq', '流程', '配置'],
-          content: 'RNA-seq流程配置详解...',
-          summary: '学习如何配置和运行RNA-seq分析流程',
-          author: 'Expert',
-          createdAt: '2024-02-01',
-          updatedAt: '2024-03-18',
-          views: 892,
-          helpful: 76,
-          notHelpful: 4,
-          difficulty: 'intermediate',
-          estimatedReadTime: 15,
-          relatedArticles: ['1', '4'],
-        },
-        {
-          id: '3',
-          title: '数据质量控制最佳实践',
-          category: 'quality-control',
-          tags: ['QC', '质量', '最佳实践'],
-          content: 'QC最佳实践详解...',
-          summary: '掌握数据质量控制的关键步骤和最佳实践',
-          author: 'Expert',
-          createdAt: '2024-02-10',
-          updatedAt: '2024-03-15',
-          views: 756,
-          helpful: 65,
-          notHelpful: 3,
-          difficulty: 'intermediate',
-          estimatedReadTime: 12,
-          relatedArticles: ['2', '5'],
-        },
-        {
-          id: '4',
-          title: '常见问题解答',
-          category: 'faq',
-          tags: ['FAQ', '问题', '解答'],
-          content: '常见问题集合...',
-          summary: '查找常见问题的答案',
-          author: 'Admin',
-          createdAt: '2024-01-20',
-          updatedAt: '2024-03-22',
-          views: 2134,
-          helpful: 156,
-          notHelpful: 12,
-          difficulty: 'beginner',
-          estimatedReadTime: 8,
-          relatedArticles: ['1'],
-        },
-      ]
+      // Fetch popular articles and tutorials in parallel
+      const [fetchedArticles, popular, fetchedTutorials] = await Promise.all([
+        articlesPromise,
+        analyticsService.getPopularArticles(3),
+        analyticsService.getTutorials(selectedCategory !== 'all' ? selectedCategory : undefined),
+      ])
 
-      setArticles(mockArticles)
-      setPopularArticles(mockArticles.slice(0, 3))
-
-      const mockTutorials: Tutorial[] = [
-        {
-          id: '1',
-          title: '从零开始的RNA-seq分析',
-          description: '完整的RNA-seq分析教程，从数据上传到结果解读',
-          category: 'getting-started',
-          difficulty: 'beginner',
-          estimatedDuration: 45,
-          steps: [],
-          outcomes: ['掌握RNA-seq基本流程', '理解质量控制', '学会结果解读'],
-          completed: false,
-          progress: 0,
-        },
-        {
-          id: '2',
-          title: 'AI功能使用指南',
-          description: '学习如何使用平台的AI智能功能提高工作效率',
-          category: 'best-practices',
-          difficulty: 'intermediate',
-          estimatedDuration: 30,
-          steps: [],
-          outcomes: ['掌握AI推荐系统', '使用自动QC', '智能分组功能'],
-          completed: false,
-          progress: 0,
-        },
-      ]
-
-      setTutorials(mockTutorials)
+      setArticles(fetchedArticles)
+      setPopularArticles(popular)
+      setTutorials(fetchedTutorials)
     } catch (error) {
-      console.error('Failed to fetch knowledge content:', error)
+      logger.error('Failed to fetch knowledge content:', error)
     } finally {
       setLoading(false)
       setInitialLoad(false)
     }
-  }
+  }, [selectedCategory])
+
+  useEffect(() => {
+    fetchKnowledgeContent()
+  }, [fetchKnowledgeContent])
 
   const handleSearch = async (value: string) => {
     setSearchQuery(value)
     if (value) {
       setLoading(true)
       try {
-        // TODO: Call search API
-        // const results = await analyticsService.searchKnowledge(value, selectedCategory !== 'all' ? selectedCategory : undefined)
-        // setArticles(results)
+        const results = await analyticsService.searchKnowledge(
+          value,
+          selectedCategory !== 'all' ? selectedCategory : undefined,
+        )
+        setArticles(results)
       } catch (error) {
-        console.error('Search failed:', error)
+        logger.error('Search failed:', error)
       } finally {
         setLoading(false)
       }

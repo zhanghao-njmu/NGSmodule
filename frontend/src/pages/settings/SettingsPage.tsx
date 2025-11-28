@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Card,
   Row,
@@ -35,21 +35,13 @@ import {
 } from '@ant-design/icons'
 import { PageHeader } from '@/components/common'
 import { useTheme } from '@/store/themeStore'
+import { userService, type ApiToken } from '@/services/user.service'
 import { DesignTokens } from '@/styles/design-tokens'
+import { logger } from '@/utils/logger'
 import './SettingsPage.css'
 
 const { Text, Paragraph } = Typography
 const { Option } = Select
-
-interface ApiToken {
-  id: string
-  name: string
-  token: string
-  createdAt: string
-  lastUsed?: string
-  expiresAt?: string
-  status: 'active' | 'expired'
-}
 
 export const SettingsPage: React.FC = () => {
   const { mode, toggleMode } = useTheme()
@@ -59,71 +51,89 @@ export const SettingsPage: React.FC = () => {
   const [newTokenModalVisible, setNewTokenModalVisible] = useState(false)
   const [tokenForm] = Form.useForm()
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(new Set())
+  const [apiTokens, setApiTokens] = useState<ApiToken[]>([])
+  const [loading, setLoading] = useState(false)
 
-  // Mock API tokens data
-  const [apiTokens, setApiTokens] = useState<ApiToken[]>([
-    {
-      id: '1',
-      name: 'Pipeline Automation',
-      token: 'ngs_tok_abc123def456...',
-      createdAt: '2024-01-15',
-      lastUsed: '2 hours ago',
-      status: 'active',
-    },
-    {
-      id: '2',
-      name: 'Data Analysis Script',
-      token: 'ngs_tok_xyz789ghi012...',
-      createdAt: '2024-02-01',
-      lastUsed: '1 day ago',
-      status: 'active',
-    },
-  ])
+  // Fetch API tokens on mount
+  const fetchApiTokens = useCallback(async () => {
+    try {
+      const tokens = await userService.getApiTokens()
+      setApiTokens(tokens)
+    } catch (error) {
+      logger.error('Failed to fetch API tokens:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchApiTokens()
+  }, [fetchApiTokens])
 
   // Account Settings
-  const handleAccountSettingsSave = async (values: any) => {
+  const handleAccountSettingsSave = async (values: Record<string, unknown>) => {
+    setLoading(true)
     try {
-      // TODO: Call API to save account settings
-      console.log('Account settings:', values)
+      await userService.updateSettings({
+        language: values.language as string,
+        timezone: values.timezone as string,
+        dateFormat: values.dateFormat as string,
+        theme: mode,
+      })
       message.success('Account settings saved successfully!')
     } catch (error) {
+      logger.error('Failed to save account settings:', error)
       message.error('Failed to save account settings')
+    } finally {
+      setLoading(false)
     }
   }
 
   // Notification Settings
-  const handleNotificationSettingsSave = async (values: any) => {
+  const handleNotificationSettingsSave = async (values: Record<string, unknown>) => {
+    setLoading(true)
     try {
-      // TODO: Call API to save notification settings
-      console.log('Notification settings:', values)
+      await userService.updateNotificationSettings({
+        emailNotifications: values.emailNotifications as boolean,
+        pipelineComplete: values.pipelineComplete as boolean,
+        taskFailed: values.taskFailed as boolean,
+        systemUpdates: values.systemUpdates as boolean,
+        weeklyReport: values.weeklyReport as boolean,
+        browserNotifications: values.browserNotifications as boolean,
+      })
       message.success('Notification preferences saved!')
     } catch (error) {
+      logger.error('Failed to save notification settings:', error)
       message.error('Failed to save notification settings')
+    } finally {
+      setLoading(false)
     }
   }
 
   // Privacy Settings
-  const handlePrivacySettingsSave = async (values: any) => {
+  const handlePrivacySettingsSave = async (values: Record<string, unknown>) => {
+    setLoading(true)
     try {
-      // TODO: Call API to save privacy settings
-      console.log('Privacy settings:', values)
+      await userService.updatePrivacySettings({
+        profileVisible: values.profileVisible as boolean,
+        activityVisible: values.activityVisible as boolean,
+        twoFactorAuth: values.twoFactorAuth as boolean,
+        sessionTimeout: values.sessionTimeout as number,
+      })
       message.success('Privacy settings updated!')
     } catch (error) {
+      logger.error('Failed to update privacy settings:', error)
       message.error('Failed to update privacy settings')
+    } finally {
+      setLoading(false)
     }
   }
 
   // API Token Management
-  const handleCreateToken = async (values: any) => {
+  const handleCreateToken = async (values: { name: string; description?: string }) => {
     try {
-      // TODO: Call API to create token
-      const newToken: ApiToken = {
-        id: Date.now().toString(),
+      const newToken = await userService.createApiToken({
         name: values.name,
-        token: `ngs_tok_${Math.random().toString(36).substr(2, 16)}...`,
-        createdAt: new Date().toLocaleDateString(),
-        status: 'active',
-      }
+        description: values.description,
+      })
       setApiTokens([...apiTokens, newToken])
       message.success('API token created successfully!')
       setNewTokenModalVisible(false)
@@ -151,6 +161,7 @@ export const SettingsPage: React.FC = () => {
         okText: 'I have saved the token',
       })
     } catch (error) {
+      logger.error('Failed to create API token:', error)
       message.error('Failed to create API token')
     }
   }
@@ -164,10 +175,11 @@ export const SettingsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          // TODO: Call API to delete token
+          await userService.deleteApiToken(tokenId)
           setApiTokens(apiTokens.filter((token) => token.id !== tokenId))
           message.success('API token deleted successfully')
         } catch (error) {
+          logger.error('Failed to delete API token:', error)
           message.error('Failed to delete API token')
         }
       },
@@ -314,7 +326,7 @@ export const SettingsPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" block>
+                <Button type="primary" htmlType="submit" block loading={loading}>
                   保存设置
                 </Button>
               </Form.Item>
@@ -428,7 +440,7 @@ export const SettingsPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" block>
+                <Button type="primary" htmlType="submit" block loading={loading}>
                   保存通知设置
                 </Button>
               </Form.Item>
@@ -516,7 +528,7 @@ export const SettingsPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" block>
+                <Button type="primary" htmlType="submit" block loading={loading}>
                   保存隐私设置
                 </Button>
               </Form.Item>

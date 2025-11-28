@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -29,8 +29,10 @@ import {
   InboxOutlined,
 } from '@ant-design/icons'
 import { PageHeader, StatisticCard } from '@/components/common'
+import { notificationService } from '@/services/notification.service'
 import type { Notification, NotificationType, NotificationCategory } from '@/types/notification'
 import { DesignTokens } from '@/styles/design-tokens'
+import { logger } from '@/utils/logger'
 import './NotificationsPage.css'
 
 const { Text, Paragraph } = Typography
@@ -58,107 +60,49 @@ export const NotificationsPage: React.FC = () => {
     info: 0,
   })
 
-  useEffect(() => {
-    fetchNotifications()
-    fetchStats()
-  }, [currentPage, pageSize, filterType, filterCategory, filterRead])
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const response = await notificationService.getNotifications({
-      //   page: currentPage,
-      //   pageSize,
-      //   filter: {
-      //     type: filterType !== 'all' ? [filterType] : undefined,
-      //     category: filterCategory !== 'all' ? [filterCategory] : undefined,
-      //     read: filterRead === 'all' ? undefined : filterRead === 'read',
-      //   },
-      // })
+      const response = await notificationService.getNotifications({
+        page: currentPage,
+        pageSize,
+        filter: {
+          type: filterType !== 'all' ? [filterType] : undefined,
+          category: filterCategory !== 'all' ? [filterCategory] : undefined,
+          read: filterRead === 'all' ? undefined : filterRead === 'read',
+        },
+      })
 
-      // Mock data
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'success',
-          category: 'pipeline',
-          title: 'Pipeline completed successfully',
-          message: 'RNA-seq analysis pipeline has finished processing sample batch A',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          read: false,
-          actionUrl: '/results/123',
-          actionText: 'View Results',
-        },
-        {
-          id: '2',
-          type: 'error',
-          category: 'task',
-          title: 'Task failed',
-          message: 'Alignment task encountered an error during execution',
-          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          read: false,
-          actionUrl: '/tasks/456',
-          actionText: 'View Details',
-        },
-        {
-          id: '3',
-          type: 'info',
-          category: 'system',
-          title: 'System maintenance scheduled',
-          message: 'Scheduled maintenance on Sunday 2:00 AM - 4:00 AM',
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          read: true,
-        },
-        {
-          id: '4',
-          type: 'warning',
-          category: 'project',
-          title: 'Storage limit warning',
-          message: 'Project "Cancer Genomics" storage is 85% full',
-          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          read: true,
-          actionUrl: '/items/789',
-          actionText: 'Manage Storage',
-        },
-        {
-          id: '5',
-          type: 'success',
-          category: 'sample',
-          title: 'Samples uploaded',
-          message: '24 new samples have been successfully uploaded',
-          timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          read: true,
-          actionUrl: '/samples',
-          actionText: 'View Samples',
-        },
-      ]
-
-      setNotifications(mockNotifications)
-      setTotal(mockNotifications.length)
+      setNotifications(response.notifications)
+      setTotal(response.total)
     } catch (error) {
+      logger.error('Failed to load notifications:', error)
       message.error('Failed to load notifications')
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, pageSize, filterType, filterCategory, filterRead])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
-      // TODO: Replace with actual API call
-      // const statsData = await notificationService.getStats()
+      const statsData = await notificationService.getStats()
       setStats({
-        total: 45,
-        unread: 12,
-        success: 20,
-        error: 5,
-        warning: 8,
-        info: 12,
+        total: statsData.total || 0,
+        unread: statsData.unread || 0,
+        success: statsData.byType?.success || 0,
+        error: statsData.byType?.error || 0,
+        warning: statsData.byType?.warning || 0,
+        info: statsData.byType?.info || 0,
       })
     } catch (error) {
-      console.error('Failed to load stats:', error)
+      logger.error('Failed to load stats:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchNotifications()
+    fetchStats()
+  }, [fetchNotifications, fetchStats])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -178,27 +122,25 @@ export const NotificationsPage: React.FC = () => {
 
   const handleMarkAsRead = async (ids: string[]) => {
     try {
-      // TODO: Call API
-      // await notificationService.markMultipleAsRead(ids)
-      setNotifications(
-        notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n))
-      )
+      await notificationService.markMultipleAsRead(ids)
+      setNotifications(notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)))
       setSelectedIds([])
       message.success(`${ids.length} notification(s) marked as read`)
       fetchStats()
     } catch (error) {
+      logger.error('Failed to mark notifications as read:', error)
       message.error('Failed to mark notifications as read')
     }
   }
 
   const handleMarkAllAsRead = async () => {
     try {
-      // TODO: Call API
-      // await notificationService.markAllAsRead()
+      await notificationService.markAllAsRead()
       setNotifications(notifications.map((n) => ({ ...n, read: true })))
       message.success('All notifications marked as read')
       fetchStats()
     } catch (error) {
+      logger.error('Failed to mark all as read:', error)
       message.error('Failed to mark all as read')
     }
   }
@@ -212,13 +154,13 @@ export const NotificationsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          // TODO: Call API
-          // await notificationService.deleteMultiple(ids)
+          await notificationService.deleteMultiple(ids)
           setNotifications(notifications.filter((n) => !ids.includes(n.id)))
           setSelectedIds([])
           message.success(`${ids.length} notification(s) deleted`)
           fetchStats()
         } catch (error) {
+          logger.error('Failed to delete notifications:', error)
           message.error('Failed to delete notifications')
         }
       },
@@ -234,12 +176,12 @@ export const NotificationsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          // TODO: Call API
-          // await notificationService.deleteAllRead()
+          await notificationService.deleteAllRead()
           setNotifications(notifications.filter((n) => !n.read))
           message.success('All read notifications deleted')
           fetchStats()
         } catch (error) {
+          logger.error('Failed to delete read notifications:', error)
           message.error('Failed to delete read notifications')
         }
       },
@@ -289,21 +231,27 @@ export const NotificationsPage: React.FC = () => {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minutes ago`
-    if (diffHours < 24) return `${diffHours} hours ago`
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffMins < 1) {
+      return 'Just now'
+    }
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`
+    }
+    if (diffDays === 1) {
+      return 'Yesterday'
+    }
+    if (diffDays < 7) {
+      return `${diffDays} days ago`
+    }
     return date.toLocaleDateString()
   }
 
   return (
     <div className="notifications-page">
-      <PageHeader
-        title="通知中心"
-        subtitle="查看和管理您的所有通知"
-        icon={<BellOutlined />}
-      />
+      <PageHeader title="通知中心" subtitle="查看和管理您的所有通知" icon={<BellOutlined />} />
 
       {/* Statistics */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -347,9 +295,7 @@ export const NotificationsPage: React.FC = () => {
           <Space wrap>
             <Checkbox
               checked={selectedIds.length === notifications.length && notifications.length > 0}
-              indeterminate={
-                selectedIds.length > 0 && selectedIds.length < notifications.length
-              }
+              indeterminate={selectedIds.length > 0 && selectedIds.length < notifications.length}
               onChange={(e) => handleSelectAll(e.target.checked)}
             >
               Select All
@@ -357,17 +303,10 @@ export const NotificationsPage: React.FC = () => {
 
             {selectedIds.length > 0 && (
               <>
-                <Button
-                  icon={<CheckOutlined />}
-                  onClick={() => handleMarkAsRead(selectedIds)}
-                >
+                <Button icon={<CheckOutlined />} onClick={() => handleMarkAsRead(selectedIds)}>
                   Mark as Read ({selectedIds.length})
                 </Button>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete(selectedIds)}
-                >
+                <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(selectedIds)}>
                   Delete ({selectedIds.length})
                 </Button>
               </>
@@ -386,12 +325,7 @@ export const NotificationsPage: React.FC = () => {
           </Space>
 
           <Space wrap>
-            <Select
-              value={filterType}
-              onChange={setFilterType}
-              style={{ width: 120 }}
-              suffixIcon={<FilterOutlined />}
-            >
+            <Select value={filterType} onChange={setFilterType} style={{ width: 120 }} suffixIcon={<FilterOutlined />}>
               <Option value="all">All Types</Option>
               <Option value="success">Success</Option>
               <Option value="error">Error</Option>
@@ -415,12 +349,7 @@ export const NotificationsPage: React.FC = () => {
               <Option value="result">Result</Option>
             </Select>
 
-            <Select
-              value={filterRead}
-              onChange={setFilterRead}
-              style={{ width: 100 }}
-              suffixIcon={<FilterOutlined />}
-            >
+            <Select value={filterRead} onChange={setFilterRead} style={{ width: 100 }} suffixIcon={<FilterOutlined />}>
               <Option value="all">All</Option>
               <Option value="unread">Unread</Option>
               <Option value="read">Read</Option>
@@ -450,6 +379,7 @@ export const NotificationsPage: React.FC = () => {
                   actions={[
                     !item.read && (
                       <Button
+                        key="mark-read"
                         type="text"
                         size="small"
                         icon={<CheckOutlined />}
@@ -463,6 +393,7 @@ export const NotificationsPage: React.FC = () => {
                     ),
                     item.actionUrl && (
                       <Button
+                        key="view"
                         type="link"
                         size="small"
                         onClick={(e) => {
@@ -474,6 +405,7 @@ export const NotificationsPage: React.FC = () => {
                       </Button>
                     ),
                     <Button
+                      key="delete"
                       type="text"
                       size="small"
                       danger
@@ -504,9 +436,7 @@ export const NotificationsPage: React.FC = () => {
                           {item.title}
                           {!item.read && <span className="unread-badge">NEW</span>}
                         </Space>
-                        <Tag color={getCategoryColor(item.category)}>
-                          {item.category.toUpperCase()}
-                        </Tag>
+                        <Tag color={getCategoryColor(item.category)}>{item.category.toUpperCase()}</Tag>
                       </div>
                     }
                     description={

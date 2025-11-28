@@ -18,6 +18,7 @@ interface AuthState {
   register: (userData: RegisterRequest) => Promise<void>
   logout: () => void
   checkAuth: () => Promise<void>
+  refreshUser: () => Promise<void>
   clearError: () => void
 }
 
@@ -97,6 +98,15 @@ export const authStore = create<AuthState>()(
         } catch (error) {
           // Token invalid or expired
           get().logout()
+        }
+      },
+
+      refreshUser: async () => {
+        try {
+          const user = await authService.getCurrentUser()
+          set({ user })
+        } catch (error) {
+          // Silently fail, user data may be stale
         }
       },
 

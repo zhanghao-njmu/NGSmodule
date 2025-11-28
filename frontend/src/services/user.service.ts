@@ -34,6 +34,39 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
+export interface UserSettings {
+  language: string
+  timezone: string
+  dateFormat: string
+  theme: 'light' | 'dark'
+}
+
+export interface NotificationSettings {
+  emailNotifications: boolean
+  pipelineComplete: boolean
+  taskFailed: boolean
+  systemUpdates: boolean
+  weeklyReport: boolean
+  browserNotifications: boolean
+}
+
+export interface PrivacySettings {
+  profileVisible: boolean
+  activityVisible: boolean
+  twoFactorAuth: boolean
+  sessionTimeout: number
+}
+
+export interface ApiToken {
+  id: string
+  name: string
+  token: string
+  createdAt: string
+  lastUsed?: string
+  expiresAt?: string
+  status: 'active' | 'expired'
+}
+
 class UserService {
   /**
    * Get user profile
@@ -65,15 +98,11 @@ class UserService {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await apiClient.post<{ avatar_url: string }>(
-      '/users/me/avatar',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
+    const response = await apiClient.post<{ avatar_url: string }>('/users/me/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     return response
   }
@@ -101,6 +130,77 @@ class UserService {
    */
   async deleteAccount(): Promise<void> {
     await apiClient.delete('/users/me')
+  }
+
+  /**
+   * Get user settings
+   */
+  async getSettings(): Promise<UserSettings> {
+    const settings = await apiClient.get<UserSettings>('/users/me/settings')
+    return settings
+  }
+
+  /**
+   * Update user settings
+   */
+  async updateSettings(data: Partial<UserSettings>): Promise<UserSettings> {
+    const settings = await apiClient.put<UserSettings>('/users/me/settings', data)
+    return settings
+  }
+
+  /**
+   * Get notification settings
+   */
+  async getNotificationSettings(): Promise<NotificationSettings> {
+    const settings = await apiClient.get<NotificationSettings>('/users/me/notifications/settings')
+    return settings
+  }
+
+  /**
+   * Update notification settings
+   */
+  async updateNotificationSettings(data: Partial<NotificationSettings>): Promise<NotificationSettings> {
+    const settings = await apiClient.put<NotificationSettings>('/users/me/notifications/settings', data)
+    return settings
+  }
+
+  /**
+   * Get privacy settings
+   */
+  async getPrivacySettings(): Promise<PrivacySettings> {
+    const settings = await apiClient.get<PrivacySettings>('/users/me/privacy')
+    return settings
+  }
+
+  /**
+   * Update privacy settings
+   */
+  async updatePrivacySettings(data: Partial<PrivacySettings>): Promise<PrivacySettings> {
+    const settings = await apiClient.put<PrivacySettings>('/users/me/privacy', data)
+    return settings
+  }
+
+  /**
+   * Get API tokens
+   */
+  async getApiTokens(): Promise<ApiToken[]> {
+    const tokens = await apiClient.get<ApiToken[]>('/users/me/tokens')
+    return tokens
+  }
+
+  /**
+   * Create API token
+   */
+  async createApiToken(data: { name: string; description?: string }): Promise<ApiToken> {
+    const token = await apiClient.post<ApiToken>('/users/me/tokens', data)
+    return token
+  }
+
+  /**
+   * Delete API token
+   */
+  async deleteApiToken(tokenId: string): Promise<void> {
+    await apiClient.delete(`/users/me/tokens/${tokenId}`)
   }
 }
 

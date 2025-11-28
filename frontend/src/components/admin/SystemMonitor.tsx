@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Row, Col, Typography, Statistic, Progress, Tag, Space, Button, Alert, List, Badge, Spin } from 'antd'
 import {
   CheckCircleOutlined,
@@ -11,7 +11,9 @@ import {
   ApiOutlined,
 } from '@ant-design/icons'
 import { DesignTokens } from '@/styles/design-tokens'
+import { enhancedAdminService } from '@/services/admin.enhanced.service'
 import type { SystemHealth, SystemMetrics, SystemAlert } from '@/types/admin'
+import { logger } from '@/utils/logger'
 import './SystemMonitor.css'
 
 const { Text } = Typography
@@ -22,61 +24,37 @@ export const SystemMonitor: React.FC = () => {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null)
   const [alerts, setAlerts] = useState<SystemAlert[]>([])
 
+  const fetchSystemData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [healthData, metricsData, alertsData] = await Promise.all([
+        enhancedAdminService.getSystemHealth(),
+        enhancedAdminService.getSystemMetrics(),
+        enhancedAdminService.getAlerts(false),
+      ])
+
+      setHealth(healthData as SystemHealth)
+      setMetrics(metricsData as SystemMetrics)
+      setAlerts(alertsData as SystemAlert[])
+    } catch (error) {
+      logger.error('Failed to fetch system data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchSystemData()
     const interval = setInterval(fetchSystemData, 30000) // Refresh every 30s
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchSystemData])
 
-  const fetchSystemData = async () => {
-    setLoading(true)
+  const handleResolveAlert = async (alertId: string) => {
     try {
-      // TODO: Replace with actual API calls
-      // const healthData = await enhancedAdminService.getSystemHealth()
-      // const metricsData = await enhancedAdminService.getSystemMetrics()
-      // const alertsData = await enhancedAdminService.getAlerts()
-
-      // Mock data
-      const mockHealth: SystemHealth = {
-        overall: 'healthy',
-        components: {
-          api: { status: 'operational', latency: 45 },
-          database: { status: 'operational', latency: 12 },
-          storage: { status: 'operational' },
-          queue: { status: 'operational' },
-        },
-        metrics: {
-          cpu: 45.2,
-          memory: 62.8,
-          disk: 58.3,
-        },
-      }
-
-      const mockMetrics: SystemMetrics = {
-        cpu: { usage: 45.2, load: [1.2, 1.5, 1.8] },
-        memory: { used: 6280, total: 10000, usagePercent: 62.8 },
-        disk: { used: 583, total: 1000, usagePercent: 58.3 },
-      }
-
-      const mockAlerts: SystemAlert[] = [
-        {
-          id: '1',
-          type: 'warning',
-          severity: 'medium',
-          title: 'High Memory Usage',
-          message: 'Memory usage above 60%',
-          timestamp: new Date().toISOString(),
-          resolved: false,
-        },
-      ]
-
-      setHealth(mockHealth)
-      setMetrics(mockMetrics)
-      setAlerts(mockAlerts)
+      await enhancedAdminService.resolveAlert(alertId)
+      setAlerts(alerts.filter((a) => a.id !== alertId))
     } catch (error) {
-      console.error('Failed to fetch system data:', error)
-    } finally {
-      setLoading(false)
+      logger.error('Failed to resolve alert:', error)
     }
   }
 
@@ -289,10 +267,7 @@ export const SystemMonitor: React.FC = () => {
                 description={alert.message}
                 showIcon
                 closable
-                onClose={() => {
-                  // TODO: Resolve alert
-                  setAlerts(alerts.filter((a) => a.id !== alert.id))
-                }}
+                onClose={() => handleResolveAlert(alert.id)}
                 style={{ marginBottom: 8 }}
               />
             )}

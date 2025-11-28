@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Space, Typography, Tag, Button, Tooltip, Progress, Alert, Spin } from 'antd'
+import { Card, Space, Typography, Tag, Button, Tooltip, Progress, Alert, Spin, message } from 'antd'
 import {
   BulbOutlined,
   CheckCircleOutlined,
@@ -11,6 +11,7 @@ import {
 import type { ParameterRecommendation, PipelineRecommendation } from '@/types/ai'
 import { aiService } from '@/services/ai.service'
 import { DesignTokens } from '@/styles/design-tokens'
+import { logger } from '@/utils/logger'
 import './ParameterRecommendation.css'
 
 const { Text, Paragraph, Title } = Typography
@@ -34,6 +35,7 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
   const [recommendation, setRecommendation] = useState<PipelineRecommendation | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [expandedParams, setExpandedParams] = useState<Set<string>>(new Set())
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   useEffect(() => {
     fetchRecommendations()
@@ -97,6 +99,26 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
       return DesignTokens.colors.warning.main
     }
     return DesignTokens.colors.error.main
+  }
+
+  const handleFeedback = async (helpful: boolean) => {
+    if (!recommendation || feedbackSubmitted) {
+      return
+    }
+
+    try {
+      // Use pipelineType_timestamp as recommendation ID
+      const recommendationId = `${recommendation.pipelineType}_${recommendation.timestamp}`
+      await aiService.submitFeedback(recommendationId, {
+        helpful,
+        comments: `Pipeline: ${recommendation.pipelineType}, Sample: ${sampleType || 'N/A'}, Organism: ${organism || 'N/A'}`,
+      })
+      setFeedbackSubmitted(true)
+      message.success('Thank you for your feedback!')
+    } catch (err) {
+      logger.error('Failed to submit feedback:', err)
+      message.error('Failed to submit feedback')
+    }
   }
 
   const getConfidenceLabel = (confidence: number): string => {
@@ -305,28 +327,18 @@ export const ParameterRecommendationWidget: React.FC<ParameterRecommendationProp
       {/* Feedback */}
       <div className="recommendation-feedback">
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Was this recommendation helpful?
+          {feedbackSubmitted ? 'Thank you for your feedback!' : 'Was this recommendation helpful?'}
         </Text>
-        <Space>
-          <Button
-            size="small"
-            icon={<LikeOutlined />}
-            onClick={() => {
-              // TODO: Submit positive feedback
-            }}
-          >
-            Yes
-          </Button>
-          <Button
-            size="small"
-            icon={<DislikeOutlined />}
-            onClick={() => {
-              // TODO: Submit negative feedback
-            }}
-          >
-            No
-          </Button>
-        </Space>
+        {!feedbackSubmitted && (
+          <Space>
+            <Button size="small" icon={<LikeOutlined />} onClick={() => handleFeedback(true)}>
+              Yes
+            </Button>
+            <Button size="small" icon={<DislikeOutlined />} onClick={() => handleFeedback(false)}>
+              No
+            </Button>
+          </Space>
+        )}
       </div>
     </Card>
   )

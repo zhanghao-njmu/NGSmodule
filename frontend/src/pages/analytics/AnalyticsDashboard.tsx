@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Row, Col, Typography, Select, Space, Button, Statistic, Progress, Tag, Tabs, Alert } from 'antd'
 import {
   LineChartOutlined,
@@ -14,7 +14,9 @@ import {
 } from '@ant-design/icons'
 import { PageHeader, StatisticCard, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import type { AnalyticsSummary, TrendAnalysis } from '@/types/analytics'
+import { analyticsService } from '@/services/analytics.service'
 import { DesignTokens } from '@/styles/design-tokens'
+import { logger } from '@/utils/logger'
 import './AnalyticsDashboard.css'
 
 const { Title, Text } = Typography
@@ -28,95 +30,26 @@ export const AnalyticsDashboard: React.FC = () => {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [trends, setTrends] = useState<TrendAnalysis[]>([])
 
-  useEffect(() => {
-    fetchAnalytics()
-  }, [period])
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API calls
-      // const data = await analyticsService.getAnalyticsSummary(period)
-      // setSummary(data)
-
-      // Mock data
-      const mockSummary: AnalyticsSummary = {
-        period,
-        projectStats: {
-          total: 45,
-          active: 12,
-          completed: 28,
-          failed: 5,
-          successRate: 84.8,
-        },
-        sampleStats: {
-          total: 342,
-          processed: 298,
-          pending: 44,
-          avgQualityScore: 87.3,
-        },
-        pipelineStats: {
-          totalRuns: 156,
-          successfulRuns: 142,
-          failedRuns: 14,
-          avgRuntime: '4.2 hours',
-          avgCost: 28.5,
-        },
-        storageStats: {
-          totalUsed: 1247,
-          totalAvailable: 2000,
-          usageByType: {
-            fastq: 658,
-            bam: 412,
-            vcf: 98,
-            reports: 79,
-          },
-          trend: 'increasing',
-        },
-        activityStats: {
-          dailyActiveUsers: 24,
-          totalSessions: 186,
-          avgSessionDuration: '42 min',
-          peakUsageHour: 14,
-        },
-      }
-      setSummary(mockSummary)
-
-      // Mock trends
-      const mockTrends: TrendAnalysis[] = [
-        {
-          metric: 'Project Success Rate',
-          currentValue: 84.8,
-          previousValue: 81.2,
-          change: 3.6,
-          changePercent: 4.4,
-          trend: 'up',
-        },
-        {
-          metric: 'Avg Quality Score',
-          currentValue: 87.3,
-          previousValue: 85.9,
-          change: 1.4,
-          changePercent: 1.6,
-          trend: 'up',
-        },
-        {
-          metric: 'Pipeline Failures',
-          currentValue: 14,
-          previousValue: 19,
-          change: -5,
-          changePercent: -26.3,
-          trend: 'down',
-        },
-      ]
-      setTrends(mockTrends)
+      const [summaryData, trendsData] = await Promise.all([
+        analyticsService.getAnalyticsSummary(period),
+        analyticsService.getTrendAnalysis(['Project Success Rate', 'Avg Quality Score', 'Pipeline Failures']),
+      ])
+      setSummary(summaryData)
+      setTrends(trendsData)
     } catch (error) {
-      console.error('Failed to fetch analytics:', error)
+      logger.error('Failed to fetch analytics:', error)
     } finally {
       setLoading(false)
       setInitialLoad(false)
     }
-  }
+  }, [period])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     if (trend === 'up') {
