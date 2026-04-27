@@ -28,18 +28,19 @@ class AnalyticsService {
 
   /**
    * Get analytics summary for dashboard
+   * 对接后端 GET /analytics/dashboard
    */
   async getAnalyticsSummary(
-    period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week'
+    _period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week'
   ): Promise<AnalyticsSummary> {
-    const summary = await apiClient.get<AnalyticsSummary>('/analytics/summary', {
-      params: { period },
-    })
+    // 后端使用 /dashboard 端点（单数）替代 /summary
+    const summary = await apiClient.get<AnalyticsSummary>('/analytics/dashboard')
     return summary
   }
 
   /**
    * Get time series data for metrics
+   * 对接后端 GET /analytics/timeseries/{metric}
    */
   async getTimeSeriesData(
     metric: string,
@@ -47,20 +48,31 @@ class AnalyticsService {
     endDate: string,
     interval: 'hour' | 'day' | 'week' | 'month' = 'day'
   ): Promise<TimeSeriesData[]> {
-    const data = await apiClient.get<TimeSeriesData[]>('/analytics/timeseries', {
-      params: { metric, startDate, endDate, interval },
+    // 后端使用 metric 作为路径参数
+    const data = await apiClient.get<TimeSeriesData[]>(`/analytics/timeseries/${metric}`, {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+        time_range: interval === 'hour' ? 'hour' : interval === 'day' ? 'day' : interval === 'week' ? 'week' : 'month',
+      },
     })
     return data
   }
 
   /**
    * Get trend analysis for metrics
+   * 对接后端 GET /analytics/trends/{metric}
+   * 注意: 后端目前每次只支持单个 metric，需要循环调用
    */
   async getTrendAnalysis(metrics: string[]): Promise<TrendAnalysis[]> {
-    const trends = await apiClient.post<TrendAnalysis[]>('/analytics/trends', {
-      metrics,
-    })
-    return trends
+    const results = await Promise.all(
+      metrics.map((metric) =>
+        apiClient.get<TrendAnalysis>(`/analytics/trends/${metric}`, {
+          params: { time_range: 'month' },
+        })
+      )
+    )
+    return results
   }
 
   // ============================================================
@@ -69,21 +81,25 @@ class AnalyticsService {
 
   /**
    * Compare multiple items
+   * 对接后端 POST /analytics/projects/compare
    */
   async compareProjects(projectIds: string[]): Promise<ProjectComparison> {
+    // 后端期望项目ID数组直接作为请求体
     const comparison = await apiClient.post<ProjectComparison>(
-      '/analytics/items/compare',
-      { projectIds }
+      '/analytics/projects/compare',
+      projectIds,
+      { params: { metric: 'success_rate' } }
     )
     return comparison
   }
 
   /**
    * Get project performance analysis
+   * 对接后端 GET /analytics/projects/{project_id}/performance
    */
   async getProjectPerformance(projectId: string): Promise<ProjectPerformance> {
     const performance = await apiClient.get<ProjectPerformance>(
-      `/analytics/items/${projectId}/performance`
+      `/analytics/projects/${projectId}/performance`
     )
     return performance
   }
