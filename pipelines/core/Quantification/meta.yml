@@ -1,0 +1,64 @@
+name: Quantification
+display_name: Read Quantification
+category: Quantification
+version: 1.0.0
+description: >
+  Per-sample read counting against a GTF annotation using featureCounts.
+  Produces a per-sample counts table plus a summary; merging into a project
+  matrix happens at the analysis stage.
+requires:
+  - Alignment
+tools:
+  - subread >= 2.0
+  - samtools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: rna
+  strand_specific: 0
+  feature_type: exon
+  meta_feature: gene_id
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates input BAM directory.
+  strand_specific:
+    type: enum
+    values: ["0", "1", "2"]
+    default: "0"
+    description: featureCounts strand mode (0=unstranded, 1=forward, 2=reverse).
+  feature_type:
+    type: string
+    default: exon
+    description: GTF feature column 3 to count against (default 'exon').
+  meta_feature:
+    type: string
+    default: gene_id
+    description: GTF attribute used as count grouping (default 'gene_id').
+  gtf:
+    type: path
+    required: false
+    description: GTF annotation file. Auto-resolved via iGenomes if unset.
+  threads_featurecounts:
+    type: int
+    min: 1
+    max: 64
+    default: 4
+    description: featureCounts -T threads.
+estimated_minutes_per_sample: 15
+resources:
+  mem: 16G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: counts_tab
+    pattern: "{sample}.{aligner}.counts.tab"
+  - kind: counts_summary
+    pattern: "{sample}.{aligner}.counts.tab.summary"
