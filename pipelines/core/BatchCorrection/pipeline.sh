@@ -54,10 +54,13 @@ run_BatchCorrection_for_project() {
 
   emit_status "[_project] BatchCorrection: method=$method"
 
-  module_rscript_run \
-    --script "$bc_script" \
-    --required "$required_pkg" \
-    --args "$matrix $SampleInfoFile $out_dir $method"
+  if ! module_rscript_run \
+       --script "$bc_script" \
+       --required "$required_pkg" \
+       --args "$matrix $SampleInfoFile $out_dir $method"; then
+    log_error "[_project] BatchCorrection R script failed"
+    return 1
+  fi
 
   if ! is_dry_run; then
     [[ -f "$out_dir/counts.matrix.corrected.tab" ]] && \

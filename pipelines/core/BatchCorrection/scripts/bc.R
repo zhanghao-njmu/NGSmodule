@@ -102,8 +102,12 @@ if (method == "combat_seq") {
   } else {
     log_corrected <- limma::removeBatchEffect(log_counts, batch = batch)
   }
-  # Round back to integer counts (clamped at 0)
-  corrected <- pmax(0L, round(expm1(log_corrected)))
+  # Round back to integer counts (clamped at 0). pmax(scalar, matrix) drops
+  # dimensions, so build the result element-wise then restore dim/dimnames.
+  corrected <- round(expm1(log_corrected))
+  corrected[corrected < 0] <- 0
+  dim(corrected) <- dim(log_corrected)
+  dimnames(corrected) <- dimnames(log_corrected)
   storage.mode(corrected) <- "integer"
 } else {
   stop(sprintf("Unknown method '%s'; valid: combat_seq, limma", method))

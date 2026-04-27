@@ -1,0 +1,71 @@
+name: DifferentialMethylation
+display_name: Differential Methylation (CpG Welch t-test)
+category: Methylation
+version: 1.0.0
+scope: project
+description: >
+  Project-level differential methylation between two groups. Reads
+  per-sample bismark.cov.gz files emitted by MethylationExtraction,
+  filters by min_cov, computes per-CpG Welch's t-test on logit-
+  transformed methylation rates, and reports BH-adjusted q-values.
+  Pure base R — no Bioconductor required for the default engine.
+  Users can plug in methylKit via --dm_script.
+requires:
+  - MethylationExtraction
+tools:
+  - Rscript >= 4.0
+default_params:
+  Aligner: bismark
+  min_cov: 3
+  max_qval: 0.05
+  min_meth_diff: 25
+params_schema:
+  Aligner:
+    type: enum
+    values: [bismark, bismark_bowtie2, bismark_hisat2]
+    default: bismark
+    required: true
+    description: Aligner used upstream (locates the cov files).
+  group_a:
+    type: string
+    required: true
+    description: Reference group label (matches Group column in SampleInfoFile).
+  group_b:
+    type: string
+    required: true
+    description: Test group label — meth_diff is mean(group_b) - mean(group_a).
+  min_cov:
+    type: int
+    min: 1
+    max: 1000
+    default: 3
+    description: Drop CpGs with <min_cov reads in any sample.
+  max_qval:
+    type: float
+    default: 0.05
+    description: BH-adjusted p-value (FDR) threshold for significance.
+  min_meth_diff:
+    type: float
+    default: 25
+    description: Minimum |% methylation difference| for significance (0-100).
+  dm_script:
+    type: path
+    required: false
+    description: Override the bundled CpG t-test with your own R script.
+estimated_minutes_per_sample: 15
+resources:
+  mem: 32G
+  time: "4:00:00"
+  cpus_per_task: 4
+  partition: medium
+  queue: main
+inputs:
+  kind: bismark_coverage
+  pattern: "{sample}.{aligner}.bismark.cov.gz"
+outputs:
+  - kind: dm_results_full
+    pattern: "dm_results_{group_b}_vs_{group_a}.tab"
+  - kind: dm_results_significant
+    pattern: "dm_significant_{group_b}_vs_{group_a}.tab"
+  - kind: dm_summary_json
+    pattern: "summary.json"

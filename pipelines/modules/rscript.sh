@@ -63,8 +63,10 @@ module_rscript_run() {
     return 1
   fi
 
-  if [[ -n "$required" ]]; then
+  if [[ -n "$required" ]] && ! { declare -f is_dry_run >/dev/null && is_dry_run; }; then
     # Comma- or space-separated list of required packages.
+    # Skip the check in dry-run mode — the test fixture shouldn't fail
+    # just because the user's CI box is missing Bioconductor packages.
     local IFS=', '
     # shellcheck disable=SC2206
     local pkgs=($required)

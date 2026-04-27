@@ -43,9 +43,12 @@ run_postQuantificationQC_for_project() {
 
   emit_status "[_project] postQuantificationQC: running $(basename "$qc_script")"
 
-  module_rscript_run \
-    --script "$qc_script" \
-    --args "$matrix ${SampleInfoFile:-} $out_dir"
+  if ! module_rscript_run \
+       --script "$qc_script" \
+       --args "$matrix ${SampleInfoFile:-} $out_dir"; then
+    log_error "[_project] postQuantificationQC R script failed"
+    return 1
+  fi
 
   if ! is_dry_run; then
     [[ -f "$out_dir/library_sizes.tab"     ]] && emit_artifact postQC_library_sizes "$out_dir/library_sizes.tab"

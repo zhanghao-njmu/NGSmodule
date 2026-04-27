@@ -68,10 +68,13 @@ run_DifferentialExpression_for_project() {
 
   emit_status "[_project] DifferentialExpression: $group_b vs $group_a (FDR<${max_padj}, |log2FC|>=${min_log2fc})"
 
-  module_rscript_run \
-    --script "$de_script" \
-    --required "edgeR" \
-    --args "$matrix $SampleInfoFile $out_dir ${max_padj:-0.05} ${min_log2fc:-1} ${min_count:-10} $group_a $group_b"
+  if ! module_rscript_run \
+       --script "$de_script" \
+       --required "edgeR" \
+       --args "$matrix $SampleInfoFile $out_dir ${max_padj:-0.05} ${min_log2fc:-1} ${min_count:-10} $group_a $group_b"; then
+    log_error "[_project] DifferentialExpression R script failed"
+    return 1
+  fi
 
   if ! is_dry_run; then
     local results_full="$out_dir/de_results_${group_b}_vs_${group_a}.tab"

@@ -1,0 +1,54 @@
+name: MethylationExtraction
+display_name: Methylation Extraction (Bismark)
+category: Methylation
+version: 1.0.0
+description: >
+  Per-sample bismark methylation extraction. Reads the Bismark BAM
+  produced by Alignment (Aligner=bismark, SequenceType=bisulfite),
+  emits gzipped per-position coverage files (.bismark.cov.gz),
+  bedGraph, M-bias / splitting reports, and a self-contained HTML
+  bismark2report. Output is consumable by methylKit downstream.
+requires:
+  - Alignment
+tools:
+  - bismark >= 0.24
+  - samtools >= 1.19
+default_params:
+  Aligner: bismark
+  SequenceType: bisulfite
+params_schema:
+  Aligner:
+    type: enum
+    values: [bismark, bismark_bowtie2, bismark_hisat2]
+    default: bismark
+    required: true
+    description: Bisulfite aligner used upstream.
+  SequenceType:
+    type: enum
+    values: [bisulfite]
+    default: bisulfite
+    required: true
+    description: Must be bisulfite — methylation extraction is BS-seq specific.
+  genome_folder:
+    type: path
+    required: false
+    description: Path to the bismark genome folder. Auto-resolved via iGenomes when unset.
+estimated_minutes_per_sample: 60
+resources:
+  mem: 32G
+  time: "4:00:00"
+  cpus_per_task: 8
+  partition: medium
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.bam"
+outputs:
+  - kind: bismark_coverage
+    pattern: "{sample}.{aligner}.bismark.cov.gz"
+  - kind: bismark_bedgraph
+    pattern: "{sample}.{aligner}.bedGraph.gz"
+  - kind: bismark_cytosine_report
+    pattern: "{sample}.{aligner}.CpG_report.txt.gz"
+  - kind: bismark_html_report
+    pattern: "bismark2report/{sample}*.html"
