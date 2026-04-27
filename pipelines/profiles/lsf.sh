@@ -31,9 +31,9 @@ profile_submit_sample() {
 #BSUB -J ngs.${pipeline}.${sample}
 #BSUB -o ${out_log}
 #BSUB -e ${err_log}
-${R[queue]:+#BSUB -q ${R[queue]}}
-${R[mem]:+#BSUB -M ${R[mem]}}
-${R[time]:+#BSUB -W ${R[time]}}
+${R[queue]:+#BSUB -q "${R[queue]}"}
+${R[mem]:+#BSUB -M "${R[mem]}"}
+${R[time]:+#BSUB -W "${R[time]}"}
 ${R[cpus_per_task]:+#BSUB -n ${R[cpus_per_task]}}
 ${R[extra]:+#BSUB ${R[extra]}}
 set -euo pipefail

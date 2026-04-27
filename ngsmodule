@@ -283,6 +283,7 @@ cmd_trace() {
     return 1
   fi
   if ! command -v jq >/dev/null 2>&1; then
+    echo "WARN: jq not found — printing raw state.json (install jq for formatted lineage)" >&2
     cat "$state"
     return 0
   fi

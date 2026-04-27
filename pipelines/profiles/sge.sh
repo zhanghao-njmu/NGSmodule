@@ -32,9 +32,9 @@ profile_submit_sample() {
 #$ -o ${out_log}
 #$ -e ${err_log}
 #$ -cwd
-${R[queue]:+#$ -q ${R[queue]}}
-${R[mem]:+#$ -l h_vmem=${R[mem]}}
-${R[time]:+#$ -l h_rt=${R[time]}}
+${R[queue]:+#$ -q "${R[queue]}"}
+${R[mem]:+#$ -l h_vmem="${R[mem]}"}
+${R[time]:+#$ -l h_rt="${R[time]}"}
 ${R[cpus_per_task]:+#$ -pe smp ${R[cpus_per_task]}}
 ${R[extra]:+#$ ${R[extra]}}
 set -euo pipefail

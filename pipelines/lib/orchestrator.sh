@@ -169,6 +169,8 @@ pipeline_run_one() {
   version="$(pipeline_version "$pipeline")"
   ngs_state_stage_begin "$sample" "$pipeline" "$version"
   ngs_benchmark_begin "$sample" "$pipeline"
+  # Guarantee bench-file cleanup even if state writes below blow up.
+  trap 'ngs_benchmark_end' RETURN
 
   local rc=0
   local attempt=1
@@ -208,7 +210,7 @@ pipeline_run_one() {
       --benchmark "$bench_json"
     log_error "[$sample] $pipeline FAILED"
   fi
-  ngs_benchmark_end
+  # ngs_benchmark_end is invoked via the RETURN trap registered above.
   return $rc
 }
 

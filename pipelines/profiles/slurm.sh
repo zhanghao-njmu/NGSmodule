@@ -40,9 +40,9 @@ profile_submit_sample() {
 #SBATCH --job-name=ngs.${pipeline}.${sample}
 #SBATCH --output=${out_log}
 #SBATCH --error=${err_log}
-${R[partition]:+#SBATCH --partition=${R[partition]}}
-${R[mem]:+#SBATCH --mem=${R[mem]}}
-${R[time]:+#SBATCH --time=${R[time]}}
+${R[partition]:+#SBATCH --partition=\"${R[partition]}\"}
+${R[mem]:+#SBATCH --mem=\"${R[mem]}\"}
+${R[time]:+#SBATCH --time=\"${R[time]}\"}
 ${R[cpus_per_task]:+#SBATCH --cpus-per-task=${R[cpus_per_task]}}
 ${R[extra]:+#SBATCH ${R[extra]}}
 set -euo pipefail

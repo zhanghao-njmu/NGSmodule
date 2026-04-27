@@ -90,10 +90,14 @@ pipeline_schema_load() {
       # Strip surrounding quotes.
       val="${val%\"}"; val="${val#\"}"
       val="${val%\'}"; val="${val#\'}"
-      # Strip surrounding [ ] for inline lists, normalise comma+space → comma.
+      # Strip surrounding [ ] for inline lists, normalise comma+space → comma,
+      # and strip per-element quotes so `[STAR, "bwa-mem2", hisat2]` becomes
+      # `STAR,bwa-mem2,hisat2`.
       if [[ "$val" =~ ^\[(.*)\]$ ]]; then
         val="${BASH_REMATCH[1]}"
         val="${val// /}"
+        val="${val//\"/}"
+        val="${val//\'/}"
       fi
       _out["$param.$key"]="$val"
       continue
@@ -277,6 +281,12 @@ pipeline_lint() {
   declare -A SCHEMA
   pipeline_schema_load "$meta" SCHEMA
   local params="${SCHEMA[__params__]:-}"
+  # Warn if the block is declared but empty (likely an editing accident).
+  if grep -qE '^params_schema:[[:space:]]*$' "$meta" && [[ -z "$params" ]]; then
+    printf '⚠ %s: params_schema: block declared but contains no parameters\n' \
+      "$pipeline" >&2
+    issues=$((issues + 1))
+  fi
   local p type values minv maxv
   for p in $params; do
     type="${SCHEMA[$p.type]:-string}"
