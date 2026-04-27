@@ -167,3 +167,58 @@ module_gatk_merge_vcfs() {
   NGS_MODULE_CURRENT_TOOL=gatk \
     module_run "gatk MergeVcfs" "$(_gatk_bin)" "${args[@]}"
 }
+
+# ---------------------------------------------------------------------------
+# Somatic variant calling. Tumor-only mode is the default (matches the legacy
+# Analysis/GATK/GATK-somatic-short-variant.sh which used GATK3 -T MuTect2).
+# Pass --normal-bam to enable proper tumor-normal pair calling.
+# ---------------------------------------------------------------------------
+module_gatk_mutect2() {
+  local tumor_bam="" normal_bam="" tumor_name="" normal_name=""
+  local ref="" out="" bam_out="" germline_resource="" panel_of_normals=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --tumor-bam)         tumor_bam="$2"; shift 2 ;;
+      --normal-bam)        normal_bam="$2"; shift 2 ;;
+      --tumor-name)        tumor_name="$2"; shift 2 ;;
+      --normal-name)       normal_name="$2"; shift 2 ;;
+      --ref)               ref="$2"; shift 2 ;;
+      --out)               out="$2"; shift 2 ;;
+      --bam-out)           bam_out="$2"; shift 2 ;;
+      --germline-resource) germline_resource="$2"; shift 2 ;;
+      --panel-of-normals)  panel_of_normals="$2"; shift 2 ;;
+      *) echo "module_gatk_mutect2: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${tumor_bam:?--tumor-bam required}"; : "${ref:?--ref required}"; : "${out:?--out required}"
+
+  local args=(Mutect2 -R "$ref" -I "$tumor_bam" -O "$out")
+  [[ -n "$tumor_name"        ]] && args+=(-tumor "$tumor_name")
+  [[ -n "$normal_bam"        ]] && args+=(-I "$normal_bam")
+  [[ -n "$normal_name"       ]] && args+=(-normal "$normal_name")
+  [[ -n "$bam_out"           ]] && args+=(--bam-output "$bam_out")
+  [[ -n "$germline_resource" ]] && args+=(--germline-resource "$germline_resource")
+  [[ -n "$panel_of_normals"  ]] && args+=(--panel-of-normals "$panel_of_normals")
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk Mutect2" "$(_gatk_bin)" "${args[@]}"
+}
+
+# Mutect2 emits a stats file alongside the VCF that FilterMutectCalls needs;
+# we rely on GATK's default stats path (<vcf>.stats) — caller doesn't pass it.
+module_gatk_filter_mutect_calls() {
+  local vcf="" ref="" out=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --vcf) vcf="$2"; shift 2 ;;
+      --ref) ref="$2"; shift 2 ;;
+      --out) out="$2"; shift 2 ;;
+      *) echo "module_gatk_filter_mutect_calls: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${vcf:?--vcf required}"; : "${ref:?--ref required}"; : "${out:?--out required}"
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk FilterMutectCalls" "$(_gatk_bin)" \
+      FilterMutectCalls -R "$ref" -V "$vcf" -O "$out"
+}

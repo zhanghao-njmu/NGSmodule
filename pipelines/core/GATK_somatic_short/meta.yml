@@ -1,0 +1,55 @@
+name: GATK_somatic_short
+display_name: GATK Somatic Short Variants (Mutect2)
+category: VariantCalling
+version: 1.0.0
+description: >
+  GATK4 Mutect2-based somatic short-variant pipeline. Defaults to tumor-only
+  mode (one BAM per sample, like the legacy Analysis/GATK script). When the
+  ConfigFile sets $normal_sample to a sister sample's name, runs in proper
+  tumor-normal pair mode for that pairing. BQSR is optional; FilterMutectCalls
+  is always applied.
+requires:
+  - Alignment
+tools:
+  - gatk4 >= 4.4
+  - bcftools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+  skip_bqsr: false
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM.
+  skip_bqsr:
+    type: bool
+    default: false
+    description: Skip BQSR if true (or no known sites supplied).
+  genome:
+    type: path
+    required: false
+    description: Reference FASTA. Auto-resolved via iGenomes when unset.
+estimated_minutes_per_sample: 240
+resources:
+  mem: 32G
+  time: "8:00:00"
+  cpus_per_task: 4
+  partition: long
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.dedup.bam | {sample}.{aligner}.markdup.bam | {sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: somatic_vcf_raw
+    pattern: "{sample}.{aligner}.gatk.Mutect2.vcf.gz"
+  - kind: somatic_vcf_filtered
+    pattern: "{sample}.{aligner}.gatk.Mutect2.filter.vcf.gz"
