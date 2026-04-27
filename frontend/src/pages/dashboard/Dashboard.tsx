@@ -1,6 +1,12 @@
 /**
- * Dashboard Page
- * Refactored: Unified color usage with CSS variables
+ * Dashboard Page — TanStack Query migration.
+ *
+ * The previous version used a manual `useAsync` wrapper; now the same
+ * data flows through the shared query cache, so:
+ *   - Refetch happens automatically on window focus and every 60s
+ *   - Other pages that consume the same stats share this cached data
+ *   - WebSocket-driven cache invalidation keeps numbers live without
+ *     extra plumbing
  */
 import { Card, Row, Col, Statistic, Typography, Space, Tag, Progress } from 'antd'
 import {
@@ -10,10 +16,10 @@ import {
   ClockCircleOutlined,
   DatabaseOutlined,
 } from '@ant-design/icons'
+
 import { authStore } from '@/store/authStore'
 import { PageSkeleton, FadeIn, StaggeredList, EnhancedEmptyState } from '@/components/common'
-import { useAsync } from '@/hooks'
-import { statsService } from '@/services/stats.service'
+import { useDashboardStats } from '@/hooks/queries'
 import { formatFileSize } from '@/utils/format'
 import styles from './Dashboard.module.css'
 
@@ -22,36 +28,26 @@ const { Title, Text } = Typography
 export const Dashboard: React.FC = () => {
   const { user } = authStore()
 
-  // Using useAsync hook eliminates 20+ lines of boilerplate
-  const {
-    data: stats,
-    loading,
-    error,
-    execute: loadStats,
-  } = useAsync(
-    async () => {
-      // 获取仪表板统计数据并添加用户存储信息
-      const dashboardStats = await statsService.getDashboardStats()
-      return {
+  // Server-state via TanStack Query: shared cache, auto-refetch on focus,
+  // and live updates via the realtime layer mounted in MainLayout.
+  const { data: dashboardStats, isLoading, error, refetch } = useDashboardStats()
+
+  // Combine server-side stats with the auth user's storage usage so the
+  // storage card reflects per-user quota rather than system-wide totals.
+  const stats = dashboardStats
+    ? {
         ...dashboardStats,
-        storageUsed: user?.storage_used || 0,
-        storageQuota: user?.storage_quota || 107374182400, // 100GB 默认配额
+        storageUsed: user?.storage_used ?? dashboardStats.storageUsed ?? 0,
+        storageQuota: user?.storage_quota ?? dashboardStats.storageQuota ?? 107374182400,
       }
-    },
-    {
-      immediate: true,
-      onError: (err) => console.error('Failed to load dashboard stats:', err),
-    },
-  )
+    : null
 
   const storagePercent = stats ? Math.round((stats.storageUsed / stats.storageQuota) * 100) : 0
 
-  // Loading 状态 - Use PageSkeleton
-  if (loading) {
+  if (isLoading && !stats) {
     return <PageSkeleton hasHeader rows={4} />
   }
 
-  // 错误状态
   if (error) {
     return (
       <div className={styles.dashboard}>
@@ -59,11 +55,8 @@ export const Dashboard: React.FC = () => {
           <EnhancedEmptyState
             type="error"
             title="Error Loading Dashboard"
-            description={error?.message || 'Failed to load statistics. Please try again later.'}
-            action={{
-              text: 'Retry',
-              onClick: loadStats,
-            }}
+            description={(error as Error)?.message || 'Failed to load statistics. Please try again later.'}
+            action={{ text: 'Retry', onClick: () => refetch() }}
             size="default"
           />
         </FadeIn>
@@ -71,7 +64,6 @@ export const Dashboard: React.FC = () => {
     )
   }
 
-  // 无数据状态
   if (!stats) {
     return (
       <div className={styles.dashboard}>
@@ -89,7 +81,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className={styles.dashboard}>
-      {/* Header with Fade In */}
       <FadeIn direction="up" delay={0} duration={300}>
         <div className={styles.header}>
           <Space direction="vertical" size={4}>
@@ -104,7 +95,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Statistics Cards with Staggered Animation */}
       <StaggeredList staggerDelay={80} baseDelay={100} direction="up">
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={12} lg={6}>
@@ -165,7 +155,6 @@ export const Dashboard: React.FC = () => {
         </Row>
       </StaggeredList>
 
-      {/* Content Area with Fade In */}
       <FadeIn direction="up" delay={400} duration={300}>
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
           <Col xs={24} lg={16}>

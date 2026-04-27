@@ -1,8 +1,14 @@
 /**
- * Sample List Page - Complete CRUD for sample management
+ * Sample List Page — TanStack Query migration.
+ *
+ * Replaces the previous Zustand store with the shared query cache:
+ *   - List re-fetches automatically when the project filter changes
+ *   - All mutations (create / update / delete / CSV import) auto-invalidate
+ *     the list and stats caches
+ *   - Loading/refetch states come straight from `isFetching`
  */
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Button,
   Space,
@@ -28,8 +34,16 @@ import {
   TeamOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { useSampleStore } from '../../store/sampleStore'
-import { useProjectStore } from '../../store/projectStore'
+import dayjs from 'dayjs'
+
+import {
+  useSampleList,
+  useCreateSample,
+  useUpdateSample,
+  useDeleteSample,
+  useImportSamplesFromCSV,
+  useProjectList,
+} from '@/hooks/queries'
 import {
   PageHeader,
   DataTable,
@@ -38,47 +52,49 @@ import {
   PageSkeleton,
   FadeIn,
   StaggeredList,
-} from '../../components/common'
-import type { FilterConfig } from '../../components/common'
-import { toast, notifications } from '../../utils/notification'
+} from '@/components/common'
+import type { FilterConfig } from '@/components/common'
+import { toast, notifications } from '@/utils/notification'
 import { useFilters } from '@/hooks'
-import type { Sample, SampleCreate, SampleUpdate } from '../../types/sample'
-import dayjs from 'dayjs'
+import type { Sample, SampleCreate, SampleUpdate } from '@/types/sample'
 
 const { Option } = Select
 
 export const SampleList: React.FC = () => {
-  const { samples, loading, fetchSamples, createSample, updateSample, deleteSample, importFromCSV } = useSampleStore()
-  const { items, fetchItems } = useProjectStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingSample, setEditingSample] = useState<Sample | null>(null)
   const [form] = Form.useForm()
 
-  // Using useFilters hook eliminates repetitive filter state management
+  // ---- queries -------------------------------------------------------------
+
+  const { data: projectList } = useProjectList({ limit: 200 })
+  const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
+
+  // List is enabled only after a project is selected (matches old behavior)
+  const { data: sampleResponse, isLoading, isFetching } = useSampleList(selectedProject || undefined)
+  const samples: Sample[] = useMemo(
+    () => (sampleResponse as any)?.items ?? (sampleResponse as any) ?? [],
+    [sampleResponse],
+  )
+
+  // ---- mutations -----------------------------------------------------------
+
+  const createMutation = useCreateSample()
+  const updateMutation = useUpdateSample()
+  const deleteMutation = useDeleteSample()
+  const importMutation = useImportSamplesFromCSV()
+
+  // ---- filters -------------------------------------------------------------
+
   const {
     filters,
     setFilter,
     resetFilters: handleFilterReset,
   } = useFilters({
-    initialFilters: {
-      search: '',
-      group: 'all',
-      layout: 'all',
-    },
+    initialFilters: { search: '', group: 'all', layout: 'all' },
   })
 
-  useEffect(() => {
-    fetchItems()
-  }, [])
-
-  useEffect(() => {
-    if (selectedProject) {
-      fetchSamples({ project_id: selectedProject })
-    }
-  }, [selectedProject])
-
-  // Filter configuration
   const filterConfigs: FilterConfig[] = [
     {
       type: 'search',
@@ -109,40 +125,54 @@ export const SampleList: React.FC = () => {
     },
   ]
 
-  // Filter samples
-  const filteredSamples = samples.filter((sample) => {
-    const matchesSearch =
-      filters.search === '' ||
-      sample.sample_id.toLowerCase().includes(filters.search.toLowerCase()) ||
-      sample.run_id?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      sample.batch_id?.toLowerCase().includes(filters.search.toLowerCase())
-    const matchesGroup = filters.group === 'all' || sample.group_name === filters.group
-    const matchesLayout = filters.layout === 'all' || sample.layout === filters.layout
-    return matchesSearch && matchesGroup && matchesLayout
-  })
-
-  // Calculate statistics
-  const groupStats = samples.reduce(
-    (acc, sample) => {
-      const group = sample.group_name || 'Unknown'
-      acc[group] = (acc[group] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
+  const filteredSamples = useMemo(
+    () =>
+      samples.filter((sample) => {
+        const matchesSearch =
+          filters.search === '' ||
+          sample.sample_id.toLowerCase().includes(filters.search.toLowerCase()) ||
+          sample.run_id?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          sample.batch_id?.toLowerCase().includes(filters.search.toLowerCase())
+        const matchesGroup = filters.group === 'all' || sample.group_name === filters.group
+        const matchesLayout = filters.layout === 'all' || sample.layout === filters.layout
+        return matchesSearch && matchesGroup && matchesLayout
+      }),
+    [samples, filters],
   )
 
-  const layoutStats = samples.reduce(
-    (acc, sample) => {
-      const layout = sample.layout || 'Unknown'
-      acc[layout] = (acc[layout] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
+  const groupStats = useMemo(
+    () =>
+      samples.reduce(
+        (acc, sample) => {
+          const group = sample.group_name || 'Unknown'
+          acc[group] = (acc[group] || 0) + 1
+          return acc
+        },
+        {} as Record<string, number>,
+      ),
+    [samples],
   )
 
-  const totalFiles = samples.reduce((sum, sample) => sum + (sample.file_count || 0), 0)
+  const layoutStats = useMemo(
+    () =>
+      samples.reduce(
+        (acc, sample) => {
+          const layout = sample.layout || 'Unknown'
+          acc[layout] = (acc[layout] || 0) + 1
+          return acc
+        },
+        {} as Record<string, number>,
+      ),
+    [samples],
+  )
 
-  // 打开创建/编辑模态框
+  const totalFiles = useMemo(
+    () => samples.reduce((sum, sample) => sum + (sample.file_count || 0), 0),
+    [samples],
+  )
+
+  // ---- handlers ------------------------------------------------------------
+
   const showModal = (sample?: Sample) => {
     if (sample) {
       setEditingSample(sample)
@@ -160,20 +190,17 @@ export const SampleList: React.FC = () => {
     setIsModalVisible(true)
   }
 
-  // 关闭模态框
   const handleCancel = () => {
     setIsModalVisible(false)
     setEditingSample(null)
     form.resetFields()
   }
 
-  // 提交表单（创建或更新）
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
 
       if (editingSample) {
-        // 更新样本
         const updateData: SampleUpdate = {
           sample_id: values.sample_id,
           run_id: values.run_id,
@@ -181,10 +208,9 @@ export const SampleList: React.FC = () => {
           layout: values.layout,
           batch_id: values.batch_id,
         }
-        await updateSample(editingSample.id, updateData)
+        await updateMutation.mutateAsync({ id: editingSample.id, data: updateData })
         toast.success('Sample updated successfully')
       } else {
-        // 创建样本
         if (!selectedProject) {
           toast.warning('Please select a project first')
           return
@@ -197,37 +223,27 @@ export const SampleList: React.FC = () => {
           layout: values.layout,
           batch_id: values.batch_id,
         }
-        await createSample(createData)
+        await createMutation.mutateAsync(createData)
         toast.success('Sample created successfully')
       }
 
       handleCancel()
-      // 刷新列表
-      if (selectedProject) {
-        fetchSamples({ project_id: selectedProject })
-      }
     } catch (error) {
       console.error('Failed to save sample:', error)
       toast.error('Failed to save sample')
     }
   }
 
-  // 删除样本
   const handleDelete = async (id: string) => {
     try {
-      await deleteSample(id)
+      await deleteMutation.mutateAsync(id)
       toast.success('Sample deleted successfully')
-      // 刷新列表
-      if (selectedProject) {
-        fetchSamples({ project_id: selectedProject })
-      }
     } catch (error) {
       console.error('Failed to delete sample:', error)
       toast.error('Failed to delete sample')
     }
   }
 
-  // CSV 导入
   const handleCSVImport = async (file: File) => {
     if (!selectedProject) {
       toast.warning('Please select a project first')
@@ -236,17 +252,17 @@ export const SampleList: React.FC = () => {
 
     const loadingToast = toast.loading('Importing samples...')
     try {
-      await importFromCSV(selectedProject, file)
+      await importMutation.mutateAsync({ projectId: selectedProject, file })
       loadingToast()
       notifications.uploadSuccess()
-      // 刷新列表
-      fetchSamples({ project_id: selectedProject })
-    } catch (error) {
+    } catch {
       loadingToast()
       notifications.uploadError()
     }
-    return false // 阻止自动上传
+    return false // prevent AntD auto-upload
   }
+
+  // ---- table config --------------------------------------------------------
 
   const columns: ColumnsType<Sample> = [
     {
@@ -280,7 +296,8 @@ export const SampleList: React.FC = () => {
       dataIndex: 'layout',
       key: 'layout',
       width: 100,
-      render: (layout) => (layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-'),
+      render: (layout) =>
+        layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-',
     },
     {
       title: 'Batch',
@@ -320,7 +337,7 @@ export const SampleList: React.FC = () => {
             onConfirm={() => handleDelete(record.id)}
             okText="Yes, Delete"
             cancelText="Cancel"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
           >
             <Tooltip title="Delete">
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
@@ -331,14 +348,14 @@ export const SampleList: React.FC = () => {
     },
   ]
 
-  // Show skeleton while loading
-  if (loading && samples.length === 0 && selectedProject) {
+  // Skeleton on first load only — background refetches don't reset the UI
+  if (isLoading && samples.length === 0 && selectedProject) {
     return <PageSkeleton hasHeader hasFilters rows={8} />
   }
 
   return (
     <div>
-      {/* Statistics Cards - Only show when project selected and has samples */}
+      {/* Statistics */}
       {selectedProject && samples.length > 0 && (
         <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -402,9 +419,9 @@ export const SampleList: React.FC = () => {
                 style={{ width: 300 }}
                 value={selectedProject || undefined}
                 onChange={setSelectedProject}
-                loading={items.length === 0}
+                loading={projects.length === 0}
               >
-                {items.map((p) => (
+                {projects.map((p: any) => (
                   <Option key={p.id} value={p.id}>
                     {p.name}
                   </Option>
@@ -423,11 +440,20 @@ export const SampleList: React.FC = () => {
           right={
             <>
               <Upload beforeUpload={handleCSVImport} accept=".csv" showUploadList={false}>
-                <Button icon={<UploadOutlined />} disabled={!selectedProject}>
+                <Button
+                  icon={<UploadOutlined />}
+                  disabled={!selectedProject}
+                  loading={importMutation.isPending}
+                >
                   Import CSV
                 </Button>
               </Upload>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()} disabled={!selectedProject}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => showModal()}
+                disabled={!selectedProject}
+              >
                 New Sample
               </Button>
             </>
@@ -444,9 +470,13 @@ export const SampleList: React.FC = () => {
             description="Please select a project from the dropdown above to view and manage samples"
             size="default"
           />
-        ) : filteredSamples.length === 0 && !loading ? (
+        ) : filteredSamples.length === 0 && !isFetching ? (
           <EnhancedEmptyState
-            type={filters.search || filters.group !== 'all' || filters.layout !== 'all' ? 'noSearchResults' : 'noData'}
+            type={
+              filters.search || filters.group !== 'all' || filters.layout !== 'all'
+                ? 'noSearchResults'
+                : 'noData'
+            }
             title={
               filters.search || filters.group !== 'all' || filters.layout !== 'all'
                 ? 'No matching samples'
@@ -469,7 +499,7 @@ export const SampleList: React.FC = () => {
             columns={columns}
             dataSource={filteredSamples}
             rowKey="id"
-            loading={loading}
+            loading={isFetching && samples.length === 0}
             pagination={{ pageSize: 20 }}
             emptyText="No Samples"
             emptyDescription="Select a project and add samples or import from CSV"
@@ -477,17 +507,22 @@ export const SampleList: React.FC = () => {
         )}
       </FadeIn>
 
-      {/* 创建/编辑样本模态框 */}
+      {/* Create / Edit Modal */}
       <Modal
         title={editingSample ? 'Edit Sample' : 'Create Sample'}
         open={isModalVisible}
         onOk={handleSubmit}
         onCancel={handleCancel}
         okText={editingSample ? 'Update' : 'Create'}
+        confirmLoading={createMutation.isPending || updateMutation.isPending}
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="sample_id" label="Sample ID" rules={[{ required: true, message: 'Please enter sample ID' }]}>
+          <Form.Item
+            name="sample_id"
+            label="Sample ID"
+            rules={[{ required: true, message: 'Please enter sample ID' }]}
+          >
             <Input placeholder="e.g., Sample001" />
           </Form.Item>
 

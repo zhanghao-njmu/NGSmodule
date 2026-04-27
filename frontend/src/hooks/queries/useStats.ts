@@ -58,3 +58,17 @@ export function useTrends(metric: string, period?: 'daily' | 'weekly' | 'monthly
     staleTime: 5 * 60_000,
   })
 }
+
+/**
+ * Dashboard composite hook — wraps the legacy `getDashboardStats` shim
+ * for compatibility, but everything underneath benefits from query
+ * caching and realtime invalidation.
+ */
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ['stats', 'dashboard'],
+    queryFn: () => statsService.getDashboardStats(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+}
