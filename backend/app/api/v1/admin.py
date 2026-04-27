@@ -567,6 +567,363 @@ async def get_admin_system_statistics(
 
 
 # ============================================================================
+# Enhanced Features
+# ============================================================================
+
+@router.get("/system/metrics", response_model=SystemMetrics)
+async def get_system_metrics(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed system metrics (Admin only)
+
+    **Returns:**
+    - CPU usage and load average
+    - Memory usage (used, total, percentage)
+    - Disk usage (used, total, percentage)
+    - Network I/O statistics (optional)
+
+    **Use Case:**
+    - Real-time system monitoring
+    - Performance analysis
+    - Resource capacity planning
+    """
+    service = AdminService(db)
+    return service.get_system_metrics()
+
+
+@router.get("/alerts", response_model=AlertListResponse)
+async def get_alerts(
+    resolved: bool = False,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get system alerts (Admin only)
+
+    **Parameters:**
+    - resolved: Filter by resolution status (default: false, show unresolved)
+
+    **Returns:**
+    - List of alerts with type, severity, and details
+    - Total count
+    - Unresolved count
+
+    **Alert Types:**
+    - error: System errors requiring immediate attention
+    - warning: Potential issues to monitor
+    - info: Informational messages
+
+    **Severity Levels:**
+    - critical: Immediate action required
+    - high: Important, address soon
+    - medium: Monitor and plan
+    - low: Informational
+    """
+    service = AdminService(db)
+    return service.get_alerts(resolved=resolved)
+
+
+@router.post("/alerts/{alert_id}/resolve")
+async def resolve_alert(
+    alert_id: str,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Resolve an alert (Admin only)
+
+    **Parameters:**
+    - alert_id: ID of the alert to resolve
+
+    **Returns:**
+    - Updated alert with resolved status
+    - Resolution timestamp
+    - Admin user who resolved it
+    """
+    service = AdminService(db)
+    alert = service.resolve_alert(alert_id, str(current_admin.id))
+
+    return {
+        "success": True,
+        "message": "Alert resolved successfully",
+        "alert": alert
+    }
+
+
+@router.get("/audit-logs", response_model=List[AuditLogEntry])
+async def get_audit_logs(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    user_id: Optional[str] = None,
+    action: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get audit logs (Admin only)
+
+    **Parameters:**
+    - start_date: Filter by start date
+    - end_date: Filter by end date
+    - user_id: Filter by admin user ID
+    - action: Filter by action type
+    - skip: Pagination offset
+    - limit: Number of records to return
+
+    **Returns:**
+    - List of audit log entries
+    - Each entry includes:
+      - Timestamp
+      - Action performed
+      - Admin user who performed it
+      - Target user/resource
+      - IP address
+      - Details
+
+    **Tracked Actions:**
+    - User management (create, update, delete, role change)
+    - System configuration changes
+    - Password resets
+    - Backups and restores
+    - System cleanup operations
+    """
+    service = AdminService(db)
+    return service.get_audit_logs(
+        start_date=start_date,
+        end_date=end_date,
+        user_id=user_id,
+        action=action,
+        skip=skip,
+        limit=limit
+    )
+
+
+@router.post("/audit-logs/export", response_model=ExportResult)
+async def export_audit_logs(
+    request: AuditLogExportRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Export audit logs (Admin only)
+
+    **Parameters:**
+    - start_date: Start date for export range
+    - end_date: End date for export range
+    - user_id: Filter by admin user ID
+    - action: Filter by action type
+    - format: Export format (json or csv)
+
+    **Returns:**
+    - Download URL for the exported file
+    - File name
+    - File size
+    - Expiration timestamp
+
+    **Note:**
+    - Export files expire after 24 hours
+    - Large exports may take time to generate
+    """
+    service = AdminService(db)
+    return service.export_audit_logs(
+        start_date=request.start_date,
+        end_date=request.end_date,
+        user_id=request.user_id,
+        action=request.action,
+        format=request.format
+    )
+
+
+@router.get("/resources/usage", response_model=ResourceUsage)
+async def get_resource_usage(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get resource usage summary (Admin only)
+
+    **Returns:**
+    - Storage: total and used disk space
+    - Compute: active jobs and limits
+    - Memory: total and used RAM
+
+    **Use Case:**
+    - Capacity planning
+    - Resource allocation
+    - Quota management
+    """
+    service = AdminService(db)
+    return service.get_resource_usage()
+
+
+@router.post("/backups", response_model=BackupInfo)
+async def create_backup(
+    request: BackupRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Create system backup (Admin only)
+
+    **Parameters:**
+    - backup_type: Type of backup (full, incremental, database_only, files_only)
+    - description: Optional description for the backup
+    - compress: Whether to compress the backup (default: true)
+
+    **Returns:**
+    - Backup ID
+    - File path
+    - Size
+    - Creation timestamp
+    - Status
+
+    **Backup Types:**
+    - full: Complete system backup
+    - incremental: Only changes since last backup
+    - database_only: Database only
+    - files_only: User files only
+
+    **Note:**
+    - Full backups are recommended weekly
+    - Incremental backups can be done daily
+    """
+    service = AdminService(db)
+    return service.create_backup(
+        backup_type=request.backup_type,
+        description=request.description,
+        admin_user_id=str(current_admin.id),
+        compress=request.compress
+    )
+
+
+@router.get("/backups", response_model=BackupListResponse)
+async def list_backups(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    List all backups (Admin only)
+
+    **Returns:**
+    - List of all system backups
+    - Each backup includes:
+      - ID
+      - Type
+      - File path
+      - Size
+      - Creation date
+      - Status
+
+    **Use Case:**
+    - Backup management
+    - Restore planning
+    - Storage cleanup
+    """
+    service = AdminService(db)
+    return service.list_backups()
+
+
+@router.get("/jobs", response_model=JobListResponse)
+async def list_jobs(
+    status: Optional[JobStatus] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    List system jobs (Admin only)
+
+    **Parameters:**
+    - status: Filter by job status (pending, running, completed, failed, cancelled)
+    - skip: Pagination offset
+    - limit: Number of records to return
+
+    **Returns:**
+    - List of jobs with details
+    - Each job includes:
+      - ID
+      - Type (pipeline, backup, cleanup, export, import)
+      - Status
+      - User
+      - Timestamps
+      - Progress
+      - Result or error message
+
+    **Use Case:**
+    - Job monitoring
+    - Performance analysis
+    - Error diagnosis
+    """
+    service = AdminService(db)
+    return service.list_jobs(status=status, skip=skip, limit=limit)
+
+
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_job(
+    job_id: str,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Cancel a running job (Admin only)
+
+    **Parameters:**
+    - job_id: ID of the job to cancel
+
+    **Returns:**
+    - Updated job with cancelled status
+    - Cancellation message
+
+    **Note:**
+    - Only pending or running jobs can be cancelled
+    - Cancellation may take time to complete
+    """
+    service = AdminService(db)
+    job = service.cancel_job(job_id)
+
+    return {
+        "success": True,
+        "message": "Job cancelled successfully",
+        "job": job
+    }
+
+
+@router.post("/jobs/{job_id}/retry")
+async def retry_job(
+    job_id: str,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Retry a failed job (Admin only)
+
+    **Parameters:**
+    - job_id: ID of the job to retry
+
+    **Returns:**
+    - New job with pending status
+    - Retry message
+
+    **Note:**
+    - Only failed jobs can be retried
+    - A new job will be created with the same parameters
+    """
+    service = AdminService(db)
+    job = service.retry_job(job_id)
+
+    return {
+        "success": True,
+        "message": "Job queued for retry",
+        "job": job
+    }
+
+
+# ============================================================================
 # Health Check
 # ============================================================================
 

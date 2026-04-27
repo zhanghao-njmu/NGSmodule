@@ -775,3 +775,322 @@ class AdminService:
             disk_usage=disk.percent,
             generated_at=datetime.utcnow()
         )
+
+    # ========================================================================
+    # Enhanced Features
+    # ========================================================================
+
+    def get_system_metrics(self) -> SystemMetrics:
+        """Get detailed system metrics"""
+        import psutil
+
+        # CPU metrics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        load_avg = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else [0, 0, 0]
+
+        # Memory metrics
+        memory = psutil.virtual_memory()
+
+        # Disk metrics
+        disk = psutil.disk_usage('/')
+
+        # Network metrics (optional)
+        try:
+            network = psutil.net_io_counters()
+            network_info = {
+                "bytes_sent": network.bytes_sent,
+                "bytes_recv": network.bytes_recv,
+                "packets_sent": network.packets_sent,
+                "packets_recv": network.packets_recv
+            }
+        except:
+            network_info = None
+
+        return SystemMetrics(
+            cpu={
+                "usage": cpu_percent,
+                "load": list(load_avg)
+            },
+            memory={
+                "used": memory.used,
+                "total": memory.total,
+                "usagePercent": memory.percent
+            },
+            disk={
+                "used": disk.used,
+                "total": disk.total,
+                "usagePercent": disk.percent
+            },
+            network=network_info
+        )
+
+    def get_alerts(self, resolved: bool = False) -> AlertListResponse:
+        """Get system alerts"""
+        # Mock implementation - in production would query alert database
+        alerts = []
+
+        # Check for common alert conditions
+        import psutil
+
+        # Disk space alert
+        disk = psutil.disk_usage('/')
+        if disk.percent > 90:
+            alerts.append(Alert(
+                id=str(uuid.uuid4()),
+                type=AlertType.ERROR,
+                severity=AlertSeverity.CRITICAL,
+                title="Disk Space Critical",
+                message=f"Disk usage is at {disk.percent}%. Immediate action required.",
+                timestamp=datetime.utcnow(),
+                resolved=False,
+                source="system_monitor"
+            ))
+        elif disk.percent > 80:
+            alerts.append(Alert(
+                id=str(uuid.uuid4()),
+                type=AlertType.WARNING,
+                severity=AlertSeverity.HIGH,
+                title="Disk Space Warning",
+                message=f"Disk usage is at {disk.percent}%. Consider cleanup.",
+                timestamp=datetime.utcnow(),
+                resolved=False,
+                source="system_monitor"
+            ))
+
+        # Memory alert
+        memory = psutil.virtual_memory()
+        if memory.percent > 90:
+            alerts.append(Alert(
+                id=str(uuid.uuid4()),
+                type=AlertType.WARNING,
+                severity=AlertSeverity.HIGH,
+                title="High Memory Usage",
+                message=f"Memory usage is at {memory.percent}%.",
+                timestamp=datetime.utcnow(),
+                resolved=False,
+                source="system_monitor"
+            ))
+
+        # Filter by resolved status
+        filtered_alerts = [a for a in alerts if a.resolved == resolved]
+
+        return AlertListResponse(
+            alerts=filtered_alerts,
+            total=len(filtered_alerts),
+            unresolved_count=len([a for a in alerts if not a.resolved])
+        )
+
+    def resolve_alert(self, alert_id: str, admin_user_id: str) -> Alert:
+        """Resolve an alert"""
+        # Mock implementation - in production would update alert database
+        return Alert(
+            id=alert_id,
+            type=AlertType.INFO,
+            severity=AlertSeverity.LOW,
+            title="Alert Resolved",
+            message="Alert has been marked as resolved",
+            timestamp=datetime.utcnow() - timedelta(hours=1),
+            resolved=True,
+            resolved_at=datetime.utcnow(),
+            resolved_by=admin_user_id,
+            source="manual"
+        )
+
+    def get_audit_logs(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> List[AuditLogEntry]:
+        """Get audit logs"""
+        # Mock implementation - in production would query audit log database
+        logs = []
+
+        # Generate sample audit log entries
+        sample_actions = [
+            (AuditAction.USER_CREATED, "Created new user account"),
+            (AuditAction.USER_ROLE_CHANGED, "Changed user role from user to admin"),
+            (AuditAction.CONFIG_UPDATED, "Updated system configuration"),
+            (AuditAction.PASSWORD_RESET, "Reset user password"),
+        ]
+
+        for i in range(min(10, limit)):
+            action_item, detail = sample_actions[i % len(sample_actions)]
+            logs.append(AuditLogEntry(
+                id=str(uuid.uuid4()),
+                timestamp=datetime.utcnow() - timedelta(hours=i),
+                action=action_item,
+                admin_user_id=user_id or str(uuid.uuid4()),
+                admin_username="admin",
+                target_user_id=str(uuid.uuid4()),
+                target_username=f"user{i}",
+                details={"description": detail},
+                ip_address="192.168.1.100"
+            ))
+
+        return logs
+
+    def export_audit_logs(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        user_id: Optional[str] = None,
+        action: Optional[AuditAction] = None,
+        format: str = "json"
+    ) -> ExportResult:
+        """Export audit logs"""
+        # Mock implementation - in production would generate actual file
+        filename = f"audit_logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}"
+
+        return ExportResult(
+            download_url=f"/api/v1/admin/downloads/{filename}",
+            file_name=filename,
+            file_size=1024 * 100,  # 100 KB
+            expires_at=datetime.utcnow() + timedelta(hours=24)
+        )
+
+    def get_resource_usage(self) -> ResourceUsage:
+        """Get resource usage summary"""
+        import psutil
+
+        # Storage usage
+        disk = psutil.disk_usage('/')
+        storage_used = self.db.query(func.sum(User.storage_used)).scalar() or 0
+        storage_quota = self.db.query(func.sum(User.storage_quota)).scalar() or 0
+
+        # Compute usage (running tasks)
+        active_tasks = self.db.query(func.count(PipelineTask.id)).filter(
+            PipelineTask.status.in_(['pending', 'running'])
+        ).scalar() or 0
+
+        # Memory usage
+        memory = psutil.virtual_memory()
+
+        return ResourceUsage(
+            storage={
+                "total": int(disk.total),
+                "used": int(storage_used)
+            },
+            compute={
+                "active": active_tasks,
+                "limit": 100  # Mock limit
+            },
+            memory={
+                "total": int(memory.total),
+                "used": int(memory.used)
+            }
+        )
+
+    def create_backup(
+        self,
+        backup_type: BackupType,
+        description: Optional[str],
+        admin_user_id: str,
+        compress: bool = True
+    ) -> BackupInfo:
+        """Create system backup"""
+        # Mock implementation - in production would trigger actual backup
+        backup_id = str(uuid.uuid4())
+
+        return BackupInfo(
+            id=backup_id,
+            backup_type=backup_type,
+            file_path=f"/backups/{backup_id}.tar.gz" if compress else f"/backups/{backup_id}",
+            size=1024 * 1024 * 500,  # 500 MB mock size
+            compressed=compress,
+            description=description,
+            created_at=datetime.utcnow(),
+            created_by=admin_user_id,
+            status="completed"
+        )
+
+    def list_backups(self) -> BackupListResponse:
+        """List all backups"""
+        # Mock implementation - in production would list actual backup files
+        backups = []
+
+        for i in range(5):
+            backups.append(BackupInfo(
+                id=str(uuid.uuid4()),
+                backup_type=BackupType.FULL if i % 2 == 0 else BackupType.INCREMENTAL,
+                file_path=f"/backups/backup_{i}.tar.gz",
+                size=1024 * 1024 * (500 - i * 50),
+                compressed=True,
+                description=f"Automated backup {i+1}",
+                created_at=datetime.utcnow() - timedelta(days=i),
+                created_by="system",
+                status="completed"
+            ))
+
+        return BackupListResponse(
+            backups=backups,
+            total=len(backups)
+        )
+
+    def list_jobs(
+        self,
+        status: Optional[JobStatus] = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> JobListResponse:
+        """List system jobs"""
+        # Mock implementation - in production would query job queue
+        jobs = []
+
+        job_types = [JobType.PIPELINE, JobType.BACKUP, JobType.CLEANUP, JobType.EXPORT]
+        job_statuses = [JobStatus.PENDING, JobStatus.RUNNING, JobStatus.COMPLETED, JobStatus.FAILED]
+
+        for i in range(min(10, limit)):
+            job_status = status if status else job_statuses[i % len(job_statuses)]
+
+            jobs.append(JobInfo(
+                id=str(uuid.uuid4()),
+                type=job_types[i % len(job_types)],
+                status=job_status,
+                user_id=str(uuid.uuid4()),
+                username=f"user{i}",
+                created_at=datetime.utcnow() - timedelta(hours=i),
+                started_at=datetime.utcnow() - timedelta(hours=i, minutes=5) if job_status != JobStatus.PENDING else None,
+                completed_at=datetime.utcnow() - timedelta(hours=i-1) if job_status in [JobStatus.COMPLETED, JobStatus.FAILED] else None,
+                progress=0.75 if job_status == JobStatus.RUNNING else (1.0 if job_status == JobStatus.COMPLETED else 0.0),
+                message=f"Processing job {i+1}"
+            ))
+
+        return JobListResponse(
+            jobs=jobs,
+            total=len(jobs),
+            page=skip // limit + 1,
+            page_size=limit
+        )
+
+    def cancel_job(self, job_id: str) -> JobInfo:
+        """Cancel a running job"""
+        # Mock implementation - in production would cancel actual job
+        return JobInfo(
+            id=job_id,
+            type=JobType.PIPELINE,
+            status=JobStatus.CANCELLED,
+            user_id=str(uuid.uuid4()),
+            username="user",
+            created_at=datetime.utcnow() - timedelta(hours=1),
+            started_at=datetime.utcnow() - timedelta(minutes=50),
+            completed_at=datetime.utcnow(),
+            progress=0.45,
+            message="Job cancelled by administrator"
+        )
+
+    def retry_job(self, job_id: str) -> JobInfo:
+        """Retry a failed job"""
+        # Mock implementation - in production would requeue job
+        return JobInfo(
+            id=job_id,
+            type=JobType.PIPELINE,
+            status=JobStatus.PENDING,
+            user_id=str(uuid.uuid4()),
+            username="user",
+            created_at=datetime.utcnow(),
+            message="Job requeued for retry"
+        )

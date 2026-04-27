@@ -454,3 +454,142 @@ class AdminOperationResponse(BaseModel):
     message: str
     details: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================================
+# System Metrics (Enhanced)
+# ============================================================================
+
+class SystemMetrics(BaseModel):
+    """Detailed system metrics"""
+    cpu: Dict[str, Any]  # {"usage": 45.2, "load": [1.2, 1.5, 1.8]}
+    memory: Dict[str, Any]  # {"used": 8192, "total": 16384, "usagePercent": 50.0}
+    disk: Dict[str, Any]  # {"used": 102400, "total": 512000, "usagePercent": 20.0}
+    network: Optional[Dict[str, Any]] = None
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================================
+# System Alerts
+# ============================================================================
+
+class AlertType(str, Enum):
+    """Alert type"""
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class AlertSeverity(str, Enum):
+    """Alert severity"""
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class Alert(BaseModel):
+    """System alert"""
+    id: str
+    type: AlertType
+    severity: AlertSeverity
+    title: str
+    message: str
+    timestamp: datetime
+    resolved: bool = False
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[str] = None
+    source: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class AlertListResponse(BaseModel):
+    """Alert list response"""
+    alerts: List[Alert]
+    total: int
+    unresolved_count: int
+
+
+# ============================================================================
+# Resource Management
+# ============================================================================
+
+class ResourceUsage(BaseModel):
+    """System resource usage"""
+    storage: Dict[str, int]  # {"total": 512000, "used": 102400}
+    compute: Dict[str, int]  # {"active": 5, "limit": 10}
+    memory: Dict[str, int]  # {"total": 16384, "used": 8192}
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ============================================================================
+# Job Management
+# ============================================================================
+
+class JobType(str, Enum):
+    """Job type"""
+    PIPELINE = "pipeline"
+    BACKUP = "backup"
+    CLEANUP = "cleanup"
+    EXPORT = "export"
+    IMPORT = "import"
+    SYSTEM_TASK = "system_task"
+
+
+class JobStatus(str, Enum):
+    """Job status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class JobInfo(BaseModel):
+    """Job information"""
+    id: str
+    type: JobType
+    status: JobStatus
+    user_id: str
+    username: Optional[str] = None
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    progress: Optional[float] = None  # 0.0 to 1.0
+    message: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+
+class JobListResponse(BaseModel):
+    """Job list response"""
+    jobs: List[JobInfo]
+    total: int
+    page: int
+    page_size: int
+
+
+class JobOperation(BaseModel):
+    """Job operation request"""
+    reason: Optional[str] = None
+
+
+# ============================================================================
+# Audit Log Export
+# ============================================================================
+
+class AuditLogExportRequest(BaseModel):
+    """Audit log export request"""
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    user_id: Optional[str] = None
+    action: Optional[AuditAction] = None
+    format: str = "json"  # json, csv
+
+
+class ExportResult(BaseModel):
+    """Export result"""
+    download_url: str
+    file_name: str
+    file_size: int
+    expires_at: datetime
