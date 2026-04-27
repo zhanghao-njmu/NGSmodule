@@ -1,7 +1,8 @@
 """
 Admin API endpoints for user management, system configuration, and logs
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Response
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import Optional, List
@@ -10,10 +11,44 @@ from app.core.database import get_db
 from app.core.deps import get_current_admin
 from app.models.user import User
 from app.services.admin_service import AdminService
+from app.services.audit_service import AuditService
 from app.schemas.admin import *
 
 
 router = APIRouter()
+
+
+def _audit_log(
+    db: Session,
+    request: Request,
+    admin: User,
+    action: str,
+    target_user_id: Optional[str] = None,
+    target_username: Optional[str] = None,
+    target_resource_type: Optional[str] = None,
+    target_resource_id: Optional[str] = None,
+    details: Optional[dict] = None,
+    status: str = "success",
+) -> None:
+    """Helper to record an audit log entry from an API endpoint."""
+    try:
+        AuditService(db).log_action(
+            action=action,
+            admin_user_id=str(admin.id),
+            admin_username=admin.username,
+            target_user_id=target_user_id,
+            target_username=target_username,
+            target_resource_type=target_resource_type,
+            target_resource_id=target_resource_id,
+            details=details,
+            status=status,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            request_id=request.headers.get("x-request-id"),
+        )
+    except Exception:
+        # Audit logging failures should not break the main operation
+        pass
 
 
 # ============================================================================
@@ -88,6 +123,7 @@ async def get_user_by_id(
 async def update_user_by_admin(
     user_id: str,
     update_data: UserUpdateRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -117,6 +153,16 @@ async def update_user_by_admin(
     # Update user
     updated_user = service.update_user(user_id, update_data)
 
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.USER_UPDATED.value,
+        target_user_id=user_id,
+        target_username=updated_user.username if updated_user else user.username,
+        target_resource_type="user",
+        target_resource_id=user_id,
+        details=update_data.dict(exclude_unset=True),
+    )
+
     return updated_user
 
 
@@ -124,6 +170,7 @@ async def update_user_by_admin(
 async def change_user_role(
     user_id: str,
     role_update: UserRoleUpdate,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -155,6 +202,16 @@ async def change_user_role(
             detail="User not found"
         )
 
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.USER_ROLE_CHANGED.value,
+        target_user_id=user_id,
+        target_username=user.username,
+        target_resource_type="user",
+        target_resource_id=user_id,
+        details={"new_role": role_update.role.value},
+    )
+
     return user
 
 
@@ -162,6 +219,7 @@ async def change_user_role(
 async def activate_deactivate_user(
     user_id: str,
     activation: UserActivationRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -194,6 +252,16 @@ async def activate_deactivate_user(
             detail="User not found"
         )
 
+    _audit_log(
+        db, request, current_admin,
+        action=(AuditAction.USER_ACTIVATED if activation.is_active else AuditAction.USER_DEACTIVATED).value,
+        target_user_id=user_id,
+        target_username=user.username,
+        target_resource_type="user",
+        target_resource_id=user_id,
+        details={"is_active": activation.is_active, "reason": activation.reason},
+    )
+
     return user
 
 
@@ -201,6 +269,7 @@ async def activate_deactivate_user(
 async def reset_user_password(
     user_id: str,
     password_reset: PasswordResetRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -232,6 +301,15 @@ async def reset_user_password(
             detail="User not found"
         )
 
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.PASSWORD_RESET.value,
+        target_user_id=user_id,
+        target_resource_type="user",
+        target_resource_id=user_id,
+        details={"notify_user": password_reset.notify_user},
+    )
+
     return AdminOperationResponse(
         success=True,
         message="Password reset successfully",
@@ -243,6 +321,7 @@ async def reset_user_password(
 async def delete_user_by_admin(
     user_id: str,
     deletion: UserDeletionRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -281,6 +360,10 @@ async def delete_user_by_admin(
             detail="You cannot delete your own account"
         )
 
+    # Capture username before deletion for audit log
+    target = service.get_user_detail(user_id)
+    target_username = target.username if target else None
+
     success = service.delete_user(user_id, deletion.transfer_data_to)
 
     if not success:
@@ -288,6 +371,19 @@ async def delete_user_by_admin(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.USER_DELETED.value,
+        target_user_id=user_id,
+        target_username=target_username,
+        target_resource_type="user",
+        target_resource_id=user_id,
+        details={
+            "transfer_data_to": deletion.transfer_data_to,
+            "reason": deletion.reason,
+        },
+    )
 
     return AdminOperationResponse(
         success=True,
@@ -330,6 +426,7 @@ async def get_system_configuration(
 @router.put("/config", response_model=SystemConfig)
 async def update_system_configuration(
     config_update: ConfigUpdateRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -348,6 +445,17 @@ async def update_system_configuration(
     - Some changes may require server restart
     """
     service = AdminService(db)
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.CONFIG_UPDATED.value,
+        target_resource_type="config",
+        target_resource_id=config_update.category.value,
+        details={
+            "category": config_update.category.value,
+            "updates": config_update.updates,
+            "reason": config_update.reason,
+        },
+    )
 
     return service.update_system_config(
         category=config_update.category,
@@ -359,6 +467,7 @@ async def update_system_configuration(
 @router.post("/config/reset", response_model=SystemConfig)
 async def reset_system_configuration(
     reset_request: ConfigResetRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -383,7 +492,18 @@ async def reset_system_configuration(
 
     service = AdminService(db)
 
-    return service.reset_system_config(reset_request.categories)
+    result = service.reset_system_config(reset_request.categories)
+
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.CONFIG_RESET.value,
+        target_resource_type="config",
+        details={
+            "categories": [c.value for c in reset_request.categories] if reset_request.categories else "all",
+        },
+    )
+
+    return result
 
 
 # ============================================================================
@@ -506,6 +626,7 @@ async def get_system_health(
 @router.post("/system/cleanup", response_model=CleanupResponse)
 async def cleanup_system(
     cleanup_options: CleanupOptions,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -532,7 +653,21 @@ async def cleanup_system(
     """
     service = AdminService(db)
 
-    return service.cleanup_system(cleanup_options)
+    result = service.cleanup_system(cleanup_options)
+
+    if not cleanup_options.dry_run:
+        _audit_log(
+            db, request, current_admin,
+            action=AuditAction.SYSTEM_CLEANUP.value,
+            target_resource_type="system",
+            details={
+                "options": cleanup_options.dict(),
+                "items_deleted": result.total_items_deleted,
+                "space_freed": result.total_space_freed,
+            },
+        )
+
+    return result
 
 
 # ============================================================================
@@ -762,7 +897,8 @@ async def get_resource_usage(
 
 @router.post("/backups", response_model=BackupInfo)
 async def create_backup(
-    request: BackupRequest,
+    backup_request: BackupRequest,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -792,12 +928,26 @@ async def create_backup(
     - Incremental backups can be done daily
     """
     service = AdminService(db)
-    return service.create_backup(
-        backup_type=request.backup_type,
-        description=request.description,
+    result = service.create_backup(
+        backup_type=backup_request.backup_type,
+        description=backup_request.description,
         admin_user_id=str(current_admin.id),
-        compress=request.compress
+        compress=backup_request.compress
     )
+
+    _audit_log(
+        db, request, current_admin,
+        action=AuditAction.BACKUP_CREATED.value,
+        target_resource_type="backup",
+        target_resource_id=result.id,
+        details={
+            "backup_type": backup_request.backup_type.value,
+            "compress": backup_request.compress,
+            "description": backup_request.description,
+        },
+    )
+
+    return result
 
 
 @router.get("/backups", response_model=BackupListResponse)

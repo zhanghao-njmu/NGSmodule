@@ -825,75 +825,66 @@ class AdminService:
         )
 
     def get_alerts(self, resolved: bool = False) -> AlertListResponse:
-        """Get system alerts"""
-        # Mock implementation - in production would query alert database
-        alerts = []
+        """Get system alerts from the database, generating new ones as needed."""
+        from app.services.alert_service import AlertService
 
-        # Check for common alert conditions
-        import psutil
+        alert_service = AlertService(self.db)
 
-        # Disk space alert
-        disk = psutil.disk_usage('/')
-        if disk.percent > 90:
-            alerts.append(Alert(
-                id=str(uuid.uuid4()),
-                type=AlertType.ERROR,
-                severity=AlertSeverity.CRITICAL,
-                title="Disk Space Critical",
-                message=f"Disk usage is at {disk.percent}%. Immediate action required.",
-                timestamp=datetime.utcnow(),
-                resolved=False,
-                source="system_monitor"
-            ))
-        elif disk.percent > 80:
-            alerts.append(Alert(
-                id=str(uuid.uuid4()),
-                type=AlertType.WARNING,
-                severity=AlertSeverity.HIGH,
-                title="Disk Space Warning",
-                message=f"Disk usage is at {disk.percent}%. Consider cleanup.",
-                timestamp=datetime.utcnow(),
-                resolved=False,
-                source="system_monitor"
-            ))
+        # Run health check to generate any new alerts
+        try:
+            alert_service.check_system_health()
+        except Exception as e:
+            logger.error(f"Health check during alert query failed: {e}")
 
-        # Memory alert
-        memory = psutil.virtual_memory()
-        if memory.percent > 90:
-            alerts.append(Alert(
-                id=str(uuid.uuid4()),
-                type=AlertType.WARNING,
-                severity=AlertSeverity.HIGH,
-                title="High Memory Usage",
-                message=f"Memory usage is at {memory.percent}%.",
-                timestamp=datetime.utcnow(),
-                resolved=False,
-                source="system_monitor"
-            ))
+        # Query persisted alerts
+        db_alerts = alert_service.get_alerts(resolved=resolved, limit=200)
+        unresolved_count = alert_service.count_alerts(resolved=False)
 
-        # Filter by resolved status
-        filtered_alerts = [a for a in alerts if a.resolved == resolved]
+        alerts = [
+            Alert(
+                id=str(a.id),
+                type=AlertType(a.type),
+                severity=AlertSeverity(a.severity),
+                title=a.title,
+                message=a.message,
+                timestamp=a.timestamp,
+                resolved=a.resolved,
+                resolved_at=a.resolved_at,
+                resolved_by=str(a.resolved_by) if a.resolved_by else None,
+                source=a.source,
+                metadata=a.alert_metadata,
+            )
+            for a in db_alerts
+        ]
 
         return AlertListResponse(
-            alerts=filtered_alerts,
-            total=len(filtered_alerts),
-            unresolved_count=len([a for a in alerts if not a.resolved])
+            alerts=alerts,
+            total=len(alerts),
+            unresolved_count=unresolved_count,
         )
 
     def resolve_alert(self, alert_id: str, admin_user_id: str) -> Alert:
-        """Resolve an alert"""
-        # Mock implementation - in production would update alert database
+        """Resolve an alert in the database."""
+        from app.services.alert_service import AlertService
+
+        alert_service = AlertService(self.db)
+        db_alert = alert_service.resolve_alert(alert_id, admin_user_id)
+
+        if not db_alert:
+            raise ValueError(f"Alert {alert_id} not found")
+
         return Alert(
-            id=alert_id,
-            type=AlertType.INFO,
-            severity=AlertSeverity.LOW,
-            title="Alert Resolved",
-            message="Alert has been marked as resolved",
-            timestamp=datetime.utcnow() - timedelta(hours=1),
-            resolved=True,
-            resolved_at=datetime.utcnow(),
-            resolved_by=admin_user_id,
-            source="manual"
+            id=str(db_alert.id),
+            type=AlertType(db_alert.type),
+            severity=AlertSeverity(db_alert.severity),
+            title=db_alert.title,
+            message=db_alert.message,
+            timestamp=db_alert.timestamp,
+            resolved=db_alert.resolved,
+            resolved_at=db_alert.resolved_at,
+            resolved_by=str(db_alert.resolved_by) if db_alert.resolved_by else None,
+            source=db_alert.source,
+            metadata=db_alert.alert_metadata,
         )
 
     def get_audit_logs(
@@ -905,33 +896,34 @@ class AdminService:
         skip: int = 0,
         limit: int = 50
     ) -> List[AuditLogEntry]:
-        """Get audit logs"""
-        # Mock implementation - in production would query audit log database
-        logs = []
+        """Get audit logs from the database."""
+        from app.services.audit_service import AuditService
 
-        # Generate sample audit log entries
-        sample_actions = [
-            (AuditAction.USER_CREATED, "Created new user account"),
-            (AuditAction.USER_ROLE_CHANGED, "Changed user role from user to admin"),
-            (AuditAction.CONFIG_UPDATED, "Updated system configuration"),
-            (AuditAction.PASSWORD_RESET, "Reset user password"),
+        audit_service = AuditService(self.db)
+        db_logs = audit_service.get_logs(
+            start_date=start_date,
+            end_date=end_date,
+            admin_user_id=user_id,
+            action=action,
+            skip=skip,
+            limit=limit,
+        )
+
+        return [
+            AuditLogEntry(
+                id=str(log.id),
+                timestamp=log.timestamp,
+                action=AuditAction(log.action) if log.action in [a.value for a in AuditAction] else AuditAction.CONFIG_UPDATED,
+                admin_user_id=str(log.admin_user_id),
+                admin_username=log.admin_username,
+                target_user_id=str(log.target_user_id) if log.target_user_id else None,
+                target_username=log.target_username,
+                details=log.details or {},
+                ip_address=log.ip_address,
+                user_agent=log.user_agent,
+            )
+            for log in db_logs
         ]
-
-        for i in range(min(10, limit)):
-            action_item, detail = sample_actions[i % len(sample_actions)]
-            logs.append(AuditLogEntry(
-                id=str(uuid.uuid4()),
-                timestamp=datetime.utcnow() - timedelta(hours=i),
-                action=action_item,
-                admin_user_id=user_id or str(uuid.uuid4()),
-                admin_username="admin",
-                target_user_id=str(uuid.uuid4()),
-                target_username=f"user{i}",
-                details={"description": detail},
-                ip_address="192.168.1.100"
-            ))
-
-        return logs
 
     def export_audit_logs(
         self,
@@ -941,30 +933,77 @@ class AdminService:
         action: Optional[AuditAction] = None,
         format: str = "json"
     ) -> ExportResult:
-        """Export audit logs"""
-        # Mock implementation - in production would generate actual file
+        """Export audit logs to a downloadable file."""
+        from app.services.audit_service import AuditService
+        import json
+        from pathlib import Path
+
+        audit_service = AuditService(self.db)
+
+        action_str = action.value if action else None
+        logs = audit_service.get_logs(
+            start_date=start_date,
+            end_date=end_date,
+            admin_user_id=user_id,
+            action=action_str,
+            skip=0,
+            limit=100000,
+        )
+
+        # Determine export directory (use BACKUP_DIR/exports as a safe location)
+        from app.core.config import settings
+        export_dir = Path(settings.BACKUP_DIR) / "exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+
         filename = f"audit_logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}"
+        file_path = export_dir / filename
+
+        try:
+            if format == "csv":
+                csv_content = audit_service.export_logs_to_csv(
+                    start_date=start_date,
+                    end_date=end_date,
+                    admin_user_id=user_id,
+                    action=action_str,
+                )
+                file_path.write_text(csv_content)
+            else:  # json
+                data = [log.to_dict() for log in logs]
+                file_path.write_text(json.dumps(data, indent=2, default=str))
+
+            file_size = file_path.stat().st_size
+        except Exception as e:
+            logger.error(f"Failed to export audit logs: {e}")
+            file_size = 0
 
         return ExportResult(
             download_url=f"/api/v1/admin/downloads/{filename}",
             file_name=filename,
-            file_size=1024 * 100,  # 100 KB
+            file_size=file_size,
             expires_at=datetime.utcnow() + timedelta(hours=24)
         )
 
     def get_resource_usage(self) -> ResourceUsage:
-        """Get resource usage summary"""
+        """Get resource usage summary using real metrics."""
         import psutil
+        from app.services.job_service import JobService
 
         # Storage usage
         disk = psutil.disk_usage('/')
         storage_used = self.db.query(func.sum(User.storage_used)).scalar() or 0
-        storage_quota = self.db.query(func.sum(User.storage_quota)).scalar() or 0
 
-        # Compute usage (running tasks)
+        # Compute usage from actual job queue
+        job_service = JobService(self.db)
+        active_jobs = job_service.get_active_jobs_count()
+
+        # Active pipeline tasks
         active_tasks = self.db.query(func.count(PipelineTask.id)).filter(
             PipelineTask.status.in_(['pending', 'running'])
         ).scalar() or 0
+
+        # Compute limit from CPU count (rough estimate)
+        cpu_count = psutil.cpu_count() or 4
+        compute_limit = cpu_count * 4  # Allow 4 jobs per CPU
 
         # Memory usage
         memory = psutil.virtual_memory()
@@ -975,8 +1014,8 @@ class AdminService:
                 "used": int(storage_used)
             },
             compute={
-                "active": active_tasks,
-                "limit": 100  # Mock limit
+                "active": int(active_jobs + active_tasks),
+                "limit": compute_limit
             },
             memory={
                 "total": int(memory.total),
@@ -991,43 +1030,103 @@ class AdminService:
         admin_user_id: str,
         compress: bool = True
     ) -> BackupInfo:
-        """Create system backup"""
-        # Mock implementation - in production would trigger actual backup
-        backup_id = str(uuid.uuid4())
+        """
+        Create system backup asynchronously via Celery.
 
-        return BackupInfo(
-            id=backup_id,
-            backup_type=backup_type,
-            file_path=f"/backups/{backup_id}.tar.gz" if compress else f"/backups/{backup_id}",
-            size=1024 * 1024 * 500,  # 500 MB mock size
+        Returns a SystemBackup record with status='pending' that will be
+        updated by the Celery task as the backup progresses.
+        """
+        from app.services.job_service import JobService
+        from app.models.backup import SystemBackup
+        from app.core.config import settings as app_settings
+
+        # Create initial backup record
+        backup = SystemBackup(
+            backup_type=backup_type.value,
+            status="pending",
             compressed=compress,
             description=description,
-            created_at=datetime.utcnow(),
             created_by=admin_user_id,
-            status="completed"
+            expires_at=datetime.utcnow() + timedelta(days=app_settings.BACKUP_RETENTION_DAYS),
+        )
+        self.db.add(backup)
+        self.db.commit()
+        self.db.refresh(backup)
+
+        # Dispatch Celery task and create corresponding job record
+        try:
+            from app.workers.admin_tasks import create_backup_task
+
+            celery_result = create_backup_task.delay(
+                backup_id=str(backup.id),
+                backup_type=backup_type.value,
+                admin_user_id=admin_user_id,
+                description=description,
+                compress=compress,
+            )
+
+            # Track job
+            job_service = JobService(self.db)
+            job_service.create_job(
+                type="backup",
+                user_id=admin_user_id,
+                celery_task_id=celery_result.id,
+                parameters={
+                    "backup_id": str(backup.id),
+                    "backup_type": backup_type.value,
+                    "compress": compress,
+                },
+                message=f"Creating {backup_type.value} backup",
+            )
+        except Exception as e:
+            logger.error(f"Failed to dispatch backup task: {e}")
+            # Fallback: run synchronously
+            from app.services.backup_service import BackupService
+            backup_service = BackupService(self.db)
+            backup = backup_service.create_backup(
+                backup_type=backup_type.value,
+                admin_user_id=admin_user_id,
+                description=description,
+                compress=compress,
+            )
+
+        return BackupInfo(
+            id=str(backup.id),
+            backup_type=BackupType(backup.backup_type),
+            file_path=backup.file_path or "",
+            size=backup.size or 0,
+            compressed=backup.compressed,
+            description=backup.description,
+            created_at=backup.created_at,
+            created_by=str(backup.created_by),
+            status=backup.status,
         )
 
     def list_backups(self) -> BackupListResponse:
-        """List all backups"""
-        # Mock implementation - in production would list actual backup files
-        backups = []
+        """List all backups from the database."""
+        from app.services.backup_service import BackupService
 
-        for i in range(5):
-            backups.append(BackupInfo(
-                id=str(uuid.uuid4()),
-                backup_type=BackupType.FULL if i % 2 == 0 else BackupType.INCREMENTAL,
-                file_path=f"/backups/backup_{i}.tar.gz",
-                size=1024 * 1024 * (500 - i * 50),
-                compressed=True,
-                description=f"Automated backup {i+1}",
-                created_at=datetime.utcnow() - timedelta(days=i),
-                created_by="system",
-                status="completed"
-            ))
+        backup_service = BackupService(self.db)
+        db_backups = backup_service.list_backups(limit=100)
+
+        backups = [
+            BackupInfo(
+                id=str(b.id),
+                backup_type=BackupType(b.backup_type),
+                file_path=b.file_path or "",
+                size=b.size or 0,
+                compressed=b.compressed,
+                description=b.description,
+                created_at=b.created_at,
+                created_by=str(b.created_by),
+                status=b.status,
+            )
+            for b in db_backups
+        ]
 
         return BackupListResponse(
             backups=backups,
-            total=len(backups)
+            total=len(backups),
         )
 
     def list_jobs(
@@ -1036,61 +1135,110 @@ class AdminService:
         skip: int = 0,
         limit: int = 50
     ) -> JobListResponse:
-        """List system jobs"""
-        # Mock implementation - in production would query job queue
-        jobs = []
+        """List system jobs from the database, syncing with Celery state."""
+        from app.services.job_service import JobService
 
-        job_types = [JobType.PIPELINE, JobType.BACKUP, JobType.CLEANUP, JobType.EXPORT]
-        job_statuses = [JobStatus.PENDING, JobStatus.RUNNING, JobStatus.COMPLETED, JobStatus.FAILED]
+        job_service = JobService(self.db)
+        status_str = status.value if status else None
+        db_jobs = job_service.list_jobs(status=status_str, skip=skip, limit=limit)
 
-        for i in range(min(10, limit)):
-            job_status = status if status else job_statuses[i % len(job_statuses)]
+        # Sync running jobs with Celery to ensure up-to-date status
+        for job in db_jobs:
+            if job.status in ("pending", "running") and job.celery_task_id:
+                try:
+                    job_service.sync_with_celery(job)
+                except Exception as e:
+                    logger.error(f"Failed to sync job {job.id} with Celery: {e}")
 
-            jobs.append(JobInfo(
-                id=str(uuid.uuid4()),
-                type=job_types[i % len(job_types)],
-                status=job_status,
-                user_id=str(uuid.uuid4()),
-                username=f"user{i}",
-                created_at=datetime.utcnow() - timedelta(hours=i),
-                started_at=datetime.utcnow() - timedelta(hours=i, minutes=5) if job_status != JobStatus.PENDING else None,
-                completed_at=datetime.utcnow() - timedelta(hours=i-1) if job_status in [JobStatus.COMPLETED, JobStatus.FAILED] else None,
-                progress=0.75 if job_status == JobStatus.RUNNING else (1.0 if job_status == JobStatus.COMPLETED else 0.0),
-                message=f"Processing job {i+1}"
-            ))
+        total = job_service.count_jobs(status=status_str)
+
+        jobs = [
+            JobInfo(
+                id=str(j.id),
+                type=JobType(j.type) if j.type in [t.value for t in JobType] else JobType.SYSTEM_TASK,
+                status=JobStatus(j.status),
+                user_id=str(j.user_id) if j.user_id else "",
+                username=j.username,
+                created_at=j.created_at,
+                started_at=j.started_at,
+                completed_at=j.completed_at,
+                progress=j.progress,
+                message=j.message,
+                result=j.result,
+                error=j.error,
+            )
+            for j in db_jobs
+        ]
 
         return JobListResponse(
             jobs=jobs,
-            total=len(jobs),
-            page=skip // limit + 1,
-            page_size=limit
+            total=total,
+            page=skip // limit + 1 if limit > 0 else 1,
+            page_size=limit,
         )
 
     def cancel_job(self, job_id: str) -> JobInfo:
-        """Cancel a running job"""
-        # Mock implementation - in production would cancel actual job
+        """Cancel a running job via Celery and update database state."""
+        from app.services.job_service import JobService
+
+        job_service = JobService(self.db)
+        job = job_service.cancel_job(job_id)
+
+        if not job:
+            raise ValueError(f"Job {job_id} not found")
+
         return JobInfo(
-            id=job_id,
-            type=JobType.PIPELINE,
-            status=JobStatus.CANCELLED,
-            user_id=str(uuid.uuid4()),
-            username="user",
-            created_at=datetime.utcnow() - timedelta(hours=1),
-            started_at=datetime.utcnow() - timedelta(minutes=50),
-            completed_at=datetime.utcnow(),
-            progress=0.45,
-            message="Job cancelled by administrator"
+            id=str(job.id),
+            type=JobType(job.type) if job.type in [t.value for t in JobType] else JobType.SYSTEM_TASK,
+            status=JobStatus(job.status),
+            user_id=str(job.user_id) if job.user_id else "",
+            username=job.username,
+            created_at=job.created_at,
+            started_at=job.started_at,
+            completed_at=job.completed_at,
+            progress=job.progress,
+            message=job.message,
+            result=job.result,
+            error=job.error,
         )
 
     def retry_job(self, job_id: str) -> JobInfo:
-        """Retry a failed job"""
-        # Mock implementation - in production would requeue job
+        """Retry a failed job by creating a new job record and dispatching it."""
+        from app.services.job_service import JobService
+
+        job_service = JobService(self.db)
+        new_job = job_service.retry_job(job_id)
+
+        if not new_job:
+            raise ValueError(f"Job {job_id} not found or not in failed state")
+
+        # Re-dispatch the job to Celery based on its type
+        try:
+            if new_job.type == "backup":
+                from app.workers.admin_tasks import create_backup_task
+                params = new_job.parameters or {}
+                celery_result = create_backup_task.delay(
+                    backup_id=params.get("backup_id"),
+                    backup_type=params.get("backup_type", "full"),
+                    admin_user_id=str(new_job.user_id) if new_job.user_id else None,
+                    description=params.get("description"),
+                    compress=params.get("compress", True),
+                )
+                new_job.celery_task_id = celery_result.id
+                self.db.commit()
+                self.db.refresh(new_job)
+        except Exception as e:
+            logger.error(f"Failed to dispatch retry for job {new_job.id}: {e}")
+
         return JobInfo(
-            id=job_id,
-            type=JobType.PIPELINE,
-            status=JobStatus.PENDING,
-            user_id=str(uuid.uuid4()),
-            username="user",
-            created_at=datetime.utcnow(),
-            message="Job requeued for retry"
+            id=str(new_job.id),
+            type=JobType(new_job.type) if new_job.type in [t.value for t in JobType] else JobType.SYSTEM_TASK,
+            status=JobStatus(new_job.status),
+            user_id=str(new_job.user_id) if new_job.user_id else "",
+            username=new_job.username,
+            created_at=new_job.created_at,
+            started_at=new_job.started_at,
+            completed_at=new_job.completed_at,
+            progress=new_job.progress,
+            message=new_job.message,
         )

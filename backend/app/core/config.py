@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FILE: Optional[str] = None
 
+    # Backup
+    BACKUP_DIR: str = "/data/backups"
+    BACKUP_RETENTION_DAYS: int = 30
+
+    # Alerts (thresholds)
+    ALERT_DISK_WARNING_PERCENT: float = 80.0
+    ALERT_DISK_CRITICAL_PERCENT: float = 90.0
+    ALERT_MEMORY_WARNING_PERCENT: float = 85.0
+    ALERT_MEMORY_CRITICAL_PERCENT: float = 95.0
+
     class Config:
         env_file = ".env"
         case_sensitive = True
