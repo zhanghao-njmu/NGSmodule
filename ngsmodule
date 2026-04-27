@@ -516,6 +516,72 @@ HTML_HEAD
     + "</tbody></table>"
   ' <<<"$agg"
 
+  # Resource peaks across all stages with benchmark data. Sorted by max RSS so
+  # users land on the biggest memory consumers first when triaging cluster jobs.
+  echo '<h2>Resource usage (peak per stage)</h2>'
+  jq -r '
+    [ .stage_records[]
+      | select(.benchmark != null and .benchmark != {})
+      | { sample, stage,
+          rss: (.benchmark.max_rss_kb // 0),
+          cpu: (.benchmark.cpu_pct // 0),
+          wall: (.benchmark.wall_seconds // .elapsed_seconds // 0) }
+    ] as $rows
+    | if ($rows | length) == 0 then
+        "<p class=\"small\">No benchmark data captured (install <code>/usr/bin/time</code> for resource tracking).</p>"
+      else
+        ($rows | map(.rss) | max // 1) as $rss_max
+        | "<table><thead><tr><th>Sample</th><th>Stage</th><th>Max RSS</th><th style=\"width:30%\">RSS bar</th><th>CPU%</th><th>Wall</th></tr></thead><tbody>"
+          + (($rows | sort_by(-.rss))[:50]
+             | map(
+                 "<tr><td>" + .sample + "</td><td>" + .stage + "</td>"
+                 + "<td>" + (if .rss == 0 then "—"
+                              else (((.rss / 1024) * 10 | floor) / 10 | tostring) + " MB" end) + "</td>"
+                 + "<td><div class=\"gantt\"><div class=\"bar completed\" style=\"left:0;width:"
+                   + (if $rss_max == 0 then 0 else (.rss / $rss_max * 100) end | tostring)
+                   + "%\"></div></div></td>"
+                 + "<td>" + (if .cpu == 0 then "—" else (.cpu|tostring) + "%" end) + "</td>"
+                 + "<td>" + (.wall|tostring) + "s</td></tr>"
+               ) | join(""))
+          + "</tbody></table>"
+      end
+  ' <<<"$agg"
+
+  # Tool tally — which binaries were actually invoked (deduped).
+  echo '<h2>Tools invoked</h2>'
+  jq -r '
+    [ .stage_records[]
+      | select(.tools != null)
+      | .tools[]?
+      | (.name // .)
+    ] as $tools
+    | if ($tools | length) == 0 then
+        "<p class=\"small\">No tool tracking data found.</p>"
+      else
+        ($tools | group_by(.) | map({tool: .[0], count: length}) | sort_by(-.count)) as $tally
+        | "<div class=\"pills\">"
+          + ($tally | map("<div class=\"pill\"><span class=\"n\">" + (.count|tostring) + "</span> " + .tool + "</div>") | join(""))
+          + "</div>"
+      end
+  ' <<<"$agg"
+
+  # Surface failures separately so they don't get lost in the lineage drawer.
+  echo '<h2>Failures</h2>'
+  jq -r '
+    [.stage_records[] | select(.status == "failed")] as $fails
+    | if ($fails | length) == 0 then
+        "<p class=\"small\">No failed stages — clean run.</p>"
+      else
+        "<table><thead><tr><th>Sample</th><th>Stage</th><th>Error</th><th>Started</th></tr></thead><tbody>"
+        + ($fails | map(
+            "<tr><td>" + .sample + "</td><td>" + .stage + "</td>"
+            + "<td><code>" + ((.error // "") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) + "</code></td>"
+            + "<td class=\"small\">" + (.started_at // "") + "</td></tr>"
+          ) | join(""))
+        + "</tbody></table>"
+      end
+  ' <<<"$agg"
+
   echo '<h2>Per-sample lineage</h2>'
   jq -r '
     .samples[] |
