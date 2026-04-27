@@ -4,7 +4,7 @@ Pipeline Template Model
 Represents predefined pipeline templates for common NGS analysis workflows.
 """
 from sqlalchemy import Column, String, Text, Boolean, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
@@ -16,7 +16,7 @@ class PipelineTemplate(Base):
 
     __tablename__ = "pipeline_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False, unique=True, index=True)
     display_name = Column(String(200), nullable=False)
     description = Column(Text)

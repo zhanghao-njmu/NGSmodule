@@ -2,7 +2,7 @@
 Sample model
 """
 from sqlalchemy import Column, String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 from app.core.database import Base
@@ -14,8 +14,8 @@ class Sample(Base):
 
     __tablename__ = "samples"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     sample_id = Column(String(100), nullable=False)
     run_id = Column(String(100))
     group_name = Column(String(50))

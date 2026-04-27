@@ -2,7 +2,7 @@
 Result model
 """
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 from app.core.database import Base
@@ -14,8 +14,8 @@ class Result(Base):
 
     __tablename__ = "results"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_id = Column(UUID(as_uuid=True), ForeignKey("pipeline_tasks.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    task_id = Column(UUID(), ForeignKey("pipeline_tasks.id", ondelete="CASCADE"), nullable=False)
     result_type = Column(String(50))  # 'qc_report', 'alignment', 'quantification', 'de_analysis'
     result_path = Column(Text)
     # NOTE: Python attribute renamed to avoid clash with SQLAlchemy's reserved `metadata` name.

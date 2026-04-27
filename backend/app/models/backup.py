@@ -3,7 +3,7 @@ System Backup database model
 """
 from sqlalchemy import Column, String, Text, Boolean, BigInteger, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 import uuid
 
 from app.core.database import Base
@@ -19,7 +19,7 @@ class SystemBackup(Base):
     """
     __tablename__ = "system_backups"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Backup classification
     backup_type = Column(String(50), nullable=False, index=True)  # full, incremental, database_only, files_only
@@ -38,7 +38,7 @@ class SystemBackup(Base):
     error_message = Column(Text, nullable=True)
 
     # Ownership
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_by = Column(UUID(), ForeignKey("users.id"), nullable=False)
 
     # Timestamps
     created_at = Column(DateTime, default=utc_now_naive, nullable=False, index=True)

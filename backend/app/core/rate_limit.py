@@ -1,7 +1,8 @@
 """
 Rate limiting configuration for API endpoints
 
-Uses slowapi for rate limiting with Redis storage
+Uses slowapi with Redis storage when available; falls back to in-memory
+storage for local development/tests.
 """
 import os
 from slowapi import Limiter
@@ -11,23 +12,63 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 import logging
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
-# Get Redis URL from environment for production, fallback to memory for development
-# In production, set REDIS_URL environment variable (e.g., redis://localhost:6379/0)
-RATE_LIMIT_STORAGE = os.getenv("REDIS_URL", "memory://")
 
-# Initialize limiter with appropriate storage backend
+def _resolve_storage_uri() -> str:
+    """Resolve rate limit storage from settings/env.
+
+    Order of precedence:
+      1. RATE_LIMIT_STORAGE env var (explicit override)
+      2. settings.REDIS_URL (from .env / config) — only if Redis is reachable
+      3. "memory://" (development fallback)
+
+    During tests (pytest detected via sys.modules) we always use memory://.
+    """
+    import sys
+    if "pytest" in sys.modules:
+        return "memory://"
+
+    explicit = os.getenv("RATE_LIMIT_STORAGE")
+    if explicit:
+        return explicit
+
+    redis_url = getattr(settings, "REDIS_URL", None)
+    if redis_url and redis_url not in ("", "memory://"):
+        # Verify Redis is reachable; fall back to memory on connection error
+        # so the app still starts when Redis is temporarily down.
+        try:
+            import redis as _redis
+            _client = _redis.Redis.from_url(redis_url, socket_connect_timeout=1)
+            _client.ping()
+            _client.close()
+            return redis_url
+        except Exception as exc:
+            logger.warning(
+                f"Configured Redis ({redis_url}) is not reachable "
+                f"({exc}); using in-memory rate limiter"
+            )
+
+    return "memory://"
+
+
+RATE_LIMIT_STORAGE = _resolve_storage_uri()
+
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["100/minute"],  # Global default: 100 requests per minute
+    default_limits=["100/minute"],
     storage_uri=RATE_LIMIT_STORAGE,
 )
 
-if RATE_LIMIT_STORAGE != "memory://":
-    logger.info(f"Rate limiter using Redis storage")
+if RATE_LIMIT_STORAGE.startswith("redis"):
+    logger.info(f"Rate limiter using Redis: {RATE_LIMIT_STORAGE}")
 else:
-    logger.warning("Rate limiter using in-memory storage (not suitable for multi-instance deployment)")
+    logger.warning(
+        "Rate limiter using in-memory storage "
+        "(not suitable for multi-instance deployment)"
+    )
 
 
 # Rate limit configurations for different endpoint types

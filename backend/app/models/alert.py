@@ -3,7 +3,7 @@ System Alert database model for monitoring and notifications
 """
 from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 import uuid
 
 from app.core.database import Base
@@ -19,7 +19,7 @@ class SystemAlert(Base):
     """
     __tablename__ = "system_alerts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Alert classification
     type = Column(String(20), nullable=False, index=True)  # error, warning, info
@@ -33,7 +33,7 @@ class SystemAlert(Base):
     # Resolution tracking
     resolved = Column(Boolean, default=False, nullable=False, index=True)
     resolved_at = Column(DateTime, nullable=True)
-    resolved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    resolved_by = Column(UUID(), ForeignKey("users.id"), nullable=True)
     resolution_notes = Column(Text, nullable=True)
 
     # Metadata

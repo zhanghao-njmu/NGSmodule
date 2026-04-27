@@ -3,7 +3,7 @@ System Job database model for tracking background operations
 """
 from sqlalchemy import Column, String, Text, Float, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 import uuid
 
 from app.core.database import Base
@@ -19,14 +19,14 @@ class SystemJob(Base):
     """
     __tablename__ = "system_jobs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Job classification
     type = Column(String(50), nullable=False, index=True)  # pipeline, backup, cleanup, export, import, system_task
     status = Column(String(20), nullable=False, default="pending", index=True)  # pending, running, completed, failed, cancelled
 
     # Job ownership
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    user_id = Column(UUID(), ForeignKey("users.id"), nullable=True, index=True)
     username = Column(String(100), nullable=True)
 
     # Celery integration
@@ -48,7 +48,7 @@ class SystemJob(Base):
 
     # Retry tracking
     retry_count = Column(String(10), default="0")
-    parent_job_id = Column(UUID(as_uuid=True), ForeignKey("system_jobs.id"), nullable=True)
+    parent_job_id = Column(UUID(), ForeignKey("system_jobs.id"), nullable=True)
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id])

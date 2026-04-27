@@ -2,7 +2,7 @@
 File model
 """
 from sqlalchemy import Column, String, DateTime, BigInteger, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from app.core.database import Base
@@ -14,8 +14,8 @@ class File(Base):
 
     __tablename__ = "files"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sample_id = Column(UUID(as_uuid=True), ForeignKey("samples.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    sample_id = Column(UUID(), ForeignKey("samples.id", ondelete="CASCADE"), nullable=False)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(512), nullable=False)
     file_type = Column(String(20))  # 'fastq', 'bam', 'vcf', etc.

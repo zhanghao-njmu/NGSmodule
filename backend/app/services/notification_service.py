@@ -26,19 +26,24 @@ class NotificationService:
         self.db = db
 
     def create_notification(self, notification: NotificationCreate) -> Notification:
-        """
-        Create a new notification
-
-        Args:
-            notification: Notification data
-
-        Returns:
-            Created notification
-        """
+        """Create a new notification and broadcast it over WebSocket."""
         db_notification = Notification(**notification.model_dump())
         self.db.add(db_notification)
         self.db.commit()
         self.db.refresh(db_notification)
+
+        # Publish to realtime channel so connected WebSocket clients get
+        # immediate push updates (best-effort: failures are silent).
+        try:
+            from app.services.realtime import publish_user_event
+            publish_user_event(
+                str(db_notification.user_id),
+                "notification",
+                db_notification.to_dict(),
+            )
+        except Exception:
+            pass
+
         return db_notification
 
     def get_notifications(

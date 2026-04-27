@@ -79,6 +79,23 @@ class Settings(BaseSettings):
     ALERT_MEMORY_WARNING_PERCENT: float = 85.0
     ALERT_MEMORY_CRITICAL_PERCENT: float = 95.0
 
+    # Observability
+    SENTRY_DSN: Optional[str] = None
+    SENTRY_ENVIRONMENT: str = "production"
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+    SENTRY_SEND_PII: bool = False
+    PROMETHEUS_ENABLED: bool = True
+
+    # Rate limiting
+    RATE_LIMIT_STORAGE: Optional[str] = None  # Override REDIS_URL for slowapi
+
+    # AI provider
+    AI_PROVIDER: str = "mock"  # mock | claude | openai
+    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

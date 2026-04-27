@@ -3,7 +3,7 @@ Notification database model
 """
 from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 import uuid
 
 from app.core.database import Base
@@ -18,8 +18,8 @@ class Notification(Base):
     """
     __tablename__ = "notifications"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(), ForeignKey("users.id"), nullable=False, index=True)
     type = Column(String(50), nullable=False, index=True)  # info, warning, error, success, task_update
     title = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
@@ -63,8 +63,8 @@ class NotificationSettings(Base):
     """
     __tablename__ = "notification_settings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(), ForeignKey("users.id"), nullable=False, unique=True)
 
     # Email notifications
     email_enabled = Column(Boolean, default=True)

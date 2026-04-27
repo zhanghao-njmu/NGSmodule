@@ -1,0 +1,68 @@
+# Multi-replica Celery deployment overlay.
+#
+# Usage:
+#   docker compose \
+#     -f docker-compose.prod.yml \
+#     -f docker-compose.scale.yml \
+#     up -d --scale celery-worker=4 --scale celery-worker-heavy=2
+#
+# Or with Docker Swarm:
+#   docker stack deploy -c docker-compose.prod.yml -c docker-compose.scale.yml ngsmodule
+
+version: "3.8"
+
+services:
+  # Default Celery worker pool — handles short, latency-sensitive tasks
+  # (audit-log writes, alert checks, notification fanout, etc.)
+  celery-worker:
+    container_name: ""  # unset to allow horizontal scaling
+    command: >
+      celery -A app.workers.celery_app worker
+      --loglevel=info
+      --concurrency=${CELERY_CONCURRENCY:-4}
+      --max-tasks-per-child=100
+      --queues=default,admin
+      --hostname=worker-default@%h
+    deploy:
+      replicas: ${CELERY_DEFAULT_REPLICAS:-2}
+      resources:
+        limits:
+          cpus: "${CELERY_DEFAULT_CPU_LIMIT:-2.0}"
+          memory: ${CELERY_DEFAULT_MEM_LIMIT:-2G}
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+
+  # Heavy NGS pipeline worker pool — long-running, CPU/memory-intensive
+  # (alignment, quantification, etc.)
+  celery-worker-heavy:
+    extends:
+      file: docker-compose.prod.yml
+      service: celery-worker
+    container_name: ""
+    command: >
+      celery -A app.workers.celery_app worker
+      --loglevel=info
+      --concurrency=${CELERY_HEAVY_CONCURRENCY:-2}
+      --max-tasks-per-child=10
+      --queues=ngs_pipeline,backup
+      --hostname=worker-heavy@%h
+      --time-limit=86400
+      --soft-time-limit=82800
+    deploy:
+      replicas: ${CELERY_HEAVY_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: "${CELERY_HEAVY_CPU_LIMIT:-8.0}"
+          memory: ${CELERY_HEAVY_MEM_LIMIT:-16G}
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+  # Beat scheduler must be a single replica to avoid duplicate periodic tasks
+  celery-beat:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5

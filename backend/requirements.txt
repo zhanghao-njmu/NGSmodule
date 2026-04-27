@@ -31,6 +31,14 @@ httpx==0.26.0
 slowapi==0.1.9
 psutil==5.9.8
 
+# Observability (optional but recommended for production)
+sentry-sdk[fastapi,celery,sqlalchemy]==1.40.0
+prometheus-fastapi-instrumentator==6.1.0
+
+# AI providers (optional — install only the ones you use)
+anthropic==0.18.1; python_version >= "3.8"
+# openai==1.12.0  # uncomment to enable OpenAI provider
+
 # Development
 pytest==7.4.4
 pytest-asyncio==0.23.3

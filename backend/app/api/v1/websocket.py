@@ -96,6 +96,14 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+async def start_realtime_subscriber():
+    """Hook called from the lifespan to start the Redis subscriber."""
+    from app.services.realtime import RedisRealtimeSubscriber
+    sub = RedisRealtimeSubscriber(manager)
+    await sub.start()
+    return sub
+
+
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,

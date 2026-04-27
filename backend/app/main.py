@@ -2,6 +2,7 @@
 Main application entry point
 """
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,6 +23,42 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan: startup + shutdown."""
+    # Startup
+    init_db()
+    logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} started successfully")
+    logger.info(f"API documentation: http://localhost:8000{settings.API_V1_PREFIX}/docs")
+
+    # Initialize observability (Sentry, Prometheus) lazily so missing deps
+    # don't break startup
+    try:
+        from app.core.observability import init_observability
+        init_observability(app)
+    except Exception as e:
+        logger.warning(f"Observability initialization skipped: {e}")
+
+    # Start realtime subscriber for WebSocket fanout
+    realtime_sub = None
+    try:
+        from app.api.v1.websocket import start_realtime_subscriber
+        realtime_sub = await start_realtime_subscriber()
+    except Exception as e:
+        logger.warning(f"Realtime subscriber not started: {e}")
+
+    yield
+
+    # Shutdown
+    if realtime_sub is not None:
+        try:
+            await realtime_sub.stop()
+        except Exception:
+            pass
+    logger.info(f"{settings.APP_NAME} shutting down...")
+
+
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
@@ -29,7 +66,8 @@ app = FastAPI(
     description="NGSmodule API - Enterprise-grade bioinformatics workstation",
     docs_url=f"{settings.API_V1_PREFIX}/docs",
     redoc_url=f"{settings.API_V1_PREFIX}/redoc",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
+    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    lifespan=lifespan,
 )
 
 # Add rate limiter state to app
@@ -119,21 +157,6 @@ async def general_exception_handler(request: Request, exc: Exception):
             "code": "INTERNAL_ERROR"
         }
     )
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize application on startup"""
-    # Initialize database
-    init_db()
-    logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} started successfully")
-    logger.info(f"API documentation: http://localhost:8000{settings.API_V1_PREFIX}/docs")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info(f"{settings.APP_NAME} shutting down...")
 
 
 @app.get("/")

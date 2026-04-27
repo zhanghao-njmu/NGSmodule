@@ -2,7 +2,7 @@
 Project model
 """
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 from app.core.database import Base
@@ -14,8 +14,8 @@ class Project(Base):
 
     __tablename__ = "projects"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text)
     project_type = Column(String(20))  # 'rna-seq', 'dna-seq', 'sc-rna-seq', etc.

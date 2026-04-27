@@ -3,7 +3,7 @@ Audit Log database model for tracking admin actions
 """
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UUID
 import uuid
 
 from app.core.database import Base
@@ -19,18 +19,18 @@ class AuditLog(Base):
     """
     __tablename__ = "audit_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Action information
     action = Column(String(100), nullable=False, index=True)
     timestamp = Column(DateTime, default=utc_now_naive, nullable=False, index=True)
 
     # Actor (admin who performed the action)
-    admin_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    admin_user_id = Column(UUID(), ForeignKey("users.id"), nullable=False, index=True)
     admin_username = Column(String(100), nullable=False)
 
     # Target (resource affected)
-    target_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    target_user_id = Column(UUID(), ForeignKey("users.id"), nullable=True, index=True)
     target_username = Column(String(100), nullable=True)
     target_resource_type = Column(String(50), nullable=True)  # user, config, backup, etc.
     target_resource_id = Column(String(100), nullable=True)

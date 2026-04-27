@@ -2,7 +2,7 @@
 Pipeline Task model
 """
 from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 from app.core.database import Base
@@ -14,8 +14,8 @@ class PipelineTask(Base):
 
     __tablename__ = "pipeline_tasks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     task_name = Column(String(100), nullable=False)
     task_type = Column(String(50))  # 'preAlignmentQC', 'Alignment', 'Quantification', etc.
     status = Column(String(20), default="pending")  # 'pending', 'running', 'completed', 'failed', 'cancelled'

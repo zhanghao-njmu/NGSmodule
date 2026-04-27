@@ -530,33 +530,58 @@ class AIService:
         user_id: str,
         db: Session
     ) -> AIAssistantMessage:
-        """Send message to AI assistant"""
+        """Send message to AI assistant via the configured provider."""
+        from app.services.ai_providers import get_ai_provider
 
-        # Add user message
+        # Record the user message
         user_msg = AIAssistantMessage(
             conversation_id=conversation_id,
             role="user",
             content=request.message,
-            metadata=request.context
+            metadata=request.context,
         )
 
-        # Generate AI response
-        responses = [
-            "Based on your data, I recommend using a quality threshold of 20 for optimal results.",
-            "I've analyzed your pipeline configuration and found potential optimization opportunities.",
-            "The anomaly you're experiencing is likely due to adapter contamination. Try running Cutadapt.",
-            "Your samples show good clustering by condition. Proceed with differential expression analysis.",
-            "I suggest increasing the thread count to 16 for better performance on your dataset.",
-        ]
+        # Build the message history for the provider
+        provider = get_ai_provider()
+        history: List[Dict[str, str]] = []
+
+        existing = self.conversations_store.get(conversation_id)
+        if existing:
+            for m in existing.messages[-20:]:  # last 20 turns
+                if m.role in ("user", "assistant"):
+                    history.append({"role": m.role, "content": m.content})
+
+        history.append({"role": "user", "content": request.message})
+
+        system_prompt = (
+            "You are NGSmodule's AI assistant. Help users with NGS pipeline "
+            "configuration, quality control, troubleshooting, and analysis "
+            "interpretation. Be concise and cite parameters when relevant."
+        )
+
+        try:
+            response_text = provider.chat(
+                messages=history,
+                system=system_prompt,
+                temperature=0.4,
+                max_tokens=1024,
+            )
+            metadata = {"provider": provider.name}
+        except Exception as exc:
+            response_text = (
+                "I encountered an issue contacting the AI service. "
+                f"Details: {exc}"
+            )
+            metadata = {"provider": provider.name, "error": str(exc)}
 
         assistant_msg = AIAssistantMessage(
             conversation_id=conversation_id,
             role="assistant",
-            content=random.choice(responses),
-            metadata={"confidence": 0.85, "sources": ["historical_data", "best_practices"]}
+            content=response_text,
+            metadata=metadata,
         )
 
-        # Store in conversation
+        # Persist in the conversation store
         if conversation_id in self.conversations_store:
             self.conversations_store[conversation_id].messages.append(user_msg)
             self.conversations_store[conversation_id].messages.append(assistant_msg)

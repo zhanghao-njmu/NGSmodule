@@ -3,13 +3,15 @@ Security utilities for authentication and authorization
 """
 from datetime import timedelta
 from typing import Any, Union
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt has a 72-byte limit. We use the bcrypt module directly to avoid
+# passlib's compatibility issues with newer bcrypt versions (passlib's
+# version detection breaks on bcrypt>=4 because `__about__` was removed).
+_BCRYPT_MAX_BYTES = 72
 
 
 def create_access_token(
@@ -67,28 +69,27 @@ def verify_token(token: str) -> dict[str, Any] | None:
         return None
 
 
+def _truncate_password(password: str) -> bytes:
+    """Encode and truncate password to bcrypt's 72-byte limit."""
+    pw_bytes = password.encode("utf-8")
+    if len(pw_bytes) > _BCRYPT_MAX_BYTES:
+        pw_bytes = pw_bytes[:_BCRYPT_MAX_BYTES]
+    return pw_bytes
+
+
 def get_password_hash(password: str) -> str:
-    """
-    Hash a password
-
-    Args:
-        password: Plain text password
-
-    Returns:
-        Hashed password
-    """
-    return pwd_context.hash(password)
+    """Hash a password with bcrypt."""
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(_truncate_password(password), salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify a password against hash
-
-    Args:
-        plain_password: Plain text password
-        hashed_password: Hashed password to verify against
-
-    Returns:
-        True if password matches, False otherwise
-    """
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its bcrypt hash."""
+    try:
+        return bcrypt.checkpw(
+            _truncate_password(plain_password),
+            hashed_password.encode("utf-8") if isinstance(hashed_password, str) else hashed_password,
+        )
+    except (ValueError, TypeError):
+        return False
