@@ -51,6 +51,14 @@ params_schema:
     type: path
     required: false
     description: Override path to the R DE script (default = scripts/de.R).
+  use_corrected:
+    type: enum
+    values: [auto, "true", "false"]
+    default: auto
+    description: >
+      Whether to consume BatchCorrection's corrected matrix instead of
+      the raw merged counts. "auto" picks the corrected file if it
+      exists, otherwise the raw matrix.
 estimated_minutes_per_sample: 5
 resources:
   mem: 16G

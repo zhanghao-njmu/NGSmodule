@@ -1,0 +1,54 @@
+name: BatchCorrection
+display_name: Batch Correction (ComBat-seq / limma)
+category: Quantification
+version: 1.0.0
+scope: project
+description: >
+  Project-level batch correction of the merged counts matrix produced by
+  MergeCounts. Defaults to sva::ComBat_seq (designed for raw counts);
+  falls back to limma::removeBatchEffect on log-CPM when sva is missing.
+  Writes counts.matrix.corrected.tab in the MergeCounts schema so
+  downstream pipelines (DifferentialExpression, etc.) can consume it
+  transparently. Requires a Batch column in SampleInfoFile.
+requires:
+  - MergeCounts
+tools:
+  - Rscript >= 4.0
+  - sva (Bioconductor, preferred) or limma (Bioconductor, fallback)
+default_params:
+  Aligner: STAR
+  method: combat_seq
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2]
+    default: STAR
+    description: Aligner used upstream.
+  method:
+    type: enum
+    values: [combat_seq, limma]
+    default: combat_seq
+    description: Batch-correction backend (combat_seq for raw counts; limma for log-CPM fallback).
+  bc_script:
+    type: path
+    required: false
+    description: Override path to the R script (default = scripts/bc.R).
+estimated_minutes_per_sample: 10
+resources:
+  mem: 16G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: counts_matrix
+  pattern: "_project/Quantification/counts.matrix.tab"
+outputs:
+  - kind: counts_matrix_corrected
+    pattern: "counts.matrix.corrected.tab"
+  - kind: bc_pca_before
+    pattern: "pca_before.pdf"
+  - kind: bc_pca_after
+    pattern: "pca_after.pdf"
+  - kind: bc_summary_json
+    pattern: "summary.json"

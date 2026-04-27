@@ -1,0 +1,5 @@
+RunID,SampleID,Layout,Group,Batch
+runA,sample_A,PE,control,b1
+runB,sample_B,PE,treatment,b1
+runC,sample_C,PE,control,b2
+runD,sample_D,PE,treatment,b2

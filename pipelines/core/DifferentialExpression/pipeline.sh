@@ -26,7 +26,28 @@ module_load rscript
 run_DifferentialExpression_for_project() {
   module_reset
 
-  local matrix="$work_dir/$NGS_PROJECT_SENTINEL/Quantification/counts.matrix.tab"
+  # Prefer batch-corrected counts when available, fall back to raw merged counts.
+  # Users can force one or the other by setting $use_corrected={true,false}.
+  local raw_matrix="$work_dir/$NGS_PROJECT_SENTINEL/Quantification/counts.matrix.tab"
+  local corrected_matrix="$work_dir/$NGS_PROJECT_SENTINEL/BatchCorrection/counts.matrix.corrected.tab"
+  local matrix matrix_kind
+  case "${use_corrected:-auto}" in
+    true)
+      matrix="$corrected_matrix"; matrix_kind="counts_matrix_corrected"
+      ;;
+    false)
+      matrix="$raw_matrix"; matrix_kind="counts_matrix"
+      ;;
+    *)
+      if [[ -f "$corrected_matrix" ]]; then
+        matrix="$corrected_matrix"; matrix_kind="counts_matrix_corrected"
+        log_info "[_project] using batch-corrected counts: $corrected_matrix"
+      else
+        matrix="$raw_matrix"; matrix_kind="counts_matrix"
+      fi
+      ;;
+  esac
+
   local out_dir="$work_dir/$NGS_PROJECT_SENTINEL/DifferentialExpression"
   mkdir -p "$out_dir"
 
@@ -67,7 +88,7 @@ run_DifferentialExpression_for_project() {
 
   local tools_json inputs_json outputs_json params_json
   tools_json="$(module_tools_json)"
-  inputs_json="$(ngs_state_files_json --kind=counts_matrix "$matrix")"
+  inputs_json="$(ngs_state_files_json --kind="$matrix_kind" "$matrix")"
   local -a out_paths=()
   for f in "$out_dir/de_results_${group_b}_vs_${group_a}.tab" \
            "$out_dir/de_significant_${group_b}_vs_${group_a}.tab" \
@@ -79,8 +100,8 @@ run_DifferentialExpression_for_project() {
   else
     outputs_json='[]'
   fi
-  params_json="$(printf '{"group_a":"%s","group_b":"%s","max_padj":%s,"min_log2fc":%s,"min_count":%s}' \
-    "${group_a}" "${group_b}" "${max_padj:-0.05}" "${min_log2fc:-1}" "${min_count:-10}")"
+  params_json="$(printf '{"group_a":"%s","group_b":"%s","max_padj":%s,"min_log2fc":%s,"min_count":%s,"matrix_kind":"%s"}' \
+    "${group_a}" "${group_b}" "${max_padj:-0.05}" "${min_log2fc:-1}" "${min_count:-10}" "$matrix_kind")"
 
   ngs_state_stage_end "$NGS_PROJECT_SENTINEL" DifferentialExpression completed \
     --params  "$params_json" \
