@@ -1,0 +1,62 @@
+name: Strelka2_germline
+display_name: Strelka2 Germline Variants
+category: VariantCalling
+version: 1.0.0
+description: >
+  Per-sample germline small-variant calling with Illumina Strelka2.
+  Produces a bgzipped/tabix-indexed VCF and a bcftools stats summary.
+  Optional --exome / --targeted flags trim WGS-only QC heuristics.
+requires:
+  - Alignment
+tools:
+  - strelka2 >= 2.9
+  - bcftools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+  exome: FALSE
+  targeted: FALSE
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates input BAM directory.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM (TRUE recommended for variant calling).
+  exome:
+    type: enum
+    values: [TRUE, FALSE]
+    default: FALSE
+    description: Pass --exome to Strelka2 (skip WGS-only depth heuristics).
+  targeted:
+    type: enum
+    values: [TRUE, FALSE]
+    default: FALSE
+    description: Pass --targeted (further restrict QC for capture panels).
+  genome:
+    type: path
+    required: false
+    description: Reference FASTA. Auto-resolved via iGenomes when unset.
+estimated_minutes_per_sample: 60
+resources:
+  mem: 16G
+  time: "4:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.dedup.bam | {sample}.{aligner}.markdup.bam | {sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: variant_vcf
+    pattern: "{sample}.{aligner}.Strelka2.vcf.gz"
+  - kind: variant_vcf_index
+    pattern: "{sample}.{aligner}.Strelka2.vcf.gz.tbi"
+  - kind: variant_stats
+    pattern: "{sample}.{aligner}.Strelka2.vcf.gz.stats"
