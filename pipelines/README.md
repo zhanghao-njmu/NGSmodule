@@ -1,78 +1,86 @@
 # pipelines/
 
-This directory holds the new infrastructure for NGSmodule's bash pipelines:
+The new pipeline framework for NGSmodule. Sample-first, dependency-resolving,
+schema-validated, cluster-aware, dry-runnable, scope:project-aware.
 
 ```
 pipelines/
-├── lib/
-│   └── runtime.sh            ← Shared bash helpers (progress, log, dry-run)
-└── docker/
-    └── preAlignmentQC.Dockerfile   ← Container per pipeline (PoC)
+├── core/                  ← One directory per pipeline (18 today)
+│   └── <Name>/
+│       ├── meta.yml       schema, requires, resources, scope
+│       ├── env.yml        conda environment
+│       ├── pipeline.sh    run_<Name>_for_{sample,project}() function
+│       ├── scripts/       (optional) bundled R / python helpers
+│       └── tests/         dry-run fixture
+├── lib/                   ← framework primitives (orchestrator, schema, ...)
+├── modules/               ← reusable tool wrappers (18 today)
+├── profiles/              ← cluster scheduler adapters (slurm/sge/lsf/local)
+└── docker/                ← per-pipeline Dockerfiles (PoC)
 ```
 
-The legacy pipeline scripts themselves still live at the repository root
-(`GeneralSteps/`, `Analysis/`, `PreparationSteps/`, `PrefetchData/`,
-`SingleCellPipe/`) so the existing CLI and conda workflow keep working
-unchanged.
-
-## What lives here
-
-### `lib/runtime.sh`
-
-A small bash library scripts can `source` to opt into:
-
-- `set -euo pipefail` (when `NGS_STRICT=1`)
-- Structured event protocol (`::progress::N`, `::status::TEXT`,
-  `::artifact::kind=X path=Y`, `::metric::K=V`) parsed by the Celery worker
-- Coloured CLI logging (`log_info`, `log_warn`, `log_error`, `log_ok`)
-- `--dry-run` execution mode (`NGS_DRY_RUN=1`)
-- `run_step "label" cmd args...` wrapper combining the above
-
-GeneralSteps/* scripts source this file at the top:
+## Quickstart
 
 ```bash
-_ngs_runtime="${shell_folder:-$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/..}/pipelines/lib/runtime.sh"
-[[ -f "$_ngs_runtime" ]] && source "$_ngs_runtime"
+ngsmodule list                                        # all available pipelines
+ngsmodule deps DifferentialExpression                 # see what 'run' would resolve
+ngsmodule run Alignment -c project.cfg                # execute (auto-resolves prereqs)
+ngsmodule resume Alignment -c project.cfg             # re-run only failed samples
+ngsmodule status -c project.cfg                       # sample × stage grid
+ngsmodule report -c project.cfg -o run.html           # self-contained HTML report
+ngsmodule init MyPipe --requires Alignment            # scaffold a new pipeline
+ngsmodule lint                                        # offline schema validation
+ngsmodule test                                        # dry-run regression suite
 ```
 
-If the file is missing, the script falls back to legacy behaviour — the
-hardening is strictly additive.
+## Pipeline catalogue (18)
 
-### `docker/`
+| Scope     | Pipeline                  | Category        | Tool(s)                                         |
+| --------- | ------------------------- | --------------- | ----------------------------------------------- |
+| sample    | preAlignmentQC            | QC              | fastp, fastqc                                   |
+| sample    | Alignment                 | Alignment       | STAR / bwa-mem2 / hisat2 / bismark              |
+| sample    | postAlignmentQC           | QC              | RSeQC, preseq, mosdepth, goleft                 |
+| sample    | Quantification            | Quantification  | featureCounts                                   |
+| sample    | MethylationExtraction     | Methylation     | bismark methylation_extractor                   |
+| sample    | CircRNA                   | Quantification  | STAR + CIRCexplorer2                            |
+| sample    | VariantCalling            | VariantCalling  | bcftools mpileup/call                           |
+| sample    | GATK_germline_short       | VariantCalling  | GATK4 HaplotypeCaller                           |
+| sample    | GATK_somatic_short        | VariantCalling  | GATK4 Mutect2                                   |
+| sample    | GATK_CNV                  | VariantCalling  | GATK4 ModelSegments (consumes PoN)              |
+| sample    | Strelka2_germline         | VariantCalling  | Strelka2                                        |
+| sample    | Strelka2_somatic          | VariantCalling  | Strelka2 T/N                                    |
+| project   | MergeCounts               | Quantification  | awk merge per-sample counts                     |
+| project   | postQuantificationQC      | Quantification  | base-R PCA + correlation                        |
+| project   | BatchCorrection           | Quantification  | sva ComBat-seq / limma                          |
+| project   | DifferentialExpression    | Quantification  | edgeR (auto-uses corrected matrix)              |
+| project   | DifferentialMethylation   | Methylation     | base-R CpG Welch t-test                         |
+| project   | GATK_CNV_PoN              | VariantCalling  | GATK4 CreateReadCountPanelOfNormals             |
 
-Per-pipeline Dockerfiles. Building these and tagging the resulting image
-ID into the corresponding `PipelineTemplate` row gives reproducible runs
-without rewriting the bash logic.
+## What you get for free
 
-The `preAlignmentQC.Dockerfile` is the PoC. Replicate the pattern for
-`Alignment.Dockerfile`, `postAlignmentQC.Dockerfile`, etc. as you promote
-each pipeline.
+- **State machine.** `<work_dir>/<sample>/.state.json` records each stage's
+  status, started_at, completed_at, params, tools, inputs, outputs.
+- **Auto-discovery + dependency resolution.** Declaring `requires:` in
+  meta.yml is enough — the orchestrator transitively resolves prereqs.
+- **Project-scope.** Set `scope: project` and define
+  `run_<Name>_for_project()`. State goes to `_project/.state.json`.
+- **Schema validation.** Typed `params_schema:` (enum, int, float,
+  bool, path, string with pattern) is checked before any sample runs.
+- **Cluster execution.** `--profile slurm|sge|lsf|local` swaps the
+  per-sample submit logic without touching pipeline code.
+- **Dry-run + tests + CI.** Every pipeline ships a `tests/` fixture;
+  `ngsmodule test` runs the lot in dry-run mode (no real tools needed).
+- **HTML report.** Self-contained, no JS, no CDN. Status grid + Gantt
+  + resource peaks + tool tally + failure breakdown + lineage.
 
-Build & run:
+## Migration & contribution
 
-```bash
-docker build \
-  -f pipelines/docker/preAlignmentQC.Dockerfile \
-  -t ngsmodule/preAlignmentQC:1.0.0 .
+For a step-by-step guide to porting a legacy script into a new pipeline,
+see [`../docs/MIGRATION_GUIDE.md`](../docs/MIGRATION_GUIDE.md). The
+fastest start is `ngsmodule init <Name>`.
 
-docker run --rm \
-  -v $(pwd):/opt/ngsmodule:ro \
-  -v /data/ngsmodule_work:/data/work \
-  -e NGS_TASK_ID=test \
-  -e NGS_STRICT=1 \
-  ngsmodule/preAlignmentQC:1.0.0 \
-  bash /opt/ngsmodule/GeneralSteps/preAlignmentQC.sh ...
-```
+## Out of scope
 
-## Why this layout
-
-Putting hardening helpers in `pipelines/lib/` (instead of mixing with the
-existing root-level shell scripts) keeps two things separate:
-
-1. **Lab-specific pipeline logic** — biologists fork, edit, version
-2. **Web/runtime contract** — Celery worker depends on the event protocol;
-   centralised so a single change updates all pipelines
-
-See [`../docs/PIPELINE_MIGRATION_ANALYSIS.md`](../docs/PIPELINE_MIGRATION_ANALYSIS.md)
-for the deeper architectural reasoning, including the explicit decision
-*not* to migrate to Snakemake/Nextflow at this stage.
+`SingleCellPipe/` (cellranger / Seurat / SCP custom R package) is a
+separate ~11k-line subframework and has not been migrated. See the
+"Migration coverage" section of MIGRATION_GUIDE.md for an outline of
+what porting it would involve.

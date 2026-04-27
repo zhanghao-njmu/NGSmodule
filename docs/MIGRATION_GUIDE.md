@@ -46,6 +46,25 @@ Write these on paper before touching any framework files.
 
 ### 2. Create the directory + meta.yml
 
+**Fast path (recommended):** use the scaffold generator.
+
+```bash
+# Sample-scope pipeline (default)
+ngsmodule init MyPipe --requires Alignment,preAlignmentQC
+
+# Project-scope (cohort-level analysis)
+ngsmodule init CohortDE --scope project --requires Quantification
+
+# Custom category for the listing UI
+ngsmodule init MyPipe --category Custom --requires Alignment
+```
+
+The generated tree is immediately functional — `ngsmodule lint` and
+`ngsmodule test` both pass on the empty boilerplate, so you can commit
+incrementally as you fill in TODOs.
+
+**Manual path:**
+
 ```bash
 mkdir -p pipelines/core/MyPipe/tests/test_data
 touch    pipelines/core/MyPipe/tests/test_data/.gitkeep
@@ -329,3 +348,37 @@ When project-scope is *not* the right answer:
 - If your pipeline aggregates pairs (tumor/normal, case/control) instead
   of the whole cohort, keep `scope: sample` and use a `$normal_sample`
   config var. See `GATK_somatic_short` and `Strelka2_somatic` for examples.
+
+## Migration coverage
+
+As of this writing, all RNA-seq, WGS/WES, and bisulfite-sequencing
+pipelines from the legacy `Analysis/` and `GeneralSteps/` directories
+have been migrated. The `Analysis/CNV/CNVanalysis.sh` script
+(readCounter + Control-FREEC + HMMcopy + DNAcopy) is functionally
+covered by the new `GATK_CNV` + `GATK_CNV_PoN` pair, so it has not been
+ported separately.
+
+**Single-cell pipelines (`SingleCellPipe/`) are deferred.** That
+subframework comprises ~11K lines of R + 924 lines of bash, depends on
+proprietary 10x Genomics cellranger / cellranger-atac / cellranger-arc
+tooling and a custom `SCP` Bioconductor package, and would migrate as
+its own epic with at least these per-stage pipelines:
+
+  - `RunCellranger` (per-sample, mode=rna|atac|arc)
+  - `RunCellCalling` (per-sample, custom barcode QC)
+  - `RunCellQC` (project-scope, doublet detection + per-cell metrics)
+  - `RunIntegration` (project-scope, Seurat/Harmony)
+  - `RunAnnotation` (project-scope, automated cell-type calling)
+
+Any contributor picking up SCP migration should:
+
+1. Read `SingleCellPipe/LoadSCPConfig.sh` to map all the SCP-specific
+   config vars (`mode`, `cellranger_ref`, `FastqScreen_config`, ...).
+2. Migrate `RunCellranger.sh` first (foundation for everything else).
+3. Use `ngsmodule init RunCellranger --requires preAlignmentQC` to
+   start, then port the cellranger invocation into a new
+   `pipelines/modules/cellranger.sh`.
+4. The R-heavy steps (CellQC / Integration / Annotation) follow the
+   same scope:project pattern as `DifferentialExpression` —
+   bundle a self-contained R script under `scripts/` and use
+   `module_rscript_run`.
