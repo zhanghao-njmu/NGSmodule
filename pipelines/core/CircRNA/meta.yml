@@ -1,0 +1,67 @@
+name: CircRNA
+display_name: Circular RNA Detection (CIRCexplorer2)
+category: Quantification
+version: 1.0.0
+description: >
+  Per-sample circular-RNA detection using CIRCexplorer2 against STAR's
+  chimeric junction output. Replaces the legacy
+  Analysis/CircRNA/cirRNA.sh, which presented a menu of seven different
+  circRNA tools (CIRI, CIRCexplorer2, find_circ, KNIFE, CircMaker,
+  CircRNADBG, sailfish-cir) with every block commented out — i.e. it
+  was an unfinished prototype, not a working pipeline.
+
+  This migration picks CIRCexplorer2 because it (a) is in active
+  Bioconda, (b) consumes STAR chimeric output (no tophat2/bowtie1),
+  and (c) annotates against a UCSC-style ref table rather than
+  requiring a custom GTF→DB transformation.
+requires:
+  - preAlignmentQC
+tools:
+  - star >= 2.7.10
+  - circexplorer2 >= 2.3
+  - samtools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: rna
+  chim_segment_min: 10
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR]
+    default: STAR
+    required: true
+    description: Only STAR is currently wired up (chim output is its native format).
+  SequenceType:
+    type: enum
+    values: [rna]
+    default: rna
+    required: true
+    description: CircRNA detection only meaningful for RNA-seq.
+  chim_segment_min:
+    type: int
+    min: 5
+    max: 50
+    default: 10
+    description: STAR --chimSegmentMin (lower = more sensitive, more noise).
+  circexplorer2_ref:
+    type: path
+    required: true
+    description: >
+      CIRCexplorer2 annotation file (e.g. GRCh38_ref_all.txt). Build
+      once per genome with fetch_ucsc.py or download from the
+      CIRCexplorer2 documentation.
+estimated_minutes_per_sample: 90
+resources:
+  mem: 32G
+  time: "4:00:00"
+  cpus_per_task: 8
+  partition: medium
+  queue: main
+inputs:
+  kind: trimmed_fastq
+  pattern: "{sample}_trim_{1,2}.fq.gz"
+outputs:
+  - kind: circrna_bsj_bed
+    pattern: "back_spliced_junction.bed"
+  - kind: circrna_table
+    pattern: "circularRNA_known.txt"

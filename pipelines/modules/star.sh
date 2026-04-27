@@ -17,7 +17,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 module_star_align() {
-  local index="" out_prefix="" in1="" in2=""
+  local index="" out_prefix="" in1="" in2="" extra=""
   local threads="${threads:-4}"
   local sam_type="BAM SortedByCoordinate"
   local read_cmd="zcat"
@@ -30,6 +30,7 @@ module_star_align() {
       --threads)     threads="$2"; shift 2 ;;
       --sam-type)    sam_type="$2"; shift 2 ;;
       --read-cmd)    read_cmd="$2"; shift 2 ;;
+      --extra)       extra="$2"; shift 2 ;;
       *) echo "module_star_align: unknown arg $1" >&2; return 2 ;;
     esac
   done
@@ -39,7 +40,7 @@ module_star_align() {
   local reads_arg=("$in1")
   [[ -n "$in2" ]] && reads_arg+=("$in2")
 
-  # shellcheck disable=SC2086  # sam_type is intentionally split
+  # shellcheck disable=SC2086  # sam_type and extra intentionally split
   module_run "STAR align" \
     STAR \
       --runThreadN "$threads" \
@@ -47,5 +48,6 @@ module_star_align() {
       --readFilesIn "${reads_arg[@]}" \
       --readFilesCommand "$read_cmd" \
       --outFileNamePrefix "$out_prefix" \
-      --outSAMtype $sam_type
+      --outSAMtype $sam_type \
+      $extra
 }
