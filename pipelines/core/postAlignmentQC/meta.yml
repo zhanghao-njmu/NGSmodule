@@ -1,0 +1,62 @@
+name: postAlignmentQC
+display_name: Post-Alignment QC
+category: QC
+version: 1.0.0
+description: >
+  Quality assessment of aligned BAM files. Runs RSeQC, preseq, goleft and
+  mosdepth on the sorted BAM produced by the Alignment pipeline. RNA-seq
+  samples additionally get geneBody / junction coverage analyses.
+requires:
+  - Alignment
+tools:
+  - rseqc >= 5.0
+  - preseq >= 3.2
+  - mosdepth >= 0.3
+  - goleft >= 0.2
+default_params:
+  Aligner: STAR
+  SequenceType: rna
+  Deduplication: NONE
+# Typed schema consumed by pipelines/lib/schema.sh.
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — selects the input BAM directory.
+  SequenceType:
+    type: enum
+    values: [rna, dna, bisulfite]
+    default: rna
+    description: Library type — RNA samples get extra junction/coverage QC.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: NONE
+    description: Which BAM variant to read (markdup / dedup / raw).
+  gtf:
+    type: path
+    required: false
+    description: GTF annotation; auto-derived to genes.bed for RSeQC.
+estimated_minutes_per_sample: 30
+resources:
+  mem: 16G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: rseqc_bam_stat
+    pattern: "{sample}.{aligner}.bam_stat.txt"
+  - kind: rseqc_infer_experiment
+    pattern: "{sample}.{aligner}.infer_experiment.txt"
+  - kind: preseq_lc_extrap
+    pattern: "{sample}.{aligner}.preseq.txt"
+  - kind: mosdepth_summary
+    pattern: "{sample}.{aligner}.mosdepth.summary.txt"
+  - kind: goleft_indexcov_html
+    pattern: "index.html"
