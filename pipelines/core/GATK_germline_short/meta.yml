@@ -1,0 +1,67 @@
+name: GATK_germline_short
+display_name: GATK Germline Short Variants
+category: VariantCalling
+version: 1.0.0
+description: >
+  GATK4-based germline short-variant pipeline. Per-sample BQSR →
+  HaplotypeCaller (GVCF mode) → GenotypeGVCFs, then split SNPs/Indels
+  with VariantFiltration's recommended hard-filter expressions and
+  recombine into a final filtered VCF. Skips known-sites supply when
+  $known_indels / $known_snps are unset (test/dry-run friendly).
+requires:
+  - Alignment
+tools:
+  - gatk4 >= 4.4
+  - bcftools >= 1.19
+  - samtools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+  snp_filter: "QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0"
+  indel_filter: "QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0"
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates input BAM directory.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM (TRUE recommended for variant calling).
+  snp_filter:
+    type: string
+    default: "QD < 2.0 || MQ < 40.0 || FS > 60.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0"
+    description: GATK4 hard-filter expression for SNPs (Best Practices recipe).
+  indel_filter:
+    type: string
+    default: "QD < 2.0 || ReadPosRankSum < -20.0 || InbreedingCoeff < -0.8 || FS > 200.0 || SOR > 10.0"
+    description: GATK4 hard-filter expression for indels (Best Practices recipe).
+  genome:
+    type: path
+    required: false
+    description: Reference FASTA (.fa). Auto-resolved via iGenomes when unset.
+  skip_bqsr:
+    type: bool
+    default: false
+    description: Skip BQSR step (fast path; only for evaluation runs).
+estimated_minutes_per_sample: 240
+resources:
+  mem: 32G
+  time: "8:00:00"
+  cpus_per_task: 4
+  partition: long
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.dedup.bam | {sample}.{aligner}.markdup.bam | {sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: gvcf
+    pattern: "{sample}.{aligner}.gatk.HaplotypeCaller.gvcf.gz"
+  - kind: variant_vcf
+    pattern: "{sample}.{aligner}.gatk.HaplotypeCaller.vcf.gz"
+  - kind: variant_vcf_filtered
+    pattern: "{sample}.{aligner}.gatk.HaplotypeCaller.filter.vcf.gz"
