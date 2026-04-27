@@ -42,7 +42,9 @@ USAGE
 COMMANDS
   list                                List discovered pipelines
   info <pipeline>                     Show metadata for a pipeline
+  deps <pipeline>                     Print prerequisite graph (preview what 'run' would resolve)
   run <pipeline> [opts]               Execute a pipeline (auto-resolves prerequisites)
+  resume <pipeline> -c <ConfigFile>   Re-run only failed/incomplete samples for a pipeline
   status -c <ConfigFile>              Show sample × stage grid for a project
   trace <sample> [-c <ConfigFile>]    Show lineage of a sample's outputs
   report -c <ConfigFile> [-o file]    Render self-contained HTML report
@@ -697,12 +699,144 @@ cmd_lint() {
   return $rc
 }
 
+# ---------------------------------------------------------------------------
+# `ngsmodule resume <pipeline> -c <ConfigFile>` — re-run only the samples
+# whose previous attempt at <pipeline> failed (or never completed).
+#
+# Implementation: discover failed/incomplete samples by reading every
+# .state.json under work_dir, build a regex matching their IDs, then
+# delegate to `ngsmodule run` with --filter $regex --force. Inherits
+# everything else from cmd_run (--profile, --no-deps, etc.).
+# ---------------------------------------------------------------------------
+cmd_resume() {
+  local pipeline="${1:?ngsmodule resume: pipeline name required}"; shift
+
+  # Pull --config out of the args so we can also resolve work_dir
+  # ourselves; everything else is forwarded verbatim to `ngsmodule run`.
+  local config="" forwarded=()
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config) config="$2"; forwarded+=("$1" "$2"); shift 2 ;;
+      *)           forwarded+=("$1"); shift ;;
+    esac
+  done
+  if [[ -z "$config" ]]; then
+    echo "ERROR: ngsmodule resume requires -c <ConfigFile>" >&2
+    return 1
+  fi
+
+  local workdir
+  workdir="$(_resolve_workdir_from_config "$config")" || return 1
+  if [[ -z "$workdir" || ! -d "$workdir" ]]; then
+    echo "ERROR: work_dir not found (resolved: '$workdir')" >&2
+    return 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: jq required for ngsmodule resume" >&2
+    return 1
+  fi
+
+  # Walk every .state.json (excluding the _project sentinel) and pick
+  # samples where the requested pipeline is failed or unrecorded.
+  local -a state_files=()
+  while IFS= read -r f; do state_files+=("$f"); done < <(
+    find "$workdir" -maxdepth 2 -name '.state.json' -type f 2>/dev/null \
+      | grep -v '/_project/' | sort
+  )
+  if (( ${#state_files[@]} == 0 )); then
+    echo "No samples found under $workdir." >&2
+    return 1
+  fi
+
+  local -a samples_to_retry=()
+  local f sid status
+  for f in "${state_files[@]}"; do
+    sid="$(jq -r '.sample_id // .sample // ""' "$f" 2>/dev/null)"
+    [[ -z "$sid" ]] && continue
+    status="$(jq -r --arg p "$pipeline" '.stages[$p].status // "missing"' "$f" 2>/dev/null)"
+    case "$status" in
+      completed) ;;  # skip
+      *)         samples_to_retry+=("$sid") ;;
+    esac
+  done
+
+  if (( ${#samples_to_retry[@]} == 0 )); then
+    log_ok "No samples need resuming — $pipeline is complete for every sample."
+    return 0
+  fi
+
+  # Build an alternation regex: ^(s1|s2|s3)$. Escape metachars in IDs.
+  local sid_alt
+  sid_alt="$(printf '%s\n' "${samples_to_retry[@]}" \
+    | sed -e 's/[][\\.*^$+?()|{}]/\\&/g' | paste -sd '|' -)"
+  local regex="^(${sid_alt})\$"
+
+  log_info "ngsmodule resume: $pipeline → ${#samples_to_retry[@]} sample(s) to retry"
+  log_info "                  --filter '$regex' --force"
+
+  cmd_run "$pipeline" "${forwarded[@]}" --filter "$regex" --force
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule deps <pipeline>` — print the recursive prerequisite graph for
+# a pipeline. Useful to preview what `run` will actually execute.
+#
+# Output format: tree with " ← " separators showing dependency direction.
+# The terminal pipeline is at the top; its prereqs indented below.
+# ---------------------------------------------------------------------------
+cmd_deps() {
+  local pipeline="${1:?ngsmodule deps: pipeline name required}"
+  local meta="$PIPELINES_DIR/$pipeline/meta.yml"
+  if [[ ! -f "$meta" ]]; then
+    echo "ERROR: unknown pipeline: $pipeline" >&2
+    return 1
+  fi
+
+  # Source orchestrator helpers for pipeline_requires + pipeline_scope.
+  # shellcheck source=pipelines/lib/orchestrator.sh
+  PIPELINES_DIR="$PIPELINES_DIR" source "$NGSMODULE_ROOT/pipelines/lib/orchestrator.sh" 2>/dev/null
+
+  echo "Dependency graph for: $pipeline"
+  echo
+  _deps_render "$pipeline" 0 ""
+  echo
+  echo "Legend:  [project] = scope:project pipeline   [sample] = scope:sample (default)"
+  echo "Run order: depth-first, leaves first. Use --no-deps to skip resolution."
+}
+
+# Print a pipeline + recursively its prereqs as an indented tree.
+# Args: pipeline depth visited_csv
+_deps_render() {
+  local p="$1" depth="$2" visited="$3"
+  local indent=""
+  local i
+  for (( i = 0; i < depth; i++ )); do indent+="  "; done
+
+  local scope tag
+  scope="$(pipeline_scope "$p" 2>/dev/null || echo sample)"
+  tag="[$scope]"
+
+  printf '%s- %-26s %s\n' "$indent" "$p" "$tag"
+
+  # Detect cycles.
+  case ",$visited," in *,"$p",*) printf '%s  ↳ (cycle, skipping)\n' "$indent"; return ;; esac
+  visited="${visited:+$visited,}$p"
+
+  local prereq
+  while IFS= read -r prereq; do
+    [[ -z "$prereq" ]] && continue
+    _deps_render "$prereq" "$((depth + 1))" "$visited"
+  done < <(pipeline_requires "$p" 2>/dev/null)
+}
+
 main() {
   local cmd="${1:-help}"
   case "$cmd" in
     list)       cmd_list ;;
     info)       shift; cmd_info "$@" ;;
     run)        shift; cmd_run "$@" ;;
+    resume)     shift; cmd_resume "$@" ;;
+    deps)       shift; cmd_deps "$@" ;;
     status)     shift; cmd_status "$@" ;;
     trace)      shift; cmd_trace "$@" ;;
     report)     shift; cmd_report "$@" ;;
