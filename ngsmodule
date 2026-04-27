@@ -42,6 +42,8 @@ USAGE
 COMMANDS
   list                                List discovered pipelines
   info <pipeline>                     Show metadata for a pipeline
+  init <name> [--scope sample|project] [--requires a,b]
+                                      Scaffold a new pipeline directory under pipelines/core/
   deps <pipeline>                     Print prerequisite graph (preview what 'run' would resolve)
   run <pipeline> [opts]               Execute a pipeline (auto-resolves prerequisites)
   resume <pipeline> -c <ConfigFile>   Re-run only failed/incomplete samples for a pipeline
@@ -685,6 +687,267 @@ cmd_test() {
 # Without arguments, lints every discovered pipeline. Exits non-zero if any
 # pipeline has issues, so it's CI-friendly.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# `ngsmodule init <name>` — scaffold a new pipeline.
+#
+# Creates:
+#   pipelines/core/<Name>/
+#     meta.yml          (skeleton with TODO placeholders)
+#     env.yml           (minimal conda env stub)
+#     pipeline.sh       (boilerplate run_<Name>_for_{sample,project} fn)
+#     tests/test_samples.csv
+#     tests/test_config.sh
+#     tests/test_data/.gitkeep
+#
+# Flags:
+#   --scope project|sample   (default: sample)
+#   --requires <prereq,...>  comma-separated requires: list
+#   --category <cat>         (default: Custom)
+#   --force                  overwrite existing scaffold
+# ---------------------------------------------------------------------------
+cmd_init() {
+  local name="${1:?ngsmodule init: pipeline name required}"; shift
+
+  local scope="sample" category="Custom" requires_csv="" force=0
+  while (( $# > 0 )); do
+    case "$1" in
+      --scope)     scope="$2"; shift 2 ;;
+      --requires)  requires_csv="$2"; shift 2 ;;
+      --category)  category="$2"; shift 2 ;;
+      --force)     force=1; shift ;;
+      *) echo "Unknown flag: $1" >&2; return 2 ;;
+    esac
+  done
+
+  case "$scope" in sample|project) ;; *) echo "ERROR: --scope must be sample|project (got '$scope')" >&2; return 2 ;; esac
+  if ! [[ "$name" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]]; then
+    echo "ERROR: pipeline name must be [A-Za-z][A-Za-z0-9_]*" >&2
+    return 2
+  fi
+
+  local dir="$PIPELINES_DIR/$name"
+  if [[ -d "$dir" ]] && (( ! force )); then
+    echo "ERROR: $dir already exists (use --force to overwrite)" >&2
+    return 1
+  fi
+  mkdir -p "$dir/tests/test_data"
+  touch "$dir/tests/test_data/.gitkeep"
+
+  # ---- meta.yml ----
+  local requires_yaml="# requires:"
+  if [[ -n "$requires_csv" ]]; then
+    requires_yaml="requires:"$'\n'
+    local IFS=','
+    local r
+    for r in $requires_csv; do
+      requires_yaml+="  - $r"$'\n'
+    done
+    # Strip trailing newline for cleaner heredoc
+    requires_yaml="${requires_yaml%$'\n'}"
+  fi
+
+  local scope_yaml=""
+  [[ "$scope" == "project" ]] && scope_yaml=$'\n'"scope: project"
+
+  cat >"$dir/meta.yml" <<META
+name: $name
+display_name: TODO — friendly name
+category: $category
+version: 1.0.0$scope_yaml
+description: >
+  TODO — one-paragraph description. The web UI shows this verbatim.
+$requires_yaml
+tools:
+  - TODO_tool >= 1.0
+default_params:
+  TODO_param: default_value
+# Typed schema consumed by pipelines/lib/schema.sh.
+params_schema:
+  TODO_param:
+    type: string
+    default: default_value
+    description: TODO — describe this parameter.
+estimated_minutes_per_sample: 30
+resources:
+  mem: 8G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: TODO_input_kind
+  pattern: "TODO_pattern"
+outputs:
+  - kind: TODO_output_kind
+    pattern: "{sample}.TODO.out"
+META
+
+  # ---- env.yml ----
+  cat >"$dir/env.yml" <<ENV
+# Conda environment for the $name pipeline.
+
+name: ngsmodule-$name
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.11
+  - jq
+  # TODO: pin the bioinformatics tools your pipeline uses
+ENV
+
+  # ---- pipeline.sh ----
+  local entry_fn worker_signature worker_body
+  if [[ "$scope" == "project" ]]; then
+    entry_fn="run_${name}_for_project"
+    worker_signature="${entry_fn}() {"
+    worker_body=$'  module_reset
+
+  # TODO: read inputs (e.g. per-sample outputs from prereq pipelines)
+  local out_dir="$work_dir/$NGS_PROJECT_SENTINEL/'"$name"$'"
+  mkdir -p "$out_dir"
+
+  emit_status "[_project] '"$name"$': starting"
+
+  # TODO: do the project-level work here.
+  # Use module_run "<desc>" cmd args... to wrap CLI invocations.
+  # In dry-run mode, the wrapper short-circuits to a print, so your
+  # pipeline code should not assume the command actually executed.
+
+  if ! is_dry_run; then
+    # TODO: emit_artifact <kind> <path> for each output you produce.
+    :
+  fi
+
+  local tools_json inputs_json outputs_json params_json
+  tools_json="$(module_tools_json)"
+  inputs_json=\'[]\'    # TODO: populate from real inputs
+  outputs_json=\'[]\'   # TODO: populate from real outputs
+  params_json="$(printf \'{"TODO_param":"%s"}\' "${TODO_param:-}")"
+
+  ngs_state_stage_end "$NGS_PROJECT_SENTINEL" '"$name"$' completed \\
+    --params  "$params_json" \\
+    --tools   "$tools_json" \\
+    --inputs  "$inputs_json" \\
+    --outputs "$outputs_json"
+
+  return 0
+}'
+  else
+    entry_fn="run_${name}_for_sample"
+    worker_signature="${entry_fn}() {"
+    worker_body=$'  local sample="${1:?sample required}"
+  local sample_dir="$work_dir/$sample"
+  local out_dir="$sample_dir/'"$name"$'"
+  mkdir -p "$out_dir"
+  module_reset
+
+  # TODO: locate this sample\'s input files (typically from a prereq stage).
+  # Bail early in non-dry-run if they\'re missing.
+
+  emit_status "[$sample] '"$name"$': starting"
+
+  # TODO: do the per-sample work here.
+  # Use module_run "<desc>" cmd args... to wrap CLI invocations.
+
+  if ! is_dry_run; then
+    # TODO: emit_artifact <kind> <path> for each output you produce.
+    :
+  fi
+
+  local tools_json inputs_json outputs_json params_json
+  tools_json="$(module_tools_json)"
+  inputs_json=\'[]\'    # TODO: populate from real inputs
+  outputs_json=\'[]\'   # TODO: populate from real outputs
+  params_json="$(printf \'{"TODO_param":"%s"}\' "${TODO_param:-}")"
+
+  ngs_state_stage_end "$sample" '"$name"$' completed \\
+    --params  "$params_json" \\
+    --tools   "$tools_json" \\
+    --inputs  "$inputs_json" \\
+    --outputs "$outputs_json"
+
+  return 0
+}'
+  fi
+
+  cat >"$dir/pipeline.sh" <<PIPELINE
+#!/usr/bin/env bash
+# shellcheck shell=bash
+###############################################################################
+# pipelines/core/$name/pipeline.sh — TODO summary
+#
+# Generated by ngsmodule init. See docs/MIGRATION_GUIDE.md for the full
+# pattern and the existing pipelines under pipelines/core/ for examples.
+###############################################################################
+
+set -euo pipefail
+
+_PIPELINE_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+_NGS_LIB_DIR="\$(cd "\$_PIPELINE_DIR/../../lib" && pwd)"
+export _NGS_LIB_DIR
+
+# shellcheck source=../../lib/orchestrator.sh
+source "\$_NGS_LIB_DIR/orchestrator.sh"
+
+_NGS_MODULES_DIR="\$(cd "\$_PIPELINE_DIR/../../modules" && pwd)"
+# shellcheck source=../../modules/_lib.sh
+source "\$_NGS_MODULES_DIR/_lib.sh"
+# TODO: module_load <tool> for each tool you'll invoke.
+
+$worker_signature
+$worker_body
+
+if [[ "\${BASH_SOURCE[0]}" == "\${0}" ]]; then
+  if [[ -n "\${ConfigFile:-}" ]] && [[ -f "\${ConfigFile}" ]]; then
+    # shellcheck source=/dev/null
+    source "\$ConfigFile"
+  fi
+  if [[ -n "\${SampleInfoFile:-}" ]] && [[ -f "\${SampleInfoFile}" ]]; then
+    ngs_load_sample_info "\$SampleInfoFile"
+  fi
+  if [[ -n "\${rawdata_dir:-}" ]] && [[ -n "\${work_dir:-}" ]]; then
+    if [[ ! -d "\$work_dir" ]] || [[ -z "\$(ls -A "\$work_dir" 2>/dev/null)" ]]; then
+      ngs_build_workdir "\$rawdata_dir" "\$work_dir"
+    fi
+  fi
+  pipeline_run $name
+fi
+PIPELINE
+  chmod +x "$dir/pipeline.sh"
+
+  # ---- tests/ ----
+  cat >"$dir/tests/test_samples.csv" <<'CSV'
+RunID,SampleID,Layout,Group
+runA,test_sample_PE,PE,test
+CSV
+
+  cat >"$dir/tests/test_config.sh" <<TEST
+# Config for \`ngsmodule test $name\`.
+
+rawdata_dir="\${TEST_DIR:-.}/test_data"
+work_dir="\${TEST_WORK:-/tmp/ngsmodule-test}/$name"
+SampleInfoFile="\${TEST_DIR:-.}/test_samples.csv"
+
+ntask_per_run=1
+threads=2
+
+# TODO: set the schema-required parameters with sensible test values.
+TODO_param=default_value
+TEST
+
+  log_ok "Created pipeline scaffold: $dir"
+  cat <<HINT
+
+Next steps:
+  1. Edit pipelines/core/$name/meta.yml — fill in tools, schema, resources
+  2. Edit pipelines/core/$name/pipeline.sh — implement $entry_fn
+  3. Add module_load lines for the tools you'll invoke
+  4. Validate: ngsmodule lint $name && ngsmodule test $name
+  5. Read docs/MIGRATION_GUIDE.md for the full pattern
+HINT
+}
+
 cmd_lint() {
   # shellcheck source=pipelines/lib/schema.sh
   source "$NGSMODULE_ROOT/pipelines/lib/schema.sh"
@@ -834,6 +1097,7 @@ main() {
   case "$cmd" in
     list)       cmd_list ;;
     info)       shift; cmd_info "$@" ;;
+    init)       shift; cmd_init "$@" ;;
     run)        shift; cmd_run "$@" ;;
     resume)     shift; cmd_resume "$@" ;;
     deps)       shift; cmd_deps "$@" ;;
