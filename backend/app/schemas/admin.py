@@ -114,7 +114,7 @@ class UserDeletionRequest(BaseModel):
 
 class BulkUserOperation(BaseModel):
     """Bulk operation on multiple users"""
-    user_ids: List[str] = Field(..., min_items=1)
+    user_ids: List[str] = Field(..., min_length=1)
     operation: str  # activate, deactivate, delete, change_role
     parameters: Optional[Dict[str, Any]] = None
 

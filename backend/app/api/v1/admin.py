@@ -62,8 +62,8 @@ async def get_all_users(
     role: Optional[UserRole] = None,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
-    sort_by: str = Query("created_at", regex="^(created_at|username|email|role|storage_used)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|username|email|role|storage_used)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -556,7 +556,7 @@ async def download_system_logs(
     end_date: Optional[datetime] = None,
     levels: Optional[List[LogLevel]] = Query(None),
     sources: Optional[List[LogSource]] = Query(None),
-    format: str = Query("json", regex="^(json|csv|txt)$"),
+    format: str = Query("json", pattern="^(json|csv|txt)$"),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):

@@ -18,7 +18,9 @@ class Result(Base):
     task_id = Column(UUID(as_uuid=True), ForeignKey("pipeline_tasks.id", ondelete="CASCADE"), nullable=False)
     result_type = Column(String(50))  # 'qc_report', 'alignment', 'quantification', 'de_analysis'
     result_path = Column(Text)
-    metadata = Column(JSONB, default={})  # Result metadata
+    # NOTE: Python attribute renamed to avoid clash with SQLAlchemy's reserved `metadata` name.
+    # Database column is still named `metadata` for backward compatibility.
+    result_metadata = Column("metadata", JSONB, default={})
     created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships

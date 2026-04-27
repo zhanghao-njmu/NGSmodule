@@ -152,5 +152,29 @@ class StorageService:
             raise Exception(f"Error generating presigned URL: {str(e)}")
 
 
-# Singleton instance
-storage_service = StorageService()
+# Lazy singleton: connecting to MinIO at import time made the application fail
+# whenever the object store was unavailable. The accessor below defers
+# initialization until the first call.
+_storage_service: Optional[StorageService] = None
+
+
+def get_storage_service() -> StorageService:
+    """Return the lazily-initialized StorageService singleton."""
+    global _storage_service
+    if _storage_service is None:
+        _storage_service = StorageService()
+    return _storage_service
+
+
+class _StorageServiceProxy:
+    """Proxy that defers attribute access to the lazy-initialized StorageService.
+
+    Maintains backward compatibility with existing call sites that import
+    `storage_service` directly.
+    """
+
+    def __getattr__(self, name):
+        return getattr(get_storage_service(), name)
+
+
+storage_service = _StorageServiceProxy()

@@ -148,7 +148,7 @@ async def get_quick_stats(
 @router.get("/trends/{metric}", response_model=TrendData)
 async def get_trend_data(
     metric: str,
-    period: str = Query("week", regex="^(day|week|month)$"),
+    period: str = Query("week", pattern="^(day|week|month)$"),
     days: int = Query(7, ge=1, le=90),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

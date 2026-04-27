@@ -5,7 +5,6 @@ from app.schemas.user import (
     UserCreate,
     UserUpdate,
     UserResponse,
-    UserLogin,
     Token,
 )
 from app.schemas.project import (
@@ -44,7 +43,6 @@ __all__ = [
     "UserCreate",
     "UserUpdate",
     "UserResponse",
-    "UserLogin",
     "Token",
     # Project schemas
     "ProjectCreate",

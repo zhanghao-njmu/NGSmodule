@@ -179,7 +179,7 @@ class SampleService:
             group_name=sample_data.group_name,
             layout=sample_data.layout,
             batch_id=sample_data.batch_id,
-            metadata=sample_data.metadata or {}
+            sample_metadata=sample_data.metadata or {}
         )
 
         self.db.add(sample)
@@ -249,7 +249,7 @@ class SampleService:
                 group_name=sample_data.group_name,
                 layout=sample_data.layout,
                 batch_id=sample_data.batch_id,
-                metadata={}
+                sample_metadata={}
             )
             samples_to_add.append(sample)
 
@@ -326,7 +326,7 @@ class SampleService:
                     group_name=row.get('group_name', '').strip() or None,
                     layout=row.get('layout', '').strip() or None,
                     batch_id=row.get('batch_id', '').strip() or None,
-                    metadata={}
+                    sample_metadata={}
                 )
                 samples_to_add.append(sample)
                 existing_ids.add(sample_id)

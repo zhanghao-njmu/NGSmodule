@@ -89,6 +89,46 @@ def verify_resource_ownership(
     return resource
 
 
+def require_role(role: str):
+    """
+    Decorator that requires the current user to have a specific role.
+
+    Used as `@require_role("admin")` on FastAPI endpoints. Expects the
+    decorated coroutine to receive `current_user: User` as a kwarg.
+    """
+    from functools import wraps
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            current_user = kwargs.get("current_user")
+            if current_user is None:
+                # Locate User instance in positional args as fallback
+                for arg in args:
+                    if isinstance(arg, User):
+                        current_user = arg
+                        break
+
+            if current_user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Authentication required",
+                )
+
+            user_role = getattr(current_user, "role", None)
+            if user_role != role and not (role == "admin" and getattr(current_user, "is_admin", False)):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"{role.title()} access required",
+                )
+
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def require_admin(current_user: User) -> None:
     """
     Verify that the current user has admin privileges

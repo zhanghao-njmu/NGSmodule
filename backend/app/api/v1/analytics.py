@@ -7,7 +7,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.security import get_current_user, get_current_admin_user
+from app.core.deps import get_current_user, get_current_admin as get_current_admin_user
 from app.models.user import User
 from app.services.analytics_service import AnalyticsService
 from app.schemas.analytics import *
@@ -238,7 +238,7 @@ async def get_storage_analytics(
 
 @router.get("/compare/{entity_type}", response_model=ComparativeAnalysis)
 async def get_comparative_analysis(
-    entity_type: str = Query(..., description="Entity type: project, pipeline, user"),
+    entity_type: str,
     metric: str = Query(..., description="Metric to compare"),
     limit: int = Query(10, ge=1, le=100, description="Number of entities to compare"),
     current_user: User = Depends(get_current_user),

@@ -10,7 +10,7 @@ import os
 
 from app.models.project import Project
 from app.models.sample import Sample
-from app.models.task import Task
+from app.models.task import PipelineTask as Task
 from app.models.file import File
 from app.models.user import User
 from app.models.pipeline_template import PipelineTemplate

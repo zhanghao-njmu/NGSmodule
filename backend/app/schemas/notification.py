@@ -14,7 +14,7 @@ class NotificationBase(BaseModel):
     message: str = Field(..., description="Notification message")
     data: Optional[Dict[str, Any]] = Field(None, description="Additional data")
     action_url: Optional[str] = Field(None, max_length=500, description="Action URL")
-    priority: str = Field("normal", description="Priority level", regex="^(low|normal|high|urgent)$")
+    priority: str = Field("normal", description="Priority level", pattern="^(low|normal|high|urgent)$")
 
 
 class NotificationCreate(NotificationBase):

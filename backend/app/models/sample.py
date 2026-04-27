@@ -21,12 +21,19 @@ class Sample(Base):
     group_name = Column(String(50))
     layout = Column(String(10))  # 'PE' or 'SE'
     batch_id = Column(String(50))
-    metadata = Column(JSONB, default={})  # Additional sample metadata
+    # NOTE: Python attribute renamed to avoid clash with SQLAlchemy's reserved `metadata` name.
+    # Database column is still named `metadata` for backward compatibility.
+    sample_metadata = Column("metadata", JSONB, default={})
     created_at = Column(DateTime, default=utc_now_naive)
 
     # Relationships
     project = relationship("Project", back_populates="samples")
     files = relationship("File", back_populates="sample", cascade="all, delete-orphan")
+
+    @property
+    def metadata_dict(self) -> dict:
+        """Backward-compatible accessor for sample metadata."""
+        return self.sample_metadata or {}
 
     def __repr__(self):
         return f"<Sample {self.sample_id}>"

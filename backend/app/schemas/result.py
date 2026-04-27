@@ -11,7 +11,8 @@ class ResultBase(BaseModel):
     """Base result schema"""
 
     result_type: str = Field(..., description="Type of result (qc_report, alignment, quantification, de_analysis)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Result metadata")
+    # Read from ORM's `result_metadata` attribute, expose as `metadata` in JSON
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Result metadata", alias="result_metadata")
 
 
 class ResultResponse(ResultBase):
@@ -24,6 +25,7 @@ class ResultResponse(ResultBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class ResultListResponse(BaseModel):

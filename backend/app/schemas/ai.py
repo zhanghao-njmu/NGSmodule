@@ -150,10 +150,9 @@ class QCReport(BaseModel):
 
 class BatchQCRequest(BaseModel):
     """Batch QC request"""
-    sampleIds: List[str] = Field(..., alias="sampleIds", min_items=1)
+    sampleIds: List[str] = Field(..., alias="sampleIds", min_length=1)
 
     class Config:
-        allow_population_by_field_name = True
         populate_by_name = True
 
 

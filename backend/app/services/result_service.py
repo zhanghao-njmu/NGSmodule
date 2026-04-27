@@ -205,7 +205,7 @@ class ResultService:
             return ResultVisualizationData(
                 type=result.result_type,
                 message="Visualization not yet implemented for this result type",
-                raw_metadata=result.metadata
+                raw_metadata=result.result_metadata
             )
 
     # ============= HELPER METHODS =============
@@ -223,10 +223,10 @@ class ResultService:
         # In production, parse FastQC output from result.result_path
         # For now, use metadata or generate mock data
         metrics = {
-            "total_reads": result.metadata.get("total_reads", 10000000),
-            "quality_score": result.metadata.get("quality_score", 35.5),
-            "gc_content": result.metadata.get("gc_content", 48.2),
-            "duplication_rate": result.metadata.get("duplication_rate", 15.3),
+            "total_reads": result.result_metadata.get("total_reads", 10000000),
+            "quality_score": result.result_metadata.get("quality_score", 35.5),
+            "gc_content": result.result_metadata.get("gc_content", 48.2),
+            "duplication_rate": result.result_metadata.get("duplication_rate", 15.3),
         }
 
         charts = {
@@ -267,10 +267,10 @@ class ResultService:
             Alignment visualization data
         """
         metrics = {
-            "mapped_reads": result.metadata.get("mapped_reads", 8500000),
-            "mapping_rate": result.metadata.get("mapping_rate", 85.0),
-            "properly_paired": result.metadata.get("properly_paired", 7200000),
-            "average_coverage": result.metadata.get("average_coverage", 42.5),
+            "mapped_reads": result.result_metadata.get("mapped_reads", 8500000),
+            "mapping_rate": result.result_metadata.get("mapping_rate", 85.0),
+            "properly_paired": result.result_metadata.get("properly_paired", 7200000),
+            "average_coverage": result.result_metadata.get("average_coverage", 42.5),
         }
 
         charts = {

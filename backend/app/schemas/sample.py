@@ -42,7 +42,8 @@ class SampleResponse(SampleBase):
     """Schema for sample response"""
     id: UUID
     project_id: UUID
-    metadata: Dict[str, Any]
+    # Read from ORM's sample_metadata attribute, expose as `metadata` in JSON
+    metadata: Dict[str, Any] = Field(default_factory=dict, alias="sample_metadata")
     created_at: datetime
 
     # Computed fields
@@ -50,6 +51,7 @@ class SampleResponse(SampleBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class SampleListResponse(BaseModel):

@@ -63,6 +63,11 @@ async def get_current_user(
     return user
 
 
+# Alias: existing API modules import this name, but get_current_user
+# already enforces the is_active check. Keep both names for compatibility.
+get_current_active_user = get_current_user
+
+
 async def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
