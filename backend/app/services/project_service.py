@@ -32,21 +32,35 @@ class ProjectService:
 
     # ============= READ OPERATIONS =============
 
-    def get_by_id(self, project_id: UUID, user_id: UUID) -> Optional[Project]:
+    def get_by_id(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        is_admin: bool = False,
+    ) -> Optional[Project]:
         """
-        Get project by ID for a specific user
+        Get project by ID.
 
         Args:
             project_id: Project UUID
-            user_id: User UUID (for authorization)
+            user_id: Caller's user UUID (used for ownership check unless admin)
+            is_admin: If True, bypass the ownership check
 
         Returns:
-            Project if found and belongs to user, None otherwise
+            Project if found (and accessible), None otherwise
+
+        Note:
+            Soft-deleted projects (status='deleted') are excluded for both
+            owners and admins.
         """
-        project = self.db.query(Project).filter(
+        query = self.db.query(Project).filter(
             Project.id == project_id,
-            Project.user_id == user_id
-        ).first()
+            Project.status != "deleted",
+        )
+        if not is_admin:
+            query = query.filter(Project.user_id == user_id)
+
+        project = query.first()
 
         if project:
             # Add computed fields
@@ -55,13 +69,19 @@ class ProjectService:
 
         return project
 
-    def get_by_id_or_raise(self, project_id: UUID, user_id: UUID) -> Project:
+    def get_by_id_or_raise(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        is_admin: bool = False,
+    ) -> Project:
         """
         Get project by ID or raise 404 error
 
         Args:
             project_id: Project UUID
             user_id: User UUID (for authorization)
+            is_admin: If True, bypass ownership check
 
         Returns:
             Project
@@ -69,7 +89,7 @@ class ProjectService:
         Raises:
             HTTPException: If project not found or unauthorized
         """
-        project = self.get_by_id(project_id, user_id)
+        project = self.get_by_id(project_id, user_id, is_admin=is_admin)
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

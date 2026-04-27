@@ -104,9 +104,15 @@ async def get_project(
     service: ProjectService = Depends(get_project_service)
 ):
     """
-    Get project by ID
+    Get project by ID.
+
+    Admins can access any project; regular users can only access their own.
     """
-    return service.get_by_id_or_raise(project_id, current_user.id)
+    return service.get_by_id_or_raise(
+        project_id,
+        current_user.id,
+        is_admin=bool(getattr(current_user, "is_admin", False)),
+    )
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
