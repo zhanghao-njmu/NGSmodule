@@ -37,7 +37,7 @@ ngs_benchmark_begin() {
   local sample="${1:?sample required}"
   local pipeline="${2:?pipeline required}"
   _NGS_BENCH_TIME_BIN=/usr/bin/time
-  _NGS_BENCH_FILE="$(mktemp -t ngs-bench.XXXXXX)"
+  _NGS_BENCH_FILE="$(mktemp "${TMPDIR:-/tmp}/ngs-bench.XXXXXX")"
   export _NGS_BENCH_FILE
 }
 
@@ -46,7 +46,7 @@ ngs_benchmark_begin() {
 ngs_benchmark_wrap() {
   [[ -z "${_NGS_BENCH_FILE:-}" ]] && { "$@"; return $?; }
   local tmp
-  tmp="$(mktemp -t ngs-bench-step.XXXXXX)"
+  tmp="$(mktemp "${TMPDIR:-/tmp}/ngs-bench-step.XXXXXX")"
   "$_NGS_BENCH_TIME_BIN" -v -o "$tmp" "$@"
   local rc=$?
   # Append normalised key=value lines to the stage file.
