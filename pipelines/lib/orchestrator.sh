@@ -412,6 +412,23 @@ pipeline_run() {
     return 1
   fi
 
+  # Apply --filter <regex> if set. Filter the per-pipeline working list,
+  # not the global $samples[] (the project-scope path still wants the full
+  # cohort for prereq resolution checks).
+  if [[ -n "${NGS_SAMPLE_FILTER:-}" ]]; then
+    local -a filtered=()
+    local s
+    for s in "${samples[@]}"; do
+      [[ "$s" =~ $NGS_SAMPLE_FILTER ]] && filtered+=("$s")
+    done
+    if (( ${#filtered[@]} == 0 )); then
+      log_error "pipeline_run: --filter '$NGS_SAMPLE_FILTER' matched 0 samples (cohort: ${#samples[@]})"
+      return 1
+    fi
+    log_info "pipeline_run: --filter '$NGS_SAMPLE_FILTER' kept ${#filtered[@]}/${#samples[@]} samples"
+    samples=("${filtered[@]}")
+  fi
+
   # (Schema validation already ran at the top of pipeline_run.)
 
   # Echo dependency graph so users can see what will actually run.

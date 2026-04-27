@@ -1,0 +1,65 @@
+name: GATK_CNV_PoN
+display_name: GATK4 Panel of Normals (CNV)
+category: VariantCalling
+version: 1.0.0
+scope: project
+description: >
+  Project-level Panel of Normals (PoN) builder for GATK4 CNV calling.
+  Picks the cohort's normal samples (Group=Normal by default; configurable
+  via $pon_groups), runs CollectReadCounts on each, then merges them into
+  a single .hdf5 PoN with CreateReadCountPanelOfNormals. Output is consumed
+  by GATK_CNV to denoise per-sample read counts.
+
+  Build the PoN once per organism × capture; rerun only when adding new
+  normals or changing the interval list.
+requires:
+  - Alignment
+tools:
+  - gatk4 >= 4.4
+default_params:
+  Aligner: STAR
+  Deduplication: TRUE
+  pon_groups: Normal
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates the BAM directory.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM (TRUE recommended for CNV).
+  cnv_intervals:
+    type: path
+    required: true
+    description: GATK4 preprocessed interval list (.interval_list).
+  pon_groups:
+    type: string
+    default: Normal
+    description: >
+      Comma-separated list of Group labels to treat as normal samples.
+      Default "Normal" — matches a typical SampleInfoFile convention.
+  pon_min_samples:
+    type: int
+    min: 2
+    max: 1000
+    default: 5
+    description: Minimum normal samples required to build a usable PoN.
+estimated_minutes_per_sample: 10
+resources:
+  mem: 32G
+  time: "4:00:00"
+  cpus_per_task: 4
+  partition: medium
+  queue: main
+inputs:
+  kind: aligned_bam_cohort
+  pattern: "{normal_sample}.{aligner}.dedup.bam"
+outputs:
+  - kind: cnv_pon
+    pattern: "cnv.pon.hdf5"
+  - kind: cnv_pon_normals_list
+    pattern: "normals.txt"

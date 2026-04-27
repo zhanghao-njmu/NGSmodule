@@ -62,6 +62,8 @@ GLOBAL FLAGS (apply to 'run')
       --rawdata <dir>        Override rawdata_dir from config
       --workdir <dir>        Override work_dir from config
       --profile <name>       Execution profile (local|slurm|sge|lsf, default local)
+      --filter <regex>       Run only samples whose ID matches the regex
+                             (e.g. "sample_4[0-9]" runs sample_40 .. sample_49)
 
 EXAMPLES
   ngsmodule list
@@ -122,6 +124,7 @@ cmd_run() {
   # so we just set environment variables before invocation.
   local config="" samples_csv="" rawdata_override="" workdir_override=""
   local force_flag="FALSE" retry_count="1" ntask_hint=""
+  local sample_filter=""
   while (( $# > 0 )); do
     case "$1" in
       -c|--config)   config="$2"; shift 2 ;;
@@ -135,6 +138,7 @@ cmd_run() {
       --workdir)     workdir_override="$2"; shift 2 ;;
       --no-deps)     export NGS_NO_DEPS=1; shift ;;
       --profile)     export NGS_PROFILE="$2"; shift 2 ;;
+      --filter)      sample_filter="$2"; shift 2 ;;
       -h|--help)     cmd_info "$pipeline"; return 0 ;;
       *)             echo "Unknown flag: $1" >&2; return 2 ;;
     esac
@@ -149,6 +153,7 @@ cmd_run() {
   fi
   [[ -n "$rawdata_override" ]] && export rawdata_dir="$rawdata_override"
   [[ -n "$workdir_override" ]] && export work_dir="$workdir_override"
+  [[ -n "$sample_filter"    ]] && export NGS_SAMPLE_FILTER="$sample_filter"
   export force="$force_flag"
   export retry="$retry_count"
   [[ -n "$ntask_hint" ]] && export ntask_per_run="$ntask_hint"
@@ -430,6 +435,12 @@ _render_report_html() {
   .cell.running   { background: #fff8c5; color: #4d2d00; }
   .cell.failed    { background: #ffebe9; color: #6e1320; }
   .cell.pending   { background: var(--soft); color: var(--grey); }
+  /* Project-scope row: subtle distinct background + bold sample-id label */
+  tr.row-project td:first-child { font-weight: 600; color: #0969da; }
+  tr.row-project { background: #ddf4ff66; }
+  .badge-project { display: inline-block; font-size: 10px; padding: 1px 6px;
+                   margin-left: 6px; background: #0969da; color: white;
+                   border-radius: 8px; vertical-align: middle; }
   .gantt { position: relative; height: 18px; background: var(--soft);
            border: 1px solid var(--border); border-radius: 3px; }
   .gantt .bar { position: absolute; top: 1px; bottom: 1px;
@@ -456,8 +467,12 @@ HTML_HEAD
   ' <<<"$agg"
 
   jq -r '
-    "<div class=\"pills\">"
-    + "<div class=\"pill\"><span class=\"n\">" + (.sample_count|tostring) + "</span> samples</div>"
+    ([.samples[] | select(.sample_id != "_project")] | length) as $n_real
+    | (any(.samples[]; .sample_id == "_project")) as $has_project
+    | "<div class=\"pills\">"
+    + "<div class=\"pill\"><span class=\"n\">" + ($n_real|tostring) + "</span> samples</div>"
+    + (if $has_project then "<div class=\"pill\"><span class=\"n\">1</span> project<span class=\"badge-project\">scope</span></div>"
+       else "" end)
     + "<div class=\"pill\"><span class=\"n\">" + (.stages|length|tostring) + "</span> stages</div>"
     + "<div class=\"pill ok\"><span class=\"n\">" + (.summary.completed|tostring) + "</span> completed</div>"
     + "<div class=\"pill run\"><span class=\"n\">" + (.summary.running|tostring) + "</span> running</div>"
@@ -474,7 +489,10 @@ HTML_HEAD
       + "</tr></thead><tbody>"
       + ([
           .samples[] as $s |
-          "<tr><td>" + $s.sample_id + "</td>"
+          ($s.sample_id == "_project") as $is_proj |
+          "<tr" + (if $is_proj then " class=\"row-project\"" else "" end) + ">"
+          + "<td>" + (if $is_proj then "Project (cohort)<span class=\"badge-project\">project</span>"
+                      else $s.sample_id end) + "</td>"
           + ([
               $root.stages[] as $stg |
               ($s.stages[$stg] // {status:"pending"}) as $rec |
@@ -585,8 +603,11 @@ HTML_HEAD
   echo '<h2>Per-sample lineage</h2>'
   jq -r '
     .samples[] |
-    "<details><summary><b>" + .sample_id + "</b> — "
-    + ((.stages // {}) | keys | length | tostring) + " stages</summary>"
+    (.sample_id == "_project") as $is_proj |
+    "<details><summary><b>"
+    + (if $is_proj then "Project (cohort)" else .sample_id end) + "</b>"
+    + (if $is_proj then "<span class=\"badge-project\">project</span>" else "" end)
+    + " — " + ((.stages // {}) | keys | length | tostring) + " stages</summary>"
     + "<pre>" + (. | tojson) + "</pre>"
     + "</details>"
   ' <<<"$agg"
