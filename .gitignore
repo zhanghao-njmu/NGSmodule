@@ -22,6 +22,9 @@ var/
 # Exception: frontend source `lib/` directories are intentional
 !frontend/src/**/lib/
 !frontend/src/**/lib/**
+# Exception: pipelines/lib/ holds the bash framework helpers
+!pipelines/lib/
+!pipelines/lib/**
 wheels/
 *.egg-info/
 .installed.cfg

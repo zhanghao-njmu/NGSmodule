@@ -1,0 +1,41 @@
+# Pipeline metadata.
+#
+# Consumed by:
+#   - The CLI dispatcher (auto-discovery — drop a directory under
+#     pipelines/core/ with a meta.yml and it appears as a mode).
+#   - backend/init_pipeline_templates.py to seed the PipelineTemplate DB row
+#     so the web UI shows the same name + parameters + resource hints.
+#   - The web Result viewer (knows what kind of artefacts to expect).
+#
+# Keep this file flat. The orchestrator's parser only handles top-level
+# scalars + a single `default_params:` map; richer schemas would need a
+# real YAML library.
+
+name: preAlignmentQC
+display_name: Pre-Alignment Quality Control
+category: Quality Control
+version: 1.0.0
+description: >
+  Adapter trimming and quality filtering of raw FASTQ reads before alignment.
+  Produces trimmed FASTQ + interactive HTML/JSON QC report per sample.
+tools:
+  - fastp >= 0.23
+  - fastqc >= 0.12
+container: ngsmodule/preAlignmentQC:1.0.0
+default_params:
+  min_quality: 20
+  min_length: 50
+  trim_front1: 0
+  trim_front2: 0
+  detect_adapter_for_pe: true
+estimated_minutes_per_sample: 30
+inputs:
+  kind: fastq
+  pattern: "run*_{sample}*.fq.gz"
+outputs:
+  - kind: trimmed_fastq
+    pattern: "{sample}_trim_{1,2}.fq.gz"
+  - kind: qc_report_html
+    pattern: "{sample}_fastp.html"
+  - kind: qc_report_json
+    pattern: "{sample}_fastp.json"

@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+###############################################################################
+# ngsmodule — framework-style CLI dispatcher
+#
+# Auto-discovers pipelines under `pipelines/core/<name>/pipeline.sh` (each
+# with a `meta.yml`) and exposes them as subcommands. Drop a new directory
+# into `pipelines/core/` and it appears here automatically.
+#
+# Backwards compatibility: the legacy `./NGSmodule` entry point is preserved
+# untouched. Use `./ngsmodule` (lowercase) for the new dispatcher.
+#
+# Usage:
+#   ./ngsmodule list                                  – show available pipelines
+#   ./ngsmodule run <pipeline> -c <ConfigFile> [opts] – run a pipeline
+#   ./ngsmodule info <pipeline>                       – show metadata
+#   ./ngsmodule help [<pipeline>]                     – show usage
+#
+# Common flags:
+#   --dry-run        echo commands instead of running them
+#   --strict         enable `set -euo pipefail` inside step scripts
+#   --force          re-run samples that are already marked complete
+#   --retry N        per-sample retry count (default 1)
+#   --ntask N|ALL    parallelism hint (default 1)
+###############################################################################
+
+set -euo pipefail
+
+NGSMODULE_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PIPELINES_DIR="$NGSMODULE_ROOT/pipelines/core"
+
+# shellcheck source=pipelines/lib/runtime.sh
+source "$NGSMODULE_ROOT/pipelines/lib/runtime.sh"
+
+usage() {
+  cat <<EOF
+ngsmodule — NGS pipeline framework
+
+USAGE
+  ngsmodule <command> [options]
+
+COMMANDS
+  list                       List discovered pipelines
+  info <pipeline>            Show metadata for a pipeline
+  run <pipeline> [opts]      Execute a pipeline
+  help [<pipeline>]          Show this message or pipeline-specific help
+
+GLOBAL FLAGS (apply to 'run')
+  -c, --config <file>        Path to a ConfigFile (sourced into the env)
+  -s, --samples <csv>        Path to SampleInfoFile (overrides ConfigFile)
+      --dry-run              Preview commands; emit ::dry-run:: events
+      --strict               Enable set -euo pipefail in step scripts
+      --force                Re-run samples even if already complete
+      --retry <N>            Per-sample retry count (default 1)
+      --ntask <N|ALL>        Concurrency hint (default 1)
+      --rawdata <dir>        Override rawdata_dir from config
+      --workdir <dir>        Override work_dir from config
+
+EXAMPLES
+  ngsmodule list
+  ngsmodule info preAlignmentQC
+  ngsmodule run preAlignmentQC -c configs/Project_X.sh
+  ngsmodule run preAlignmentQC -c configs/Project_X.sh --dry-run
+  ngsmodule run preAlignmentQC -c configs/Project_X.sh --ntask 4 --retry 2
+EOF
+}
+
+discover_pipelines() {
+  local d
+  for d in "$PIPELINES_DIR"/*/; do
+    [[ -f "$d/pipeline.sh" ]] || continue
+    [[ -f "$d/meta.yml" ]]    || continue
+    basename "$d"
+  done
+}
+
+cmd_list() {
+  printf '%-25s %-25s %s\n' "NAME" "CATEGORY" "DESCRIPTION"
+  printf '%-25s %-25s %s\n' "----" "--------" "-----------"
+  local p
+  for p in $(discover_pipelines); do
+    local meta="$PIPELINES_DIR/$p/meta.yml"
+    local name category desc
+    name=$(grep -E '^name:' "$meta" | head -1 | sed 's/^name:[[:space:]]*//')
+    category=$(grep -E '^category:' "$meta" | head -1 | sed 's/^category:[[:space:]]*//')
+    desc=$(awk '/^description:/{flag=1;next}/^[a-z_]+:/{flag=0}flag' "$meta" \
+             | tr -s ' \n' ' ' | sed 's/^ *//;s/ *$//' | cut -c1-60)
+    printf '%-25s %-25s %s\n' "${name:-$p}" "${category:--}" "${desc:--}"
+  done
+}
+
+cmd_info() {
+  local pipeline="${1:?ngsmodule info: pipeline name required}"
+  local meta="$PIPELINES_DIR/$pipeline/meta.yml"
+  if [[ ! -f "$meta" ]]; then
+    echo "ERROR: unknown pipeline: $pipeline" >&2
+    echo "Run 'ngsmodule list' to see available pipelines." >&2
+    return 1
+  fi
+  cat "$meta"
+}
+
+cmd_run() {
+  local pipeline="${1:?ngsmodule run: pipeline name required}"; shift
+  local script="$PIPELINES_DIR/$pipeline/pipeline.sh"
+  if [[ ! -f "$script" ]]; then
+    echo "ERROR: unknown pipeline: $pipeline" >&2
+    echo "Run 'ngsmodule list' to see available pipelines." >&2
+    return 1
+  fi
+
+  # Parse generic flags. We let the pipeline source ConfigFile itself,
+  # so we just set environment variables before invocation.
+  local config="" samples_csv="" rawdata_override="" workdir_override=""
+  local force_flag="FALSE" retry_count="1" ntask_hint=""
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config)   config="$2"; shift 2 ;;
+      -s|--samples)  samples_csv="$2"; shift 2 ;;
+      --dry-run)     export NGS_DRY_RUN=1; shift ;;
+      --strict)      export NGS_STRICT=1; shift ;;
+      --force)       force_flag="TRUE"; shift ;;
+      --retry)       retry_count="$2"; shift 2 ;;
+      --ntask)       ntask_hint="$2"; shift 2 ;;
+      --rawdata)     rawdata_override="$2"; shift 2 ;;
+      --workdir)     workdir_override="$2"; shift 2 ;;
+      -h|--help)     cmd_info "$pipeline"; return 0 ;;
+      *)             echo "Unknown flag: $1" >&2; return 2 ;;
+    esac
+  done
+
+  if [[ -n "$config" ]]; then
+    [[ -f "$config" ]] || { echo "ERROR: config not found: $config" >&2; return 1; }
+    export ConfigFile="$config"
+  fi
+  if [[ -n "$samples_csv" ]]; then
+    export SampleInfoFile="$samples_csv"
+  fi
+  [[ -n "$rawdata_override" ]] && export rawdata_dir="$rawdata_override"
+  [[ -n "$workdir_override" ]] && export work_dir="$workdir_override"
+  export force="$force_flag"
+  export retry="$retry_count"
+  [[ -n "$ntask_hint" ]] && export ntask_per_run="$ntask_hint"
+
+  log_info "ngsmodule run: pipeline=$pipeline"
+  bash "$script"
+}
+
+main() {
+  local cmd="${1:-help}"
+  case "$cmd" in
+    list)       cmd_list ;;
+    info)       shift; cmd_info "$@" ;;
+    run)        shift; cmd_run "$@" ;;
+    help|-h|--help) shift; if [[ $# -eq 0 ]]; then usage; else cmd_info "$@"; fi ;;
+    *)          usage; return 2 ;;
+  esac
+}
+
+main "$@"
