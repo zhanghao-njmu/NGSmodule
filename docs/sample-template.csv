@@ -1,0 +1,7 @@
+sample_id,run_id,group_name,layout,batch_id
+S001,Run001,Control,PE,Batch_2024_03
+S002,Run001,Control,PE,Batch_2024_03
+S003,Run001,Treatment,PE,Batch_2024_03
+S004,Run001,Treatment,PE,Batch_2024_03
+S005,Run002,Control,PE,Batch_2024_04
+S006,Run002,Treatment,PE,Batch_2024_04
