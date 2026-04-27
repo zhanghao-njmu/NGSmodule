@@ -1,0 +1,150 @@
+name: Pipelines CI
+
+on:
+  push:
+    branches: [main, develop, "claude/**"]
+    paths:
+      - "pipelines/**"
+      - "ngsmodule"
+      - ".github/workflows/pipelines-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "pipelines/**"
+      - "ngsmodule"
+      - ".github/workflows/pipelines-ci.yml"
+
+jobs:
+  # ----------------------------------------------------------------------
+  # Static checks: shellcheck the bash files + ngsmodule's own lint.
+  # No tools/conda envs needed; runs in <30s.
+  # ----------------------------------------------------------------------
+  pipeline-static:
+    name: Static checks (shellcheck + lint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq + shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq jq shellcheck
+
+      - name: shellcheck pipelines/lib + pipelines/modules + pipelines/profiles
+        run: |
+          set -e
+          # Justified exclusions for the ngsmodule patterns:
+          #   SC1091 — sources resolved at runtime (orchestrator/_lib.sh)
+          #   SC2155 — `local x="$(...)"` is intentional (errors caught by
+          #            run_step's caller, not the local-decl line)
+          #   SC2034 — Sample_dict/Group_dict/Batch_dict populated by
+          #            ngs_load_sample_info, used elsewhere via indirect access
+          #   SC2154 — work_dir / samples / threads sourced from ConfigFile
+          #   SC2064 — trap_add intentionally interpolates "$cmd" eagerly so the
+          #            trap captures the closure of the moment it was registered
+          shellcheck \
+            --shell=bash \
+            --severity=warning \
+            --exclude=SC1091,SC2155,SC2034,SC2154,SC2064 \
+            pipelines/lib/*.sh \
+            pipelines/modules/*.sh \
+            pipelines/profiles/*.sh
+
+      - name: shellcheck pipeline.sh files
+        run: |
+          set -e
+          for p in pipelines/core/*/pipeline.sh; do
+            echo "::group::$p"
+            shellcheck \
+              --shell=bash \
+              --severity=warning \
+              --exclude=SC1091,SC2155,SC2034,SC2154,SC2064 \
+              "$p"
+            echo "::endgroup::"
+          done
+
+      - name: ngsmodule lint (offline schema check)
+        run: ./ngsmodule lint
+
+  # ----------------------------------------------------------------------
+  # Dry-run regression: ngsmodule test exercises every pipeline's
+  # pipeline.sh against its tests/ fixture without invoking any actual
+  # bioinformatics tool. Catches schema/type/path/argument-mismatch bugs.
+  # ----------------------------------------------------------------------
+  pipeline-dry-run:
+    name: Dry-run regression
+    runs-on: ubuntu-latest
+    needs: pipeline-static
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y -qq jq
+
+      - name: ngsmodule test (--dry-run)
+        run: ./ngsmodule test
+
+      - name: Pipeline list smoke test
+        run: |
+          set -e
+          ./ngsmodule list
+          # Discovery must report at least the framework's bundled pipelines.
+          count=$(./ngsmodule list | tail -n +3 | wc -l)
+          if [ "$count" -lt 5 ]; then
+            echo "ERROR: expected ≥5 pipelines, got $count"
+            exit 1
+          fi
+          echo "OK: discovered $count pipelines"
+
+  # ----------------------------------------------------------------------
+  # State-machine + helper-library unit checks. Loads each lib/*.sh
+  # independently and runs a tiny set of assertions against its API.
+  # ----------------------------------------------------------------------
+  pipeline-unit:
+    name: Lib unit checks
+    runs-on: ubuntu-latest
+    needs: pipeline-static
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y -qq jq
+
+      - name: schema.sh — validate a known-good meta.yml
+        run: |
+          set -e
+          source pipelines/lib/schema.sh
+          declare -A SCHEMA
+          pipeline_schema_load pipelines/core/Alignment/meta.yml SCHEMA
+          [[ -n "${SCHEMA[__params__]:-}" ]] || { echo "no params loaded"; exit 1; }
+          echo "✓ schema.sh loaded $(echo ${SCHEMA[__params__]} | wc -w) params"
+
+      - name: profiles.sh — resources block parses
+        run: |
+          set -e
+          source pipelines/lib/profiles.sh
+          declare -A R=()
+          pipeline_resources Alignment R
+          [[ -n "${R[mem]:-}" ]] || { echo "no mem in resources"; exit 1; }
+          echo "✓ profiles.sh: mem=${R[mem]} cpus=${R[cpus_per_task]}"
+
+      - name: sample_state.sh — round-trip a stage
+        run: |
+          set -e
+          tmpdir=$(mktemp -d)
+          export work_dir="$tmpdir"
+          mkdir -p "$tmpdir/sampleX"
+          declare -A Layout_dict=() Group_dict=() Batch_dict=()
+          source pipelines/lib/sample_state.sh
+          ngs_state_init sampleX
+          ngs_state_stage_begin sampleX TestPipe 1.0.0
+          ngs_state_stage_end   sampleX TestPipe completed
+          status=$(ngs_state_stage_status sampleX TestPipe)
+          [[ "$status" == "completed" ]] || { echo "expected completed, got $status"; exit 1; }
+          echo "✓ sample_state.sh: status round-tripped"
