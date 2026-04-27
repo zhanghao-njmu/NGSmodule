@@ -1,0 +1,65 @@
+name: Strelka2_somatic
+display_name: Strelka2 Somatic Variants
+category: VariantCalling
+version: 1.0.0
+description: >
+  Tumor-normal pair somatic variant calling with Illumina Strelka2.
+  Produces separate SNV and indel VCFs (Strelka2's native output) plus
+  bcftools stats summaries. Requires $normal_sample to be set in the
+  ConfigFile pointing to the matched-normal sample's ID.
+requires:
+  - Alignment
+tools:
+  - strelka2 >= 2.9
+  - bcftools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+  exome: FALSE
+  targeted: FALSE
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM.
+  exome:
+    type: enum
+    values: [TRUE, FALSE]
+    default: FALSE
+    description: Pass --exome (skip WGS-only depth heuristics).
+  targeted:
+    type: enum
+    values: [TRUE, FALSE]
+    default: FALSE
+    description: Pass --targeted (capture-panel mode).
+  normal_sample:
+    type: string
+    required: true
+    description: Sample ID of the matched normal — required for somatic calling.
+  genome:
+    type: path
+    required: false
+    description: Reference FASTA. Auto-resolved via iGenomes when unset.
+estimated_minutes_per_sample: 90
+resources:
+  mem: 16G
+  time: "4:00:00"
+  cpus_per_task: 4
+  partition: medium
+  queue: main
+inputs:
+  kind: aligned_bam_pair
+  pattern: "tumor:{sample}.{aligner}.dedup.bam, normal:{normal_sample}.{aligner}.dedup.bam"
+outputs:
+  - kind: somatic_snvs_vcf
+    pattern: "{sample}.{aligner}.Strelka2.somatic.snvs.vcf.gz"
+  - kind: somatic_indels_vcf
+    pattern: "{sample}.{aligner}.Strelka2.somatic.indels.vcf.gz"
