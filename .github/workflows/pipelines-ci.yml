@@ -148,3 +148,52 @@ jobs:
           status=$(ngs_state_stage_status sampleX TestPipe)
           [[ "$status" == "completed" ]] || { echo "expected completed, got $status"; exit 1; }
           echo "✓ sample_state.sh: status round-tripped"
+
+      - name: schema.sh — path type accepts real paths (regression)
+        run: |
+          set -e
+          # Regression: $'\0' glob matched every non-empty string in bash
+          # (it strips NULs from the pattern), so type:path always failed.
+          source pipelines/lib/schema.sh
+          declare -A SCHEMA=()
+          SCHEMA[__params__]="my_path"
+          SCHEMA[my_path.type]="path"
+          SCHEMA[my_path.required]="true"
+          export my_path="/tmp/some/file.txt"
+          if pipeline_validate_params __synthetic_no_meta__ 2>/dev/null; then
+            : # _validate_params returns 0 when meta.yml missing, but
+              # we want to test _schema_check_one directly. Bypass:
+          fi
+          # Direct check
+          if _schema_check_one SCHEMA my_path "/tmp/foo.txt" 2>/dev/null; then
+            echo "✓ schema.sh: type:path accepts /tmp/foo.txt"
+          else
+            echo "✗ schema.sh: type:path rejected a normal path (regression!)"
+            exit 1
+          fi
+          # Empty should fail
+          if _schema_check_one SCHEMA my_path "" 2>/dev/null; then
+            echo "✗ schema.sh: type:path accepted empty string (regression!)"
+            exit 1
+          else
+            echo "✓ schema.sh: type:path rejects empty string"
+          fi
+
+      - name: workdir.sh — empty dir + dry-run is a no-op (regression)
+        run: |
+          set -e
+          # Regression: ngs_build_workdir errored with `found_files: unbound
+          # variable` when no FASTQs matched. Should succeed in dry-run.
+          source pipelines/lib/runtime.sh
+          source pipelines/lib/workdir.sh
+          export NGS_DRY_RUN=1
+          declare -gA Sample_dict=([runX]=sampleX)
+          declare -gA Layout_dict Group_dict Batch_dict
+          tmpraw=$(mktemp -d); tmpwd=$(mktemp -d)
+          # An empty rawdata dir should not crash in dry-run
+          if ngs_build_workdir "$tmpraw" "$tmpwd" 2>&1; then
+            echo "✓ workdir.sh: dry-run with empty rawdata succeeded"
+          else
+            echo "✗ workdir.sh: dry-run with empty rawdata failed"
+            exit 1
+          fi

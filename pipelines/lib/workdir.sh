@@ -193,12 +193,19 @@ ngs_build_workdir() {
 
   local grep_pattern="(${RunIDPattern}(${R1_SufixPattern})\$)|(${RunIDPattern}(${R2_SufixPattern})\$)|(${RunIDPattern}(${SE_SufixPattern})\$)"
 
-  local -a found_files
+  local -a found_files=()
   while IFS= read -r f; do
     found_files+=("$f")
   done < <(find "$rawdata" -type f 2>/dev/null | grep -P "$grep_pattern" | sort)
 
   if (( ${#found_files[@]} == 0 )); then
+    # In dry-run mode the test fixtures intentionally have no real FASTQs;
+    # downgrade the hard error to a warning so pipelines can still exercise
+    # their schema/module/state flows.
+    if declare -f is_dry_run >/dev/null && is_dry_run; then
+      echo "WARN: No raw files under $rawdata (dry-run; skipping workdir build)" >&2
+      return 0
+    fi
     echo "ERROR: No raw files matched the suffix pattern under $rawdata" >&2
     echo "       R1: $R1_SufixPattern" >&2
     echo "       R2: $R2_SufixPattern" >&2

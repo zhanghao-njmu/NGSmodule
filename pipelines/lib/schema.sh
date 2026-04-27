@@ -163,8 +163,11 @@ _schema_check_one() {
       ;;
     path)
       # Path may not exist yet (it could be an output) — only validate
-      # syntactic shape: no embedded nulls, not empty.
-      if [[ -z "$value" ]] || [[ "$value" == *$'\0'* ]]; then
+      # syntactic shape: not empty, not a tab-or-newline (those would
+      # break shell-escaping downstream). Bash strings can't actually
+      # contain NULs (the previous null check matched every value
+      # because bash strips $'\0' from the glob pattern, leaving `*`).
+      if [[ -z "$value" ]] || [[ "$value" == *$'\t'* ]] || [[ "$value" == *$'\n'* ]]; then
         printf '  %s=%s — not a valid path\n' "$param" "$value" >&2
         return 1
       fi

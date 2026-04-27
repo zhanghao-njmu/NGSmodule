@@ -222,3 +222,145 @@ module_gatk_filter_mutect_calls() {
     module_run "gatk FilterMutectCalls" "$(_gatk_bin)" \
       FilterMutectCalls -R "$ref" -V "$vcf" -O "$out"
 }
+
+# ---------------------------------------------------------------------------
+# GATK4 CNV calling toolkit. The standard germline / tumor-only flow is:
+#
+#   CollectReadCounts        --bam <bam> --intervals <interval_list> --out <hdf5>
+#   DenoiseReadCounts        --counts <hdf5> --pon <hdf5> --std-out --denoised-out
+#   ModelSegments            --denoised <tsv> --out-prefix <p> --out-dir <d>
+#   CallCopyRatioSegments    --segments <cr.seg> --out <called.seg>
+#   PlotModeledSegments      --segments <cr.seg> --denoised <tsv> ...
+#
+# Each function is a thin wrapper — the pipeline composes them.
+# ---------------------------------------------------------------------------
+
+module_gatk_collect_read_counts() {
+  local bam="" intervals="" out="" extra=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --bam)        bam="$2"; shift 2 ;;
+      --intervals)  intervals="$2"; shift 2 ;;
+      --out)        out="$2"; shift 2 ;;
+      --extra)      extra="$2"; shift 2 ;;
+      *) echo "module_gatk_collect_read_counts: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${bam:?--bam required}"; : "${intervals:?--intervals required}"; : "${out:?--out required}"
+
+  # shellcheck disable=SC2086  # extra is intentionally word-split
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk CollectReadCounts" "$(_gatk_bin)" \
+      CollectReadCounts -I "$bam" -L "$intervals" \
+        --interval-merging-rule OVERLAPPING_ONLY -O "$out" $extra
+}
+
+module_gatk_denoise_read_counts() {
+  local counts="" pon="" standardized_out="" denoised_out=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --counts)            counts="$2"; shift 2 ;;
+      --pon)               pon="$2"; shift 2 ;;
+      --standardized-out)  standardized_out="$2"; shift 2 ;;
+      --denoised-out)      denoised_out="$2"; shift 2 ;;
+      *) echo "module_gatk_denoise_read_counts: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${counts:?--counts required}"; : "${pon:?--pon required}"
+  : "${standardized_out:?--standardized-out required}"
+  : "${denoised_out:?--denoised-out required}"
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk DenoiseReadCounts" "$(_gatk_bin)" \
+      DenoiseReadCounts -I "$counts" --count-panel-of-normals "$pon" \
+        --standardized-copy-ratios "$standardized_out" \
+        --denoised-copy-ratios "$denoised_out"
+}
+
+module_gatk_model_segments() {
+  local denoised="" out_dir="" out_prefix=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --denoised)    denoised="$2"; shift 2 ;;
+      --out-dir)     out_dir="$2"; shift 2 ;;
+      --out-prefix)  out_prefix="$2"; shift 2 ;;
+      *) echo "module_gatk_model_segments: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${denoised:?--denoised required}"; : "${out_dir:?--out-dir required}"
+  : "${out_prefix:?--out-prefix required}"
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk ModelSegments" "$(_gatk_bin)" \
+      ModelSegments \
+        --denoised-copy-ratios "$denoised" \
+        --output "$out_dir" --output-prefix "$out_prefix"
+}
+
+module_gatk_call_copy_ratio_segments() {
+  local in="" out=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --in)  in="$2"; shift 2 ;;
+      --out) out="$2"; shift 2 ;;
+      *) echo "module_gatk_call_copy_ratio_segments: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${in:?--in required}"; : "${out:?--out required}"
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk CallCopyRatioSegments" "$(_gatk_bin)" \
+      CallCopyRatioSegments -I "$in" -O "$out"
+}
+
+# Optional plot generation — needs R + ggplot2 from the GATK env.
+module_gatk_plot_modeled_segments() {
+  local denoised="" segments="" sequence_dict="" out_dir="" out_prefix=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --denoised)        denoised="$2"; shift 2 ;;
+      --segments)        segments="$2"; shift 2 ;;
+      --sequence-dict)   sequence_dict="$2"; shift 2 ;;
+      --out-dir)         out_dir="$2"; shift 2 ;;
+      --out-prefix)      out_prefix="$2"; shift 2 ;;
+      *) echo "module_gatk_plot_modeled_segments: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${denoised:?--denoised required}"; : "${segments:?--segments required}"
+  : "${sequence_dict:?--sequence-dict required}"
+  : "${out_dir:?--out-dir required}"; : "${out_prefix:?--out-prefix required}"
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk PlotModeledSegments" "$(_gatk_bin)" \
+      PlotModeledSegments \
+        --denoised-copy-ratios "$denoised" \
+        --segments "$segments" \
+        --sequence-dictionary "$sequence_dict" \
+        --output "$out_dir" --output-prefix "$out_prefix"
+}
+
+# Project-scope helper: build a Panel of Normals from a list of read-count
+# HDF5s. Caller passes one --counts <hdf5> per normal sample.
+module_gatk_create_read_count_pon() {
+  local out=""
+  local -a counts=()
+  while (( $# > 0 )); do
+    case "$1" in
+      --out)    out="$2"; shift 2 ;;
+      --counts) counts+=("$2"); shift 2 ;;
+      *) echo "module_gatk_create_read_count_pon: unknown arg $1" >&2; return 2 ;;
+    esac
+  done
+  : "${out:?--out required}"
+  if (( ${#counts[@]} == 0 )); then
+    echo "module_gatk_create_read_count_pon: at least one --counts required" >&2
+    return 2
+  fi
+
+  local args=(CreateReadCountPanelOfNormals -O "$out")
+  local c
+  for c in "${counts[@]}"; do args+=(-I "$c"); done
+
+  NGS_MODULE_CURRENT_TOOL=gatk \
+    module_run "gatk CreateReadCountPanelOfNormals" "$(_gatk_bin)" "${args[@]}"
+}

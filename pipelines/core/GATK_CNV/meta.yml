@@ -1,0 +1,66 @@
+name: GATK_CNV
+display_name: GATK4 Copy-Number Variation
+category: VariantCalling
+version: 1.0.0
+description: >
+  Per-sample copy-number calling with the GATK4 CNV best-practices flow:
+  CollectReadCounts → DenoiseReadCounts (using a pre-built Panel of
+  Normals) → ModelSegments → CallCopyRatioSegments. Replaces the legacy
+  Analysis/GATK/GATK-{germline,somatic}-CNV.sh, which were copy-paste
+  duplicates of the short-variant scripts (a real legacy bug — they
+  never actually called any CNV tool).
+
+  Caveat: the user must supply $cnv_intervals (preprocessed interval
+  list) and $cnv_pon (HDF5 panel of normals). Build the PoN once per
+  organism/capture using GATK_CNV_PoN (project-scope) or your site's
+  existing assets — it is not regenerated per run.
+requires:
+  - Alignment
+tools:
+  - gatk4 >= 4.4
+  - samtools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates input BAM directory.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM (TRUE recommended for CNV calling).
+  cnv_intervals:
+    type: path
+    required: true
+    description: GATK4 preprocessed interval list (.interval_list).
+  cnv_pon:
+    type: path
+    required: true
+    description: GATK4 panel of normals (.hdf5) built by GATK_CNV_PoN.
+  emit_plots:
+    type: bool
+    default: true
+    description: Generate PlotModeledSegments PNGs (requires ref .dict + ggplot2).
+estimated_minutes_per_sample: 60
+resources:
+  mem: 16G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.dedup.bam | {sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: cnv_read_counts
+    pattern: "{sample}.{aligner}.counts.hdf5"
+  - kind: cnv_denoised_copy_ratios
+    pattern: "{sample}.{aligner}.denoisedCR.tsv"
+  - kind: cnv_called_segments
+    pattern: "{sample}.{aligner}.called.seg"
