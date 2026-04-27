@@ -2,7 +2,7 @@
  * Result List Page - Browse all analysis results
  */
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -31,9 +31,10 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import resultService from '@/services/result.service'
+import { useResultList, useExportResult } from '@/hooks/queries'
 import { FilterBar, EnhancedEmptyState, PageSkeleton, FadeIn, StaggeredList, StatusTag } from '@/components/common'
 import type { FilterConfig } from '@/components/common'
-import { useAsync, useFilters, usePagination } from '@/hooks'
+import { useFilters, usePagination } from '@/hooks'
 import { toast } from '@/utils/notification'
 import type { Result } from '@/types/result'
 import dayjs from 'dayjs'
@@ -67,38 +68,21 @@ export const ResultList: React.FC = () => {
     initialPageSize: 20,
   })
 
-  // Load results with filters and pagination
-  const {
-    data: resultsData,
-    loading,
-    execute: loadResults,
-  } = useAsync(
-    async () => {
-      const params: any = {
-        skip,
-        limit,
-      }
+  // TanStack Query handles refetch on key change — no manual useEffect.
+  const queryParams = useMemo(() => {
+    const params: any = { skip, limit }
+    if (filters.result_type && filters.result_type !== 'all') {
+      params.result_type = filters.result_type
+    }
+    if (filters.task_id) {
+      params.task_id = filters.task_id
+    }
+    return params
+  }, [skip, limit, filters.result_type, filters.task_id])
 
-      if (filters.result_type && filters.result_type !== 'all') {
-        params.result_type = filters.result_type
-      }
+  const { data: resultsData, isLoading: loading } = useResultList(queryParams)
 
-      if (filters.task_id) {
-        params.task_id = filters.task_id
-      }
-
-      return resultService.getAll(params)
-    },
-    {
-      immediate: false,
-      onError: (err) => toast.error(`Failed to load results: ${err.message}`),
-    },
-  )
-
-  // Load results when filters or pagination changes
-  useEffect(() => {
-    loadResults()
-  }, [filters, pagination.current, pagination.pageSize])
+  const exportMutation = useExportResult()
 
   // Filter results by search term (client-side)
   const filteredResults = useMemo(() => {
@@ -281,7 +265,7 @@ export const ResultList: React.FC = () => {
                 label: 'CSV Format',
                 onClick: async () => {
                   try {
-                    const { download_url } = await resultService.exportResult(record.id, 'csv')
+                    const { download_url } = await exportMutation.mutateAsync({ id: record.id, format: 'csv' })
                     window.open(download_url, '_blank')
                     toast.success('CSV export started')
                   } catch (error: any) {
@@ -294,7 +278,7 @@ export const ResultList: React.FC = () => {
                 label: 'JSON Format',
                 onClick: async () => {
                   try {
-                    const { download_url } = await resultService.exportResult(record.id, 'json')
+                    const { download_url } = await exportMutation.mutateAsync({ id: record.id, format: 'json' })
                     window.open(download_url, '_blank')
                     toast.success('JSON export started')
                   } catch (error: any) {
@@ -307,7 +291,7 @@ export const ResultList: React.FC = () => {
                 label: 'TSV Format',
                 onClick: async () => {
                   try {
-                    const { download_url } = await resultService.exportResult(record.id, 'tsv')
+                    const { download_url } = await exportMutation.mutateAsync({ id: record.id, format: 'tsv' })
                     window.open(download_url, '_blank')
                     toast.success('TSV export started')
                   } catch (error: any) {

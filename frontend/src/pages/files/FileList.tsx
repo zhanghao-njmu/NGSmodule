@@ -1,9 +1,8 @@
 /**
- * File List Page - Complete file upload and management
- * Modernized with animations and enhanced UI components
+ * File List Page — TanStack Query migration.
  */
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Select, Tag, Modal, Upload, Popconfirm, Tooltip, Space, Typography, Progress } from 'antd'
 import {
   UploadOutlined,
@@ -15,44 +14,56 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { UploadFile, UploadProps } from 'antd'
-import { useFileStore } from '../../store/fileStore'
-import { useProjectStore } from '../../store/projectStore'
-import { useSampleStore } from '../../store/sampleStore'
-import { PageHeader, DataTable, PageSkeleton, FadeIn, EnhancedEmptyState } from '../../components/common'
-import { toast } from '../../utils/notification'
-import type { FileItem } from '../../types/file'
 import dayjs from 'dayjs'
+
+import {
+  useFilesByProject,
+  useDeleteFile,
+  useBatchUploadFiles,
+  useProjectList,
+  useSampleList,
+} from '@/hooks/queries'
+import fileService from '@/services/file.service'
+import { PageHeader, DataTable, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
+import { toast } from '@/utils/notification'
+import type { FileItem } from '@/types/file'
 
 const { Option } = Select
 const { Title, Text } = Typography
 
 export const FileList: React.FC = () => {
-  const { files, loading, uploadProgress, fetchFiles, deleteFile, downloadFile, batchUploadFiles } = useFileStore()
-  const { items, fetchItems } = useProjectStore()
-  const { samples, fetchSamples } = useSampleStore()
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedSample, setSelectedSample] = useState<string>('')
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [initialLoad, setInitialLoad] = useState(true)
 
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchItems()
-      setInitialLoad(false)
-    }
-    loadData()
-  }, [])
+  // ---- queries -------------------------------------------------------------
 
-  useEffect(() => {
-    if (selectedProject) {
-      fetchFiles({ project_id: selectedProject })
-      fetchSamples({ project_id: selectedProject })
-    }
-  }, [selectedProject])
+  const { data: projectList } = useProjectList({ limit: 200 })
+  const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
-  // 打开上传模态框
+  const { data: filesData, isLoading, isFetching } = useFilesByProject(
+    selectedProject || undefined,
+  )
+  const files: FileItem[] = useMemo(
+    () => (filesData as any)?.items ?? (filesData as any) ?? [],
+    [filesData],
+  )
+
+  const { data: samplesData } = useSampleList(selectedProject || undefined)
+  const samples = useMemo(
+    () => (samplesData as any)?.items ?? (samplesData as any) ?? [],
+    [samplesData],
+  )
+
+  // ---- mutations -----------------------------------------------------------
+
+  const deleteMutation = useDeleteFile()
+  const uploadMutation = useBatchUploadFiles()
+
+  // ---- handlers ------------------------------------------------------------
+
   const showUploadModal = () => {
     if (!selectedProject) {
       toast.warning('Please select a project first')
@@ -61,50 +72,76 @@ export const FileList: React.FC = () => {
     setIsUploadModalVisible(true)
   }
 
-  // 关闭上传模态框
   const handleCancelUpload = () => {
     setIsUploadModalVisible(false)
     setSelectedSample('')
     setFileList([])
+    setUploadProgress(0)
   }
 
-  // 文件上传配置
   const uploadProps: UploadProps = {
     name: 'file',
     multiple: true,
     accept: '.fastq,.fq,.fastq.gz,.fq.gz,.bam,.sam,.vcf,.vcf.gz',
     fileList,
-    beforeUpload: () => false, // 阻止自动上传
+    beforeUpload: () => false,
     onChange(info) {
-      // 更新文件列表
       setFileList(info.fileList)
     },
     onRemove(file) {
-      // 从文件列表中移除
       setFileList((prev) => prev.filter((f) => f.uid !== file.uid))
     },
   }
 
-  // 删除文件
   const handleDelete = async (id: string) => {
     try {
-      await deleteFile(id)
+      await deleteMutation.mutateAsync(id)
       toast.success('File deleted successfully')
-
-      // 刷新文件列表
-      if (selectedProject) {
-        fetchFiles({ project_id: selectedProject })
-      }
-    } catch (error) {
-      console.error('Failed to delete file:', error)
+    } catch {
       toast.error('Failed to delete file')
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) {
-      return '0 B'
+  const handleDownload = async (file: FileItem) => {
+    try {
+      await fileService.downloadFile(file.id, file.filename)
+    } catch {
+      toast.error('Failed to download file')
     }
+  }
+
+  const handleUpload = async () => {
+    if (!selectedSample) {
+      toast.warning('Please select a sample first')
+      return
+    }
+    if (fileList.length === 0) {
+      toast.warning('Please select at least one file to upload')
+      return
+    }
+    const filesToUpload: File[] = []
+    for (const f of fileList) {
+      if (f.originFileObj) filesToUpload.push(f.originFileObj as File)
+    }
+    if (filesToUpload.length === 0) {
+      toast.error('No valid files to upload')
+      return
+    }
+    try {
+      await uploadMutation.mutateAsync({
+        sampleId: selectedSample,
+        files: filesToUpload,
+        onProgress: (percent) => setUploadProgress(percent),
+      })
+      handleCancelUpload()
+      toast.success('Files uploaded successfully')
+    } catch (error) {
+      console.error('Upload error:', error)
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -152,7 +189,7 @@ export const FileList: React.FC = () => {
       key: 'sample_id',
       width: 150,
       render: (sampleId) => {
-        const sample = samples.find((s) => s.id === sampleId)
+        const sample = samples.find((s: any) => s.id === sampleId)
         return sample ? sample.sample_id : '-'
       },
     },
@@ -175,7 +212,7 @@ export const FileList: React.FC = () => {
               type="text"
               size="small"
               icon={<DownloadOutlined />}
-              onClick={() => downloadFile(record.id, record.filename)}
+              onClick={() => handleDownload(record)}
             />
           </Tooltip>
           <Popconfirm
@@ -184,7 +221,7 @@ export const FileList: React.FC = () => {
             onConfirm={() => handleDelete(record.id)}
             okText="Yes, Delete"
             cancelText="Cancel"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
           >
             <Tooltip title="Delete">
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
@@ -195,14 +232,12 @@ export const FileList: React.FC = () => {
     },
   ]
 
-  // Show skeleton on initial load
-  if (initialLoad && loading) {
+  if (isLoading && files.length === 0 && selectedProject) {
     return <PageSkeleton hasHeader rows={8} />
   }
 
   return (
     <div>
-      {/* Header */}
       <FadeIn direction="up" delay={0} duration={300}>
         <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 24 }}>
           <Space align="center">
@@ -222,9 +257,9 @@ export const FileList: React.FC = () => {
                 style={{ width: 300 }}
                 value={selectedProject || undefined}
                 onChange={setSelectedProject}
-                loading={items.length === 0}
+                loading={projects.length === 0}
               >
-                {items.map((p) => (
+                {projects.map((p: any) => (
                   <Option key={p.id} value={p.id}>
                     {p.name}
                   </Option>
@@ -232,7 +267,12 @@ export const FileList: React.FC = () => {
               </Select>
             }
             right={
-              <Button type="primary" icon={<UploadOutlined />} onClick={showUploadModal} disabled={!selectedProject}>
+              <Button
+                type="primary"
+                icon={<UploadOutlined />}
+                onClick={showUploadModal}
+                disabled={!selectedProject}
+              >
                 Upload Files
               </Button>
             }
@@ -240,7 +280,6 @@ export const FileList: React.FC = () => {
         </Space>
       </FadeIn>
 
-      {/* File table with enhanced empty state */}
       <FadeIn direction="up" delay={100} duration={300}>
         {!selectedProject ? (
           <EnhancedEmptyState
@@ -249,16 +288,12 @@ export const FileList: React.FC = () => {
             description="Please select a project from the dropdown above to view and manage files"
             size="default"
           />
-        ) : files.length === 0 && !loading ? (
+        ) : files.length === 0 && !isFetching ? (
           <EnhancedEmptyState
             type="noData"
             title="No files uploaded yet"
             description="Upload FASTQ, BAM, SAM, or VCF files to get started with analysis"
-            action={{
-              text: 'Upload Files',
-              onClick: showUploadModal,
-              icon: <UploadOutlined />,
-            }}
+            action={{ text: 'Upload Files', onClick: showUploadModal, icon: <UploadOutlined /> }}
             size="default"
           />
         ) : (
@@ -266,16 +301,25 @@ export const FileList: React.FC = () => {
             columns={columns}
             dataSource={files}
             rowKey="id"
-            loading={loading}
-            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `Total ${total} files` }}
+            loading={isFetching && files.length === 0}
+            pagination={{
+              pageSize: 20,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} files`,
+            }}
             emptyText="No Files"
             emptyDescription="Select a project and upload files to get started"
           />
         )}
       </FadeIn>
 
-      {/* 文件上传模态框 */}
-      <Modal title="Upload Files" open={isUploadModalVisible} onCancel={handleCancelUpload} footer={null} width={700}>
+      <Modal
+        title="Upload Files"
+        open={isUploadModalVisible}
+        onCancel={handleCancelUpload}
+        footer={null}
+        width={700}
+      >
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Select Sample *</label>
           <Select
@@ -284,7 +328,7 @@ export const FileList: React.FC = () => {
             value={selectedSample || undefined}
             onChange={setSelectedSample}
           >
-            {samples.map((s) => (
+            {samples.map((s: any) => (
               <Option key={s.id} value={s.id}>
                 {s.sample_id} {s.group_name && `(${s.group_name})`}
               </Option>
@@ -304,8 +348,7 @@ export const FileList: React.FC = () => {
           </p>
         </Upload.Dragger>
 
-        {/* Upload Progress */}
-        {uploading && uploadProgress > 0 && (
+        {uploadMutation.isPending && uploadProgress > 0 && (
           <div style={{ marginTop: 16 }}>
             <Progress percent={uploadProgress} status="active" strokeColor="var(--color-primary)" />
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -316,59 +359,14 @@ export const FileList: React.FC = () => {
 
         <div style={{ marginTop: 16, textAlign: 'right' }}>
           <Space>
-            <Button onClick={handleCancelUpload} disabled={uploading}>
+            <Button onClick={handleCancelUpload} disabled={uploadMutation.isPending}>
               Cancel
             </Button>
             <Button
               type="primary"
-              loading={uploading}
+              loading={uploadMutation.isPending}
               disabled={!selectedSample || fileList.length === 0}
-              onClick={async () => {
-                if (!selectedSample) {
-                  toast.warning('Please select a sample first')
-                  return
-                }
-
-                if (fileList.length === 0) {
-                  toast.warning('Please select at least one file to upload')
-                  return
-                }
-
-                try {
-                  setUploading(true)
-
-                  // Convert UploadFile[] to File[]
-                  const filesToUpload: File[] = []
-                  for (const f of fileList) {
-                    if (f.originFileObj) {
-                      filesToUpload.push(f.originFileObj as File)
-                    }
-                  }
-
-                  if (filesToUpload.length === 0) {
-                    toast.error('No valid files to upload')
-                    setUploading(false)
-                    return
-                  }
-
-                  // Upload files
-                  await batchUploadFiles(selectedSample, filesToUpload)
-
-                  // Success - close modal and refresh
-                  setIsUploadModalVisible(false)
-                  setSelectedSample('')
-                  setFileList([])
-
-                  // Refresh file list
-                  if (selectedProject) {
-                    await fetchFiles({ project_id: selectedProject })
-                  }
-                } catch (error) {
-                  console.error('Upload error:', error)
-                } finally {
-                  setUploading(false)
-                }
-              }}
+              onClick={handleUpload}
             >
               Upload {fileList.length > 0 && `(${fileList.length})`}
             </Button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -28,8 +28,16 @@ import {
   FilterOutlined,
   InboxOutlined,
 } from '@ant-design/icons'
+
 import { PageHeader, StatisticCard } from '@/components/common'
-import { notificationService } from '@/services/notification.service'
+import {
+  useNotifications,
+  useUnreadNotificationCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  useDeleteNotification,
+} from '@/hooks/queries'
+import notificationService from '@/services/notification.service'
 import type { Notification, NotificationType, NotificationCategory } from '@/types/notification'
 import { DesignTokens } from '@/styles/design-tokens'
 import { logger } from '@/utils/logger'
@@ -40,93 +48,61 @@ const { Option } = Select
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [total, setTotal] = useState(0)
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all')
   const [filterCategory, setFilterCategory] = useState<NotificationCategory | 'all'>('all')
   const [filterRead, setFilterRead] = useState<'all' | 'read' | 'unread'>('all')
 
-  // Statistics
-  const [stats, setStats] = useState({
-    total: 0,
-    unread: 0,
-    success: 0,
-    error: 0,
-    warning: 0,
-    info: 0,
-  })
+  const queryParams = useMemo(
+    () => ({
+      page: currentPage,
+      pageSize,
+      filter: {
+        type: filterType !== 'all' ? [filterType] : undefined,
+        category: filterCategory !== 'all' ? [filterCategory] : undefined,
+        read: filterRead === 'all' ? undefined : filterRead === 'read',
+      },
+    }),
+    [currentPage, pageSize, filterType, filterCategory, filterRead],
+  )
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await notificationService.getNotifications({
-        page: currentPage,
-        pageSize,
-        filter: {
-          type: filterType !== 'all' ? [filterType] : undefined,
-          category: filterCategory !== 'all' ? [filterCategory] : undefined,
-          read: filterRead === 'all' ? undefined : filterRead === 'read',
-        },
-      })
+  const { data: listData, isLoading: loading } = useNotifications(queryParams as any)
+  const notifications: Notification[] = (listData as any)?.items ?? (listData as any)?.notifications ?? []
+  const total = (listData as any)?.total ?? 0
 
-      setNotifications(response.notifications)
-      setTotal(response.total)
-    } catch (error) {
-      logger.error('Failed to load notifications:', error)
-      message.error('Failed to load notifications')
-    } finally {
-      setLoading(false)
+  const { data: unread } = useUnreadNotificationCount()
+
+  const stats = useMemo(() => {
+    const byType: Record<string, number> = (unread as any)?.by_type ?? {}
+    return {
+      total: total,
+      unread: (unread as any)?.count ?? 0,
+      success: byType.success ?? 0,
+      error: byType.error ?? 0,
+      warning: byType.warning ?? 0,
+      info: byType.info ?? 0,
     }
-  }, [currentPage, pageSize, filterType, filterCategory, filterRead])
+  }, [total, unread])
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const statsData = await notificationService.getStats()
-      setStats({
-        total: statsData.total || 0,
-        unread: statsData.unread || 0,
-        success: statsData.byType?.success || 0,
-        error: statsData.byType?.error || 0,
-        warning: statsData.byType?.warning || 0,
-        info: statsData.byType?.info || 0,
-      })
-    } catch (error) {
-      logger.error('Failed to load stats:', error)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchNotifications()
-    fetchStats()
-  }, [fetchNotifications, fetchStats])
+  const markReadMutation = useMarkNotificationRead()
+  const markAllReadMutation = useMarkAllNotificationsRead()
+  const deleteMutation = useDeleteNotification()
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(notifications.map((n) => n.id))
-    } else {
-      setSelectedIds([])
-    }
+    setSelectedIds(checked ? notifications.map((n) => n.id) : [])
   }
 
   const handleSelect = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds([...selectedIds, id])
-    } else {
-      setSelectedIds(selectedIds.filter((sid) => sid !== id))
-    }
+    setSelectedIds(checked ? [...selectedIds, id] : selectedIds.filter((sid) => sid !== id))
   }
 
   const handleMarkAsRead = async (ids: string[]) => {
     try {
-      await notificationService.markMultipleAsRead(ids)
-      setNotifications(notifications.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)))
+      await Promise.all(ids.map((id) => markReadMutation.mutateAsync(id)))
       setSelectedIds([])
       message.success(`${ids.length} notification(s) marked as read`)
-      fetchStats()
     } catch (error) {
       logger.error('Failed to mark notifications as read:', error)
       message.error('Failed to mark notifications as read')
@@ -135,10 +111,8 @@ export const NotificationsPage: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead()
-      setNotifications(notifications.map((n) => ({ ...n, read: true })))
+      await markAllReadMutation.mutateAsync()
       message.success('All notifications marked as read')
-      fetchStats()
     } catch (error) {
       logger.error('Failed to mark all as read:', error)
       message.error('Failed to mark all as read')
@@ -154,11 +128,9 @@ export const NotificationsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          await notificationService.deleteMultiple(ids)
-          setNotifications(notifications.filter((n) => !ids.includes(n.id)))
+          await Promise.all(ids.map((id) => deleteMutation.mutateAsync(id)))
           setSelectedIds([])
           message.success(`${ids.length} notification(s) deleted`)
-          fetchStats()
         } catch (error) {
           logger.error('Failed to delete notifications:', error)
           message.error('Failed to delete notifications')
@@ -176,10 +148,10 @@ export const NotificationsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
+          // notification.service exposes a deleteAllRead helper that
+          // batches via the existing mutations
           await notificationService.deleteAllRead()
-          setNotifications(notifications.filter((n) => !n.read))
           message.success('All read notifications deleted')
-          fetchStats()
         } catch (error) {
           logger.error('Failed to delete read notifications:', error)
           message.error('Failed to delete read notifications')

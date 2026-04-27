@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Typography, Input, Space, Button, Tag, List, Avatar, Tabs, Badge, Progress } from 'antd'
 import {
@@ -15,7 +15,12 @@ import {
 } from '@ant-design/icons'
 import { PageHeader, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import type { KnowledgeArticle, KnowledgeCategory, Tutorial } from '@/types/analytics'
-import { analyticsService } from '@/services/analytics.service'
+import {
+  usePopularArticles,
+  useArticlesByCategory,
+  useTutorials,
+  useKnowledgeSearch,
+} from '@/hooks/queries'
 import { DesignTokens } from '@/styles/design-tokens'
 import { logger } from '@/utils/logger'
 import './KnowledgeBase.css'
@@ -50,63 +55,39 @@ const categoryNames: Record<KnowledgeCategory, string> = {
 
 export const KnowledgeBase: React.FC = () => {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
-  const [_searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory | 'all'>('all')
-  const [articles, setArticles] = useState<KnowledgeArticle[]>([])
-  const [popularArticles, setPopularArticles] = useState<KnowledgeArticle[]>([])
-  const [tutorials, setTutorials] = useState<Tutorial[]>([])
 
-  const fetchKnowledgeContent = useCallback(async () => {
-    setLoading(true)
-    try {
-      // Fetch articles based on selected category
-      const articlesPromise =
-        selectedCategory === 'all'
-          ? analyticsService.getPopularArticles(20)
-          : analyticsService.getArticlesByCategory(selectedCategory)
+  const categoryFilter = selectedCategory !== 'all' ? selectedCategory : undefined
 
-      // Fetch popular articles and tutorials in parallel
-      const [fetchedArticles, popular, fetchedTutorials] = await Promise.all([
-        articlesPromise,
-        analyticsService.getPopularArticles(3),
-        analyticsService.getTutorials(selectedCategory !== 'all' ? selectedCategory : undefined),
-      ])
+  // Search overrides category-based article browsing when present
+  const isSearching = !!searchQuery
+  const searchResults = useKnowledgeSearch(searchQuery, categoryFilter)
+  const popularList = usePopularArticles(20)
+  const categoryList = useArticlesByCategory(selectedCategory)
+  const popularSidebar = usePopularArticles(3)
+  const tutorialsQuery = useTutorials(categoryFilter)
 
-      setArticles(fetchedArticles)
-      setPopularArticles(popular)
-      setTutorials(fetchedTutorials)
-    } catch (error) {
-      logger.error('Failed to fetch knowledge content:', error)
-    } finally {
-      setLoading(false)
-      setInitialLoad(false)
-    }
-  }, [selectedCategory])
+  const articles: KnowledgeArticle[] = useMemo(() => {
+    if (isSearching) return (searchResults.data as KnowledgeArticle[]) ?? []
+    if (selectedCategory === 'all') return (popularList.data as KnowledgeArticle[]) ?? []
+    return (categoryList.data as KnowledgeArticle[]) ?? []
+  }, [isSearching, selectedCategory, searchResults.data, popularList.data, categoryList.data])
 
-  useEffect(() => {
-    fetchKnowledgeContent()
-  }, [fetchKnowledgeContent])
+  const popularArticles: KnowledgeArticle[] = (popularSidebar.data as KnowledgeArticle[]) ?? []
+  const tutorials: Tutorial[] = (tutorialsQuery.data as Tutorial[]) ?? []
 
-  const handleSearch = async (value: string) => {
+  const loading =
+    (isSearching && searchResults.isLoading) ||
+    (!isSearching && selectedCategory === 'all' && popularList.isLoading) ||
+    (!isSearching && selectedCategory !== 'all' && categoryList.isLoading) ||
+    popularSidebar.isLoading ||
+    tutorialsQuery.isLoading
+
+  const initialLoad = articles.length === 0 && popularArticles.length === 0 && loading
+
+  const handleSearch = (value: string) => {
     setSearchQuery(value)
-    if (value) {
-      setLoading(true)
-      try {
-        const results = await analyticsService.searchKnowledge(
-          value,
-          selectedCategory !== 'all' ? selectedCategory : undefined,
-        )
-        setArticles(results)
-      } catch (error) {
-        logger.error('Search failed:', error)
-      } finally {
-        setLoading(false)
-      }
-    } else {
-      fetchKnowledgeContent()
-    }
   }
 
   const getDifficultyColor = (difficulty: string): string => {

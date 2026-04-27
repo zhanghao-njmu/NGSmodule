@@ -2,33 +2,19 @@
  * Result Detail Page - Analysis results visualization
  */
 import type React from 'react'
-import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Statistic, Tabs, Space, Tag, Descriptions, Button } from 'antd'
 import { ArrowLeftOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons'
-import resultService from '@/services/result.service'
+import { useResultVisualization } from '@/hooks/queries'
 import { PageSkeleton, FadeIn, EnhancedEmptyState, StaggeredList } from '@/components/common'
 import { LineChart, BarChart, PieChart, ScatterPlot } from '@/components/charts'
-import { useAsync } from '@/hooks'
 import type { ResultVisualizationData, ChartData } from '@/types/result'
 
 export const ResultDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  // Using useAsync hook eliminates 15+ lines of boilerplate
-  const {
-    data: vizData,
-    loading,
-    error,
-    execute: loadVisualizationData,
-  } = useAsync(() => resultService.getVisualizationData(id!), { immediate: false })
-
-  useEffect(() => {
-    if (id) {
-      loadVisualizationData()
-    }
-  }, [id])
+  const { data: vizData, isLoading: loading, error, refetch } = useResultVisualization(id)
 
   if (loading) {
     return <PageSkeleton hasHeader rows={6} />
@@ -40,11 +26,8 @@ export const ResultDetail: React.FC = () => {
         <EnhancedEmptyState
           type="error"
           title="Error Loading Results"
-          description={error?.message || 'No data available'}
-          action={{
-            text: 'Retry',
-            onClick: loadVisualizationData,
-          }}
+          description={(error as Error)?.message || 'No data available'}
+          action={{ text: 'Retry', onClick: () => refetch() }}
           size="default"
         />
       </FadeIn>

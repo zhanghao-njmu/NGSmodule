@@ -1,9 +1,8 @@
 /**
- * Pipeline List Page - Browse and execute pipelines
- * Refactored with modern hooks and components
+ * Pipeline List Page — TanStack Query migration.
  */
 import type React from 'react'
-import { useEffect, useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Card,
   Row,
@@ -35,80 +34,73 @@ import {
   RocketOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons'
-import { pipelineService } from '../../services/pipeline.service'
-import { useProjectStore } from '../../store/projectStore'
-import { useSampleStore } from '../../store/sampleStore'
+
+import {
+  usePipelineTemplates,
+  useExecutePipeline,
+  useBatchExecutePipeline,
+  useProjectList,
+  useSampleList,
+} from '@/hooks/queries'
+import pipelineService from '@/services/pipeline.service'
 import { FilterBar, EnhancedEmptyState, PageSkeleton, FadeIn, StaggeredList } from '@/components/common'
 import type { FilterConfig } from '@/components/common'
-import { useAsync, useFilters } from '@/hooks'
+import { useFilters } from '@/hooks'
 import { toast, notify } from '@/utils/notification'
-import type { PipelineTemplate, ParamSchema } from '../../types/pipeline'
+import type { PipelineTemplate, ParamSchema } from '@/types/pipeline'
 
 const { Option } = Select
 const { Title, Text } = Typography
 
 export const PipelineList: React.FC = () => {
-  // Modern hooks replacing manual state management
-  const {
-    data: templates,
-    loading,
-    error,
-    execute: loadTemplates,
-  } = useAsync(() => pipelineService.getAll({ is_active: true }), { immediate: true })
+  const { data: templates, isLoading, error, refetch } = usePipelineTemplates({ is_active: true })
 
   const { filters, setFilter, resetFilters } = useFilters({
-    initialFilters: {
-      search: '',
-      category: 'all',
-    },
+    initialFilters: { search: '', category: 'all' },
   })
 
   const [executeModalOpen, setExecuteModalOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<PipelineTemplate | null>(null)
   const [batchMode, setBatchMode] = useState(false)
   const [recommendLoading, setRecommendLoading] = useState(false)
+  const [selectedProjectInForm, setSelectedProjectInForm] = useState<string>('')
   const [form] = Form.useForm()
 
-  const { items, fetchItems } = useProjectStore()
-  const { samples, fetchSamples } = useSampleStore()
+  const { data: projectList } = useProjectList({ limit: 200 })
+  const items = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
-  useEffect(() => {
-    fetchItems()
-  }, [])
+  const { data: samplesData } = useSampleList(selectedProjectInForm || undefined)
+  const samples = (samplesData as any)?.items ?? (samplesData as any) ?? []
 
-  // Filter templates using useMemo for performance
+  const executeMutation = useExecutePipeline()
+  const batchExecuteMutation = useBatchExecutePipeline()
+
   const filteredTemplates = useMemo(() => {
-    if (!templates?.items) {
-      return []
-    }
-
-    let filtered = templates.items
+    const list = (templates as any)?.items ?? []
+    let filtered = list
 
     if (filters.category !== 'all') {
-      filtered = filtered.filter((t) => t.category === filters.category)
+      filtered = filtered.filter((t: PipelineTemplate) => t.category === filters.category)
     }
 
     if (filters.search) {
       const search = filters.search.toLowerCase()
       filtered = filtered.filter(
-        (t) =>
+        (t: PipelineTemplate) =>
           t.display_name.toLowerCase().includes(search) ||
           t.description?.toLowerCase().includes(search) ||
           t.tags.some((tag) => tag.toLowerCase().includes(search)),
       )
     }
 
-    return filtered
+    return filtered as PipelineTemplate[]
   }, [filters, templates])
 
   const categories = useMemo(() => {
-    if (!templates?.items) {
-      return []
-    }
-    return Array.from(new Set(templates.items.map((t) => t.category)))
+    const list = (templates as any)?.items ?? []
+    return Array.from(new Set(list.map((t: PipelineTemplate) => t.category)))
   }, [templates])
 
-  // Filter configuration for FilterBar
   const filterConfigs: FilterConfig[] = [
     {
       type: 'search',
@@ -119,7 +111,10 @@ export const PipelineList: React.FC = () => {
       type: 'select',
       key: 'category',
       label: 'Category',
-      options: [{ label: 'All Categories', value: 'all' }, ...categories.map((cat) => ({ label: cat, value: cat }))],
+      options: [
+        { label: 'All Categories', value: 'all' },
+        ...categories.map((cat: any) => ({ label: cat, value: cat })),
+      ],
     },
   ]
 
@@ -135,25 +130,23 @@ export const PipelineList: React.FC = () => {
   }
 
   const handleProjectChange = (projectId: string) => {
-    fetchSamples({ project_id: projectId })
+    setSelectedProjectInForm(projectId)
   }
 
   const handleGetRecommendations = async () => {
-    if (!selectedTemplate) {
-      return
-    }
+    if (!selectedTemplate) return
 
     const loadingToast = toast.loading('Analyzing historical tasks...')
     setRecommendLoading(true)
 
     try {
       const projectId = form.getFieldValue('project_id')
-      const recommendations = await pipelineService.getParameterRecommendations(selectedTemplate.id, projectId)
+      const recommendations = await pipelineService.getParameterRecommendations(
+        selectedTemplate.id,
+        projectId,
+      )
 
-      // Update form parameters with recommendations
-      form.setFieldsValue({
-        parameters: recommendations.recommended_params,
-      })
+      form.setFieldsValue({ parameters: recommendations.recommended_params })
 
       loadingToast()
       toast.success(
@@ -170,15 +163,12 @@ export const PipelineList: React.FC = () => {
   }
 
   const handleExecuteSubmit = async () => {
-    if (!selectedTemplate) {
-      return
-    }
+    if (!selectedTemplate) return
 
     try {
       const values = await form.validateFields()
 
       if (batchMode) {
-        // Batch execution mode
         if (!values.sample_ids || values.sample_ids.length === 0) {
           toast.warning('Please select at least one sample for batch execution')
           return
@@ -186,7 +176,7 @@ export const PipelineList: React.FC = () => {
 
         const loadingToast = toast.loading('Creating batch tasks...')
 
-        const result = await pipelineService.batchExecutePipeline({
+        const result = await batchExecuteMutation.mutateAsync({
           template_id: selectedTemplate.id,
           project_id: values.project_id,
           sample_ids: values.sample_ids,
@@ -202,10 +192,9 @@ export const PipelineList: React.FC = () => {
           notify.success('Batch Execution Started', `${result.total_tasks} tasks created successfully!`)
         }
       } else {
-        // Single execution mode
         const loadingToast = toast.loading('Starting pipeline execution...')
 
-        await pipelineService.executePipeline({
+        await executeMutation.mutateAsync({
           template_id: selectedTemplate.id,
           task_name: values.task_name,
           project_id: values.project_id,
@@ -214,7 +203,10 @@ export const PipelineList: React.FC = () => {
         })
 
         loadingToast()
-        notify.success('Pipeline Execution Started', 'Your pipeline task has been created and will start shortly.')
+        notify.success(
+          'Pipeline Execution Started',
+          'Your pipeline task has been created and will start shortly.',
+        )
       }
 
       setExecuteModalOpen(false)
@@ -244,21 +236,17 @@ export const PipelineList: React.FC = () => {
       case 'select':
         return (
           <Select placeholder={`Select ${schema.label}`}>
-            {schema.options?.map((opt) => {
-              if (typeof opt === 'string') {
-                return (
-                  <Option key={opt} value={opt}>
-                    {opt}
-                  </Option>
-                )
-              } else {
-                return (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Option>
-                )
-              }
-            })}
+            {schema.options?.map((opt) =>
+              typeof opt === 'string' ? (
+                <Option key={opt} value={opt}>
+                  {opt}
+                </Option>
+              ) : (
+                <Option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </Option>
+              ),
+            )}
           </Select>
         )
       default:
@@ -266,21 +254,19 @@ export const PipelineList: React.FC = () => {
     }
   }
 
-  // Show skeleton while loading
-  if (loading && !templates) {
+  if (isLoading && !templates) {
     return <PageSkeleton hasHeader hasFilters rows={6} />
   }
 
-  // Error state
   if (error) {
     return (
       <FadeIn>
         <Alert
           message="Error Loading Pipelines"
-          description={error?.message || 'Failed to load pipeline templates'}
+          description={(error as Error)?.message || 'Failed to load pipeline templates'}
           type="error"
           showIcon
-          action={<Button onClick={loadTemplates}>Retry</Button>}
+          action={<Button onClick={() => refetch()}>Retry</Button>}
         />
       </FadeIn>
     )
@@ -288,7 +274,6 @@ export const PipelineList: React.FC = () => {
 
   return (
     <div>
-      {/* Header with filters */}
       <FadeIn direction="up" delay={0} duration={300}>
         <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 24 }}>
           <Space align="center">
@@ -312,17 +297,20 @@ export const PipelineList: React.FC = () => {
             <Badge count={filteredTemplates.length} showZero>
               <Text strong>Available Pipelines</Text>
             </Badge>
-            <Text type="secondary">{templates?.total || 0} total templates</Text>
+            <Text type="secondary">{(templates as any)?.total || 0} total templates</Text>
           </Space>
         </Space>
       </FadeIn>
 
-      {/* Empty state */}
-      {filteredTemplates.length === 0 && !loading ? (
+      {filteredTemplates.length === 0 && !isLoading ? (
         <FadeIn direction="up" delay={100}>
           <EnhancedEmptyState
             type={filters.search || filters.category !== 'all' ? 'noSearchResults' : 'noData'}
-            title={filters.search || filters.category !== 'all' ? 'No matching pipelines' : 'No pipelines available'}
+            title={
+              filters.search || filters.category !== 'all'
+                ? 'No matching pipelines'
+                : 'No pipelines available'
+            }
             description={
               filters.search || filters.category !== 'all'
                 ? 'Try adjusting your search criteria or filters'
@@ -330,17 +318,13 @@ export const PipelineList: React.FC = () => {
             }
             action={
               filters.search || filters.category !== 'all'
-                ? {
-                    text: 'Clear Filters',
-                    onClick: resetFilters,
-                  }
+                ? { text: 'Clear Filters', onClick: resetFilters }
                 : undefined
             }
             size="default"
           />
         </FadeIn>
       ) : (
-        /* Pipeline Cards with staggered animation */
         <StaggeredList staggerDelay={80} baseDelay={100} direction="up">
           <Row gutter={[16, 16]}>
             {filteredTemplates.map((template) => (
@@ -367,7 +351,9 @@ export const PipelineList: React.FC = () => {
                   ]}
                   style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                 >
-                  <p style={{ minHeight: 60, color: '#666', marginBottom: 16 }}>{template.description}</p>
+                  <p style={{ minHeight: 60, color: '#666', marginBottom: 16 }}>
+                    {template.description}
+                  </p>
 
                   <Divider style={{ margin: '12px 0' }} />
 
@@ -402,12 +388,13 @@ export const PipelineList: React.FC = () => {
         </StaggeredList>
       )}
 
-      {/* Execute Modal with Modern UI */}
       <Modal
         title={
           <Space>
             <ThunderboltOutlined style={{ color: 'var(--color-primary)' }} />
-            <span style={{ fontWeight: 600 }}>Execute Pipeline: {selectedTemplate?.display_name}</span>
+            <span style={{ fontWeight: 600 }}>
+              Execute Pipeline: {selectedTemplate?.display_name}
+            </span>
           </Space>
         }
         open={executeModalOpen}
@@ -425,7 +412,7 @@ export const PipelineList: React.FC = () => {
         }
         okButtonProps={{ size: 'large' }}
         cancelButtonProps={{ size: 'large' }}
-        confirmLoading={loading}
+        confirmLoading={executeMutation.isPending || batchExecuteMutation.isPending}
         destroyOnClose
       >
         <Alert
@@ -438,7 +425,6 @@ export const PipelineList: React.FC = () => {
         />
 
         <Form form={form} layout="vertical" size="large">
-          {/* Batch Mode Toggle */}
           <Card size="small" style={{ marginBottom: 16, background: '#f5f5f5' }}>
             <Space direction="vertical" style={{ width: '100%' }}>
               <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -454,8 +440,8 @@ export const PipelineList: React.FC = () => {
               <Text type="secondary" style={{ fontSize: 13 }}>
                 {batchMode ? (
                   <>
-                    <RocketOutlined /> Create one task per sample for parallel processing (recommended for large
-                    datasets)
+                    <RocketOutlined /> Create one task per sample for parallel processing
+                    (recommended for large datasets)
                   </>
                 ) : (
                   <>
@@ -466,7 +452,6 @@ export const PipelineList: React.FC = () => {
             </Space>
           </Card>
 
-          {/* Task Name / Task Name Prefix */}
           {batchMode ? (
             <Form.Item
               name="task_name_prefix"
@@ -486,9 +471,18 @@ export const PipelineList: React.FC = () => {
             </Form.Item>
           )}
 
-          <Form.Item name="project_id" label="Project" rules={[{ required: true, message: 'Please select project' }]}>
-            <Select placeholder="Select project" onChange={handleProjectChange} showSearch optionFilterProp="children">
-              {items.map((p) => (
+          <Form.Item
+            name="project_id"
+            label="Project"
+            rules={[{ required: true, message: 'Please select project' }]}
+          >
+            <Select
+              placeholder="Select project"
+              onChange={handleProjectChange}
+              showSearch
+              optionFilterProp="children"
+            >
+              {items.map((p: any) => (
                 <Option key={p.id} value={p.id}>
                   {p.name}
                 </Option>
@@ -508,11 +502,13 @@ export const PipelineList: React.FC = () => {
           >
             <Select
               mode="multiple"
-              placeholder={batchMode ? 'Select samples for batch processing' : 'Select samples (leave empty for all)'}
+              placeholder={
+                batchMode ? 'Select samples for batch processing' : 'Select samples (leave empty for all)'
+              }
               showSearch
               optionFilterProp="children"
             >
-              {samples.map((s) => (
+              {samples.map((s: any) => (
                 <Option key={s.id} value={s.id}>
                   {s.sample_id}
                 </Option>
@@ -528,7 +524,6 @@ export const PipelineList: React.FC = () => {
             </Space>
           </Divider>
 
-          {/* AI Recommendations Card */}
           <Card size="small" style={{ marginBottom: 16, borderColor: '#faad14', background: '#fffbe6' }}>
             <Space style={{ width: '100%', justifyContent: 'space-between' }}>
               <Space>

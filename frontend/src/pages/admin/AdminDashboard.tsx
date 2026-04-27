@@ -2,7 +2,7 @@
  * Admin Dashboard - System overview and user management
  */
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Card,
   Tag,
@@ -32,7 +32,14 @@ import {
   PlayCircleOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { adminService } from '../../services/admin.service'
+
+import {
+  useSystemStats,
+  useAdminUsers,
+  useUpdateAdminUser,
+  useToggleUserStatus,
+  useDeleteAdminUser,
+} from '@/hooks/queries'
 import {
   StatisticCard,
   DataTable,
@@ -41,45 +48,30 @@ import {
   FadeIn,
   StaggeredList,
   EnhancedEmptyState,
-} from '../../components/common'
-import { toast } from '../../utils/notification'
-import { formatFileSize } from '../../utils/format'
-import type { StatisticItem } from '../../components/common'
-import type { User, UserAdminUpdate, SystemStats } from '../../types/admin'
+} from '@/components/common'
+import { toast } from '@/utils/notification'
+import { formatFileSize } from '@/utils/format'
+import type { StatisticItem } from '@/components/common'
+import type { User, UserAdminUpdate, SystemStats } from '@/types/admin'
 import dayjs from 'dayjs'
 
 const { Option } = Select
 const { Title, Text } = Typography
 
 export const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<SystemStats | null>(null)
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [form] = Form.useForm()
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  const { data: stats, isLoading: statsLoading } = useSystemStats() as { data: SystemStats | undefined; isLoading: boolean }
+  const { data: usersData, isLoading: usersLoading } = useAdminUsers({ limit: 100 })
+  const users: User[] = (usersData as any)?.users ?? (usersData as any) ?? []
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      const [systemStats, userList] = await Promise.all([
-        adminService.getSystemStats(),
-        adminService.getUsers({ limit: 100 }),
-      ])
-      setStats(systemStats)
-      setUsers(userList)
-    } catch (error: any) {
-      toast.error(`Failed to load data: ${error.message}`)
-    } finally {
-      setLoading(false)
-      setInitialLoad(false)
-    }
-  }
+  const updateMutation = useUpdateAdminUser()
+  const toggleMutation = useToggleUserStatus()
+  const deleteMutation = useDeleteAdminUser()
+
+  const loading = statsLoading || usersLoading
 
   const handleEdit = (user: User) => {
     setSelectedUser(user)
@@ -89,27 +81,22 @@ export const AdminDashboard: React.FC = () => {
       organization: user.organization,
       role: user.role,
       is_active: user.is_active,
-      storage_quota: Math.round(user?.storage_quota ?? 0 / (1024 * 1024 * 1024)), // Convert to GB
+      storage_quota: Math.round((user?.storage_quota ?? 0) / (1024 * 1024 * 1024)),
     })
     setEditModalOpen(true)
   }
 
   const handleEditSubmit = async () => {
-    if (!selectedUser) {
-      return
-    }
-
+    if (!selectedUser) return
     try {
       const values = await form.validateFields()
       const updateData: UserAdminUpdate = {
         ...values,
-        storage_quota: values.storage_quota * 1024 * 1024 * 1024, // Convert GB to bytes
+        storage_quota: values.storage_quota * 1024 * 1024 * 1024,
       }
-
-      await adminService.updateUser(selectedUser.id, updateData)
+      await updateMutation.mutateAsync({ id: selectedUser.id, data: updateData })
       toast.success('User updated successfully')
       setEditModalOpen(false)
-      loadData()
     } catch (error: any) {
       toast.error(`Failed to update user: ${error.message}`)
     }
@@ -117,9 +104,8 @@ export const AdminDashboard: React.FC = () => {
 
   const handleToggleStatus = async (user: User) => {
     try {
-      await adminService.toggleUserStatus(user.id)
+      await toggleMutation.mutateAsync({ id: user.id, isActive: !user.is_active })
       toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`)
-      loadData()
     } catch (error: any) {
       toast.error(`Failed to toggle user status: ${error.message}`)
     }
@@ -127,9 +113,8 @@ export const AdminDashboard: React.FC = () => {
 
   const handleDelete = async (userId: string) => {
     try {
-      await adminService.deleteUser(userId)
+      await deleteMutation.mutateAsync({ id: userId })
       toast.success('User deleted successfully')
-      loadData()
     } catch (error: any) {
       toast.error(`Failed to delete user: ${error.message}`)
     }
@@ -256,8 +241,7 @@ export const AdminDashboard: React.FC = () => {
     },
   ]
 
-  // Show skeleton on initial load
-  if (initialLoad && loading) {
+  if (loading && !stats && users.length === 0) {
     return <PageSkeleton hasHeader rows={8} />
   }
 
@@ -330,6 +314,7 @@ export const AdminDashboard: React.FC = () => {
         onCancel={() => setEditModalOpen(false)}
         onOk={handleEditSubmit}
         width={600}
+        confirmLoading={updateMutation.isPending}
       >
         <Form form={form} layout="vertical">
           <Form.Item name="full_name" label="Full Name">

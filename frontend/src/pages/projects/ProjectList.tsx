@@ -1,8 +1,8 @@
 /**
- * Project List Page - Complete project management interface
+ * Project List Page — TanStack Query migration.
  */
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Space, Dropdown, Modal } from 'antd'
 import {
   PlusOutlined,
@@ -16,7 +16,16 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { useProjectStore } from '../../store/projectStore'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+
+import {
+  useProjectList,
+  useGlobalProjectStats,
+  useDeleteProject,
+  useArchiveProject,
+  useRestoreProject,
+} from '@/hooks/queries'
 import { ProjectFormModal } from './components/ProjectFormModal'
 import {
   PageHeader,
@@ -28,48 +37,40 @@ import {
   PageSkeleton,
   FadeIn,
   StaggeredList,
-} from '../../components/common'
-import type { FilterConfig } from '../../components/common'
-import { toast, notifications } from '../../utils/notification'
+} from '@/components/common'
+import type { FilterConfig, StatisticItem } from '@/components/common'
+import { toast, notifications } from '@/utils/notification'
 import { useFilters } from '@/hooks'
-import type { StatisticItem } from '../../components/common'
-import type { Project } from '../../types/project'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import type { Project } from '@/types/project'
 
 dayjs.extend(relativeTime)
 
 export const ProjectList: React.FC = () => {
-  const { items, stats, loading, fetchItems, fetchStats, deleteItem, archiveProject, restoreProject } =
-    useProjectStore()
+  const { data: listData, isLoading, isFetching } = useProjectList()
+  const { data: stats } = useGlobalProjectStats()
+
+  const items: Project[] = useMemo(
+    () => (listData as any)?.items ?? (listData as any) ?? [],
+    [listData],
+  )
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
-  // Using useFilters hook eliminates repetitive filter state management
+  const deleteMutation = useDeleteProject()
+  const archiveMutation = useArchiveProject()
+  const restoreMutation = useRestoreProject()
+
   const {
     filters,
     setFilter,
     resetFilters: handleFilterReset,
   } = useFilters({
-    initialFilters: {
-      search: '',
-      status: 'all',
-    },
+    initialFilters: { search: '', status: 'all' },
   })
 
-  useEffect(() => {
-    fetchItems()
-    fetchStats()
-  }, [])
-
-  // Filter configuration for FilterBar
   const filterConfigs: FilterConfig[] = [
-    {
-      type: 'search',
-      key: 'search',
-      placeholder: 'Search items...',
-    },
+    { type: 'search', key: 'search', placeholder: 'Search items...' },
     {
       type: 'select',
       key: 'status',
@@ -83,15 +84,18 @@ export const ProjectList: React.FC = () => {
     },
   ]
 
-  // Filter items based on status and search
-  const filteredProjects = items.filter((project) => {
-    const matchesStatus = filters.status === 'all' || project.status === filters.status
-    const matchesSearch =
-      filters.search === '' ||
-      project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      project.description?.toLowerCase().includes(filters.search.toLowerCase())
-    return matchesStatus && matchesSearch
-  })
+  const filteredProjects = useMemo(
+    () =>
+      items.filter((project) => {
+        const matchesStatus = filters.status === 'all' || project.status === filters.status
+        const matchesSearch =
+          filters.search === '' ||
+          project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+          project.description?.toLowerCase().includes(filters.search.toLowerCase())
+        return matchesStatus && matchesSearch
+      }),
+    [items, filters],
+  )
 
   const handleCreate = () => {
     setEditingProject(null)
@@ -104,7 +108,6 @@ export const ProjectList: React.FC = () => {
   }
 
   const handleDelete = (project: Project) => {
-    // Use custom dangerous action confirmation for critical operations
     Modal.confirm({
       title: '删除项目',
       content: `您确定要删除项目 "${project.name}" 吗？这将同时删除所有关联的样本、文件和任务。`,
@@ -114,12 +117,10 @@ export const ProjectList: React.FC = () => {
       onOk: async () => {
         const loadingToast = toast.loading('删除中...')
         try {
-          await deleteItem(project.id)
+          await deleteMutation.mutateAsync(project.id)
           loadingToast()
           notifications.deleteSuccess()
-          fetchItems() // Refresh list
-          fetchStats() // Refresh stats
-        } catch (error) {
+        } catch {
           loadingToast()
           notifications.deleteError()
         }
@@ -130,12 +131,10 @@ export const ProjectList: React.FC = () => {
   const handleArchive = async (project: Project) => {
     const loadingToast = toast.loading('归档中...')
     try {
-      await archiveProject(project.id)
+      await archiveMutation.mutateAsync(project.id)
       loadingToast()
       toast.success('项目已归档')
-      fetchItems()
-      fetchStats()
-    } catch (error) {
+    } catch {
       loadingToast()
       toast.error('归档失败，请重试')
     }
@@ -144,12 +143,10 @@ export const ProjectList: React.FC = () => {
   const handleRestore = async (project: Project) => {
     const loadingToast = toast.loading('恢复中...')
     try {
-      await restoreProject(project.id)
+      await restoreMutation.mutateAsync(project.id)
       loadingToast()
       toast.success('项目已恢复')
-      fetchItems()
-      fetchStats()
-    } catch (error) {
+    } catch {
       loadingToast()
       toast.error('恢复失败，请重试')
     }
@@ -168,12 +165,7 @@ export const ProjectList: React.FC = () => {
         </Space>
       ),
     },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-    },
+    { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
     {
       title: 'Status',
       dataIndex: 'status',
@@ -210,21 +202,15 @@ export const ProjectList: React.FC = () => {
         <Dropdown
           menu={{
             items: [
-              {
-                key: 'edit',
-                label: 'Edit',
-                icon: <EditOutlined />,
-                onClick: () => handleEdit(record),
-              },
+              { key: 'edit', label: 'Edit', icon: <EditOutlined />, onClick: () => handleEdit(record) },
               {
                 key: 'archive',
                 label: record.status === 'archived' ? 'Restore' : 'Archive',
                 icon: record.status === 'archived' ? <RestOutlined /> : <InboxOutlined />,
-                onClick: () => (record.status === 'archived' ? handleRestore(record) : handleArchive(record)),
+                onClick: () =>
+                  record.status === 'archived' ? handleRestore(record) : handleArchive(record),
               },
-              {
-                type: 'divider',
-              },
+              { type: 'divider' },
               {
                 key: 'delete',
                 label: 'Delete',
@@ -245,46 +231,43 @@ export const ProjectList: React.FC = () => {
     {
       key: 'total',
       title: 'Total Projects',
-      value: stats?.total_projects || 0,
+      value: (stats as any)?.total_projects || 0,
       prefix: <FolderOutlined />,
       valueStyle: { color: 'var(--color-primary)' },
     },
     {
       key: 'active',
       title: 'Active Projects',
-      value: stats?.active_projects || 0,
+      value: (stats as any)?.active_projects || 0,
       prefix: <CheckCircleOutlined />,
       valueStyle: { color: 'var(--color-success)' },
     },
     {
       key: 'total_tasks',
       title: 'Total Tasks',
-      value: stats?.total_tasks || 0,
+      value: (stats as any)?.total_tasks || 0,
       prefix: <ClockCircleOutlined />,
       valueStyle: { color: '#722ed1' },
     },
     {
       key: 'active_tasks',
       title: 'Active Tasks',
-      value: stats?.active_tasks || 0,
+      value: (stats as any)?.active_tasks || 0,
       prefix: <ClockCircleOutlined />,
       valueStyle: { color: 'var(--color-warning)' },
     },
   ]
 
-  // Show skeleton while loading
-  if (loading && items.length === 0) {
+  if (isLoading && items.length === 0) {
     return <PageSkeleton hasHeader hasFilters rows={8} />
   }
 
   return (
     <div>
-      {/* Statistics Cards with Staggered Animation */}
       <StaggeredList staggerDelay={80} baseDelay={0} direction="up">
         <StatisticCard items={statisticItems} />
       </StaggeredList>
 
-      {/* Filters and Actions */}
       <FadeIn direction="up" delay={100} duration={300}>
         <PageHeader
           left={
@@ -303,22 +286,19 @@ export const ProjectList: React.FC = () => {
         />
       </FadeIn>
 
-      {/* Projects Table with Fade In Animation */}
       <FadeIn direction="up" delay={200} duration={300}>
-        {filteredProjects.length === 0 && !loading ? (
+        {filteredProjects.length === 0 && !isFetching ? (
           <EnhancedEmptyState
             type={filters.search || filters.status !== 'all' ? 'noSearchResults' : 'noData'}
-            title={filters.search || filters.status !== 'all' ? 'No matching items' : 'No items yet'}
+            title={
+              filters.search || filters.status !== 'all' ? 'No matching items' : 'No items yet'
+            }
             description={
               filters.search || filters.status !== 'all'
                 ? 'Try adjusting your search criteria or filters'
                 : 'Create your first project to get started with NGS analysis'
             }
-            action={{
-              text: 'Create Project',
-              onClick: handleCreate,
-              icon: <PlusOutlined />,
-            }}
+            action={{ text: 'Create Project', onClick: handleCreate, icon: <PlusOutlined /> }}
             size="default"
           />
         ) : (
@@ -326,7 +306,7 @@ export const ProjectList: React.FC = () => {
             columns={columns}
             dataSource={filteredProjects}
             rowKey="id"
-            loading={loading}
+            loading={isFetching && items.length === 0}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -338,7 +318,6 @@ export const ProjectList: React.FC = () => {
         )}
       </FadeIn>
 
-      {/* Create/Edit Modal */}
       <ProjectFormModal
         open={modalOpen}
         project={editingProject}
@@ -349,8 +328,7 @@ export const ProjectList: React.FC = () => {
         onSuccess={() => {
           setModalOpen(false)
           setEditingProject(null)
-          fetchItems()
-          fetchStats()
+          // mutations inside the modal already invalidate the cache
         }}
       />
     </div>

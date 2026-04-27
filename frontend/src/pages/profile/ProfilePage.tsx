@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
   Card,
   Row,
@@ -34,14 +34,30 @@ import {
   WarningOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
+
 import { authStore } from '@/store/authStore'
 import { PageHeader, StatisticCard } from '@/components/common'
 import { DesignTokens } from '@/styles/design-tokens'
-import { userService, type UserStats, type UserActivity } from '@/services/user.service'
+import {
+  useUserStats,
+  useUserActivity,
+  useUpdateProfile,
+  useChangePassword,
+  useUploadAvatar,
+} from '@/hooks/queries'
+import type { UserStats, UserActivity } from '@/services/user.service'
 import { logger } from '@/utils/logger'
 import './ProfilePage.css'
 
 const { Title, Text, Paragraph } = Typography
+
+const DEFAULT_STATS: UserStats = {
+  items: 0,
+  samples: 0,
+  tasks: 0,
+  storageUsed: 0,
+  storageTotal: 100,
+}
 
 export const ProfilePage: React.FC = () => {
   const { user, refreshUser } = authStore()
@@ -49,57 +65,23 @@ export const ProfilePage: React.FC = () => {
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [form] = Form.useForm()
   const [passwordForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
-  const [statsLoading, setStatsLoading] = useState(false)
-  const [activitiesLoading, setActivitiesLoading] = useState(false)
 
-  // User statistics
-  const [stats, setStats] = useState<UserStats>({
-    items: 0,
-    samples: 0,
-    tasks: 0,
-    storageUsed: 0,
-    storageTotal: 100,
-  })
+  const { data: statsData, isLoading: statsLoading } = useUserStats()
+  const stats: UserStats = (statsData as UserStats) ?? DEFAULT_STATS
+  const { data: activitiesData, isLoading: activitiesLoading } = useUserActivity(10)
+  const activities: UserActivity[] = (activitiesData as UserActivity[]) ?? []
 
-  // User activities
-  const [activities, setActivities] = useState<UserActivity[]>([])
-
-  // Fetch user stats
-  const fetchUserStats = useCallback(async () => {
-    setStatsLoading(true)
-    try {
-      const userStats = await userService.getUserStats()
-      setStats(userStats)
-    } catch (error) {
-      logger.error('Failed to fetch user stats:', error)
-    } finally {
-      setStatsLoading(false)
-    }
-  }, [])
-
-  // Fetch user activities
-  const fetchUserActivities = useCallback(async () => {
-    setActivitiesLoading(true)
-    try {
-      const userActivities = await userService.getUserActivity(10)
-      setActivities(userActivities)
-    } catch (error) {
-      logger.error('Failed to fetch user activities:', error)
-    } finally {
-      setActivitiesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchUserStats()
-    fetchUserActivities()
-  }, [fetchUserStats, fetchUserActivities])
+  const updateProfileMutation = useUpdateProfile()
+  const changePasswordMutation = useChangePassword()
+  const uploadAvatarMutation = useUploadAvatar()
+  const loading =
+    updateProfileMutation.isPending ||
+    changePasswordMutation.isPending ||
+    uploadAvatarMutation.isPending
 
   const handleEditProfile = async (values: any) => {
-    setLoading(true)
     try {
-      await userService.updateProfile({
+      await updateProfileMutation.mutateAsync({
         username: values.username,
         email: values.email,
         phone: values.phone,
@@ -107,20 +89,16 @@ export const ProfilePage: React.FC = () => {
       message.success('Profile updated successfully!')
       setEditModalVisible(false)
       form.resetFields()
-      // Refresh user data in store
       refreshUser()
     } catch (error) {
       logger.error('Failed to update profile:', error)
       message.error('Failed to update profile')
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleChangePassword = async (values: any) => {
-    setLoading(true)
     try {
-      await userService.changePassword({
+      await changePasswordMutation.mutateAsync({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       })
@@ -130,23 +108,19 @@ export const ProfilePage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to change password:', error)
       message.error('Failed to change password')
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleAvatarUpload = async (file: File) => {
     try {
-      await userService.uploadAvatar(file)
+      await uploadAvatarMutation.mutateAsync(file)
       message.success('Avatar updated successfully!')
-      // Refresh user data to show new avatar
       refreshUser()
-      return false // Prevent default upload behavior
     } catch (error) {
       logger.error('Failed to upload avatar:', error)
       message.error('Failed to upload avatar')
-      return false
     }
+    return false
   }
 
   const getActivityIcon = (type: string) => {

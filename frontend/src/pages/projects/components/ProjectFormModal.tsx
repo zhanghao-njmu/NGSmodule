@@ -1,11 +1,12 @@
 /**
- * Project Form Modal - Create/Edit Project
+ * Project Form Modal — TanStack Query mutation version.
  */
 import type React from 'react'
 import { useEffect } from 'react'
 import { Modal, Form, Input, Select } from 'antd'
-import { useProjectStore } from '../../../store/projectStore'
-import type { Project } from '../../../types/project'
+
+import { useCreateProject, useUpdateProject } from '@/hooks/queries'
+import type { Project } from '@/types/project'
 
 const { TextArea } = Input
 const { Option } = Select
@@ -17,21 +18,26 @@ interface ProjectFormModalProps {
   onSuccess: () => void
 }
 
-export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ open, project, onClose, onSuccess }) => {
+export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
+  open,
+  project,
+  onClose,
+  onSuccess,
+}) => {
   const [form] = Form.useForm()
-  const { createItem, updateItem, loading } = useProjectStore()
+  const createMutation = useCreateProject()
+  const updateMutation = useUpdateProject()
+  const loading = createMutation.isPending || updateMutation.isPending
 
   useEffect(() => {
     if (open) {
       if (project) {
-        // Edit mode - populate form
         form.setFieldsValue({
           name: project.name,
           description: project.description,
           status: project.status,
         })
       } else {
-        // Create mode - reset form
         form.resetFields()
       }
     }
@@ -42,16 +48,13 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ open, projec
       const values = await form.validateFields()
 
       if (project) {
-        // Update existing project
-        await updateItem(project.id, values)
+        await updateMutation.mutateAsync({ id: project.id, data: values })
       } else {
-        // Create new project
-        await createItem(values)
+        await createMutation.mutateAsync(values)
       }
 
       onSuccess()
     } catch (error) {
-      // Form validation failed or API error
       console.error('Form submission error:', error)
     }
   }
@@ -66,13 +69,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ open, projec
       width={600}
       destroyOnClose
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          status: 'active',
-        }}
-      >
+      <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
         <Form.Item
           name="name"
           label="Project Name"
@@ -90,11 +87,20 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ open, projec
           label="Description"
           rules={[{ max: 500, message: 'Description must not exceed 500 characters' }]}
         >
-          <TextArea rows={4} placeholder="Enter project description (optional)" showCount maxLength={500} />
+          <TextArea
+            rows={4}
+            placeholder="Enter project description (optional)"
+            showCount
+            maxLength={500}
+          />
         </Form.Item>
 
         {project && (
-          <Form.Item name="status" label="Status" rules={[{ required: true, message: 'Please select status' }]}>
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: 'Please select status' }]}
+          >
             <Select>
               <Option value="active">Active</Option>
               <Option value="completed">Completed</Option>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Card, Row, Col, Typography, Select, Space, Button, Statistic, Progress, Tag, Tabs, Alert } from 'antd'
 import {
   LineChartOutlined,
@@ -14,42 +14,31 @@ import {
 } from '@ant-design/icons'
 import { PageHeader, StatisticCard, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import type { AnalyticsSummary, TrendAnalysis } from '@/types/analytics'
-import { analyticsService } from '@/services/analytics.service'
+import { useAnalyticsSummary, useTrendAnalysis } from '@/hooks/queries'
 import { DesignTokens } from '@/styles/design-tokens'
-import { logger } from '@/utils/logger'
 import './AnalyticsDashboard.css'
 
 const { Title, Text } = Typography
 const { Option } = Select
 const { TabPane } = Tabs
 
+const TREND_METRICS = ['Project Success Rate', 'Avg Quality Score', 'Pipeline Failures']
+
 export const AnalyticsDashboard: React.FC = () => {
-  const [loading, setLoading] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'year'>('week')
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
-  const [trends, setTrends] = useState<TrendAnalysis[]>([])
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [summaryData, trendsData] = await Promise.all([
-        analyticsService.getAnalyticsSummary(period),
-        analyticsService.getTrendAnalysis(['Project Success Rate', 'Avg Quality Score', 'Pipeline Failures']),
-      ])
-      setSummary(summaryData)
-      setTrends(trendsData)
-    } catch (error) {
-      logger.error('Failed to fetch analytics:', error)
-    } finally {
-      setLoading(false)
-      setInitialLoad(false)
-    }
-  }, [period])
+  const summaryQuery = useAnalyticsSummary(period)
+  const trendsQuery = useTrendAnalysis(TREND_METRICS)
 
-  useEffect(() => {
-    fetchAnalytics()
-  }, [fetchAnalytics])
+  const summary = (summaryQuery.data as AnalyticsSummary | undefined) ?? null
+  const trends = (trendsQuery.data as TrendAnalysis[] | undefined) ?? []
+  const loading = summaryQuery.isLoading || trendsQuery.isLoading
+  const initialLoad = !summary && loading
+
+  const fetchAnalytics = () => {
+    summaryQuery.refetch()
+    trendsQuery.refetch()
+  }
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     if (trend === 'up') {

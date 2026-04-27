@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
   Card,
   Row,
@@ -35,7 +35,17 @@ import {
 } from '@ant-design/icons'
 import { PageHeader } from '@/components/common'
 import { useTheme } from '@/store/themeStore'
-import { userService, type ApiToken } from '@/services/user.service'
+import {
+  userService,
+  type ApiToken,
+} from '@/services/user.service'
+import {
+  useApiTokens,
+  useCreateApiToken,
+  useDeleteApiToken,
+  useUpdateUserSettings,
+  useUpdateUserNotificationSettings,
+} from '@/hooks/queries'
 import { DesignTokens } from '@/styles/design-tokens'
 import { logger } from '@/utils/logger'
 import './SettingsPage.css'
@@ -51,28 +61,23 @@ export const SettingsPage: React.FC = () => {
   const [newTokenModalVisible, setNewTokenModalVisible] = useState(false)
   const [tokenForm] = Form.useForm()
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(new Set())
-  const [apiTokens, setApiTokens] = useState<ApiToken[]>([])
-  const [loading, setLoading] = useState(false)
 
-  // Fetch API tokens on mount
-  const fetchApiTokens = useCallback(async () => {
-    try {
-      const tokens = await userService.getApiTokens()
-      setApiTokens(tokens)
-    } catch (error) {
-      logger.error('Failed to fetch API tokens:', error)
-    }
-  }, [])
+  const { data: apiTokensData } = useApiTokens()
+  const apiTokens: ApiToken[] = (apiTokensData as ApiToken[]) ?? []
 
-  useEffect(() => {
-    fetchApiTokens()
-  }, [fetchApiTokens])
+  const updateSettingsMutation = useUpdateUserSettings()
+  const updateNotificationMutation = useUpdateUserNotificationSettings()
+  const createTokenMutation = useCreateApiToken()
+  const deleteTokenMutation = useDeleteApiToken()
+  const loading =
+    updateSettingsMutation.isPending ||
+    updateNotificationMutation.isPending ||
+    createTokenMutation.isPending ||
+    deleteTokenMutation.isPending
 
-  // Account Settings
   const handleAccountSettingsSave = async (values: Record<string, unknown>) => {
-    setLoading(true)
     try {
-      await userService.updateSettings({
+      await updateSettingsMutation.mutateAsync({
         language: values.language as string,
         timezone: values.timezone as string,
         dateFormat: values.dateFormat as string,
@@ -82,16 +87,12 @@ export const SettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to save account settings:', error)
       message.error('Failed to save account settings')
-    } finally {
-      setLoading(false)
     }
   }
 
-  // Notification Settings
   const handleNotificationSettingsSave = async (values: Record<string, unknown>) => {
-    setLoading(true)
     try {
-      await userService.updateNotificationSettings({
+      await updateNotificationMutation.mutateAsync({
         emailNotifications: values.emailNotifications as boolean,
         pipelineComplete: values.pipelineComplete as boolean,
         taskFailed: values.taskFailed as boolean,
@@ -103,14 +104,11 @@ export const SettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to save notification settings:', error)
       message.error('Failed to save notification settings')
-    } finally {
-      setLoading(false)
     }
   }
 
-  // Privacy Settings
+  // Privacy settings still use direct service call (no dedicated hook)
   const handlePrivacySettingsSave = async (values: Record<string, unknown>) => {
-    setLoading(true)
     try {
       await userService.updatePrivacySettings({
         profileVisible: values.profileVisible as boolean,
@@ -122,19 +120,15 @@ export const SettingsPage: React.FC = () => {
     } catch (error) {
       logger.error('Failed to update privacy settings:', error)
       message.error('Failed to update privacy settings')
-    } finally {
-      setLoading(false)
     }
   }
 
-  // API Token Management
   const handleCreateToken = async (values: { name: string; description?: string }) => {
     try {
-      const newToken = await userService.createApiToken({
+      const newToken = await createTokenMutation.mutateAsync({
         name: values.name,
         description: values.description,
       })
-      setApiTokens([...apiTokens, newToken])
       message.success('API token created successfully!')
       setNewTokenModalVisible(false)
       tokenForm.resetFields()
@@ -175,8 +169,7 @@ export const SettingsPage: React.FC = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          await userService.deleteApiToken(tokenId)
-          setApiTokens(apiTokens.filter((token) => token.id !== tokenId))
+          await deleteTokenMutation.mutateAsync(tokenId)
           message.success('API token deleted successfully')
         } catch (error) {
           logger.error('Failed to delete API token:', error)

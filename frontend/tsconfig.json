@@ -6,13 +6,14 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode */
+    /* Bundler mode (Rsbuild-compatible) */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "types": ["@rsbuild/core/types"],
 
     /* Linting */
     "strict": true,
@@ -26,6 +27,5 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "rsbuild.config.ts"]
 }

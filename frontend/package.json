@@ -4,9 +4,9 @@
   "description": "NGSmodule Frontend - Enterprise Bioinformatics Workstation",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "dev": "rsbuild dev",
+    "build": "tsc && rsbuild build",
+    "preview": "rsbuild preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json,md}\"",
@@ -35,7 +35,8 @@
     "@types/plotly.js": "^2.12.29",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@rsbuild/core": "^0.7.0",
+    "@rsbuild/plugin-react": "^0.7.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -43,8 +44,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.2.4",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "typescript": "^5.3.3"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
