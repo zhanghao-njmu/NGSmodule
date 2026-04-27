@@ -1,0 +1,41 @@
+name: MergeCounts
+display_name: Merge Per-sample Counts
+category: Quantification
+version: 1.0.0
+scope: project
+description: >
+  Project-level aggregation of per-sample featureCounts output into a
+  single matrix. Reads $work_dir/<sample>/Alignment-${Aligner}/Quantification/
+  ${sample}.${Aligner}.counts.tab from every sample listed in $samples[],
+  joins them on the GeneID column, and writes a unified
+  $work_dir/_project/Quantification/counts.matrix.tab. Demonstrates the
+  scope:project framework feature.
+requires:
+  - Quantification
+tools:
+  - awk
+  - bash
+default_params:
+  Aligner: STAR
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates per-sample counts files.
+estimated_minutes_per_sample: 5
+resources:
+  mem: 4G
+  time: "1:00:00"
+  cpus_per_task: 2
+  partition: short
+  queue: main
+inputs:
+  kind: counts_tab_per_sample
+  pattern: "{sample}.{aligner}.counts.tab"
+outputs:
+  - kind: counts_matrix
+    pattern: "counts.matrix.tab"
+  - kind: counts_summary_merged
+    pattern: "counts.summary.merged.tab"

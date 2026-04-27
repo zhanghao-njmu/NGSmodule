@@ -98,6 +98,21 @@ pipeline_version() {
   echo "${v:-1.0.0}"
 }
 
+# Read `scope:` from meta.yml. Returns "sample" (default) or "project".
+# Project-scope pipelines run once across the cohort; sample-scope iterate.
+pipeline_scope() {
+  local pipeline="$1"
+  local meta="$PIPELINES_DIR/$pipeline/meta.yml"
+  [[ ! -f "$meta" ]] && { echo "sample"; return; }
+  local s
+  s="$(awk '/^scope:/ {print $2; exit}' "$meta")"
+  s="${s//\"/}"; s="${s//\'/}"
+  case "${s,,}" in
+    project) echo "project" ;;
+    *)       echo "sample" ;;
+  esac
+}
+
 # ---------------------------------------------------------------------------
 # Run prerequisite pipelines for a sample if not already complete.
 # Recursive: a prereq's own prereqs are resolved transitively.
@@ -224,10 +239,136 @@ if ! declare -f trap_add >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
+# Project-scope sentinel sample id. Project-level pipelines write to
+# $work_dir/_project/.state.json and use this id everywhere a sample id
+# would normally appear.
+# ---------------------------------------------------------------------------
+NGS_PROJECT_SENTINEL="_project"
+
+# ---------------------------------------------------------------------------
+# Run a project-scope pipeline. Calls run_<Pipeline>_for_project once
+# (no sample loop), with full state tracking under $work_dir/_project/.
+# Used by pipeline_run when meta.yml declares scope: project.
+# ---------------------------------------------------------------------------
+pipeline_run_project_one() {
+  local pipeline="${1:?pipeline required}"
+  local fn="run_${pipeline}_for_project"
+  if ! declare -f "$fn" >/dev/null 2>&1; then
+    log_error "[_project] $fn not defined for pipeline '$pipeline'"
+    return 1
+  fi
+
+  if ngs_state_is_complete "$NGS_PROJECT_SENTINEL" "$pipeline" && [[ "${force:-FALSE}" != "TRUE" ]]; then
+    log_info "[_project] $pipeline already complete (state.json) → skip"
+    return 0
+  fi
+
+  local proj_dir="$work_dir/$NGS_PROJECT_SENTINEL"
+  mkdir -p "$proj_dir"
+  ngs_state_init "$NGS_PROJECT_SENTINEL"
+
+  local version
+  version="$(pipeline_version "$pipeline")"
+  ngs_state_stage_begin "$NGS_PROJECT_SENTINEL" "$pipeline" "$version"
+  ngs_benchmark_begin "$NGS_PROJECT_SENTINEL" "$pipeline"
+  trap 'ngs_benchmark_end' RETURN
+
+  local rc=0
+  local attempt=1
+  while (( attempt <= ${retry:-1} )); do
+    if (( attempt > 1 )); then
+      log_warn "[_project] $pipeline retry attempt $attempt/${retry:-1}"
+      emit_status "[_project] retry $attempt"
+    fi
+    set +e
+    "$fn"
+    rc=$?
+    set -e
+    [[ $rc -eq 0 ]] && break
+    attempt=$((attempt + 1))
+  done
+
+  local bench_json
+  bench_json="$(ngs_benchmark_json)"
+
+  if (( rc == 0 )); then
+    if [[ "$(ngs_state_stage_status "$NGS_PROJECT_SENTINEL" "$pipeline")" != "completed" ]]; then
+      ngs_state_stage_end "$NGS_PROJECT_SENTINEL" "$pipeline" completed --benchmark "$bench_json"
+    else
+      ngs_state_stage_set_benchmark "$NGS_PROJECT_SENTINEL" "$pipeline" "$bench_json"
+    fi
+    ngs_state_emit_receipt "$NGS_PROJECT_SENTINEL" "$pipeline"
+    log_ok "[_project] $pipeline complete"
+  else
+    ngs_state_stage_end "$NGS_PROJECT_SENTINEL" "$pipeline" failed \
+      --error "exit code $rc after $((attempt - 1)) attempt(s)" \
+      --benchmark "$bench_json"
+    log_error "[_project] $pipeline FAILED"
+  fi
+  return $rc
+}
+
+# ---------------------------------------------------------------------------
+# Resolve project-scope prereqs. A per-sample prereq must be complete for
+# every sample in $samples[]; a project-scope prereq is checked once.
+# ---------------------------------------------------------------------------
+pipeline_resolve_prereqs_for_project() {
+  local pipeline="$1"
+  local prereq
+  for prereq in $(pipeline_requires "$pipeline"); do
+    case " $_resolved_prereqs " in *" $prereq "*) continue ;; esac
+    _resolved_prereqs+=" $prereq"
+
+    local prereq_script="$PIPELINES_DIR/$prereq/pipeline.sh"
+    if [[ ! -f "$prereq_script" ]]; then
+      log_error "[_project] missing prerequisite '$prereq' has no pipeline.sh"
+      return 1
+    fi
+
+    local prereq_scope
+    prereq_scope="$(pipeline_scope "$prereq")"
+
+    if [[ "$prereq_scope" == "project" ]]; then
+      if ngs_state_is_complete "$NGS_PROJECT_SENTINEL" "$prereq"; then
+        continue
+      fi
+      log_info "[_project] missing prerequisite: $prereq → resolving"
+      pipeline_resolve_prereqs_for_project "$prereq" || return 1
+      if ! declare -f "run_${prereq}_for_project" >/dev/null 2>&1; then
+        # shellcheck source=/dev/null
+        source "$prereq_script"
+      fi
+      pipeline_run_project_one "$prereq" || return 1
+    else
+      # Per-sample prereq — must be complete for ALL samples in $samples[]
+      local s missing=0
+      for s in "${samples[@]}"; do
+        if ! ngs_state_is_complete "$s" "$prereq"; then missing=$((missing + 1)); fi
+      done
+      if (( missing == 0 )); then continue; fi
+      log_info "[_project] prerequisite $prereq incomplete for $missing sample(s) → resolving"
+      if ! declare -f "run_${prereq}_for_sample" >/dev/null 2>&1; then
+        # shellcheck source=/dev/null
+        source "$prereq_script"
+      fi
+      for s in "${samples[@]}"; do
+        if ngs_state_is_complete "$s" "$prereq"; then continue; fi
+        pipeline_resolve_prereqs "$prereq" "$s" || return 1
+        pipeline_run_one "$prereq" "$s" || return 1
+      done
+    fi
+  done
+  return 0
+}
+
+# ---------------------------------------------------------------------------
 # pipeline_run <pipeline_name>
 #
-# Iterates over $samples, dispatching `run_<pipeline_name>_for_sample` for
-# each sample under FIFO-controlled concurrency.
+# Dispatches based on meta.yml's `scope:` field:
+#   - scope: sample (default) — iterates over $samples[], invoking
+#     run_<name>_for_sample under FIFO-controlled concurrency.
+#   - scope: project — runs run_<name>_for_project once across the
+#     cohort (no sample loop, no concurrency).
 #
 # A sample is skipped when:
 #   - $force != "TRUE", and
@@ -238,6 +379,24 @@ fi
 # ---------------------------------------------------------------------------
 pipeline_run() {
   local pipeline="${1:?pipeline_run: name required}"
+
+  # Schema validation runs first so it catches missing params before we
+  # branch on scope (saves users a confusing "function not defined" error).
+  if [[ "${NGS_NO_SCHEMA_CHECK:-0}" != "1" ]]; then
+    if ! pipeline_validate_params "$pipeline"; then
+      log_error "pipeline_run: schema validation failed for $pipeline"
+      return 1
+    fi
+  fi
+
+  local scope
+  scope="$(pipeline_scope "$pipeline")"
+
+  if [[ "$scope" == "project" ]]; then
+    _pipeline_run_project "$pipeline"
+    return $?
+  fi
+
   local fn="run_${pipeline}_for_sample"
   if ! declare -f "$fn" >/dev/null 2>&1; then
     log_error "pipeline_run: function $fn is not defined"
@@ -253,15 +412,7 @@ pipeline_run() {
     return 1
   fi
 
-  # Schema-validate config before touching any sample. Fast-fail surfaces
-  # all bad/missing values up front; can be opted out for legacy pipelines
-  # by setting NGS_NO_SCHEMA_CHECK=1.
-  if [[ "${NGS_NO_SCHEMA_CHECK:-0}" != "1" ]]; then
-    if ! pipeline_validate_params "$pipeline"; then
-      log_error "pipeline_run: schema validation failed for $pipeline"
-      return 1
-    fi
-  fi
+  # (Schema validation already ran at the top of pipeline_run.)
 
   # Echo dependency graph so users can see what will actually run.
   local prereqs
@@ -334,6 +485,59 @@ pipeline_run() {
   fi
   emit_status "$pipeline finished cleanly"
   log_ok "Pipeline $pipeline: ${#samples[@]} samples succeeded"
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# _pipeline_run_project — internal entry point for scope:project pipelines.
+# Called from pipeline_run when meta.yml declares scope: project.
+#
+# Differences from the per-sample path:
+#   - No FIFO semaphore (single execution, no concurrency benefit)
+#   - Prereq resolution loops samples for sample-scope deps
+#   - State recorded under $work_dir/_project/.state.json
+# ---------------------------------------------------------------------------
+_pipeline_run_project() {
+  local pipeline="${1:?pipeline name required}"
+  local fn="run_${pipeline}_for_project"
+  if ! declare -f "$fn" >/dev/null 2>&1; then
+    log_error "pipeline_run: function $fn is not defined for project-scope pipeline"
+    return 1
+  fi
+
+  : "${work_dir:?work_dir is not set}"
+  : "${force:=FALSE}"
+  : "${retry:=1}"
+
+  # Echo dependency graph
+  local prereqs
+  prereqs="$(pipeline_requires "$pipeline" | tr '\n' ' ')"
+  if [[ -n "${prereqs// /}" ]] && [[ "${NGS_NO_DEPS:-0}" != "1" ]]; then
+    log_info "pipeline=$pipeline (project-scope) requires: $prereqs"
+  fi
+
+  local _n_samples="${#samples[@]}"
+  ngs_compute_threads "${_n_samples:-1}"
+  log_info "pipeline=$pipeline scope=project samples_in_cohort=$_n_samples threads=$threads"
+  emit_status "Starting $pipeline (project-scope)"
+  emit_progress 0
+
+  if [[ "${NGS_NO_DEPS:-0}" != "1" ]] && (( _n_samples > 0 )); then
+    if ! pipeline_resolve_prereqs_for_project "$pipeline"; then
+      log_error "Pipeline $pipeline: prereq resolution failed"
+      return 1
+    fi
+  fi
+
+  if ! pipeline_run_project_one "$pipeline"; then
+    emit_progress 100
+    log_error "Pipeline $pipeline: project run failed"
+    return 1
+  fi
+
+  emit_progress 100
+  emit_status "$pipeline finished cleanly"
+  log_ok "Pipeline $pipeline (project-scope): completed"
   return 0
 }
 
