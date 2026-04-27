@@ -45,6 +45,9 @@ COMMANDS
   run <pipeline> [opts]               Execute a pipeline (auto-resolves prerequisites)
   status -c <ConfigFile>              Show sample × stage grid for a project
   trace <sample> [-c <ConfigFile>]    Show lineage of a sample's outputs
+  report -c <ConfigFile> [-o file]    Render self-contained HTML report
+  test [<pipeline>] [--real]          Run the bundled test fixtures (dry-run by default)
+  lint [<pipeline>]                   Validate one (or all) pipelines' meta.yml + schema
   help [<pipeline>]                   Show this message or pipeline-specific help
 
 GLOBAL FLAGS (apply to 'run')
@@ -58,6 +61,7 @@ GLOBAL FLAGS (apply to 'run')
       --ntask <N|ALL>        Concurrency hint (default 1)
       --rawdata <dir>        Override rawdata_dir from config
       --workdir <dir>        Override work_dir from config
+      --profile <name>       Execution profile (local|slurm|sge|lsf, default local)
 
 EXAMPLES
   ngsmodule list
@@ -130,6 +134,7 @@ cmd_run() {
       --rawdata)     rawdata_override="$2"; shift 2 ;;
       --workdir)     workdir_override="$2"; shift 2 ;;
       --no-deps)     export NGS_NO_DEPS=1; shift ;;
+      --profile)     export NGS_PROFILE="$2"; shift 2 ;;
       -h|--help)     cmd_info "$pipeline"; return 0 ;;
       *)             echo "Unknown flag: $1" >&2; return 2 ;;
     esac
@@ -303,6 +308,307 @@ cmd_trace() {
   ' "$state"
 }
 
+# ---------------------------------------------------------------------------
+# `ngsmodule report -c <config> [-o <path>]` — render a self-contained HTML
+# report of a project's run state. No external CDNs; opens offline; share
+# by email or attach to a paper. Inspired by Snakemake `--report` and
+# Nextflow's `report.html`, but framed around our sample × stage model.
+# ---------------------------------------------------------------------------
+cmd_report() {
+  local config="" out=""
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config) config="$2"; shift 2 ;;
+      -o|--output) out="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+
+  local workdir
+  workdir="$(_resolve_workdir_from_config "$config")" || return 1
+  if [[ -z "$workdir" || ! -d "$workdir" ]]; then
+    echo "ERROR: work_dir not found (resolved: '$workdir')" >&2
+    return 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: jq required for ngsmodule report" >&2
+    return 1
+  fi
+  out="${out:-$workdir/ngsmodule-report.html}"
+
+  local -a state_files=()
+  while IFS= read -r f; do state_files+=("$f"); done < <(
+    find "$workdir" -maxdepth 2 -name '.state.json' -type f 2>/dev/null | sort
+  )
+  if (( ${#state_files[@]} == 0 )); then
+    echo "No samples found under $workdir." >&2
+    return 1
+  fi
+
+  # Aggregate every per-sample state.json into one object the renderer can
+  # walk in a single pass. We compute the global timeline window and an
+  # observed-stages list here so the HTML renderer is dumb-templating only.
+  local agg
+  agg="$(jq -s --arg gen "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                --arg host "$(hostname 2>/dev/null || echo unknown)" \
+                --arg user "$(id -un 2>/dev/null || echo unknown)" \
+                --arg workdir "$workdir" '
+    def stage_keys: [.[].stages // {} | keys[]?] | unique;
+    def all_stage_records:
+      [ .[] as $s
+        | ($s.stages // {}) | to_entries[]
+        | .value + {sample: $s.sample_id, stage: .key}
+      ];
+    def epoch(t): if t == null or t == "" then null
+                  else (t | fromdateiso8601) end;
+    {
+      generated_at: $gen,
+      host: $host,
+      user: $user,
+      workdir: $workdir,
+      sample_count: length,
+      samples: .,
+      stages: stage_keys,
+      stage_records: all_stage_records,
+      summary: {
+        completed: ([all_stage_records[] | select(.status == "completed")] | length),
+        running:   ([all_stage_records[] | select(.status == "running")]   | length),
+        failed:    ([all_stage_records[] | select(.status == "failed")]    | length),
+        total_elapsed_seconds: ([all_stage_records[].elapsed_seconds // 0] | add // 0)
+      },
+      timeline: {
+        t_min: ([all_stage_records[].started_at | select(. != null)] | map(epoch(.)) | min),
+        t_max: ([all_stage_records[].completed_at, all_stage_records[].started_at | select(. != null)]
+                | map(epoch(.)) | max)
+      }
+    }
+  ' "${state_files[@]}")"
+
+  _render_report_html "$agg" > "$out"
+  log_ok "Report written: $out"
+}
+
+# Renders the HTML body. Pure jq + heredoc; no JS framework, all CSS-driven
+# colour-coding so the file works offline and from `file://`.
+_render_report_html() {
+  local agg="$1"
+  local title="NGSmodule run report"
+
+  cat <<'HTML_HEAD'
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NGSmodule run report</title>
+<style>
+  :root {
+    --green: #2da44e; --red: #cf222e; --amber: #bf8700;
+    --grey: #57606a; --bg: #ffffff; --border: #d0d7de; --soft: #f6f8fa;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         margin: 0; padding: 24px; color: #1f2328; background: var(--bg); }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 28px 0 8px; padding-bottom: 6px;
+       border-bottom: 1px solid var(--border); }
+  .muted { color: var(--grey); font-size: 12px; }
+  .meta { font-size: 12px; color: var(--grey); margin-bottom: 16px; }
+  .pills { display: flex; gap: 12px; margin: 12px 0 4px; flex-wrap: wrap; }
+  .pill { padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
+          font-size: 12px; background: var(--soft); }
+  .pill .n { font-weight: 600; font-size: 14px; }
+  .pill.ok    .n { color: var(--green); }
+  .pill.fail  .n { color: var(--red); }
+  .pill.run   .n { color: var(--amber); }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--soft); font-weight: 600; }
+  .grid { width: auto; }
+  .grid td.cell { text-align: center; min-width: 80px; }
+  .cell.completed { background: #dafbe1; color: #0a3622; }
+  .cell.running   { background: #fff8c5; color: #4d2d00; }
+  .cell.failed    { background: #ffebe9; color: #6e1320; }
+  .cell.pending   { background: var(--soft); color: var(--grey); }
+  .gantt { position: relative; height: 18px; background: var(--soft);
+           border: 1px solid var(--border); border-radius: 3px; }
+  .gantt .bar { position: absolute; top: 1px; bottom: 1px;
+                border-radius: 2px; opacity: 0.85; }
+  .bar.completed { background: var(--green); }
+  .bar.running   { background: var(--amber); }
+  .bar.failed    { background: var(--red); }
+  details { margin: 6px 0; }
+  details summary { cursor: pointer; padding: 4px; }
+  pre { background: var(--soft); padding: 10px; border-radius: 4px;
+        overflow: auto; font-size: 11px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .small { font-size: 11px; color: var(--grey); }
+</style>
+</head>
+<body>
+HTML_HEAD
+
+  echo '<h1>NGSmodule — run report</h1>'
+
+  jq -r '
+    "<div class=\"meta\">Generated " + .generated_at + " on " + .host
+    + " by " + .user + " · workdir <code>" + .workdir + "</code></div>"
+  ' <<<"$agg"
+
+  jq -r '
+    "<div class=\"pills\">"
+    + "<div class=\"pill\"><span class=\"n\">" + (.sample_count|tostring) + "</span> samples</div>"
+    + "<div class=\"pill\"><span class=\"n\">" + (.stages|length|tostring) + "</span> stages</div>"
+    + "<div class=\"pill ok\"><span class=\"n\">" + (.summary.completed|tostring) + "</span> completed</div>"
+    + "<div class=\"pill run\"><span class=\"n\">" + (.summary.running|tostring) + "</span> running</div>"
+    + "<div class=\"pill fail\"><span class=\"n\">" + (.summary.failed|tostring) + "</span> failed</div>"
+    + "<div class=\"pill\"><span class=\"n\">" + (.summary.total_elapsed_seconds|tostring) + "s</span> total compute</div>"
+    + "</div>"
+  ' <<<"$agg"
+
+  echo '<h2>Status grid</h2>'
+  jq -r '
+    . as $root
+    | "<table class=\"grid\"><thead><tr><th>Sample</th>"
+      + ([.stages[] | "<th>" + . + "</th>"] | join(""))
+      + "</tr></thead><tbody>"
+      + ([
+          .samples[] as $s |
+          "<tr><td>" + $s.sample_id + "</td>"
+          + ([
+              $root.stages[] as $stg |
+              ($s.stages[$stg] // {status:"pending"}) as $rec |
+              "<td class=\"cell " + ($rec.status // "pending") + "\">"
+              + (if $rec.status == "completed" then
+                   "✓ " + (($rec.elapsed_seconds // 0)|tostring) + "s"
+                 elif $rec.status == "running" then "… running"
+                 elif $rec.status == "failed"  then "✗ failed"
+                 else "·" end)
+              + "</td>"
+            ] | join(""))
+          + "</tr>"
+        ] | join(""))
+      + "</tbody></table>"
+  ' <<<"$agg"
+
+  echo '<h2>Timeline</h2>'
+  jq -r '
+    . as $root
+    | (.timeline.t_min // 0) as $t0
+    | (.timeline.t_max // ($t0 + 1)) as $t1
+    | (if $t1 > $t0 then ($t1 - $t0) else 1 end) as $span
+    | def epoch(t): if t == null or t == "" then null
+                    else (t | fromdateiso8601) end;
+    "<table><thead><tr><th>Sample</th><th>Stage</th><th style=\"width:50%\">Time</th><th>Elapsed</th></tr></thead><tbody>"
+    + ([
+        .stage_records[] |
+        . as $r |
+        (epoch(.started_at)   // $t0) as $a |
+        (epoch(.completed_at) // $a)  as $b |
+        ((($a - $t0) / $span * 100)) as $left |
+        ((($b - $a) / $span * 100)) as $width |
+        "<tr><td>" + .sample + "</td><td>" + .stage + "</td>"
+        + "<td><div class=\"gantt\"><div class=\"bar " + (.status // "pending") + "\""
+        + " style=\"left:" + ($left|tostring) + "%;width:"
+        + (if $width < 0.4 then 0.4 else $width end | tostring) + "%\"></div></div></td>"
+        + "<td>" + ((.elapsed_seconds // 0)|tostring) + "s</td></tr>"
+      ] | join(""))
+    + "</tbody></table>"
+  ' <<<"$agg"
+
+  echo '<h2>Per-sample lineage</h2>'
+  jq -r '
+    .samples[] |
+    "<details><summary><b>" + .sample_id + "</b> — "
+    + ((.stages // {}) | keys | length | tostring) + " stages</summary>"
+    + "<pre>" + (. | tojson) + "</pre>"
+    + "</details>"
+  ' <<<"$agg"
+
+  echo '<p class="small">ngsmodule report · self-contained HTML · no external CDN</p>'
+  echo '</body></html>'
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule test [<pipeline>] [--real]` — run the bundled test fixtures
+# under pipelines/core/<pipeline>/tests/. Defaults to --dry-run so it
+# works on a stripped-down CI box without conda envs; pass --real to
+# execute the actual tools (only meaningful if you've dropped real data
+# into tests/test_data/).
+# ---------------------------------------------------------------------------
+cmd_test() {
+  local pipeline="" real=0
+  while (( $# > 0 )); do
+    case "$1" in
+      --real)  real=1; shift ;;
+      -h|--help) echo "ngsmodule test [<pipeline>] [--real]"; return 0 ;;
+      *)       pipeline="$1"; shift ;;
+    esac
+  done
+
+  local -a pipelines
+  if [[ -n "$pipeline" ]]; then
+    pipelines=("$pipeline")
+  else
+    while IFS= read -r p; do pipelines+=("$p"); done < <(discover_pipelines)
+  fi
+
+  local total=0 passed=0 skipped=0 failed=0
+  local p tdir tcfg tcsv work
+  for p in "${pipelines[@]}"; do
+    tdir="$PIPELINES_DIR/$p/tests"
+    tcfg="$tdir/test_config.sh"
+    tcsv="$tdir/test_samples.csv"
+    if [[ ! -f "$tcfg" || ! -f "$tcsv" ]]; then
+      printf '⊘ %-22s no tests/ fixture (skip)\n' "$p"
+      skipped=$((skipped + 1))
+      continue
+    fi
+    total=$((total + 1))
+    work="/tmp/ngsmodule-test-$$/$p"
+    rm -rf "$work" && mkdir -p "$work"
+
+    printf '▶ %-22s ' "$p"
+    local mode_args=()
+    (( real )) || mode_args+=(--dry-run)
+
+    if TEST_DIR="$tdir" TEST_WORK="/tmp/ngsmodule-test-$$" \
+         "$NGSMODULE_ROOT/ngsmodule" run "$p" \
+           -c "$tcfg" -s "$tcsv" --no-deps "${mode_args[@]}" \
+           >"$work/test.log" 2>&1; then
+      printf 'OK\n'
+      passed=$((passed + 1))
+    else
+      printf 'FAIL  (see %s)\n' "$work/test.log"
+      tail -15 "$work/test.log" | sed 's/^/    | /'
+      failed=$((failed + 1))
+    fi
+  done
+
+  printf '\n%d passed, %d failed, %d skipped (out of %d)\n' \
+    "$passed" "$failed" "$skipped" "$total"
+  (( failed > 0 )) && return 1
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule lint [<pipeline>]` — quality gate for meta.yml + params_schema.
+# Without arguments, lints every discovered pipeline. Exits non-zero if any
+# pipeline has issues, so it's CI-friendly.
+# ---------------------------------------------------------------------------
+cmd_lint() {
+  # shellcheck source=pipelines/lib/schema.sh
+  source "$NGSMODULE_ROOT/pipelines/lib/schema.sh"
+  local rc=0 p
+  if (( $# > 0 )); then
+    pipeline_lint "$1" || rc=$?
+  else
+    for p in $(discover_pipelines); do
+      pipeline_lint "$p" || rc=$?
+    done
+  fi
+  return $rc
+}
+
 main() {
   local cmd="${1:-help}"
   case "$cmd" in
@@ -311,6 +617,9 @@ main() {
     run)        shift; cmd_run "$@" ;;
     status)     shift; cmd_status "$@" ;;
     trace)      shift; cmd_trace "$@" ;;
+    report)     shift; cmd_report "$@" ;;
+    test)       shift; cmd_test "$@" ;;
+    lint)       shift; cmd_lint "$@" ;;
     help|-h|--help) shift; if [[ $# -eq 0 ]]; then usage; else cmd_info "$@"; fi ;;
     *)          usage; return 2 ;;
   esac

@@ -161,17 +161,19 @@ ngs_state_stage_end() {
   file="$(ngs_state_path "$sample")"
   [[ ! -f "$file" ]] && return 0
 
-  local params="null" tools="[]" inputs="[]" outputs="[]" err=""
+  local params="null" tools="[]" inputs="[]" outputs="[]" err="" bench="null"
   while (( $# > 0 )); do
     case "$1" in
-      --params)  params="$2"; shift 2 ;;
-      --tools)   tools="$2"; shift 2 ;;
-      --inputs)  inputs="$2"; shift 2 ;;
-      --outputs) outputs="$2"; shift 2 ;;
-      --error)   err="$2"; shift 2 ;;
-      *)         shift ;;
+      --params)    params="$2"; shift 2 ;;
+      --tools)     tools="$2"; shift 2 ;;
+      --inputs)    inputs="$2"; shift 2 ;;
+      --outputs)   outputs="$2"; shift 2 ;;
+      --error)     err="$2"; shift 2 ;;
+      --benchmark) bench="$2"; shift 2 ;;
+      *)           shift ;;
     esac
   done
+  [[ -z "$bench" ]] && bench="null"
 
   local tmp
   tmp="$(mktemp "$file.XXXXXX")"
@@ -182,6 +184,7 @@ ngs_state_stage_end() {
      --argjson tools "$tools" \
      --argjson inputs "$inputs" \
      --argjson outputs "$outputs" \
+     --argjson benchmark "$bench" \
      --arg err "$err" \
      '
      .stages[$k] = (.stages[$k] // {})
@@ -196,8 +199,29 @@ ngs_state_stage_end() {
        | .stages[$k].tools = $tools
        | .stages[$k].inputs = $inputs
        | .stages[$k].outputs = $outputs
+       | (if $benchmark != null then .stages[$k].benchmark = $benchmark else . end)
        | (if $err != "" then .stages[$k].error = $err else . end)
      ' "$file" > "$tmp" && mv "$tmp" "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Patch in / overwrite the benchmark blob on an already-completed stage.
+# Used by the orchestrator when the per-sample function emitted its own
+# stage_end (without the orchestrator-level benchmark).
+# ---------------------------------------------------------------------------
+ngs_state_stage_set_benchmark() {
+  local sample="${1:?sample required}"
+  local stage="${2:?stage required}"
+  local bench="${3:?benchmark json required}"
+  ngs_has_jq || return 0
+  [[ -z "$bench" || "$bench" == "null" || "$bench" == "{}" ]] && return 0
+  local file
+  file="$(ngs_state_path "$sample")"
+  [[ ! -f "$file" ]] && return 0
+  local tmp
+  tmp="$(mktemp "$file.XXXXXX")"
+  jq --arg k "$stage" --argjson b "$bench" \
+     '.stages[$k].benchmark = $b' "$file" > "$tmp" && mv "$tmp" "$file"
 }
 
 # ---------------------------------------------------------------------------

@@ -113,7 +113,14 @@ run_step() {
     printf '::dry-run::%s\n' "$*"
     return 0
   fi
-  "$@"
+  # Optional benchmark capture (max RSS, CPU%, wall clock) — set by the
+  # orchestrator via `ngs_benchmark_begin`. The wrapper degrades to a
+  # plain exec when /usr/bin/time isn't present.
+  if declare -f ngs_benchmark_wrap >/dev/null && [[ -n "${_NGS_BENCH_FILE:-}" ]]; then
+    ngs_benchmark_wrap "$@"
+  else
+    "$@"
+  fi
   local rc=$?
   if [[ $rc -eq 0 ]]; then
     log_ok "✓ ${label}"

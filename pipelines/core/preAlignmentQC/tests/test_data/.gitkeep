@@ -1,0 +1,2 @@
+# Drop a tiny chr22 FASTQ here for real-tool runs.
+# `ngsmodule test` works in dry-run mode without any data.

@@ -18,7 +18,37 @@ default_params:
   SequenceType: rna
   sort_threads: 4
   outSAMtype: "BAM SortedByCoordinate"
+# Typed schema consumed by pipelines/lib/schema.sh. The orchestrator
+# validates the running env vars against this before touching any sample,
+# and `ngsmodule lint` checks it offline. The web UI auto-generates form
+# widgets from these entries, so prefer enums + min/max over free-text.
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Read aligner.
+  SequenceType:
+    type: enum
+    values: [rna, dna, bisulfite]
+    default: rna
+    description: Library type — drives default aligner choice.
+  sort_threads:
+    type: int
+    min: 1
+    max: 64
+    default: 4
+    description: samtools sort threads.
 estimated_minutes_per_sample: 60
+# Cluster scheduler hints — consumed by pipelines/profiles/{slurm,sge,lsf}.sh
+# when NGS_PROFILE != local. Override per-job from your ConfigFile if needed.
+resources:
+  mem: 32G
+  time: "4:00:00"
+  cpus_per_task: 8
+  partition: short
+  queue: main
 inputs:
   kind: trimmed_fastq
   pattern: "{sample}_trim_{1,2}.fq.gz"

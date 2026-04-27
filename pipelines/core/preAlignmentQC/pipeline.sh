@@ -63,8 +63,14 @@ run_preAlignmentQC_for_sample() {
   fi
 
   if (( ${#r1_files[@]} == 0 )); then
-    log_error "[$sample] no input FASTQ found under $sample_dir"
-    return 1
+    if [[ "${NGS_DRY_RUN:-0}" == "1" ]]; then
+      # Synthetic placeholder so dry-run / `ngsmodule test` works on bare CI.
+      r1_files=("$sample_dir/<placeholder>_R1.fq.gz")
+      [[ "$layout" == "PE" ]] && r2_files=("$sample_dir/<placeholder>_R2.fq.gz")
+    else
+      log_error "[$sample] no input FASTQ found under $sample_dir"
+      return 1
+    fi
   fi
 
   emit_status "[$sample] preAlignmentQC: validating input"

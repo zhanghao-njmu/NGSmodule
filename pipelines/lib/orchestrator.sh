@@ -51,6 +51,12 @@ source "$_NGS_LIB_DIR/workdir.sh"
 source "$_NGS_LIB_DIR/igenomes.sh"
 # shellcheck source=sample_state.sh
 source "$_NGS_LIB_DIR/sample_state.sh"
+# shellcheck source=schema.sh
+source "$_NGS_LIB_DIR/schema.sh"
+# shellcheck source=profiles.sh
+source "$_NGS_LIB_DIR/profiles.sh"
+# shellcheck source=benchmark.sh
+source "$_NGS_LIB_DIR/benchmark.sh"
 
 # Pipelines registry — populated by the CLI dispatcher; orchestrator reads
 # `requires:` from each pipeline's meta.yml to auto-resolve prerequisites.
@@ -162,6 +168,7 @@ pipeline_run_one() {
   local version
   version="$(pipeline_version "$pipeline")"
   ngs_state_stage_begin "$sample" "$pipeline" "$version"
+  ngs_benchmark_begin "$sample" "$pipeline"
 
   local rc=0
   local attempt=1
@@ -171,25 +178,37 @@ pipeline_run_one() {
       emit_status "[$sample] retry $attempt"
     fi
     set +e
-    "$fn" "$sample"
+    if [[ "${NGS_PROFILE:-local}" == "local" ]]; then
+      "$fn" "$sample"
+    else
+      profile_dispatch "$pipeline" "$sample"
+    fi
     rc=$?
     set -e
     [[ $rc -eq 0 ]] && break
     attempt=$((attempt + 1))
   done
 
+  # Capture and stash benchmark before any stage_end so step-script-emitted
+  # state still reflects the resource peaks.
+  local bench_json
+  bench_json="$(ngs_benchmark_json)"
+
   if (( rc == 0 )); then
-    # Step scripts may have populated state-end metadata via
-    # ngs_state_stage_end already; if not, emit a minimal completion marker.
     if [[ "$(ngs_state_stage_status "$sample" "$pipeline")" != "completed" ]]; then
-      ngs_state_stage_end "$sample" "$pipeline" completed
+      ngs_state_stage_end "$sample" "$pipeline" completed --benchmark "$bench_json"
+    else
+      ngs_state_stage_set_benchmark "$sample" "$pipeline" "$bench_json"
     fi
     ngs_state_emit_receipt "$sample" "$pipeline"
     log_ok "[$sample] $pipeline complete"
   else
-    ngs_state_stage_end "$sample" "$pipeline" failed --error "exit code $rc after $((attempt - 1)) attempt(s)"
+    ngs_state_stage_end "$sample" "$pipeline" failed \
+      --error "exit code $rc after $((attempt - 1)) attempt(s)" \
+      --benchmark "$bench_json"
     log_error "[$sample] $pipeline FAILED"
   fi
+  ngs_benchmark_end
   return $rc
 }
 
@@ -230,6 +249,16 @@ pipeline_run() {
   if (( ${#samples[@]} == 0 )); then
     log_error "pipeline_run: samples[] is empty (did you call ngs_load_sample_info?)"
     return 1
+  fi
+
+  # Schema-validate config before touching any sample. Fast-fail surfaces
+  # all bad/missing values up front; can be opted out for legacy pipelines
+  # by setting NGS_NO_SCHEMA_CHECK=1.
+  if [[ "${NGS_NO_SCHEMA_CHECK:-0}" != "1" ]]; then
+    if ! pipeline_validate_params "$pipeline"; then
+      log_error "pipeline_run: schema validation failed for $pipeline"
+      return 1
+    fi
   fi
 
   # Echo dependency graph so users can see what will actually run.

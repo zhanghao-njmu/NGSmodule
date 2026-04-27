@@ -1,0 +1,3 @@
+RunID,SampleID,Layout,Group
+runA,test_sample_PE,PE,test
+runB,test_sample_SE,SE,test

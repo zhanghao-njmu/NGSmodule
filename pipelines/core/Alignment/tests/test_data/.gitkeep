@@ -1,0 +1,2 @@
+# Drop chr22 mini-FASTQ + a tiny STAR/BWA index here for real-tool runs.
+# `ngsmodule test` works in dry-run mode without any data.

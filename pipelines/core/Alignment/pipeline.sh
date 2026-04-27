@@ -3,15 +3,16 @@
 ###############################################################################
 # pipelines/core/Alignment/pipeline.sh
 #
-# Reference alignment of trimmed reads. Demonstrates the framework's
-# dependency resolution: this pipeline declares `requires: preAlignmentQC`
-# in meta.yml, and the orchestrator transparently runs that prerequisite
-# for any sample whose state.json shows it incomplete.
+# Reference alignment of trimmed reads. Demonstrates two framework
+# capabilities at once:
 #
-# Aligner is chosen at runtime via the $Aligner config variable
-# (STAR / bwa-mem2 / hisat2 / bismark). For the framework PoC we keep
-# the actual command construction minimal and rely on emit_status +
-# state.json for tracking.
+#   1. Dependency resolution — declares `requires: preAlignmentQC` in
+#      meta.yml; the orchestrator transparently runs that prerequisite
+#      for any sample whose state.json shows it incomplete.
+#
+#   2. Module composition — the per-aligner branch is a few lines of
+#      module_<tool>_<action> calls instead of inline command construction.
+#      See pipelines/modules/{star,bwa_mem2,hisat2,samtools}.sh.
 ###############################################################################
 
 set -euo pipefail
@@ -22,6 +23,16 @@ export _NGS_LIB_DIR
 
 # shellcheck source=../../lib/orchestrator.sh
 source "$_NGS_LIB_DIR/orchestrator.sh"
+
+# Pipelines compose tool-level modules instead of inlining commands.
+# See pipelines/modules/_lib.sh for the contract.
+_NGS_MODULES_DIR="$(cd "$_PIPELINE_DIR/../../modules" && pwd)"
+# shellcheck source=../../modules/_lib.sh
+source "$_NGS_MODULES_DIR/_lib.sh"
+module_load star
+module_load bwa_mem2
+module_load hisat2
+module_load samtools
 
 # ---------------------------------------------------------------------------
 # Per-sample worker.
@@ -39,13 +50,12 @@ run_Alignment_for_sample() {
   local aligner="${Aligner:-STAR}"
   local out_dir="$sample_dir/Alignment-${aligner}"
   mkdir -p "$out_dir"
+  module_reset  # fresh per-sample tool tally
 
   local layout="${Layout_dict[$sample]:-PE}"
 
-  # The framework guarantees this prerequisite ran (or we're in --no-deps
-  # mode and the user is on their own).
   local trim_dir="$sample_dir/PreAlignmentQC"
-  local fq1 fq2
+  local fq1 fq2=""
   if [[ "$layout" == "PE" ]]; then
     fq1="$trim_dir/${sample}_trim_1.fq.gz"
     fq2="$trim_dir/${sample}_trim_2.fq.gz"
@@ -59,49 +69,60 @@ run_Alignment_for_sample() {
 
   emit_status "[$sample] Alignment ($aligner): mapping reads"
 
-  # Resolve aligner index from iGenomes (no-op if Genome_direct is set).
   if [[ -n "${iGenomes_Dir:-}" ]] && [[ -n "${Species:-}" ]] && [[ -n "${Source:-}" ]] && [[ -n "${Build:-}" ]]; then
     ngs_resolve_igenomes "$Species" "$Source" "$Build"
   fi
   local index
   index="$(ngs_aligner_index "$aligner")"
-  if [[ -z "$index" ]] && [[ "${NGS_DRY_RUN:-0}" != "1" ]]; then
-    log_error "[$sample] aligner index not found for: $aligner"
-    return 1
+  if [[ -z "$index" ]]; then
+    if [[ "${NGS_DRY_RUN:-0}" == "1" ]]; then
+      index="<index_for_${aligner}>"   # placeholder so module arg-checks pass
+    else
+      log_error "[$sample] aligner index not found for: $aligner"
+      return 1
+    fi
   fi
 
   local bam_out="$out_dir/${sample}.${aligner}.sorted.bam"
   local flagstat_out="$out_dir/${sample}.${aligner}.flagstat"
-  local align_log="$out_dir/${aligner}.log"
 
-  # Build the command per aligner. The PoC supports STAR + BWA-MEM2 +
-  # HISAT2 with minimal configs; production use should extend each branch
-  # with the full parameter set the lab needs.
-  local cmd_args=()
   case "${aligner,,}" in
     star)
-      cmd_args=(
-        STAR
-        --runThreadN "${threads:-4}"
-        --genomeDir "$index"
-        --readFilesIn "$fq1" "${fq2:-}"
-        --readFilesCommand zcat
-        --outFileNamePrefix "$out_dir/${sample}."
-        --outSAMtype BAM SortedByCoordinate
-      )
+      module_star_align \
+        --index "$index" \
+        --out-prefix "$out_dir/${sample}." \
+        --in1 "$fq1" ${fq2:+--in2 "$fq2"} \
+        --threads "${threads:-4}"
+      # STAR writes ${prefix}Aligned.sortedByCoord.out.bam — link to canonical name.
+      if ! is_dry_run; then
+        local star_bam="$out_dir/${sample}.Aligned.sortedByCoord.out.bam"
+        [[ -f "$star_bam" ]] && ln -sf "$(basename "$star_bam")" "$bam_out"
+      fi
       ;;
     bwa|bwa-mem2|bwa_mem2)
-      cmd_args=(
-        bwa-mem2 mem -t "${threads:-4}" -R "@RG\tID:${sample}\tSM:${sample}\tLB:${sample}\tPL:ILLUMINA"
-        "$index" "$fq1" "${fq2:-}"
-      )
+      local sam="$out_dir/${sample}.bwa.sam"
+      if is_dry_run; then
+        module_bwa_mem2_align --index "$index" --in1 "$fq1" ${fq2:+--in2 "$fq2"} \
+          --rg-sample "$sample" --threads "${threads:-4}"
+        module_samtools_sort --in "$sam" --out "$bam_out" --threads "${threads:-4}"
+      else
+        # Pipe align → sort, no intermediate SAM.
+        run_step "[$sample] bwa-mem2 | sort" bash -c "
+          bwa-mem2 mem -t '${threads:-4}' \
+            -R '@RG\tID:${sample}\tSM:${sample}\tLB:${sample}\tPL:ILLUMINA' \
+            '$index' '$fq1' ${fq2:+'$fq2'} \
+          | samtools sort -@ '${threads:-4}' -o '$bam_out' -
+        "
+        _MODULES_TOOLS_USED[bwa-mem2]=1
+        _MODULES_TOOLS_USED[samtools]=1
+      fi
       ;;
     hisat2)
-      cmd_args=(
-        hisat2 -p "${threads:-4}" -x "$index"
-        -1 "$fq1" -2 "${fq2:-/dev/null}"
-        -S /dev/stdout
-      )
+      local sam="$out_dir/${sample}.hisat2.sam"
+      module_hisat2_align --index "$index" --in1 "$fq1" ${fq2:+--in2 "$fq2"} \
+        --out-sam "$sam" --threads "${threads:-4}"
+      module_samtools_sort --in "$sam" --out "$bam_out" --threads "${threads:-4}"
+      ! is_dry_run && rm -f "$sam"
       ;;
     *)
       log_error "[$sample] unsupported aligner: $aligner"
@@ -109,24 +130,16 @@ run_Alignment_for_sample() {
       ;;
   esac
 
-  if is_dry_run; then
-    printf '::dry-run::%s\n' "${cmd_args[*]}"
-    printf '::dry-run::samtools sort -@ %s -o %s -\n' "${threads:-4}" "$bam_out"
-    printf '::dry-run::samtools index %s\n' "$bam_out"
-  else
-    run_step "[$sample] $aligner align" \
-      bash -c "${cmd_args[*]} 2>'$align_log' | samtools sort -@ ${threads:-4} -o '$bam_out' -" \
-      || { ngs_check_logfile "$sample" "$aligner" "$align_log" postcheck $? || return 1; }
-    run_step "[$sample] samtools index" samtools index "$bam_out"
-    run_step "[$sample] samtools flagstat" \
-      bash -c "samtools flagstat '$bam_out' > '$flagstat_out'"
+  module_samtools_index --bam "$bam_out"
+  module_samtools_flagstat --bam "$bam_out" --out "$flagstat_out"
+
+  if ! is_dry_run; then
     emit_artifact aligned_bam "$bam_out"
     emit_artifact alignment_stats "$flagstat_out"
   fi
 
-  # Record the stage in the sample state with rich metadata.
   local tools_json inputs_json outputs_json params_json
-  tools_json="$(ngs_state_tools_json "${aligner,,}" samtools)"
+  tools_json="$(module_tools_json)"
   if [[ "$layout" == "PE" ]]; then
     inputs_json="$(ngs_state_files_json --kind=trimmed_fastq "$fq1" "$fq2")"
   else
