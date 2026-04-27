@@ -34,16 +34,18 @@ source "$NGSMODULE_ROOT/pipelines/lib/runtime.sh"
 
 usage() {
   cat <<EOF
-ngsmodule — NGS pipeline framework
+ngsmodule — sample-first NGS pipeline framework
 
 USAGE
   ngsmodule <command> [options]
 
 COMMANDS
-  list                       List discovered pipelines
-  info <pipeline>            Show metadata for a pipeline
-  run <pipeline> [opts]      Execute a pipeline
-  help [<pipeline>]          Show this message or pipeline-specific help
+  list                                List discovered pipelines
+  info <pipeline>                     Show metadata for a pipeline
+  run <pipeline> [opts]               Execute a pipeline (auto-resolves prerequisites)
+  status -c <ConfigFile>              Show sample × stage grid for a project
+  trace <sample> [-c <ConfigFile>]    Show lineage of a sample's outputs
+  help [<pipeline>]                   Show this message or pipeline-specific help
 
 GLOBAL FLAGS (apply to 'run')
   -c, --config <file>        Path to a ConfigFile (sourced into the env)
@@ -51,6 +53,7 @@ GLOBAL FLAGS (apply to 'run')
       --dry-run              Preview commands; emit ::dry-run:: events
       --strict               Enable set -euo pipefail in step scripts
       --force                Re-run samples even if already complete
+      --no-deps              Skip auto-resolution of prerequisite pipelines
       --retry <N>            Per-sample retry count (default 1)
       --ntask <N|ALL>        Concurrency hint (default 1)
       --rawdata <dir>        Override rawdata_dir from config
@@ -58,10 +61,12 @@ GLOBAL FLAGS (apply to 'run')
 
 EXAMPLES
   ngsmodule list
-  ngsmodule info preAlignmentQC
+  ngsmodule info Alignment
   ngsmodule run preAlignmentQC -c configs/Project_X.sh
-  ngsmodule run preAlignmentQC -c configs/Project_X.sh --dry-run
-  ngsmodule run preAlignmentQC -c configs/Project_X.sh --ntask 4 --retry 2
+  ngsmodule run Alignment      -c configs/Project_X.sh    # auto-runs preAlignmentQC
+  ngsmodule run Alignment      -c configs/Project_X.sh --no-deps
+  ngsmodule status             -c configs/Project_X.sh
+  ngsmodule trace Tumor_S01    -c configs/Project_X.sh
 EOF
 }
 
@@ -124,6 +129,7 @@ cmd_run() {
       --ntask)       ntask_hint="$2"; shift 2 ;;
       --rawdata)     rawdata_override="$2"; shift 2 ;;
       --workdir)     workdir_override="$2"; shift 2 ;;
+      --no-deps)     export NGS_NO_DEPS=1; shift ;;
       -h|--help)     cmd_info "$pipeline"; return 0 ;;
       *)             echo "Unknown flag: $1" >&2; return 2 ;;
     esac
@@ -146,12 +152,165 @@ cmd_run() {
   bash "$script"
 }
 
+# ---------------------------------------------------------------------------
+# Resolve work_dir from a ConfigFile path. Used by `status` and `trace`.
+# ---------------------------------------------------------------------------
+_resolve_workdir_from_config() {
+  local cfg="$1"
+  [[ -z "$cfg" || ! -f "$cfg" ]] && { echo "ERROR: --config required" >&2; return 1; }
+  # shellcheck source=/dev/null
+  ( source "$cfg"; printf '%s' "${work_dir:-}" )
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule status` — sample × stage grid view of a project's progress.
+#
+# Reads each sample's .state.json and renders an aligned table where:
+#   ✓ = completed
+#   …  = running
+#   ✗ = failed
+#   ·  = pending / not yet attempted
+# ---------------------------------------------------------------------------
+cmd_status() {
+  local config=""
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config) config="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+
+  local workdir
+  workdir="$(_resolve_workdir_from_config "$config")" || return 1
+  if [[ -z "$workdir" || ! -d "$workdir" ]]; then
+    echo "ERROR: work_dir not found (resolved: '$workdir')" >&2
+    return 1
+  fi
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: jq required for ngsmodule status" >&2
+    return 1
+  fi
+
+  # Collect every state.json under workdir.
+  local -a state_files=()
+  while IFS= read -r f; do state_files+=("$f"); done < <(
+    find "$workdir" -maxdepth 2 -name '.state.json' -type f 2>/dev/null | sort
+  )
+  if (( ${#state_files[@]} == 0 )); then
+    echo "No samples found under $workdir (no .state.json files)."
+    return 0
+  fi
+
+  # Collect every distinct stage observed across all sample state files.
+  local -a stages=()
+  local f stage
+  while IFS= read -r stage; do
+    [[ -z "$stage" ]] && continue
+    case " ${stages[*]} " in *" $stage "*) ;; *) stages+=("$stage") ;; esac
+  done < <(
+    for f in "${state_files[@]}"; do
+      jq -r '.stages | keys[]?' "$f" 2>/dev/null
+    done
+  )
+  if (( ${#stages[@]} == 0 )); then
+    echo "Samples found but no stages have run yet."
+    for f in "${state_files[@]}"; do
+      jq -r '.sample_id' "$f"
+    done
+    return 0
+  fi
+
+  # Header
+  printf '%-22s' "SAMPLE"
+  for stage in "${stages[@]}"; do
+    printf ' %-18s' "$stage"
+  done
+  printf '\n'
+  printf '%-22s' "------"
+  for stage in "${stages[@]}"; do
+    printf ' %-18s' "------------------"
+  done
+  printf '\n'
+
+  # Rows
+  local sid status_for elapsed
+  for f in "${state_files[@]}"; do
+    sid="$(jq -r '.sample_id' "$f")"
+    printf '%-22s' "$sid"
+    for stage in "${stages[@]}"; do
+      status_for="$(jq -r --arg k "$stage" '.stages[$k].status // "·"' "$f")"
+      elapsed="$(jq -r --arg k "$stage" '.stages[$k].elapsed_seconds // ""' "$f")"
+      local cell
+      case "$status_for" in
+        completed) cell="✓ ${elapsed:+${elapsed}s}" ;;
+        running)   cell="… running" ;;
+        failed)    cell="✗ failed" ;;
+        ·|missing|"") cell="·" ;;
+        *)         cell="$status_for" ;;
+      esac
+      printf ' %-18s' "$cell"
+    done
+    printf '\n'
+  done
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule trace <sample>` — dump a sample's full lineage (every stage's
+# inputs, outputs, tools, and elapsed time) so you can answer "where did
+# this BAM come from?" without grepping logs.
+# ---------------------------------------------------------------------------
+cmd_trace() {
+  local sample="${1:?ngsmodule trace: sample required}"; shift
+  local config=""
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config) config="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+
+  local workdir
+  workdir="$(_resolve_workdir_from_config "$config")" || return 1
+  local state="$workdir/$sample/.state.json"
+  if [[ ! -f "$state" ]]; then
+    echo "ERROR: no state for $sample under $workdir" >&2
+    return 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    cat "$state"
+    return 0
+  fi
+
+  jq -r '
+    "Sample:    " + .sample_id,
+    "Layout:    " + (.layout // "?"),
+    "Group:     " + (.group // "?"),
+    "Created:   " + (.created_at // "?"),
+    "",
+    (.stages | to_entries[] | (
+      "── " + .key + " (" + (.value.status // "?") + ", " + ((.value.elapsed_seconds // "?")|tostring) + "s)",
+      "   started:    " + (.value.started_at   // "?"),
+      "   completed:  " + (.value.completed_at // "?"),
+      "   tools:      " + ((.value.tools // []) | map(.name + "@" + (.version // "?")) | join(", ")),
+      "   params:     " + ((.value.params // {}) | tojson),
+      "   inputs:",
+      ((.value.inputs  // []) | .[] | "     • " + .path + "  sha256=" + (.sha256 // "?")[0:12]),
+      "   outputs:",
+      ((.value.outputs // []) | .[] | "     • " + .path + "  sha256=" + (.sha256 // "?")[0:12]),
+      ""
+    ))
+  ' "$state"
+}
+
 main() {
   local cmd="${1:-help}"
   case "$cmd" in
     list)       cmd_list ;;
     info)       shift; cmd_info "$@" ;;
     run)        shift; cmd_run "$@" ;;
+    status)     shift; cmd_status "$@" ;;
+    trace)      shift; cmd_trace "$@" ;;
     help|-h|--help) shift; if [[ $# -eq 0 ]]; then usage; else cmd_info "$@"; fi ;;
     *)          usage; return 2 ;;
   esac

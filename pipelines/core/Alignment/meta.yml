@@ -1,0 +1,31 @@
+name: Alignment
+display_name: Sequence Alignment
+category: Alignment
+version: 1.0.0
+description: >
+  Map trimmed reads to a reference genome with BWA-MEM2 / STAR / HISAT2 /
+  Bismark depending on $Aligner and $SequenceType. Produces a sorted
+  indexed BAM plus per-sample mapping statistics.
+requires:
+  - preAlignmentQC
+tools:
+  - bwa-mem2 >= 2.2.1
+  - star >= 2.7.10
+  - hisat2 >= 2.2.1
+  - samtools >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: rna
+  sort_threads: 4
+  outSAMtype: "BAM SortedByCoordinate"
+estimated_minutes_per_sample: 60
+inputs:
+  kind: trimmed_fastq
+  pattern: "{sample}_trim_{1,2}.fq.gz"
+outputs:
+  - kind: aligned_bam
+    pattern: "{sample}.{aligner}.sorted.bam"
+  - kind: bam_index
+    pattern: "{sample}.{aligner}.sorted.bam.bai"
+  - kind: alignment_stats
+    pattern: "{sample}.{aligner}.flagstat"

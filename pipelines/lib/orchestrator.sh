@@ -49,6 +49,149 @@ source "$_NGS_LIB_DIR/checkpoint.sh"
 source "$_NGS_LIB_DIR/workdir.sh"
 # shellcheck source=igenomes.sh
 source "$_NGS_LIB_DIR/igenomes.sh"
+# shellcheck source=sample_state.sh
+source "$_NGS_LIB_DIR/sample_state.sh"
+
+# Pipelines registry — populated by the CLI dispatcher; orchestrator reads
+# `requires:` from each pipeline's meta.yml to auto-resolve prerequisites.
+NGSMODULE_ROOT="${NGSMODULE_ROOT:-$(cd "$_NGS_LIB_DIR/../.." && pwd)}"
+export NGSMODULE_ROOT
+PIPELINES_DIR="${PIPELINES_DIR:-$NGSMODULE_ROOT/pipelines/core}"
+
+# ---------------------------------------------------------------------------
+# Read `requires:` (a YAML list of prerequisite pipelines) from meta.yml.
+# Returns the list space-separated on stdout. Empty if no requires block.
+#
+#   requires:
+#     - preAlignmentQC
+#     - postAlignmentQC
+# ---------------------------------------------------------------------------
+pipeline_requires() {
+  local pipeline="$1"
+  local meta="$PIPELINES_DIR/$pipeline/meta.yml"
+  [[ ! -f "$meta" ]] && return 0
+  awk '
+    /^requires:/        {in_block=1; next}
+    /^[A-Za-z_]+:/      {in_block=0}
+    in_block && /^[[:space:]]*-/ {
+      sub(/^[[:space:]]*-[[:space:]]*/, "")
+      sub(/[[:space:]]*$/, "")
+      print
+    }
+  ' "$meta"
+}
+
+# Read `version:` from meta.yml (default 1.0.0).
+pipeline_version() {
+  local pipeline="$1"
+  local meta="$PIPELINES_DIR/$pipeline/meta.yml"
+  [[ ! -f "$meta" ]] && { echo "0.0.0"; return; }
+  local v
+  v="$(awk '/^version:/ {print $2; exit}' "$meta")"
+  v="${v//\"/}"; v="${v//\'/}"
+  echo "${v:-1.0.0}"
+}
+
+# ---------------------------------------------------------------------------
+# Run prerequisite pipelines for a sample if not already complete.
+# Recursive: a prereq's own prereqs are resolved transitively.
+#
+# Honoured by `pipeline_run` unless NGS_NO_DEPS=1 (or --no-deps).
+# ---------------------------------------------------------------------------
+_resolved_prereqs=""
+pipeline_resolve_prereqs() {
+  local pipeline="$1" sample="$2"
+  local prereq
+  for prereq in $(pipeline_requires "$pipeline"); do
+    # Skip if already complete
+    if ngs_state_is_complete "$sample" "$prereq"; then
+      continue
+    fi
+    # Mark visited so we don't loop on cyclic graphs
+    case " $_resolved_prereqs " in *" $prereq "*) continue ;; esac
+    _resolved_prereqs+=" $prereq"
+
+    log_info "[$sample] missing prerequisite: $prereq → resolving"
+    emit_status "[$sample] resolving prerequisite: $prereq"
+
+    local prereq_script="$PIPELINES_DIR/$prereq/pipeline.sh"
+    if [[ ! -f "$prereq_script" ]]; then
+      log_error "[$sample] missing prerequisite '$prereq' has no pipeline.sh"
+      return 1
+    fi
+
+    # Resolve transitively first
+    pipeline_resolve_prereqs "$prereq" "$sample" || return 1
+
+    # Run the prereq's per-sample function (must already be loaded since
+    # the pipeline.sh sources orchestrator.sh which sources prereq).
+    # We source the prereq's pipeline.sh in the current shell so its
+    # function becomes callable.
+    if ! declare -f "run_${prereq}_for_sample" >/dev/null 2>&1; then
+      # shellcheck source=/dev/null
+      source "$prereq_script"
+    fi
+    pipeline_run_one "$prereq" "$sample" || return 1
+  done
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# Run a single sample through a single pipeline stage with full state
+# tracking. Used both by pipeline_run (per-sample loop) and by
+# pipeline_resolve_prereqs (recursive prerequisite resolution).
+# ---------------------------------------------------------------------------
+pipeline_run_one() {
+  local pipeline="${1:?pipeline required}"
+  local sample="${2:?sample required}"
+  local fn="run_${pipeline}_for_sample"
+  if ! declare -f "$fn" >/dev/null 2>&1; then
+    log_error "[$sample] $fn not defined for pipeline '$pipeline'"
+    return 1
+  fi
+
+  if ngs_state_is_complete "$sample" "$pipeline" && [[ "${force:-FALSE}" != "TRUE" ]]; then
+    log_info "[$sample] $pipeline already complete (state.json) → skip"
+    return 0
+  fi
+
+  local sample_dir="$work_dir/$sample"
+  mkdir -p "$sample_dir"
+  ngs_state_init "$sample"
+
+  local version
+  version="$(pipeline_version "$pipeline")"
+  ngs_state_stage_begin "$sample" "$pipeline" "$version"
+
+  local rc=0
+  local attempt=1
+  while (( attempt <= ${retry:-1} )); do
+    if (( attempt > 1 )); then
+      log_warn "[$sample] $pipeline retry attempt $attempt/${retry:-1}"
+      emit_status "[$sample] retry $attempt"
+    fi
+    set +e
+    "$fn" "$sample"
+    rc=$?
+    set -e
+    [[ $rc -eq 0 ]] && break
+    attempt=$((attempt + 1))
+  done
+
+  if (( rc == 0 )); then
+    # Step scripts may have populated state-end metadata via
+    # ngs_state_stage_end already; if not, emit a minimal completion marker.
+    if [[ "$(ngs_state_stage_status "$sample" "$pipeline")" != "completed" ]]; then
+      ngs_state_stage_end "$sample" "$pipeline" completed
+    fi
+    ngs_state_emit_receipt "$sample" "$pipeline"
+    log_ok "[$sample] $pipeline complete"
+  else
+    ngs_state_stage_end "$sample" "$pipeline" failed --error "exit code $rc after $((attempt - 1)) attempt(s)"
+    log_error "[$sample] $pipeline FAILED"
+  fi
+  return $rc
+}
 
 # `trap_add` may be provided by the legacy GlobalFunction.sh; if not,
 # fall back to a single SIGINT/SIGTERM trap that kills the process group.
@@ -89,6 +232,13 @@ pipeline_run() {
     return 1
   fi
 
+  # Echo dependency graph so users can see what will actually run.
+  local prereqs
+  prereqs="$(pipeline_requires "$pipeline" | tr '\n' ' ')"
+  if [[ -n "${prereqs// /}" ]] && [[ "${NGS_NO_DEPS:-0}" != "1" ]]; then
+    log_info "pipeline=$pipeline requires: $prereqs"
+  fi
+
   ngs_compute_threads "${#samples[@]}"
   log_info "pipeline=$pipeline samples=${#samples[@]} concurrency=$ntask_per_run threads=$threads"
   emit_status "Starting $pipeline on ${#samples[@]} samples"
@@ -100,60 +250,38 @@ pipeline_run() {
   : > "$failed_log"
 
   local total="${#samples[@]}"
-  local done_count=0
-  local pids=()
 
   local sample
   for sample in "${samples[@]}"; do
     ngs_fifo_acquire
     {
-      local sample_dir="$work_dir/$sample"
-      mkdir -p "$sample_dir"
-
-      if [[ "$force" == "TRUE" ]]; then
-        ngs_pipeline_clear_complete "$sample_dir" "$pipeline"
-      fi
-
-      if ngs_pipeline_completed "$sample_dir" "$pipeline"; then
-        log_info "[$sample] skip (already complete)"
-        emit_status "[$sample] skip"
-      else
-        local attempt=1 rc=1
-        while (( attempt <= retry )) && (( rc != 0 )); do
-          if (( attempt > 1 )); then
-            log_warn "[$sample] retry attempt $attempt/$retry"
-            emit_status "[$sample] retry $attempt/$retry"
-          fi
-          # Run the sample's pipeline body. Tolerate failure so we can
-          # log + continue with other samples.
-          set +e
-          "$fn" "$sample"
-          rc=$?
-          set -e
-          attempt=$((attempt + 1))
-        done
-        if (( rc == 0 )); then
-          ngs_pipeline_mark_complete "$sample_dir" "$pipeline"
-          log_ok "[$sample] $pipeline complete"
-        else
-          log_error "[$sample] $pipeline FAILED after $retry attempt(s)"
+      # Resolve prerequisites first (recursive, transitive). Skipped
+      # when NGS_NO_DEPS=1.
+      if [[ "${NGS_NO_DEPS:-0}" != "1" ]]; then
+        if ! pipeline_resolve_prereqs "$pipeline" "$sample"; then
           printf '%s\n' "$sample" >> "$failed_log"
+          ngs_fifo_release
+          exit 0
         fi
       fi
 
-      # Best-effort progress: percentage of completed/skipped samples.
-      # We use a flock'd counter file so concurrent samples don't race.
+      if ! pipeline_run_one "$pipeline" "$sample"; then
+        printf '%s\n' "$sample" >> "$failed_log"
+      fi
+
+      # Per-pipeline progress aggregation (flock-guarded counter).
       (
         flock 9
+        local done_count
         done_count=$(($(cat "$work_dir/.ngs_done.$pipeline" 2>/dev/null || echo 0) + 1))
         printf '%s' "$done_count" > "$work_dir/.ngs_done.$pipeline"
       ) 9>"$work_dir/.ngs_done.lock.$pipeline"
+      local done_count
       done_count="$(cat "$work_dir/.ngs_done.$pipeline" 2>/dev/null || echo 0)"
       emit_progress "$(( 100 * done_count / total ))"
 
       ngs_fifo_release
     } &
-    pids+=("$!")
   done
 
   # Wait for everything; allow Ctrl+C to propagate via the process-group
