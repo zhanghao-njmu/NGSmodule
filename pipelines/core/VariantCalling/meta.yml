@@ -1,0 +1,65 @@
+name: VariantCalling
+display_name: Variant Calling (samtools/bcftools)
+category: VariantCalling
+version: 1.0.0
+description: >
+  Per-sample germline variant calling with bcftools mpileup/call followed by
+  type-split + MQ filtering and re-merging into a final filtered VCF. A
+  bcftools stats report is produced alongside.
+requires:
+  - Alignment
+tools:
+  - bcftools >= 1.19
+  - samtools >= 1.19
+  - tabix >= 1.19
+default_params:
+  Aligner: STAR
+  SequenceType: dna
+  Deduplication: TRUE
+  snp_mq: 40
+  indel_mq: 20
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2, bismark]
+    default: STAR
+    required: true
+    description: Aligner used upstream — locates input BAM directory.
+  Deduplication:
+    type: enum
+    values: [NONE, FALSE, TRUE]
+    default: TRUE
+    description: Use markdup/dedup BAM (TRUE recommended for DNA variant calling).
+  snp_mq:
+    type: int
+    min: 0
+    max: 60
+    default: 40
+    description: Minimum mapping quality for SNPs (bcftools filter -e MQ < N).
+  indel_mq:
+    type: int
+    min: 0
+    max: 60
+    default: 20
+    description: Minimum mapping quality for indels.
+  genome:
+    type: path
+    required: false
+    description: Reference FASTA. Auto-resolved via iGenomes if unset.
+estimated_minutes_per_sample: 90
+resources:
+  mem: 16G
+  time: "6:00:00"
+  cpus_per_task: 4
+  partition: medium
+  queue: main
+inputs:
+  kind: aligned_bam
+  pattern: "{sample}.{aligner}.dedup.bam | {sample}.{aligner}.markdup.bam | {sample}.{aligner}.sorted.bam"
+outputs:
+  - kind: variant_vcf_raw
+    pattern: "{sample}.{aligner}.bcftools.vcf.gz"
+  - kind: variant_vcf_filtered
+    pattern: "{sample}.{aligner}.bcftools.filter.vcf.gz"
+  - kind: variant_stats
+    pattern: "{sample}.{aligner}.bcftools.vcf.gz.stats"
