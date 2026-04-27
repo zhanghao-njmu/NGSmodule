@@ -42,11 +42,14 @@ USAGE
 COMMANDS
   list                                List discovered pipelines
   info <pipeline>                     Show metadata for a pipeline
+  version                             Show framework version + pipeline/module manifest
   init <name> [--scope sample|project] [--requires a,b]
                                       Scaffold a new pipeline directory under pipelines/core/
   deps <pipeline>                     Print prerequisite graph (preview what 'run' would resolve)
   run <pipeline> [opts]               Execute a pipeline (auto-resolves prerequisites)
   resume <pipeline> -c <ConfigFile>   Re-run only failed/incomplete samples for a pipeline
+  clean [<pipeline>] -c <ConfigFile> [--filter <regex>] [--yes]
+                                      Wipe .state.json files (or just one stage from each)
   status -c <ConfigFile>              Show sample × stage grid for a project
   trace <sample> [-c <ConfigFile>]    Show lineage of a sample's outputs
   report -c <ConfigFile> [-o file]    Render self-contained HTML report
@@ -948,6 +951,143 @@ Next steps:
 HINT
 }
 
+# ---------------------------------------------------------------------------
+# `ngsmodule clean [<pipeline>] -c <ConfigFile> [--filter <regex>]` —
+# remove recorded state so the next `run` starts fresh.
+#
+# Without arguments: clears every .state.json under work_dir (cohort reset).
+# With <pipeline>:   removes just that pipeline's stage entry from each
+#                    .state.json (other stages keep their history).
+# With --filter:     restrict the action to matching sample IDs.
+# Always asks for explicit --yes confirmation since it's destructive.
+# ---------------------------------------------------------------------------
+cmd_clean() {
+  local pipeline="" config="" filter="" yes=0
+  if (( $# > 0 )) && [[ "$1" != -* ]]; then
+    pipeline="$1"; shift
+  fi
+  while (( $# > 0 )); do
+    case "$1" in
+      -c|--config) config="$2"; shift 2 ;;
+      --filter)    filter="$2"; shift 2 ;;
+      --yes|-y)    yes=1; shift ;;
+      *) echo "Unknown flag: $1" >&2; return 2 ;;
+    esac
+  done
+  if [[ -z "$config" ]]; then
+    echo "ERROR: ngsmodule clean requires -c <ConfigFile>" >&2
+    return 1
+  fi
+
+  local workdir
+  workdir="$(_resolve_workdir_from_config "$config")" || return 1
+  if [[ -z "$workdir" || ! -d "$workdir" ]]; then
+    echo "ERROR: work_dir not found (resolved: '$workdir')" >&2
+    return 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "ERROR: jq required for ngsmodule clean" >&2
+    return 1
+  fi
+
+  local -a state_files=()
+  while IFS= read -r f; do state_files+=("$f"); done < <(
+    find "$workdir" -maxdepth 2 -name '.state.json' -type f 2>/dev/null | sort
+  )
+  if (( ${#state_files[@]} == 0 )); then
+    echo "No .state.json files under $workdir."
+    return 0
+  fi
+
+  # Apply --filter to narrow the file list (match on sample_id read from
+  # each file rather than the parent dir name, so _project is filtered
+  # out unless the regex explicitly matches "_project").
+  if [[ -n "$filter" ]]; then
+    local -a kept=()
+    local f sid
+    for f in "${state_files[@]}"; do
+      sid="$(jq -r '.sample_id // .sample // ""' "$f" 2>/dev/null)"
+      [[ -z "$sid" ]] && continue
+      if [[ "$sid" =~ $filter ]]; then kept+=("$f"); fi
+    done
+    state_files=("${kept[@]}")
+    if (( ${#state_files[@]} == 0 )); then
+      echo "No samples match --filter '$filter'."
+      return 0
+    fi
+  fi
+
+  # Preview what we're about to do.
+  if [[ -z "$pipeline" ]]; then
+    echo "Will REMOVE ${#state_files[@]} .state.json file(s) entirely."
+  else
+    echo "Will remove '$pipeline' stage from ${#state_files[@]} .state.json file(s)."
+  fi
+  if (( ! yes )); then
+    printf 'Confirm? Type yes to proceed: '
+    local reply
+    read -r reply
+    [[ "$reply" == "yes" ]] || { echo "Aborted."; return 1; }
+  fi
+
+  local f modified=0
+  for f in "${state_files[@]}"; do
+    if [[ -z "$pipeline" ]]; then
+      rm -f "$f" && modified=$((modified + 1))
+    else
+      # Drop the stage key; if no stages remain, keep the file but
+      # leave .stages = {} so future runs can still reference it.
+      local tmp
+      tmp="$(mktemp "${f}.XXXXXX")"
+      if jq --arg p "$pipeline" 'del(.stages[$p])' "$f" >"$tmp" && mv "$tmp" "$f"; then
+        modified=$((modified + 1))
+      else
+        rm -f "$tmp"
+        log_warn "failed to update $f"
+      fi
+    fi
+  done
+
+  log_ok "ngsmodule clean: ${modified}/${#state_files[@]} state file(s) updated"
+}
+
+# ---------------------------------------------------------------------------
+# `ngsmodule version` — print framework version + manifest of all
+# discovered pipelines and modules. Useful for bug reports and reproducible
+# environments.
+# ---------------------------------------------------------------------------
+NGSMODULE_VERSION="2.0.0"
+cmd_version() {
+  echo "ngsmodule framework $NGSMODULE_VERSION"
+  echo "  bash         $BASH_VERSION"
+  echo "  jq           $(jq --version 2>/dev/null || echo "(not installed)")"
+  echo "  installed at $NGSMODULE_ROOT"
+  echo
+  echo "Pipelines:"
+  local p ver scope
+  while IFS= read -r p; do
+    ver="$(awk '/^version:/ {print $2; exit}' "$PIPELINES_DIR/$p/meta.yml" 2>/dev/null)"
+    ver="${ver//\"/}"; ver="${ver//\'/}"
+    scope="$(awk '/^scope:/ {print $2; exit}' "$PIPELINES_DIR/$p/meta.yml" 2>/dev/null)"
+    scope="${scope//\"/}"; scope="${scope//\'/}"
+    [[ -z "$scope" ]] && scope="sample"
+    printf '  %-26s %-8s %s\n' "$p" "${ver:-?}" "[$scope]"
+  done < <(discover_pipelines)
+  echo
+  echo "Tool modules:"
+  local m
+  for m in "$NGSMODULE_ROOT/pipelines/modules/"*.sh; do
+    [[ "$(basename "$m")" == "_lib.sh" ]] && continue
+    printf '  %s\n' "$(basename "$m" .sh)"
+  done
+  echo
+  echo "Cluster profiles:"
+  local prof
+  for prof in "$NGSMODULE_ROOT/pipelines/profiles/"*.sh; do
+    printf '  %s\n' "$(basename "$prof" .sh)"
+  done
+}
+
 cmd_lint() {
   # shellcheck source=pipelines/lib/schema.sh
   source "$NGSMODULE_ROOT/pipelines/lib/schema.sh"
@@ -1106,6 +1246,8 @@ main() {
     report)     shift; cmd_report "$@" ;;
     test)       shift; cmd_test "$@" ;;
     lint)       shift; cmd_lint "$@" ;;
+    clean)      shift; cmd_clean "$@" ;;
+    version|--version) cmd_version ;;
     help|-h|--help) shift; if [[ $# -eq 0 ]]; then usage; else cmd_info "$@"; fi ;;
     *)          usage; return 2 ;;
   esac
