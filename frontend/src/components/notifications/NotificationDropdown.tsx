@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Dropdown, List, Button, Typography, Space, Empty, Spin } from 'antd'
 import {
@@ -12,9 +12,14 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import type { Notification } from '@/types/notification'
-import { notificationService } from '@/services/notification.service'
+import {
+  useNotifications,
+  useUnreadNotificationCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  useDeleteNotification,
+} from '@/hooks/queries'
 import { DesignTokens } from '@/styles/design-tokens'
-import { logger } from '@/utils/logger'
 import './NotificationDropdown.css'
 
 const { Text } = Typography
@@ -25,69 +30,40 @@ interface NotificationDropdownProps {
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className }) => {
   const navigate = useNavigate()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
   const [dropdownVisible, setDropdownVisible] = useState(false)
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await notificationService.getNotifications({ pageSize: 5 })
-      setNotifications(response.notifications)
-      setUnreadCount(response.notifications.filter((n) => !n.read).length)
-    } catch (error) {
-      logger.error('Failed to fetch notifications:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  // Server state via TanStack Query — automatically refetches when cache
+  // is invalidated by the realtime WebSocket layer (useNotificationStream).
+  const { data: listResponse, isLoading } = useNotifications({ pageSize: 5 } as any)
+  const { data: unread } = useUnreadNotificationCount()
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+  const markRead = useMarkNotificationRead()
+  const markAllRead = useMarkAllNotificationsRead()
+  const deleteOne = useDeleteNotification()
 
-  const handleMarkAsRead = async (id: string, event: React.MouseEvent) => {
+  const notifications = (listResponse?.items ?? []) as Notification[]
+  const unreadCount = unread?.count ?? 0
+
+  const handleMarkAsRead = (id: string, event: React.MouseEvent) => {
     event.stopPropagation()
-    try {
-      await notificationService.markAsRead(id)
-      setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
-      setUnreadCount((prev) => Math.max(0, prev - 1))
-    } catch (error) {
-      logger.error('Failed to mark notification as read:', error)
-    }
+    markRead.mutate(id)
   }
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationService.markAllAsRead()
-      setNotifications(notifications.map((n) => ({ ...n, read: true })))
-      setUnreadCount(0)
-    } catch (error) {
-      logger.error('Failed to mark all as read:', error)
-    }
+  const handleMarkAllAsRead = () => {
+    markAllRead.mutate()
   }
 
-  const handleDelete = async (id: string, event: React.MouseEvent) => {
+  const handleDelete = (id: string, event: React.MouseEvent) => {
     event.stopPropagation()
-    try {
-      await notificationService.deleteNotification(id)
-      const notification = notifications.find((n) => n.id === id)
-      setNotifications(notifications.filter((n) => n.id !== id))
-      if (notification && !notification.read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1))
-      }
-    } catch (error) {
-      logger.error('Failed to delete notification:', error)
-    }
+    deleteOne.mutate(id)
   }
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
-      handleMarkAsRead(notification.id, {} as React.MouseEvent)
+      markRead.mutate(notification.id)
     }
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl)
+    if ((notification as any).action_url || notification.actionUrl) {
+      navigate(((notification as any).action_url || notification.actionUrl) as string)
       setDropdownVisible(false)
     }
   }
@@ -113,21 +89,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) {
-      return 'Just now'
-    }
-    if (diffMins < 60) {
-      return `${diffMins} minutes ago`
-    }
-    if (diffHours < 24) {
-      return `${diffHours} hours ago`
-    }
-    if (diffDays === 1) {
-      return 'Yesterday'
-    }
-    if (diffDays < 7) {
-      return `${diffDays} days ago`
-    }
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minutes ago`
+    if (diffHours < 24) return `${diffHours} hours ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
     return date.toLocaleDateString()
   }
 
@@ -137,7 +103,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
         <Space style={{ justifyContent: 'space-between', width: '100%' }}>
           <Text strong>Notifications</Text>
           {unreadCount > 0 && (
-            <Button type="link" size="small" icon={<CheckOutlined />} onClick={handleMarkAllAsRead}>
+            <Button
+              type="link"
+              size="small"
+              icon={<CheckOutlined />}
+              onClick={handleMarkAllAsRead}
+              loading={markAllRead.isPending}
+            >
               Mark all read
             </Button>
           )}
@@ -145,12 +117,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
       </div>
 
       <div className="notification-list-container">
-        {loading ? (
+        {isLoading ? (
           <div style={{ textAlign: 'center', padding: '24px' }}>
             <Spin />
           </div>
         ) : notifications.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No notifications" style={{ padding: '24px' }} />
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No notifications"
+            style={{ padding: '24px' }}
+          />
         ) : (
           <List
             dataSource={notifications.slice(0, 5)}
@@ -194,7 +170,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
                         {item.message}
                       </Text>
                       <Text type="secondary" style={{ fontSize: 11, marginTop: 4 }}>
-                        {getTimeAgo(item.timestamp)}
+                        {getTimeAgo((item as any).created_at || item.timestamp)}
                       </Text>
                     </div>
                   }

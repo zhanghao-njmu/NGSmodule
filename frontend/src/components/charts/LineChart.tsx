@@ -1,9 +1,10 @@
 /**
- * Line Chart Component
+ * Line Chart — Plotly implementation.
+ * External API kept identical to the previous ECharts version.
  */
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Chart } from './Chart'
-import type { EChartsOption } from 'echarts'
+import type { Data, Layout } from 'plotly.js'
 import { designTokens } from '@/config'
 
 export interface LineChartProps {
@@ -21,6 +22,13 @@ export interface LineChartProps {
   loading?: boolean
 }
 
+const PALETTE = [
+  designTokens.colors.primary.default,
+  designTokens.colors.success.default,
+  designTokens.colors.warning.default,
+  designTokens.colors.error.default,
+]
+
 export const LineChart: React.FC<LineChartProps> = ({
   data,
   title,
@@ -31,55 +39,33 @@ export const LineChart: React.FC<LineChartProps> = ({
   showArea = false,
   loading = false,
 }) => {
-  const option: EChartsOption = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-      },
-    },
-    legend: {
-      data: data.map((d) => d.name || 'Series'),
-      top: 10,
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '10%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: data[0]?.x || [],
-      name: xAxisLabel,
-      nameLocation: 'middle',
-      nameGap: 30,
-    },
-    yAxis: {
-      type: 'value',
-      name: yAxisLabel,
-      nameLocation: 'middle',
-      nameGap: 50,
-    },
-    series: data.map((item, index) => ({
-      name: item.name || `Series ${index + 1}`,
-      type: 'line',
-      smooth,
-      data: item.y,
-      areaStyle: showArea ? {} : undefined,
-      itemStyle: {
-        color: [
-          designTokens.colors.primary.default,
-          designTokens.colors.success.default,
-          designTokens.colors.warning.default,
-          designTokens.colors.error.default,
-        ][index % 4],
-      },
-    })),
-  }
+  const traces = useMemo<Data[]>(
+    () =>
+      data.map((series, index) => ({
+        type: 'scatter',
+        mode: 'lines+markers',
+        x: series.x as any,
+        y: series.y,
+        name: series.name || `Series ${index + 1}`,
+        line: {
+          shape: smooth ? 'spline' : 'linear',
+          color: PALETTE[index % PALETTE.length],
+          width: 2,
+        },
+        ...(showArea ? { fill: 'tozeroy', fillcolor: `${PALETTE[index % PALETTE.length]}33` } : {}),
+      })),
+    [data, smooth, showArea],
+  )
 
-  return <Chart option={option} title={title} height={height} loading={loading} />
+  const layout = useMemo<Partial<Layout>>(
+    () => ({
+      xaxis: { title: xAxisLabel, automargin: true },
+      yaxis: { title: yAxisLabel, automargin: true },
+    }),
+    [xAxisLabel, yAxisLabel],
+  )
+
+  return <Chart data={traces} layout={layout} title={title} height={height} loading={loading} />
 }
 
 export default LineChart

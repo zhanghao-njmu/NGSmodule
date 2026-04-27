@@ -18,6 +18,10 @@ lib64/
 parts/
 sdist/
 var/
+
+# Exception: frontend source `lib/` directories are intentional
+!frontend/src/**/lib/
+!frontend/src/**/lib/**
 wheels/
 *.egg-info/
 .installed.cfg

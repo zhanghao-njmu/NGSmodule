@@ -1,9 +1,9 @@
 /**
- * Pie Chart Component
+ * Pie / Donut Chart — Plotly implementation.
  */
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Chart } from './Chart'
-import type { EChartsOption } from 'echarts'
+import type { Data, Layout } from 'plotly.js'
 
 export interface PieChartProps {
   data: {
@@ -12,7 +12,12 @@ export interface PieChartProps {
   }[]
   title?: string
   height?: number
-  radius?: string | [string, string]
+  /**
+   * Inner radius (0-1). Pass a value > 0 for a donut chart. Defaults to
+   * 0.4 to roughly match the previous ECharts radius=['40%', '70%'].
+   */
+  hole?: number
+  /** Render as nightingale rose (variable radius). */
   roseType?: boolean
   loading?: boolean
 }
@@ -21,42 +26,28 @@ export const PieChart: React.FC<PieChartProps> = ({
   data,
   title,
   height = 400,
-  radius = ['40%', '70%'],
+  hole = 0.4,
   roseType = false,
   loading = false,
 }) => {
-  const option: EChartsOption = {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)',
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      data: data.map((d) => d.name),
-    },
-    series: [
+  const traces = useMemo<Data[]>(
+    () => [
       {
-        name: title || 'Distribution',
         type: 'pie',
-        radius,
-        roseType: roseType ? 'radius' : undefined,
-        data,
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
-          },
-        },
-        label: {
-          formatter: '{b}: {d}%',
-        },
-      },
+        labels: data.map((d) => d.name),
+        values: data.map((d) => d.value),
+        hole: roseType ? 0 : hole,
+        textinfo: 'label+percent',
+        textposition: 'auto',
+        hovertemplate: '%{label}<br>%{value} (%{percent})<extra></extra>',
+      } as Data,
     ],
-  }
+    [data, hole, roseType],
+  )
 
-  return <Chart option={option} title={title} height={height} loading={loading} />
+  const layout = useMemo<Partial<Layout>>(() => ({ showlegend: true }), [])
+
+  return <Chart data={traces} layout={layout} title={title} height={height} loading={loading} />
 }
 
 export default PieChart

@@ -1,9 +1,9 @@
 /**
- * Bar Chart Component
+ * Bar Chart — Plotly implementation.
  */
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Chart } from './Chart'
-import type { EChartsOption } from 'echarts'
+import type { Data, Layout } from 'plotly.js'
 import { designTokens } from '@/config'
 
 export interface BarChartProps {
@@ -21,6 +21,13 @@ export interface BarChartProps {
   loading?: boolean
 }
 
+const PALETTE = [
+  designTokens.colors.primary.default,
+  designTokens.colors.success.default,
+  designTokens.colors.warning.default,
+  designTokens.colors.error.default,
+]
+
 export const BarChart: React.FC<BarChartProps> = ({
   data,
   title,
@@ -31,54 +38,29 @@ export const BarChart: React.FC<BarChartProps> = ({
   stacked = false,
   loading = false,
 }) => {
-  const option: EChartsOption = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow',
-      },
-    },
-    legend: {
-      data: data.map((d) => d.name || 'Series'),
-      top: 10,
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '10%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: horizontal ? 'value' : 'category',
-      data: horizontal ? undefined : data[0]?.categories || [],
-      name: xAxisLabel,
-      nameLocation: 'middle',
-      nameGap: 30,
-    },
-    yAxis: {
-      type: horizontal ? 'category' : 'value',
-      data: horizontal ? data[0]?.categories || [] : undefined,
-      name: yAxisLabel,
-      nameLocation: 'middle',
-      nameGap: 50,
-    },
-    series: data.map((item, index) => ({
-      name: item.name || `Series ${index + 1}`,
-      type: 'bar',
-      data: item.values,
-      stack: stacked ? 'total' : undefined,
-      itemStyle: {
-        color: [
-          designTokens.colors.primary.default,
-          designTokens.colors.success.default,
-          designTokens.colors.warning.default,
-          designTokens.colors.error.default,
-        ][index % 4],
-      },
-    })),
-  }
+  const traces = useMemo<Data[]>(
+    () =>
+      data.map((series, index) => ({
+        type: 'bar',
+        orientation: horizontal ? 'h' : 'v',
+        x: horizontal ? series.values : series.categories,
+        y: horizontal ? series.categories : series.values,
+        name: series.name || `Series ${index + 1}`,
+        marker: { color: PALETTE[index % PALETTE.length] },
+      })),
+    [data, horizontal],
+  )
 
-  return <Chart option={option} title={title} height={height} loading={loading} />
+  const layout = useMemo<Partial<Layout>>(
+    () => ({
+      barmode: stacked ? 'stack' : 'group',
+      xaxis: { title: xAxisLabel, automargin: true },
+      yaxis: { title: yAxisLabel, automargin: true },
+    }),
+    [xAxisLabel, yAxisLabel, stacked],
+  )
+
+  return <Chart data={traces} layout={layout} title={title} height={height} loading={loading} />
 }
 
 export default BarChart

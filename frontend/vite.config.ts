@@ -29,7 +29,8 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'antd-vendor': ['antd', '@ant-design/icons'],
-          'chart-vendor': ['plotly.js', 'echarts'],
+          'chart-vendor': ['plotly.js', 'react-plotly.js'],
+          'query-vendor': ['@tanstack/react-query'],
         },
       },
     },

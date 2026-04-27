@@ -1,80 +1,88 @@
 /**
- * Generic Chart Component - Wrapper for ECharts
+ * Generic Chart wrapper around react-plotly.js.
+ *
+ * Plotly is the de-facto standard for scientific visualization (volcano
+ * plots, Manhattan plots, heatmaps), so we standardize on it across the
+ * app and drop ECharts. The wrapper exposes a small typed surface so
+ * downstream chart components don't import plotly types directly.
  */
-import React, { useRef, useEffect } from 'react'
-import * as echarts from 'echarts'
-import { Card } from 'antd'
-import type { EChartsOption } from 'echarts'
+import React, { useMemo } from 'react'
+import Plot from 'react-plotly.js'
+import type { Data, Layout, Config } from 'plotly.js'
+import { Card, Spin } from 'antd'
 
 export interface ChartProps {
-  option: EChartsOption
+  data: Data[]
+  layout?: Partial<Layout>
+  config?: Partial<Config>
   title?: string
   height?: number | string
   loading?: boolean
   className?: string
   style?: React.CSSProperties
-  onChartReady?: (chart: echarts.ECharts) => void
+}
+
+const DEFAULT_CONFIG: Partial<Config> = {
+  responsive: true,
+  displaylogo: false,
+  modeBarButtonsToRemove: ['lasso2d', 'select2d', 'autoScale2d'],
+}
+
+const DEFAULT_LAYOUT: Partial<Layout> = {
+  autosize: true,
+  margin: { l: 50, r: 30, t: 40, b: 50 },
+  font: {
+    family:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    size: 12,
+  },
+  paper_bgcolor: 'transparent',
+  plot_bgcolor: 'transparent',
+  legend: {
+    orientation: 'h',
+    yanchor: 'bottom',
+    y: 1.02,
+    xanchor: 'right',
+    x: 1,
+  },
+  hovermode: 'closest',
 }
 
 export const Chart: React.FC<ChartProps> = ({
-  option,
+  data,
+  layout = {},
+  config = {},
   title,
   height = 400,
   loading = false,
   className,
   style,
-  onChartReady,
 }) => {
-  const chartRef = useRef<HTMLDivElement>(null)
-  const chartInstance = useRef<echarts.ECharts | null>(null)
+  const mergedLayout = useMemo<Partial<Layout>>(
+    () => ({
+      ...DEFAULT_LAYOUT,
+      ...layout,
+      autosize: true,
+    }),
+    [layout],
+  )
 
-  useEffect(() => {
-    if (!chartRef.current) return
+  const mergedConfig = useMemo<Partial<Config>>(() => ({ ...DEFAULT_CONFIG, ...config }), [config])
 
-    // Initialize chart
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current)
-      onChartReady?.(chartInstance.current)
-    }
-
-    // Set option
-    chartInstance.current.setOption(option, true)
-
-    // Handle loading
-    if (loading) {
-      chartInstance.current.showLoading()
-    } else {
-      chartInstance.current.hideLoading()
-    }
-
-    // Handle resize
-    const handleResize = () => {
-      chartInstance.current?.resize()
-    }
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [option, loading, onChartReady])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      chartInstance.current?.dispose()
-    }
-  }, [])
+  const heightCss = typeof height === 'number' ? `${height}px` : height
 
   const content = (
-    <div
-      ref={chartRef}
-      className={className}
-      style={{
-        width: '100%',
-        height: typeof height === 'number' ? `${height}px` : height,
-        ...style,
-      }}
-    />
+    <Spin spinning={loading}>
+      <div className={className} style={{ width: '100%', height: heightCss, ...style }}>
+        <Plot
+          data={data}
+          layout={mergedLayout}
+          config={mergedConfig}
+          useResizeHandler
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+    </Spin>
   )
 
   if (title) {

@@ -24,6 +24,7 @@ import {
 import { authStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/common'
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown'
+import { useRealtimeConnection, useNotificationStream } from '@/hooks/useRealtime'
 import styles from './MainLayout.module.css'
 
 const { Header, Sider, Content } = Layout
@@ -32,8 +33,14 @@ const { Text } = Typography
 export const MainLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = authStore()
+  const { user, token, logout } = authStore()
   const [collapsed, setCollapsed] = useState(false)
+
+  // Open the WebSocket as soon as the authenticated shell mounts and keep
+  // it alive for the duration of the session. Realtime events automatically
+  // invalidate the relevant TanStack Query caches.
+  useRealtimeConnection(token)
+  useNotificationStream({ showToast: true })
 
   const menuItems = [
     {
