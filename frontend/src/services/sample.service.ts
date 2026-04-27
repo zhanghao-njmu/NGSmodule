@@ -43,15 +43,11 @@ export const sampleService = extendService(baseCrudService, {
     const formData = new FormData()
     formData.append('file', file)
 
-    return apiClient.post<{ message: string; count: number }>(
-      `/samples/import-csv?project_id=${projectId}`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
+    return apiClient.post<{ message: string; count: number }>(`/samples/import-csv?project_id=${projectId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
   },
 
   /**
@@ -77,7 +73,7 @@ export const sampleService = extendService(baseCrudService, {
    */
   async getSamplesByProject(
     projectId: string,
-    params?: { skip?: number; limit?: number }
+    params?: { skip?: number; limit?: number },
   ): Promise<PaginatedResponse<Sample>> {
     return baseCrudService.getAll({
       ...params,

@@ -1,7 +1,7 @@
 /**
  * Data Table Component - Consistent table with pagination
  */
-import React from 'react'
+import type React from 'react'
 import { Card, Table, Empty } from 'antd'
 import type { TableProps } from 'antd'
 import { FileTextOutlined } from '@ant-design/icons'
@@ -42,12 +42,7 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   return (
     <Card title={title} extra={extra} style={cardStyle}>
-      <Table
-        {...tableProps}
-        pagination={pagination}
-        locale={locale}
-        className="data-table"
-      />
+      <Table {...tableProps} pagination={pagination} locale={locale} className="data-table" />
     </Card>
   )
 }

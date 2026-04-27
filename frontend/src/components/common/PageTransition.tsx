@@ -1,7 +1,8 @@
 /**
  * Page Transition Component - Smooth page transitions with animations
  */
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 interface PageTransitionProps {
@@ -9,10 +10,7 @@ interface PageTransitionProps {
   duration?: number
 }
 
-export const PageTransition: React.FC<PageTransitionProps> = ({
-  children,
-  duration = 300,
-}) => {
+export const PageTransition: React.FC<PageTransitionProps> = ({ children, duration = 300 }) => {
   const location = useLocation()
   const [displayLocation, setDisplayLocation] = useState(location)
   const [transitionStage, setTransitionStage] = useState<'fadeIn' | 'fadeOut'>('fadeIn')

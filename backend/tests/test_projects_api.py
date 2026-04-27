@@ -59,7 +59,7 @@ class TestProjectsAPI:
             # Add samples to project
             for j in range(3):
                 sample = Sample(
-                    sample_name=f"Sample {i}-{j}",
+                    sample_id=f"Sample {i}-{j}",
                     project_id=project.id
                 )
                 db_session.add(sample)
@@ -160,7 +160,7 @@ class TestProjectsAPI:
         other_user = User(
             username="otheruser",
             email="other@example.com",
-            hashed_password=get_password_hash("password"),
+            password_hash=get_password_hash("password"),
             is_active=True
         )
         db_session.add(other_user)

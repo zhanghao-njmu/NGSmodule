@@ -48,8 +48,10 @@ export function useMarkNotificationRead() {
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all })
       const previous = queryClient.getQueriesData({ queryKey: queryKeys.notifications.all })
 
-      queryClient.setQueriesData<any>({ queryKey: queryKeys.notifications.all }, (old) => {
-        if (!old?.items) return old
+      queryClient.setQueriesData<any>({ queryKey: queryKeys.notifications.all }, (old: any) => {
+        if (!old?.items) {
+          return old
+        }
         return {
           ...old,
           items: old.items.map((n: any) => (n.id === id ? { ...n, read: true } : n)),

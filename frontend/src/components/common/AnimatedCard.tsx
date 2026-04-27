@@ -1,7 +1,8 @@
 /**
  * Animated Card Component - Card with hover animations and effects
  */
-import React, { useState } from 'react'
+import type React from 'react'
+import { useState } from 'react'
 import { Card } from 'antd'
 import type { CardProps } from 'antd'
 
@@ -20,7 +21,9 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   const [isHovered, setIsHovered] = useState(false)
 
   const getHoverStyle = () => {
-    if (!isHovered || hoverEffect === 'none') return {}
+    if (!isHovered || hoverEffect === 'none') {
+      return {}
+    }
 
     switch (hoverEffect) {
       case 'lift':

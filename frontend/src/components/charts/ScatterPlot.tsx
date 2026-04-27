@@ -1,7 +1,8 @@
 /**
  * Scatter Plot — Plotly implementation.
  */
-import React, { useMemo } from 'react'
+import type React from 'react'
+import { useMemo } from 'react'
 import { Chart } from './Chart'
 import type { Data, Layout } from 'plotly.js'
 import { designTokens } from '@/config'
@@ -31,7 +32,9 @@ const PALETTE = [
 /** Fit y = m*x + b via simple least squares. */
 function fitLinearRegression(xs: number[], ys: number[]): { slope: number; intercept: number } {
   const n = xs.length
-  if (n === 0) return { slope: 0, intercept: 0 }
+  if (n === 0) {
+    return { slope: 0, intercept: 0 }
+  }
   let sumX = 0
   let sumY = 0
   let sumXY = 0

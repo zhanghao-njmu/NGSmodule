@@ -35,17 +35,19 @@ const breakpoints: Record<Breakpoint, number> = {
  */
 export const useMediaQuery = (query: string | Breakpoint): boolean => {
   // 如果是断点名称，转换为媒体查询
-  const mediaQuery = query in breakpoints
-    ? `(min-width: ${breakpoints[query as Breakpoint]}px)`
-    : query
+  const mediaQuery = query in breakpoints ? `(min-width: ${breakpoints[query as Breakpoint]}px)` : query
 
   const [matches, setMatches] = useState(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') {
+      return false
+    }
     return window.matchMedia(mediaQuery).matches
   })
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {
+      return
+    }
 
     const mediaQueryList = window.matchMedia(mediaQuery)
 
@@ -57,9 +59,8 @@ export const useMediaQuery = (query: string | Breakpoint): boolean => {
     if (mediaQueryList.addEventListener) {
       mediaQueryList.addEventListener('change', handleChange)
       return () => mediaQueryList.removeEventListener('change', handleChange)
-    }
-    // 旧浏览器兼容
-    else {
+    } else {
+      // 旧浏览器兼容
       mediaQueryList.addListener(handleChange)
       return () => mediaQueryList.removeListener(handleChange)
     }
@@ -82,7 +83,9 @@ export const useBreakpoint = (): Breakpoint => {
   const [breakpoint, setBreakpoint] = useState<Breakpoint>('md')
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {
+      return
+    }
 
     const updateBreakpoint = () => {
       const width = window.innerWidth

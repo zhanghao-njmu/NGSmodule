@@ -15,14 +15,8 @@ import {
 } from '@ant-design/icons'
 import { PageHeader, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import type { KnowledgeArticle, KnowledgeCategory, Tutorial } from '@/types/analytics'
-import {
-  usePopularArticles,
-  useArticlesByCategory,
-  useTutorials,
-  useKnowledgeSearch,
-} from '@/hooks/queries'
+import { usePopularArticles, useArticlesByCategory, useTutorials, useKnowledgeSearch } from '@/hooks/queries'
 import { DesignTokens } from '@/styles/design-tokens'
-import { logger } from '@/utils/logger'
 import './KnowledgeBase.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -69,8 +63,12 @@ export const KnowledgeBase: React.FC = () => {
   const tutorialsQuery = useTutorials(categoryFilter)
 
   const articles: KnowledgeArticle[] = useMemo(() => {
-    if (isSearching) return (searchResults.data as KnowledgeArticle[]) ?? []
-    if (selectedCategory === 'all') return (popularList.data as KnowledgeArticle[]) ?? []
+    if (isSearching) {
+      return (searchResults.data as KnowledgeArticle[]) ?? []
+    }
+    if (selectedCategory === 'all') {
+      return (popularList.data as KnowledgeArticle[]) ?? []
+    }
     return (categoryList.data as KnowledgeArticle[]) ?? []
   }, [isSearching, selectedCategory, searchResults.data, popularList.data, categoryList.data])
 

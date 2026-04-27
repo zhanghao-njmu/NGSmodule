@@ -3,11 +3,7 @@
  * 通知服务 - 对接后端 /api/v1/notifications/* 端点
  */
 import apiClient from './api'
-import type {
-  Notification,
-  NotificationStats,
-  NotificationListParams,
-} from '@/types/notification'
+import type { Notification, NotificationStats, NotificationListParams } from '@/types/notification'
 
 export interface NotificationListResponse {
   items: Notification[]
@@ -46,9 +42,7 @@ class NotificationService {
   /**
    * 获取通知列表（分页）
    */
-  async getNotifications(
-    params?: NotificationListParams
-  ): Promise<NotificationListResponse> {
+  async getNotifications(params?: NotificationListParams): Promise<NotificationListResponse> {
     return apiClient.get<NotificationListResponse>('/notifications', { params })
   }
 
@@ -115,7 +109,7 @@ class NotificationService {
       total: 0, // 需要单独获取
       unread: unread.count,
       by_type: unread.by_type,
-    } as NotificationStats
+    } as unknown as NotificationStats
   }
 
   /**

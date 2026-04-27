@@ -16,13 +16,7 @@ import type { EmptyProps } from 'antd'
 
 const { Text, Paragraph } = Typography
 
-export type EmptyStateType =
-  | 'noData'
-  | 'noSearchResults'
-  | 'noPermission'
-  | 'error'
-  | 'empty'
-  | 'custom'
+export type EmptyStateType = 'noData' | 'noSearchResults' | 'noPermission' | 'error' | 'empty' | 'custom'
 
 export interface EnhancedEmptyStateProps extends Omit<EmptyProps, 'image'> {
   type?: EmptyStateType

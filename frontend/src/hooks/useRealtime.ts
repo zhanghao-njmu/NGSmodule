@@ -15,10 +15,7 @@ import { queryKeys } from '@/lib/queryClient'
  * targeted hooks below, but this is useful for debugging and global
  * dashboards.
  */
-export function useRealtimeEvents(
-  handler: (event: RealtimeEvent) => void,
-  deps: React.DependencyList = [],
-): void {
+export function useRealtimeEvents(handler: (event: RealtimeEvent) => void, deps: React.DependencyList = []): void {
   const handlerRef = useRef(handler)
   useEffect(() => {
     handlerRef.current = handler
@@ -35,13 +32,13 @@ export function useRealtimeEvents(
  * the UI re-renders. Also pops a transient toast for high-priority
  * notifications.
  */
-export function useNotificationStream(
-  options: { showToast?: boolean } = { showToast: true },
-): void {
+export function useNotificationStream(options: { showToast?: boolean } = { showToast: true }): void {
   const queryClient = useQueryClient()
 
   useRealtimeEvents((event) => {
-    if (event.type !== 'notification') return
+    if (event.type !== 'notification') {
+      return
+    }
 
     // Invalidate caches that should reflect the new notification
     queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
@@ -78,7 +75,9 @@ export function useTaskProgress(taskId: string | null | undefined): void {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!taskId) return
+    if (!taskId) {
+      return
+    }
 
     realtimeClient.subscribeToTask(taskId)
     return () => {
@@ -88,12 +87,18 @@ export function useTaskProgress(taskId: string | null | undefined): void {
 
   useRealtimeEvents(
     (event) => {
-      if (!taskId) return
-      if (event.type !== 'task_update' || event.task_id !== taskId) return
+      if (!taskId) {
+        return
+      }
+      if (event.type !== 'task_update' || event.task_id !== taskId) {
+        return
+      }
 
       // Optimistically update the cached task detail
-      queryClient.setQueryData<any>(queryKeys.tasks.detail(taskId), (old) => {
-        if (!old) return old
+      queryClient.setQueryData<any>(queryKeys.tasks.detail(taskId), (old: any) => {
+        if (!old) {
+          return old
+        }
         return {
           ...old,
           status: event.status,

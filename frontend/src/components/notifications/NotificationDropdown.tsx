@@ -89,11 +89,21 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minutes ago`
-    if (diffHours < 24) return `${diffHours} hours ago`
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffMins < 1) {
+      return 'Just now'
+    }
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`
+    }
+    if (diffDays === 1) {
+      return 'Yesterday'
+    }
+    if (diffDays < 7) {
+      return `${diffDays} days ago`
+    }
     return date.toLocaleDateString()
   }
 
@@ -122,11 +132,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ clas
             <Spin />
           </div>
         ) : notifications.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="No notifications"
-            style={{ padding: '24px' }}
-          />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No notifications" style={{ padding: '24px' }} />
         ) : (
           <List
             dataSource={notifications.slice(0, 5)}

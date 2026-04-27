@@ -16,13 +16,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { UploadFile, UploadProps } from 'antd'
 import dayjs from 'dayjs'
 
-import {
-  useFilesByProject,
-  useDeleteFile,
-  useBatchUploadFiles,
-  useProjectList,
-  useSampleList,
-} from '@/hooks/queries'
+import { useFilesByProject, useDeleteFile, useBatchUploadFiles, useProjectList, useSampleList } from '@/hooks/queries'
 import fileService from '@/services/file.service'
 import { PageHeader, DataTable, PageSkeleton, FadeIn, EnhancedEmptyState } from '@/components/common'
 import { toast } from '@/utils/notification'
@@ -43,19 +37,11 @@ export const FileList: React.FC = () => {
   const { data: projectList } = useProjectList({ limit: 200 })
   const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
-  const { data: filesData, isLoading, isFetching } = useFilesByProject(
-    selectedProject || undefined,
-  )
-  const files: FileItem[] = useMemo(
-    () => (filesData as any)?.items ?? (filesData as any) ?? [],
-    [filesData],
-  )
+  const { data: filesData, isLoading, isFetching } = useFilesByProject(selectedProject || undefined)
+  const files: FileItem[] = useMemo(() => (filesData as any)?.items ?? (filesData as any) ?? [], [filesData])
 
   const { data: samplesData } = useSampleList(selectedProject || undefined)
-  const samples = useMemo(
-    () => (samplesData as any)?.items ?? (samplesData as any) ?? [],
-    [samplesData],
-  )
+  const samples = useMemo(() => (samplesData as any)?.items ?? (samplesData as any) ?? [], [samplesData])
 
   // ---- mutations -----------------------------------------------------------
 
@@ -121,7 +107,9 @@ export const FileList: React.FC = () => {
     }
     const filesToUpload: File[] = []
     for (const f of fileList) {
-      if (f.originFileObj) filesToUpload.push(f.originFileObj as File)
+      if (f.originFileObj) {
+        filesToUpload.push(f.originFileObj as File)
+      }
     }
     if (filesToUpload.length === 0) {
       toast.error('No valid files to upload')
@@ -141,7 +129,9 @@ export const FileList: React.FC = () => {
   }
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B'
+    if (bytes === 0) {
+      return '0 B'
+    }
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -208,12 +198,7 @@ export const FileList: React.FC = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="Download">
-            <Button
-              type="text"
-              size="small"
-              icon={<DownloadOutlined />}
-              onClick={() => handleDownload(record)}
-            />
+            <Button type="text" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)} />
           </Tooltip>
           <Popconfirm
             title="Delete File"
@@ -267,12 +252,7 @@ export const FileList: React.FC = () => {
               </Select>
             }
             right={
-              <Button
-                type="primary"
-                icon={<UploadOutlined />}
-                onClick={showUploadModal}
-                disabled={!selectedProject}
-              >
+              <Button type="primary" icon={<UploadOutlined />} onClick={showUploadModal} disabled={!selectedProject}>
                 Upload Files
               </Button>
             }
@@ -313,13 +293,7 @@ export const FileList: React.FC = () => {
         )}
       </FadeIn>
 
-      <Modal
-        title="Upload Files"
-        open={isUploadModalVisible}
-        onCancel={handleCancelUpload}
-        footer={null}
-        width={700}
-      >
+      <Modal title="Upload Files" open={isUploadModalVisible} onCancel={handleCancelUpload} footer={null} width={700}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Select Sample *</label>
           <Select

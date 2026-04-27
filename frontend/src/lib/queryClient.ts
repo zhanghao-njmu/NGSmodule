@@ -19,7 +19,9 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error: any) => {
         // Don't retry on 4xx (client errors)
         const status = error?.response?.status
-        if (status && status >= 400 && status < 500) return false
+        if (status && status >= 400 && status < 500) {
+          return false
+        }
         return failureCount < 2
       },
       // Refetch when window regains focus (catches background changes)
@@ -60,8 +62,7 @@ export const queryKeys = {
   // Samples
   samples: {
     all: ['samples'] as const,
-    list: (projectId: string, params?: Record<string, any>) =>
-      ['samples', 'list', projectId, params] as const,
+    list: (projectId: string, params?: Record<string, any>) => ['samples', 'list', projectId, params] as const,
     detail: (id: string) => ['samples', 'detail', id] as const,
   },
   // Tasks
@@ -111,10 +112,8 @@ export const queryKeys = {
   // Analytics
   analytics: {
     dashboard: ['analytics', 'dashboard'] as const,
-    timeSeries: (metric: string, range?: string) =>
-      ['analytics', 'timeseries', metric, range] as const,
-    projectPerformance: (projectId: string) =>
-      ['analytics', 'project-performance', projectId] as const,
+    timeSeries: (metric: string, range?: string) => ['analytics', 'timeseries', metric, range] as const,
+    projectPerformance: (projectId: string) => ['analytics', 'project-performance', projectId] as const,
   },
   // Admin
   admin: {

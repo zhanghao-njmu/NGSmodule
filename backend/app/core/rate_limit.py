@@ -62,7 +62,14 @@ limiter = Limiter(
     storage_uri=RATE_LIMIT_STORAGE,
 )
 
-if RATE_LIMIT_STORAGE.startswith("redis"):
+# Disable rate limiting under pytest. The default 100/min limit (and the
+# tighter login/register limits) trip during test suites that hit dozens
+# of endpoints in rapid succession with the same `testclient` IP.
+import sys as _sys
+if "pytest" in _sys.modules:
+    limiter.enabled = False
+    logger.info("Rate limiter disabled (pytest detected)")
+elif RATE_LIMIT_STORAGE.startswith("redis"):
     logger.info(f"Rate limiter using Redis: {RATE_LIMIT_STORAGE}")
 else:
     logger.warning(

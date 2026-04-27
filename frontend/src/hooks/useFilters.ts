@@ -49,9 +49,7 @@ const DEFAULT_EMPTY_VALUES: FilterValue[] = ['', null, undefined, [], 'all']
 /**
  * Hook for managing filter state in list components
  */
-export function useFilters<T extends FiltersState>(
-  options: UseFiltersOptions<T>
-): UseFiltersReturn<T> {
+export function useFilters<T extends FiltersState>(options: UseFiltersOptions<T>): UseFiltersReturn<T> {
   const { initialFilters, onChange, emptyValues = DEFAULT_EMPTY_VALUES } = options
 
   const [filters, setFiltersState] = useState<T>(initialFilters)
@@ -65,7 +63,7 @@ export function useFilters<T extends FiltersState>(
       setFiltersState(newFilters)
       onChange?.(newFilters)
     },
-    [filters, onChange]
+    [filters, onChange],
   )
 
   /**
@@ -77,7 +75,7 @@ export function useFilters<T extends FiltersState>(
       setFiltersState(newFilters)
       onChange?.(newFilters)
     },
-    [filters, onChange]
+    [filters, onChange],
   )
 
   /**
@@ -95,7 +93,7 @@ export function useFilters<T extends FiltersState>(
     (key: keyof T) => {
       return filters[key]
     },
-    [filters]
+    [filters],
   )
 
   /**
@@ -133,7 +131,7 @@ export function useFilters<T extends FiltersState>(
  * Useful for passing to FilterBar or other filter components
  */
 export function createFilterChangeHandler<T extends FiltersState>(
-  setFilter: (key: keyof T, value: FilterValue) => void
+  setFilter: (key: keyof T, value: FilterValue) => void,
 ) {
   return (key: string, value: FilterValue) => {
     setFilter(key as keyof T, value)

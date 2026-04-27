@@ -1,7 +1,8 @@
 /**
  * Progress Bar Component - Top loading bar for page transitions
  */
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 export const ProgressBar: React.FC = () => {
@@ -32,7 +33,9 @@ export const ProgressBar: React.FC = () => {
     }
   }, [location])
 
-  if (!isLoading && progress === 0) return null
+  if (!isLoading && progress === 0) {
+    return null
+  }
 
   return (
     <div

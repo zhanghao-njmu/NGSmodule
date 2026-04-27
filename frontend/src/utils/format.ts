@@ -24,8 +24,12 @@ dayjs.extend(duration)
  * formatFileSize(0) // "0 B"
  */
 export const formatFileSize = (bytes: number, decimals: number = 2): string => {
-  if (bytes === 0) return '0 B'
-  if (bytes < 0) return 'Invalid size'
+  if (bytes === 0) {
+    return '0 B'
+  }
+  if (bytes < 0) {
+    return 'Invalid size'
+  }
 
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
@@ -48,11 +52,10 @@ export const formatFileSize = (bytes: number, decimals: number = 2): string => {
  * formatDateTime('2024-01-15T10:30:00Z') // "2024-01-15 10:30"
  * formatDateTime(new Date(), 'YYYY/MM/DD') // "2024/01/15"
  */
-export const formatDateTime = (
-  date: string | Date | null | undefined,
-  format: string = 'YYYY-MM-DD HH:mm'
-): string => {
-  if (!date) return '-'
+export const formatDateTime = (date: string | Date | null | undefined, format: string = 'YYYY-MM-DD HH:mm'): string => {
+  if (!date) {
+    return '-'
+  }
   return dayjs(date).format(format)
 }
 
@@ -67,7 +70,9 @@ export const formatDateTime = (
  * formatDateRelative(new Date()) // "a few seconds ago"
  */
 export const formatDateRelative = (date: string | Date | null | undefined): string => {
-  if (!date) return '-'
+  if (!date) {
+    return '-'
+  }
   return dayjs(date).fromNow()
 }
 
@@ -126,9 +131,11 @@ export const formatTime = (date: string | Date | null | undefined): string => {
 export const formatNumber = (
   value: number | null | undefined,
   decimals: number = 2,
-  fallback: string = '-'
+  fallback: string = '-',
 ): string => {
-  if (value === null || value === undefined || isNaN(value)) return fallback
+  if (value === null || value === undefined || isNaN(value)) {
+    return fallback
+  }
   return value.toFixed(decimals)
 }
 
@@ -143,11 +150,10 @@ export const formatNumber = (
  * formatNumberWithCommas(1234567) // "1,234,567"
  * formatNumberWithCommas(1234.5678, 2) // "1,234.57"
  */
-export const formatNumberWithCommas = (
-  value: number | null | undefined,
-  decimals: number = 0
-): string => {
-  if (value === null || value === undefined || isNaN(value)) return '-'
+export const formatNumberWithCommas = (value: number | null | undefined, decimals: number = 0): string => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return '-'
+  }
 
   const parts = value.toFixed(decimals).split('.')
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -171,9 +177,11 @@ export const formatNumberWithCommas = (
 export const formatPercent = (
   value: number | null | undefined,
   decimals: number = 1,
-  fallback: string = '-'
+  fallback: string = '-',
 ): string => {
-  if (value === null || value === undefined || isNaN(value)) return fallback
+  if (value === null || value === undefined || isNaN(value)) {
+    return fallback
+  }
   return `${(value * 100).toFixed(decimals)}%`
 }
 
@@ -189,12 +197,10 @@ export const formatPercent = (
  * formatPercentFromRatio(45, 100) // "45.0%"
  * formatPercentFromRatio(3, 7, 2) // "42.86%"
  */
-export const formatPercentFromRatio = (
-  numerator: number,
-  denominator: number,
-  decimals: number = 1
-): string => {
-  if (denominator === 0) return '-'
+export const formatPercentFromRatio = (numerator: number, denominator: number, decimals: number = 1): string => {
+  if (denominator === 0) {
+    return '-'
+  }
   return formatPercent(numerator / denominator, decimals)
 }
 
@@ -211,8 +217,12 @@ export const formatPercentFromRatio = (
  * formatDuration(45) // "45s"
  */
 export const formatDuration = (seconds: number, format: 'short' | 'long' = 'short'): string => {
-  if (seconds < 0) return '-'
-  if (seconds === 0) return '0s'
+  if (seconds < 0) {
+    return '-'
+  }
+  if (seconds === 0) {
+    return '0s'
+  }
 
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -221,13 +231,25 @@ export const formatDuration = (seconds: number, format: 'short' | 'long' = 'shor
   const parts: string[] = []
 
   if (format === 'short') {
-    if (hours > 0) parts.push(`${hours}h`)
-    if (minutes > 0) parts.push(`${minutes}m`)
-    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
+    if (hours > 0) {
+      parts.push(`${hours}h`)
+    }
+    if (minutes > 0) {
+      parts.push(`${minutes}m`)
+    }
+    if (secs > 0 || parts.length === 0) {
+      parts.push(`${secs}s`)
+    }
   } else {
-    if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`)
-    if (minutes > 0) parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`)
-    if (secs > 0 || parts.length === 0) parts.push(`${secs} ${secs === 1 ? 'second' : 'seconds'}`)
+    if (hours > 0) {
+      parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`)
+    }
+    if (minutes > 0) {
+      parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`)
+    }
+    if (secs > 0 || parts.length === 0) {
+      parts.push(`${secs} ${secs === 1 ? 'second' : 'seconds'}`)
+    }
   }
 
   return parts.join(' ')
@@ -262,9 +284,11 @@ export const formatDurationMs = (ms: number): string => {
 export const formatCurrency = (
   value: number | null | undefined,
   currency: string = '$',
-  decimals: number = 2
+  decimals: number = 2,
 ): string => {
-  if (value === null || value === undefined || isNaN(value)) return '-'
+  if (value === null || value === undefined || isNaN(value)) {
+    return '-'
+  }
   return `${currency}${formatNumberWithCommas(value, decimals)}`
 }
 
@@ -278,7 +302,9 @@ export const formatCurrency = (
  * formatPhoneNumber('1234567890') // "(123) 456-7890"
  */
 export const formatPhoneNumber = (phone: string | null | undefined): string => {
-  if (!phone) return '-'
+  if (!phone) {
+    return '-'
+  }
 
   const cleaned = phone.replace(/\D/g, '')
 
@@ -305,13 +331,13 @@ export const formatPhoneNumber = (phone: string | null | undefined): string => {
  * truncate('This is a long string', 10) // "This is a..."
  * truncate('Short', 10) // "Short"
  */
-export const truncate = (
-  str: string | null | undefined,
-  maxLength: number,
-  suffix: string = '...'
-): string => {
-  if (!str) return ''
-  if (str.length <= maxLength) return str
+export const truncate = (str: string | null | undefined, maxLength: number, suffix: string = '...'): string => {
+  if (!str) {
+    return ''
+  }
+  if (str.length <= maxLength) {
+    return str
+  }
   return str.substring(0, maxLength - suffix.length) + suffix
 }
 
@@ -326,11 +352,10 @@ export const truncate = (
  * formatBoolean(true) // "Yes"
  * formatBoolean(false, ['Active', 'Inactive']) // "Inactive"
  */
-export const formatBoolean = (
-  value: boolean | null | undefined,
-  labels: [string, string] = ['Yes', 'No']
-): string => {
-  if (value === null || value === undefined) return '-'
+export const formatBoolean = (value: boolean | null | undefined, labels: [string, string] = ['Yes', 'No']): string => {
+  if (value === null || value === undefined) {
+    return '-'
+  }
   return value ? labels[0] : labels[1]
 }
 
@@ -346,7 +371,9 @@ export const formatBoolean = (
  * formatArray(['a', 'b', 'c', 'd'], 2) // "a, b, +2 more"
  */
 export const formatArray = (arr: any[] | null | undefined, max?: number): string => {
-  if (!arr || arr.length === 0) return '-'
+  if (!arr || arr.length === 0) {
+    return '-'
+  }
 
   if (max && arr.length > max) {
     const visible = arr.slice(0, max)

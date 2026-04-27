@@ -183,9 +183,7 @@ export type ColorKey = keyof typeof designTokens.colors
 export type SpacingKey = keyof typeof designTokens.spacing
 
 // Utility function to access tokens
-export const getToken = <T extends keyof DesignTokens>(
-  category: T
-): DesignTokens[T] => {
+export const getToken = <T extends keyof DesignTokens>(category: T): DesignTokens[T] => {
   return designTokens[category]
 }
 

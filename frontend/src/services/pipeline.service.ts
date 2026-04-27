@@ -85,15 +85,9 @@ export const pipelineService = {
    * @param projectId - Optional project ID for context
    * @returns Parameter recommendations
    */
-  async getParameterRecommendations(
-    templateId: string,
-    projectId?: string
-  ): Promise<ParameterRecommendationResponse> {
+  async getParameterRecommendations(templateId: string, projectId?: string): Promise<ParameterRecommendationResponse> {
     const params = projectId ? { project_id: projectId } : {}
-    return apiClient.get<ParameterRecommendationResponse>(
-      `/pipelines/${templateId}/recommend-parameters`,
-      { params }
-    )
+    return apiClient.get<ParameterRecommendationResponse>(`/pipelines/${templateId}/recommend-parameters`, { params })
   },
 
   /**

@@ -2,7 +2,8 @@
  * FadeIn - 淡入动画组件
  * 简单的淡入效果，无需外部动画库
  */
-import React, { useEffect, useState, useRef } from 'react'
+import type React from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { designTokens } from '@/config/design-tokens'
 
 export interface FadeInProps {
@@ -41,7 +42,9 @@ export const FadeIn: React.FC<FadeInProps> = ({
 
   useEffect(() => {
     // 如果已经动画过且 once=true，不再执行
-    if (once && hasAnimated) return
+    if (once && hasAnimated) {
+      return
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -57,7 +60,7 @@ export const FadeIn: React.FC<FadeInProps> = ({
       {
         threshold: 0.1,
         rootMargin: '50px',
-      }
+      },
     )
 
     if (ref.current) {
@@ -72,7 +75,9 @@ export const FadeIn: React.FC<FadeInProps> = ({
   }, [delay, once, hasAnimated])
 
   const getTransform = () => {
-    if (direction === 'none' || isVisible) return 'none'
+    if (direction === 'none' || isVisible) {
+      return 'none'
+    }
 
     switch (direction) {
       case 'up':

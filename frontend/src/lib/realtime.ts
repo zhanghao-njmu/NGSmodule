@@ -83,7 +83,9 @@ class RealtimeClient {
   // ----- internals -----
 
   private openSocket(): void {
-    if (!this.token) return
+    if (!this.token) {
+      return
+    }
 
     // Build ws:// or wss:// URL based on current page protocol
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -130,7 +132,9 @@ class RealtimeClient {
   }
 
   private scheduleReconnect(): void {
-    if (this.reconnectTimer) return
+    if (this.reconnectTimer) {
+      return
+    }
     // Exponential backoff capped at 30s
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30_000)
     this.reconnectAttempts++

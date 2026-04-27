@@ -41,9 +41,13 @@ export function useTaskDetail(
     queryFn: () => taskService.getById(taskId as string),
     enabled: !!taskId,
     refetchInterval: (query) => {
-      if (!options.enablePolling) return false
+      if (!options.enablePolling) {
+        return false
+      }
       const status = (query.state.data as any)?.status
-      if (status && TERMINAL_STATUSES.has(status)) return false
+      if (status && TERMINAL_STATUSES.has(status)) {
+        return false
+      }
       return 5_000
     },
   })
@@ -82,8 +86,7 @@ export function useCreateTask() {
 export function useExecuteTask() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ taskId, data }: { taskId: string; data: any }) =>
-      taskService.executeTask(taskId, data),
+    mutationFn: ({ taskId, data }: { taskId: string; data: any }) => taskService.executeTask(taskId, data),
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.detail(taskId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })

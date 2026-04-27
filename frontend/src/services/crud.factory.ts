@@ -5,7 +5,7 @@
  */
 
 import apiClient from './api'
-import { PaginatedResponse, ListParams } from '@/types/common'
+import type { PaginatedResponse, ListParams } from '@/types/common'
 
 /**
  * Generic CRUD service interface
@@ -127,7 +127,7 @@ export interface CrudServiceConfig {
  * })
  */
 export function createCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>>(
-  config: CrudServiceConfig
+  config: CrudServiceConfig,
 ): CrudService<T, CreateT, UpdateT> {
   const { endpoint, paginated = true, transformList, transformItem, headers } = config
 
@@ -226,7 +226,7 @@ export function createCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>>
  * const exportUrl = await projectService.export({ status: 'completed' })
  */
 export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>>(
-  config: CrudServiceConfig
+  config: CrudServiceConfig,
 ): ExtendedCrudService<T, CreateT, UpdateT> {
   const baseService = createCrudService<T, CreateT, UpdateT>(config)
   const { endpoint, headers } = config
@@ -239,22 +239,14 @@ export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Par
      * Batch delete multiple items
      */
     batchDelete: async (ids: string[]): Promise<void> => {
-      await apiClient.post(
-        `${baseEndpoint}/batch-delete`,
-        { ids },
-        { headers }
-      )
+      await apiClient.post(`${baseEndpoint}/batch-delete`, { ids }, { headers })
     },
 
     /**
      * Duplicate an existing item
      */
     duplicate: async (id: string): Promise<T> => {
-      const response = await apiClient.post<T>(
-        `${baseEndpoint}/${id}/duplicate`,
-        {},
-        { headers }
-      )
+      const response = await apiClient.post<T>(`${baseEndpoint}/${id}/duplicate`, {}, { headers })
 
       if (config.transformItem) {
         return config.transformItem(response)
@@ -267,10 +259,7 @@ export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Par
      * Export items to downloadable file
      */
     export: async (params?: ListParams): Promise<{ downloadUrl: string }> => {
-      const response = await apiClient.get<{ download_url: string }>(
-        `${baseEndpoint}/export`,
-        { params, headers }
-      )
+      const response = await apiClient.get<{ download_url: string }>(`${baseEndpoint}/export`, { params, headers })
 
       return {
         downloadUrl: response.download_url,
@@ -284,16 +273,12 @@ export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Par
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await apiClient.post<{ imported: number; failed: number }>(
-        `${baseEndpoint}/import`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            ...headers,
-          },
-        }
-      )
+      const response = await apiClient.post<{ imported: number; failed: number }>(`${baseEndpoint}/import`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...headers,
+        },
+      })
 
       return response
     },
@@ -321,7 +306,7 @@ export function createExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Par
  */
 export function extendService<T extends Record<string, any>, E extends Record<string, any>>(
   baseService: T,
-  customMethods: E
+  customMethods: E,
 ): T & E {
   return {
     ...baseService,
@@ -340,14 +325,8 @@ export function extendService<T extends Record<string, any>, E extends Record<st
  * @example
  * await batchCreate('/samples', [sample1, sample2, sample3])
  */
-export async function batchCreate<T, CreateT = Partial<T>>(
-  endpoint: string,
-  items: CreateT[]
-): Promise<T[]> {
-  const response = await apiClient.post<T[]>(
-    `${endpoint}/batch`,
-    { items }
-  )
+export async function batchCreate<T, CreateT = Partial<T>>(endpoint: string, items: CreateT[]): Promise<T[]> {
+  const response = await apiClient.post<T[]>(`${endpoint}/batch`, { items })
 
   return response
 }
@@ -368,12 +347,9 @@ export async function batchCreate<T, CreateT = Partial<T>>(
  */
 export async function batchUpdate<T, UpdateT = Partial<T>>(
   endpoint: string,
-  updates: Array<{ id: string; data: UpdateT }>
+  updates: Array<{ id: string; data: UpdateT }>,
 ): Promise<T[]> {
-  const response = await apiClient.put<T[]>(
-    `${endpoint}/batch`,
-    { updates }
-  )
+  const response = await apiClient.put<T[]>(`${endpoint}/batch`, { updates })
 
   return response
 }
@@ -393,17 +369,14 @@ export async function batchUpdate<T, UpdateT = Partial<T>>(
 export async function searchItems<T>(
   endpoint: string,
   query: string,
-  params?: Record<string, any>
+  params?: Record<string, any>,
 ): Promise<PaginatedResponse<T>> {
-  const response = await apiClient.get<PaginatedResponse<T>>(
-    `${endpoint}/search`,
-    {
-      params: {
-        q: query,
-        ...params,
-      },
-    }
-  )
+  const response = await apiClient.get<PaginatedResponse<T>>(`${endpoint}/search`, {
+    params: {
+      q: query,
+      ...params,
+    },
+  })
 
   return response
 }

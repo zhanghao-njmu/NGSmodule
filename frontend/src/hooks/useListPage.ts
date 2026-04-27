@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { message } from 'antd'
-import { PaginatedResponse, ListParams } from '@/types/common'
+import type { PaginatedResponse, ListParams } from '@/types/common'
 
 /**
  * Configuration options for useListPage hook
@@ -122,9 +122,7 @@ export interface UseListPageReturn<T> {
  *   deleteItem: projectService.delete,
  * })
  */
-export function useListPage<T extends { id: string }>(
-  options: UseListPageOptions<T>
-): UseListPageReturn<T> {
+export function useListPage<T extends { id: string }>(options: UseListPageOptions<T>): UseListPageReturn<T> {
   const {
     fetchData,
     deleteItem,
@@ -168,8 +166,7 @@ export function useListPage<T extends { id: string }>(
         setItems(response.items)
         setTotal(response.total)
       } catch (error: any) {
-        const errorMessage =
-          errorMessages.fetch || `Failed to load data: ${error.message}`
+        const errorMessage = errorMessages.fetch || `Failed to load data: ${error.message}`
 
         message.error(errorMessage)
         onError?.(error)
@@ -177,7 +174,7 @@ export function useListPage<T extends { id: string }>(
         setLoading(false)
       }
     },
-    [page, pageSize, searchText, filters, fetchData, errorMessages.fetch, onError]
+    [page, pageSize, searchText, filters, fetchData, errorMessages.fetch, onError],
   )
 
   /**
@@ -207,7 +204,7 @@ export function useListPage<T extends { id: string }>(
 
       setSearchTimeout(timeout)
     },
-    [searchTimeout, searchDebounce, loadData]
+    [searchTimeout, searchDebounce, loadData],
   )
 
   /**
@@ -222,7 +219,7 @@ export function useListPage<T extends { id: string }>(
         setPage(1) // Reset to first page when page size changes
       }
     },
-    [pageSize]
+    [pageSize],
   )
 
   /**
@@ -251,14 +248,13 @@ export function useListPage<T extends { id: string }>(
         // Refresh data after deletion
         await loadData()
       } catch (error: any) {
-        const errorMessage =
-          errorMessages.delete || `Failed to delete: ${error.message}`
+        const errorMessage = errorMessages.delete || `Failed to delete: ${error.message}`
 
         message.error(errorMessage)
         onError?.(error)
       }
     },
-    [deleteItem, loadData, errorMessages.delete, onError, onDeleteSuccess]
+    [deleteItem, loadData, errorMessages.delete, onError, onDeleteSuccess],
   )
 
   /**

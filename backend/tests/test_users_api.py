@@ -49,7 +49,7 @@ class TestUsersAPI:
             # Add samples
             for j in range(2):
                 sample = Sample(
-                    sample_name=f"Sample {i}-{j}",
+                    sample_id=f"Sample {i}-{j}",
                     project_id=project.id
                 )
                 db_session.add(sample)

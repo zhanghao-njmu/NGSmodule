@@ -1,7 +1,8 @@
 /**
  * Floating Action Button - Animated FAB for primary actions
  */
-import React, { useState } from 'react'
+import type React from 'react'
+import { useState } from 'react'
 import { Button, Tooltip } from 'antd'
 import type { ButtonProps } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
@@ -38,9 +39,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           ...positionStyles[position],
           width: 56,
           height: 56,
-          boxShadow: isHovered
-            ? '0 8px 16px rgba(37, 99, 235, 0.4)'
-            : '0 4px 8px rgba(37, 99, 235, 0.3)',
+          boxShadow: isHovered ? '0 8px 16px rgba(37, 99, 235, 0.4)' : '0 4px 8px rgba(37, 99, 235, 0.3)',
           transform: isHovered ? 'scale(1.1)' : 'scale(1)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           zIndex: 1000,

@@ -194,7 +194,7 @@ class StatsService {
   async getTrends(
     metric: 'tasks' | 'samples' | 'storage' | 'projects',
     period: 'hourly' | 'daily' | 'weekly' | 'monthly' = 'daily',
-    days = 30
+    days = 30,
   ): Promise<TrendData> {
     return apiClient.get<TrendData>(`/stats/trends/${metric}`, {
       params: { period, days },

@@ -209,21 +209,14 @@ export const adminService = {
   /**
    * 更改用户角色
    */
-  async changeUserRole(
-    userId: string,
-    role: 'user' | 'admin'
-  ): Promise<AdminUserDetail> {
+  async changeUserRole(userId: string, role: 'user' | 'admin'): Promise<AdminUserDetail> {
     return apiClient.put<AdminUserDetail>(`/admin/users/${userId}/role`, { role })
   },
 
   /**
    * 激活/停用用户
    */
-  async toggleUserStatus(
-    userId: string,
-    isActive: boolean,
-    reason?: string
-  ): Promise<AdminUserDetail> {
+  async toggleUserStatus(userId: string, isActive: boolean, reason?: string): Promise<AdminUserDetail> {
     return apiClient.put<AdminUserDetail>(`/admin/users/${userId}/activate`, {
       is_active: isActive,
       reason,
@@ -233,18 +226,11 @@ export const adminService = {
   /**
    * 重置用户密码
    */
-  async resetUserPassword(
-    userId: string,
-    newPassword: string,
-    notifyUser = true
-  ): Promise<AdminOperationResponse> {
-    return apiClient.post<AdminOperationResponse>(
-      `/admin/users/${userId}/reset-password`,
-      {
-        new_password: newPassword,
-        notify_user: notifyUser,
-      } as PasswordResetRequest
-    )
+  async resetUserPassword(userId: string, newPassword: string, notifyUser = true): Promise<AdminOperationResponse> {
+    return apiClient.post<AdminOperationResponse>(`/admin/users/${userId}/reset-password`, {
+      new_password: newPassword,
+      notify_user: notifyUser,
+    } as PasswordResetRequest)
   },
 
   /**
@@ -252,7 +238,7 @@ export const adminService = {
    */
   async deleteUser(
     userId: string,
-    options: { transferDataTo?: string; reason?: string } = {}
+    options: { transferDataTo?: string; reason?: string } = {},
   ): Promise<AdminOperationResponse> {
     return apiClient.delete<AdminOperationResponse>(`/admin/users/${userId}`, {
       data: {

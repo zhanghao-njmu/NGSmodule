@@ -30,9 +30,7 @@ class AnalyticsService {
    * Get analytics summary for dashboard
    * 对接后端 GET /analytics/dashboard
    */
-  async getAnalyticsSummary(
-    _period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week'
-  ): Promise<AnalyticsSummary> {
+  async getAnalyticsSummary(_period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week'): Promise<AnalyticsSummary> {
     // 后端使用 /dashboard 端点（单数）替代 /summary
     const summary = await apiClient.get<AnalyticsSummary>('/analytics/dashboard')
     return summary
@@ -46,7 +44,7 @@ class AnalyticsService {
     metric: string,
     startDate: string,
     endDate: string,
-    interval: 'hour' | 'day' | 'week' | 'month' = 'day'
+    interval: 'hour' | 'day' | 'week' | 'month' = 'day',
   ): Promise<TimeSeriesData[]> {
     // 后端使用 metric 作为路径参数
     const data = await apiClient.get<TimeSeriesData[]>(`/analytics/timeseries/${metric}`, {
@@ -69,8 +67,8 @@ class AnalyticsService {
       metrics.map((metric) =>
         apiClient.get<TrendAnalysis>(`/analytics/trends/${metric}`, {
           params: { time_range: 'month' },
-        })
-      )
+        }),
+      ),
     )
     return results
   }
@@ -85,11 +83,9 @@ class AnalyticsService {
    */
   async compareProjects(projectIds: string[]): Promise<ProjectComparison> {
     // 后端期望项目ID数组直接作为请求体
-    const comparison = await apiClient.post<ProjectComparison>(
-      '/analytics/projects/compare',
-      projectIds,
-      { params: { metric: 'success_rate' } }
-    )
+    const comparison = await apiClient.post<ProjectComparison>('/analytics/projects/compare', projectIds, {
+      params: { metric: 'success_rate' },
+    })
     return comparison
   }
 
@@ -98,18 +94,14 @@ class AnalyticsService {
    * 对接后端 GET /analytics/projects/{project_id}/performance
    */
   async getProjectPerformance(projectId: string): Promise<ProjectPerformance> {
-    const performance = await apiClient.get<ProjectPerformance>(
-      `/analytics/projects/${projectId}/performance`
-    )
+    const performance = await apiClient.get<ProjectPerformance>(`/analytics/projects/${projectId}/performance`)
     return performance
   }
 
   /**
    * Get project statistics
    */
-  async getProjectStatistics(
-    projectId: string
-  ): Promise<{
+  async getProjectStatistics(projectId: string): Promise<{
     samples: StatisticalAnalysis
     quality: StatisticalAnalysis
     runtime: StatisticalAnalysis
@@ -126,9 +118,7 @@ class AnalyticsService {
    * Get visualization by ID
    */
   async getVisualization(visualizationId: string): Promise<Visualization> {
-    const viz = await apiClient.get<Visualization>(
-      `/analytics/visualizations/${visualizationId}`
-    )
+    const viz = await apiClient.get<Visualization>(`/analytics/visualizations/${visualizationId}`)
     return viz
   }
 
@@ -141,24 +131,15 @@ class AnalyticsService {
     dataSource: string
     options: any
   }): Promise<Visualization> {
-    const viz = await apiClient.post<Visualization>(
-      '/analytics/visualizations',
-      config
-    )
+    const viz = await apiClient.post<Visualization>('/analytics/visualizations', config)
     return viz
   }
 
   /**
    * Get correlation matrix
    */
-  async getCorrelationMatrix(
-    projectId: string,
-    variables: string[]
-  ): Promise<CorrelationMatrix> {
-    const matrix = await apiClient.post<CorrelationMatrix>(
-      `/analytics/items/${projectId}/correlation`,
-      { variables }
-    )
+  async getCorrelationMatrix(projectId: string, variables: string[]): Promise<CorrelationMatrix> {
+    const matrix = await apiClient.post<CorrelationMatrix>(`/analytics/items/${projectId}/correlation`, { variables })
     return matrix
   }
 
@@ -183,22 +164,14 @@ class AnalyticsService {
    * Get report by ID
    */
   async getReport(reportId: string): Promise<AnalyticsReport> {
-    const report = await apiClient.get<AnalyticsReport>(
-      `/analytics/reports/${reportId}`
-    )
+    const report = await apiClient.get<AnalyticsReport>(`/analytics/reports/${reportId}`)
     return report
   }
 
   /**
    * List all reports
    */
-  async listReports(
-    filters?: {
-      type?: string
-      startDate?: string
-      endDate?: string
-    }
-  ): Promise<AnalyticsReport[]> {
+  async listReports(filters?: { type?: string; startDate?: string; endDate?: string }): Promise<AnalyticsReport[]> {
     const reports = await apiClient.get<AnalyticsReport[]>('/analytics/reports', {
       params: filters,
     })
@@ -208,14 +181,8 @@ class AnalyticsService {
   /**
    * Export report
    */
-  async exportReport(
-    reportId: string,
-    format: 'pdf' | 'excel' | 'csv'
-  ): Promise<ExportResult> {
-    const result = await apiClient.post<ExportResult>(
-      `/analytics/reports/${reportId}/export`,
-      { format }
-    )
+  async exportReport(reportId: string, format: 'pdf' | 'excel' | 'csv'): Promise<ExportResult> {
+    const result = await apiClient.post<ExportResult>(`/analytics/reports/${reportId}/export`, { format })
     return result
   }
 
@@ -226,10 +193,7 @@ class AnalyticsService {
   /**
    * Search knowledge base
    */
-  async searchKnowledge(
-    query: string,
-    category?: KnowledgeCategory
-  ): Promise<KnowledgeArticle[]> {
+  async searchKnowledge(query: string, category?: KnowledgeCategory): Promise<KnowledgeArticle[]> {
     const articles = await apiClient.get<KnowledgeArticle[]>('/knowledge/search', {
       params: { q: query, category },
     })
@@ -240,21 +204,15 @@ class AnalyticsService {
    * Get article by ID
    */
   async getArticle(articleId: string): Promise<KnowledgeArticle> {
-    const article = await apiClient.get<KnowledgeArticle>(
-      `/knowledge/articles/${articleId}`
-    )
+    const article = await apiClient.get<KnowledgeArticle>(`/knowledge/articles/${articleId}`)
     return article
   }
 
   /**
    * Get articles by category
    */
-  async getArticlesByCategory(
-    category: KnowledgeCategory
-  ): Promise<KnowledgeArticle[]> {
-    const articles = await apiClient.get<KnowledgeArticle[]>(
-      `/knowledge/categories/${category}`
-    )
+  async getArticlesByCategory(category: KnowledgeCategory): Promise<KnowledgeArticle[]> {
+    const articles = await apiClient.get<KnowledgeArticle[]>(`/knowledge/categories/${category}`)
     return articles
   }
 
@@ -262,12 +220,9 @@ class AnalyticsService {
    * Get popular articles
    */
   async getPopularArticles(limit = 10): Promise<KnowledgeArticle[]> {
-    const articles = await apiClient.get<KnowledgeArticle[]>(
-      '/knowledge/popular',
-      {
-        params: { limit },
-      }
-    )
+    const articles = await apiClient.get<KnowledgeArticle[]>('/knowledge/popular', {
+      params: { limit },
+    })
     return articles
   }
 
@@ -298,30 +253,21 @@ class AnalyticsService {
    * Get tutorial by ID
    */
   async getTutorial(tutorialId: string): Promise<Tutorial> {
-    const tutorial = await apiClient.get<Tutorial>(
-      `/knowledge/tutorials/${tutorialId}`
-    )
+    const tutorial = await apiClient.get<Tutorial>(`/knowledge/tutorials/${tutorialId}`)
     return tutorial
   }
 
   /**
    * Mark tutorial step as completed
    */
-  async completeTutorialStep(
-    tutorialId: string,
-    stepId: string
-  ): Promise<void> {
-    await apiClient.post(
-      `/knowledge/tutorials/${tutorialId}/steps/${stepId}/complete`
-    )
+  async completeTutorialStep(tutorialId: string, stepId: string): Promise<void> {
+    await apiClient.post(`/knowledge/tutorials/${tutorialId}/steps/${stepId}/complete`)
   }
 
   /**
    * Get user's tutorial progress
    */
-  async getTutorialProgress(): Promise<
-    Array<{ tutorialId: string; progress: number; completed: boolean }>
-  > {
+  async getTutorialProgress(): Promise<Array<{ tutorialId: string; progress: number; completed: boolean }>> {
     const progress = await apiClient.get('/knowledge/tutorials/progress')
     return progress
   }
@@ -334,21 +280,14 @@ class AnalyticsService {
    * Export chart or visualization
    */
   async exportVisualization(request: ExportRequest): Promise<ExportResult> {
-    const result = await apiClient.post<ExportResult>(
-      '/analytics/export',
-      request
-    )
+    const result = await apiClient.post<ExportResult>('/analytics/export', request)
     return result
   }
 
   /**
    * Export data to CSV
    */
-  async exportDataToCSV(
-    dataType: string,
-    itemId: string,
-    options?: any
-  ): Promise<ExportResult> {
+  async exportDataToCSV(dataType: string, itemId: string, options?: any): Promise<ExportResult> {
     const result = await apiClient.post<ExportResult>('/analytics/export/csv', {
       dataType,
       itemId,
@@ -361,10 +300,7 @@ class AnalyticsService {
    * Export multiple items in batch
    */
   async batchExport(requests: ExportRequest[]): Promise<ExportResult[]> {
-    const results = await apiClient.post<ExportResult[]>(
-      '/analytics/export/batch',
-      { requests }
-    )
+    const results = await apiClient.post<ExportResult[]>('/analytics/export/batch', { requests })
     return results
   }
 
@@ -384,24 +320,15 @@ class AnalyticsService {
    * Save dashboard layout
    */
   async saveDashboardLayout(layout: Partial<DashboardLayout>): Promise<DashboardLayout> {
-    const saved = await apiClient.post<DashboardLayout>(
-      '/analytics/dashboards',
-      layout
-    )
+    const saved = await apiClient.post<DashboardLayout>('/analytics/dashboards', layout)
     return saved
   }
 
   /**
    * Update dashboard layout
    */
-  async updateDashboardLayout(
-    layoutId: string,
-    updates: Partial<DashboardLayout>
-  ): Promise<DashboardLayout> {
-    const updated = await apiClient.put<DashboardLayout>(
-      `/analytics/dashboards/${layoutId}`,
-      updates
-    )
+  async updateDashboardLayout(layoutId: string, updates: Partial<DashboardLayout>): Promise<DashboardLayout> {
+    const updated = await apiClient.put<DashboardLayout>(`/analytics/dashboards/${layoutId}`, updates)
     return updated
   }
 

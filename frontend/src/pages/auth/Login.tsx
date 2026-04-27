@@ -1,7 +1,8 @@
 /**
  * Login Page
  */
-import React, { useEffect } from 'react'
+import type React from 'react'
+import { useEffect } from 'react'
 import { Form, Input, Button, Card, Typography, message, Alert } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate, Link } from 'react-router-dom'
@@ -44,9 +45,7 @@ export const Login: React.FC = () => {
           <Title level={2} className={styles.authTitle}>
             Welcome to NGSmodule
           </Title>
-          <Text type="secondary">
-            Enterprise Bioinformatics Workstation
-          </Text>
+          <Text type="secondary">Enterprise Bioinformatics Workstation</Text>
         </div>
 
         {error && (
@@ -60,46 +59,17 @@ export const Login: React.FC = () => {
           />
         )}
 
-        <Form
-          form={form}
-          name="login"
-          onFinish={handleSubmit}
-          autoComplete="off"
-          size="large"
-          layout="vertical"
-        >
-          <Form.Item
-            name="username"
-            rules={[
-              { required: true, message: 'Please input your username or email!' },
-            ]}
-          >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Username or Email"
-              autoComplete="username"
-            />
+        <Form form={form} name="login" onFinish={handleSubmit} autoComplete="off" size="large" layout="vertical">
+          <Form.Item name="username" rules={[{ required: true, message: 'Please input your username or email!' }]}>
+            <Input prefix={<UserOutlined />} placeholder="Username or Email" autoComplete="username" />
           </Form.Item>
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: 'Please input your password!' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-              autoComplete="current-password"
-            />
+          <Form.Item name="password" rules={[{ required: true, message: 'Please input your password!' }]}>
+            <Input.Password prefix={<LockOutlined />} placeholder="Password" autoComplete="current-password" />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isLoading}
-              block
-              size="large"
-            >
+            <Button type="primary" htmlType="submit" loading={isLoading} block size="large">
               Log in
             </Button>
           </Form.Item>
@@ -107,7 +77,7 @@ export const Login: React.FC = () => {
 
         <div className={styles.authFooter}>
           <Text type="secondary">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link to="/register" className={styles.authLink}>
               Register now
             </Link>

@@ -51,7 +51,11 @@ export function useStorageStats() {
   })
 }
 
-export function useTrends(metric: string, period?: 'daily' | 'weekly' | 'monthly', days?: number) {
+export function useTrends(
+  metric: 'tasks' | 'samples' | 'storage' | 'projects',
+  period: 'hourly' | 'daily' | 'weekly' | 'monthly' = 'daily',
+  days = 30,
+) {
   return useQuery({
     queryKey: queryKeys.stats.trends(metric, period),
     queryFn: () => statsService.getTrends(metric, period, days),

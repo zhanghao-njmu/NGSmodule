@@ -63,7 +63,10 @@ export const AdminDashboard: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [form] = Form.useForm()
 
-  const { data: stats, isLoading: statsLoading } = useSystemStats() as { data: SystemStats | undefined; isLoading: boolean }
+  const { data: stats, isLoading: statsLoading } = useSystemStats() as {
+    data: SystemStats | undefined
+    isLoading: boolean
+  }
   const { data: usersData, isLoading: usersLoading } = useAdminUsers({ limit: 100 })
   const users: User[] = (usersData as any)?.users ?? (usersData as any) ?? []
 
@@ -87,7 +90,9 @@ export const AdminDashboard: React.FC = () => {
   }
 
   const handleEditSubmit = async () => {
-    if (!selectedUser) return
+    if (!selectedUser) {
+      return
+    }
     try {
       const values = await form.validateFields()
       const updateData: UserAdminUpdate = {

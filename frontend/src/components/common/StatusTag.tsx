@@ -1,7 +1,7 @@
 /**
  * Status Tag Component - Consistent status display with icons
  */
-import React from 'react'
+import type React from 'react'
 import { Tag } from 'antd'
 import type { TagProps } from 'antd'
 import {
@@ -60,13 +60,7 @@ interface StatusTagProps extends Omit<TagProps, 'color' | 'icon'> {
   text?: string
 }
 
-export const StatusTag: React.FC<StatusTagProps> = ({
-  status,
-  showIcon = true,
-  text,
-  children,
-  ...tagProps
-}) => {
+export const StatusTag: React.FC<StatusTagProps> = ({ status, showIcon = true, text, children, ...tagProps }) => {
   const config = statusConfigMap[status.toLowerCase()] || statusConfigMap.default
   const displayText = text || children || status.toUpperCase()
 

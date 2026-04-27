@@ -1,7 +1,7 @@
 /**
  * Loading Spinner Component - Consistent loading state display
  */
-import React from 'react'
+import type React from 'react'
 import { Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 

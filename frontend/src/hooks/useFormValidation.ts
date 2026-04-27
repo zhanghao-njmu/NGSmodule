@@ -26,47 +26,46 @@ export const useFormValidation = (form: FormInstance) => {
   /**
    * Validate a single field
    */
-  const validateField = useCallback(
-    (fieldName: string, value: any, rules: ValidationRule | ValidationRule[]) => {
-      const ruleArray = Array.isArray(rules) ? rules : [rules]
+  const validateField = useCallback((fieldName: string, value: any, rules: ValidationRule | ValidationRule[]) => {
+    const ruleArray = Array.isArray(rules) ? rules : [rules]
 
-      for (const rule of ruleArray) {
-        // Required validation
-        if (rule.required && !value) {
-          return rule.message || `${fieldName}不能为空`
-        }
-
-        // Skip other validations if value is empty and not required
-        if (!value) continue
-
-        // Min length validation
-        if (rule.min && value.length < rule.min) {
-          return rule.message || `${fieldName}至少需要${rule.min}个字符`
-        }
-
-        // Max length validation
-        if (rule.max && value.length > rule.max) {
-          return rule.message || `${fieldName}不能超过${rule.max}个字符`
-        }
-
-        // Pattern validation
-        if (rule.pattern && !rule.pattern.test(value)) {
-          return rule.message || `${fieldName}格式不正确`
-        }
-
-        // Custom validator
-        if (rule.validator) {
-          const result = rule.validator(value)
-          if (result !== true) {
-            return typeof result === 'string' ? result : rule.message || '验证失败'
-          }
-        }
+    for (const rule of ruleArray) {
+      // Required validation
+      if (rule.required && !value) {
+        return rule.message || `${fieldName}不能为空`
       }
 
-      return null
-    },
-    []
-  )
+      // Skip other validations if value is empty and not required
+      if (!value) {
+        continue
+      }
+
+      // Min length validation
+      if (rule.min && value.length < rule.min) {
+        return rule.message || `${fieldName}至少需要${rule.min}个字符`
+      }
+
+      // Max length validation
+      if (rule.max && value.length > rule.max) {
+        return rule.message || `${fieldName}不能超过${rule.max}个字符`
+      }
+
+      // Pattern validation
+      if (rule.pattern && !rule.pattern.test(value)) {
+        return rule.message || `${fieldName}格式不正确`
+      }
+
+      // Custom validator
+      if (rule.validator) {
+        const result = rule.validator(value)
+        if (result !== true) {
+          return typeof result === 'string' ? result : rule.message || '验证失败'
+        }
+      }
+    }
+
+    return null
+  }, [])
 
   /**
    * Validate all fields
@@ -100,7 +99,7 @@ export const useFormValidation = (form: FormInstance) => {
 
       return isValid
     },
-    [form, validateField]
+    [form, validateField],
   )
 
   /**
@@ -121,7 +120,7 @@ export const useFormValidation = (form: FormInstance) => {
         return newErrors
       })
     },
-    [validateField]
+    [validateField],
   )
 
   /**

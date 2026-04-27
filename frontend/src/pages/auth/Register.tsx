@@ -1,7 +1,8 @@
 /**
  * Register Page
  */
-import React, { useEffect } from 'react'
+import type React from 'react'
+import { useEffect } from 'react'
 import { Form, Input, Button, Card, Typography, message, Alert } from 'antd'
 import { UserOutlined, LockOutlined, MailOutlined, TeamOutlined, IdcardOutlined } from '@ant-design/icons'
 import { useNavigate, Link } from 'react-router-dom'
@@ -43,9 +44,7 @@ export const Register: React.FC = () => {
           <Title level={2} className={styles.authTitle}>
             Create Account
           </Title>
-          <Text type="secondary">
-            Join NGSmodule Bioinformatics Platform
-          </Text>
+          <Text type="secondary">Join NGSmodule Bioinformatics Platform</Text>
         </div>
 
         {error && (
@@ -59,14 +58,7 @@ export const Register: React.FC = () => {
           />
         )}
 
-        <Form
-          form={form}
-          name="register"
-          onFinish={handleSubmit}
-          autoComplete="off"
-          size="large"
-          layout="vertical"
-        >
+        <Form form={form} name="register" onFinish={handleSubmit} autoComplete="off" size="large" layout="vertical">
           <Form.Item
             name="username"
             rules={[
@@ -75,15 +67,11 @@ export const Register: React.FC = () => {
               { max: 50, message: 'Username must be at most 50 characters!' },
               {
                 pattern: /^[a-zA-Z0-9_-]+$/,
-                message: 'Username can only contain letters, numbers, underscore and hyphen!'
+                message: 'Username can only contain letters, numbers, underscore and hyphen!',
               },
             ]}
           >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Username"
-              autoComplete="username"
-            />
+            <Input prefix={<UserOutlined />} placeholder="Username" autoComplete="username" />
           </Form.Item>
 
           <Form.Item
@@ -93,11 +81,7 @@ export const Register: React.FC = () => {
               { type: 'email', message: 'Please input a valid email!' },
             ]}
           >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="Email"
-              autoComplete="email"
-            />
+            <Input prefix={<MailOutlined />} placeholder="Email" autoComplete="email" />
           </Form.Item>
 
           <Form.Item
@@ -129,37 +113,19 @@ export const Register: React.FC = () => {
               }),
             ]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Confirm Password"
-              autoComplete="new-password"
-            />
+            <Input.Password prefix={<LockOutlined />} placeholder="Confirm Password" autoComplete="new-password" />
           </Form.Item>
 
           <Form.Item name="full_name">
-            <Input
-              prefix={<IdcardOutlined />}
-              placeholder="Full Name (optional)"
-              autoComplete="name"
-            />
+            <Input prefix={<IdcardOutlined />} placeholder="Full Name (optional)" autoComplete="name" />
           </Form.Item>
 
           <Form.Item name="organization">
-            <Input
-              prefix={<TeamOutlined />}
-              placeholder="Organization (optional)"
-              autoComplete="organization"
-            />
+            <Input prefix={<TeamOutlined />} placeholder="Organization (optional)" autoComplete="organization" />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isLoading}
-              block
-              size="large"
-            >
+            <Button type="primary" htmlType="submit" loading={isLoading} block size="large">
               Create Account
             </Button>
           </Form.Item>

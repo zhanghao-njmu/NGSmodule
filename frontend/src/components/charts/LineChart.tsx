@@ -2,7 +2,8 @@
  * Line Chart — Plotly implementation.
  * External API kept identical to the previous ECharts version.
  */
-import React, { useMemo } from 'react'
+import type React from 'react'
+import { useMemo } from 'react'
 import { Chart } from './Chart'
 import type { Data, Layout } from 'plotly.js'
 import { designTokens } from '@/config'

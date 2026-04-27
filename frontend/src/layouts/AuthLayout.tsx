@@ -1,7 +1,7 @@
 /**
  * Auth Layout - For login and registration pages
  */
-import React from 'react'
+import type React from 'react'
 import { Outlet } from 'react-router-dom'
 
 export const AuthLayout: React.FC = () => {

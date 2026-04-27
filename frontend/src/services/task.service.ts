@@ -6,14 +6,7 @@
 
 import { createCrudService, extendService } from './crud.factory'
 import apiClient from './api'
-import type {
-  Task,
-  TaskCreate,
-  TaskUpdate,
-  TaskExecuteRequest,
-  TaskStats,
-  TaskLogResponse,
-} from '@/types/task'
+import type { Task, TaskCreate, TaskUpdate, TaskExecuteRequest, TaskStats, TaskLogResponse } from '@/types/task'
 import type { PaginatedResponse } from '@/types/common'
 
 /**
@@ -93,7 +86,7 @@ export const taskService = extendService(baseCrudService, {
    */
   async getTasksByProject(
     projectId: string,
-    params?: { status?: string; task_type?: string }
+    params?: { status?: string; task_type?: string },
   ): Promise<PaginatedResponse<Task>> {
     return baseCrudService.getAll({
       ...params,

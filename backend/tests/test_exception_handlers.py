@@ -130,7 +130,7 @@ class TestPermissionDependencies:
         other_user = User(
             username="other",
             email="other@example.com",
-            hashed_password=get_password_hash("password")
+            password_hash=get_password_hash("password")
         )
         db_session.add(other_user)
         db_session.commit()

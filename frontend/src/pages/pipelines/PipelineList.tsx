@@ -134,17 +134,16 @@ export const PipelineList: React.FC = () => {
   }
 
   const handleGetRecommendations = async () => {
-    if (!selectedTemplate) return
+    if (!selectedTemplate) {
+      return
+    }
 
     const loadingToast = toast.loading('Analyzing historical tasks...')
     setRecommendLoading(true)
 
     try {
       const projectId = form.getFieldValue('project_id')
-      const recommendations = await pipelineService.getParameterRecommendations(
-        selectedTemplate.id,
-        projectId,
-      )
+      const recommendations = await pipelineService.getParameterRecommendations(selectedTemplate.id, projectId)
 
       form.setFieldsValue({ parameters: recommendations.recommended_params })
 
@@ -163,7 +162,9 @@ export const PipelineList: React.FC = () => {
   }
 
   const handleExecuteSubmit = async () => {
-    if (!selectedTemplate) return
+    if (!selectedTemplate) {
+      return
+    }
 
     try {
       const values = await form.validateFields()
@@ -203,10 +204,7 @@ export const PipelineList: React.FC = () => {
         })
 
         loadingToast()
-        notify.success(
-          'Pipeline Execution Started',
-          'Your pipeline task has been created and will start shortly.',
-        )
+        notify.success('Pipeline Execution Started', 'Your pipeline task has been created and will start shortly.')
       }
 
       setExecuteModalOpen(false)
@@ -306,11 +304,7 @@ export const PipelineList: React.FC = () => {
         <FadeIn direction="up" delay={100}>
           <EnhancedEmptyState
             type={filters.search || filters.category !== 'all' ? 'noSearchResults' : 'noData'}
-            title={
-              filters.search || filters.category !== 'all'
-                ? 'No matching pipelines'
-                : 'No pipelines available'
-            }
+            title={filters.search || filters.category !== 'all' ? 'No matching pipelines' : 'No pipelines available'}
             description={
               filters.search || filters.category !== 'all'
                 ? 'Try adjusting your search criteria or filters'
@@ -351,9 +345,7 @@ export const PipelineList: React.FC = () => {
                   ]}
                   style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                 >
-                  <p style={{ minHeight: 60, color: '#666', marginBottom: 16 }}>
-                    {template.description}
-                  </p>
+                  <p style={{ minHeight: 60, color: '#666', marginBottom: 16 }}>{template.description}</p>
 
                   <Divider style={{ margin: '12px 0' }} />
 
@@ -392,9 +384,7 @@ export const PipelineList: React.FC = () => {
         title={
           <Space>
             <ThunderboltOutlined style={{ color: 'var(--color-primary)' }} />
-            <span style={{ fontWeight: 600 }}>
-              Execute Pipeline: {selectedTemplate?.display_name}
-            </span>
+            <span style={{ fontWeight: 600 }}>Execute Pipeline: {selectedTemplate?.display_name}</span>
           </Space>
         }
         open={executeModalOpen}
@@ -440,8 +430,8 @@ export const PipelineList: React.FC = () => {
               <Text type="secondary" style={{ fontSize: 13 }}>
                 {batchMode ? (
                   <>
-                    <RocketOutlined /> Create one task per sample for parallel processing
-                    (recommended for large datasets)
+                    <RocketOutlined /> Create one task per sample for parallel processing (recommended for large
+                    datasets)
                   </>
                 ) : (
                   <>
@@ -471,17 +461,8 @@ export const PipelineList: React.FC = () => {
             </Form.Item>
           )}
 
-          <Form.Item
-            name="project_id"
-            label="Project"
-            rules={[{ required: true, message: 'Please select project' }]}
-          >
-            <Select
-              placeholder="Select project"
-              onChange={handleProjectChange}
-              showSearch
-              optionFilterProp="children"
-            >
+          <Form.Item name="project_id" label="Project" rules={[{ required: true, message: 'Please select project' }]}>
+            <Select placeholder="Select project" onChange={handleProjectChange} showSearch optionFilterProp="children">
               {items.map((p: any) => (
                 <Option key={p.id} value={p.id}>
                   {p.name}
@@ -502,9 +483,7 @@ export const PipelineList: React.FC = () => {
           >
             <Select
               mode="multiple"
-              placeholder={
-                batchMode ? 'Select samples for batch processing' : 'Select samples (leave empty for all)'
-              }
+              placeholder={batchMode ? 'Select samples for batch processing' : 'Select samples (leave empty for all)'}
               showSearch
               optionFilterProp="children"
             >

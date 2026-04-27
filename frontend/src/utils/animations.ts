@@ -132,18 +132,18 @@ export const transitionClasses = {
 export const createTransition = (
   properties: string[],
   duration: keyof typeof animationDurations = 'base',
-  easing: keyof typeof easings = 'easeInOut'
+  easing: keyof typeof easings = 'easeInOut',
 ): string => {
   const durationMs = animationDurations[duration]
   const easingFn = easings[easing]
-  return properties.map(prop => `${prop} ${durationMs}ms ${easingFn}`).join(', ')
+  return properties.map((prop) => `${prop} ${durationMs}ms ${easingFn}`).join(', ')
 }
 
 /**
  * 延迟执行
  */
 export const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**

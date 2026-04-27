@@ -6,7 +6,11 @@
  * app and drop ECharts. The wrapper exposes a small typed surface so
  * downstream chart components don't import plotly types directly.
  */
-import React, { useMemo } from 'react'
+import type React from 'react'
+import { useMemo } from 'react'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — react-plotly.js ships untyped; the plotly.js types we use
+// (Data, Layout, Config) cover the surface we touch here.
 import Plot from 'react-plotly.js'
 import type { Data, Layout, Config } from 'plotly.js'
 import { Card, Spin } from 'antd'
@@ -32,8 +36,7 @@ const DEFAULT_LAYOUT: Partial<Layout> = {
   autosize: true,
   margin: { l: 50, r: 30, t: 40, b: 50 },
   font: {
-    family:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
     size: 12,
   },
   paper_bgcolor: 'transparent',

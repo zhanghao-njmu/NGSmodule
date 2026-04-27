@@ -17,10 +17,7 @@ export interface UseAsyncOptions {
   onError?: (error: Error) => void
 }
 
-export function useAsync<T>(
-  asyncFunction: (...args: any[]) => Promise<T>,
-  options: UseAsyncOptions = {}
-) {
+export function useAsync<T>(asyncFunction: (...args: any[]) => Promise<T>, options: UseAsyncOptions = {}) {
   const { immediate = false, onSuccess, onError } = options
 
   const [state, setState] = useState<AsyncState<T>>({
@@ -45,7 +42,7 @@ export function useAsync<T>(
         throw err
       }
     },
-    [asyncFunction, onSuccess, onError]
+    [asyncFunction, onSuccess, onError],
   )
 
   // Execute immediately on mount if requested

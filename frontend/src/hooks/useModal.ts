@@ -5,7 +5,8 @@
  */
 
 import { useState, useCallback } from 'react'
-import { Form, FormInstance, message } from 'antd'
+import type { FormInstance } from 'antd'
+import { Form, message } from 'antd'
 
 /**
  * Configuration options for useModal hook
@@ -157,7 +158,7 @@ export function useModal<T = any>(options: UseModalOptions<T> = {}): UseModalRet
       setVisible(true)
       onOpen?.(item)
     },
-    [form, onOpen]
+    [form, onOpen],
   )
 
   /**
@@ -193,9 +194,7 @@ export function useModal<T = any>(options: UseModalOptions<T> = {}): UseModalRet
         // Show success message
         if (showSuccessMessage) {
           const defaultMessage = editing ? 'Updated successfully' : 'Created successfully'
-          const customMessage = editing
-            ? successMessages.update
-            : successMessages.create
+          const customMessage = editing ? successMessages.update : successMessages.create
 
           message.success(customMessage || defaultMessage)
         }
@@ -205,13 +204,9 @@ export function useModal<T = any>(options: UseModalOptions<T> = {}): UseModalRet
       } catch (error: any) {
         // Show error message
         if (showErrorMessage) {
-          const defaultMessage = editing
-            ? `Failed to update: ${error.message}`
-            : `Failed to create: ${error.message}`
+          const defaultMessage = editing ? `Failed to update: ${error.message}` : `Failed to create: ${error.message}`
 
-          const customMessage = editing
-            ? errorMessages.update
-            : errorMessages.create
+          const customMessage = editing ? errorMessages.update : errorMessages.create
 
           message.error(customMessage || defaultMessage)
         }
@@ -231,7 +226,7 @@ export function useModal<T = any>(options: UseModalOptions<T> = {}): UseModalRet
       errorMessages,
       onSuccess,
       onError,
-    ]
+    ],
   )
 
   /**
