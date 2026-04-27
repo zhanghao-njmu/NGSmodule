@@ -1,0 +1,74 @@
+name: DifferentialExpression
+display_name: Differential Expression (edgeR)
+category: Quantification
+version: 1.0.0
+scope: project
+description: >
+  Project-level differential-expression analysis between two sample groups
+  using edgeR's quasi-likelihood F-test. Reads the merged counts matrix
+  produced by MergeCounts, applies a low-count filter, TMM normalisation,
+  and reports per-gene logFC + FDR. Emits MA + volcano plots and a JSON
+  summary suitable for the HTML report.
+requires:
+  - MergeCounts
+tools:
+  - Rscript >= 4.0
+  - edgeR (Bioconductor)
+default_params:
+  Aligner: STAR
+  max_padj: 0.05
+  min_log2fc: 1
+  min_count: 10
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2]
+    default: STAR
+    description: Aligner used upstream (forwarded for naming consistency).
+  group_a:
+    type: string
+    required: true
+    description: Reference group label (matches Group column in SampleInfoFile).
+  group_b:
+    type: string
+    required: true
+    description: Test group label — fold change is log2(group_b / group_a).
+  max_padj:
+    type: float
+    default: 0.05
+    description: Adjusted p-value (FDR) threshold for significance.
+  min_log2fc:
+    type: float
+    default: 1
+    description: Minimum |log2 fold change| for significance.
+  min_count:
+    type: int
+    min: 0
+    max: 1000
+    default: 10
+    description: Genes with <min_count reads in <min(group_size) samples are dropped.
+  de_script:
+    type: path
+    required: false
+    description: Override path to the R DE script (default = scripts/de.R).
+estimated_minutes_per_sample: 5
+resources:
+  mem: 16G
+  time: "2:00:00"
+  cpus_per_task: 4
+  partition: short
+  queue: main
+inputs:
+  kind: counts_matrix
+  pattern: "_project/Quantification/counts.matrix.tab"
+outputs:
+  - kind: de_results_full
+    pattern: "de_results_{group_b}_vs_{group_a}.tab"
+  - kind: de_results_significant
+    pattern: "de_significant_{group_b}_vs_{group_a}.tab"
+  - kind: de_summary_json
+    pattern: "summary.json"
+  - kind: de_ma_plot
+    pattern: "ma_{group_b}_vs_{group_a}.pdf"
+  - kind: de_volcano_plot
+    pattern: "volcano_{group_b}_vs_{group_a}.pdf"

@@ -1,0 +1,3 @@
+RunID,SampleID,Layout,Group
+runA,sample_A,PE,control
+runB,sample_B,PE,treatment

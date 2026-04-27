@@ -269,6 +269,63 @@ will run the pipeline in dry-run mode and pass if `pipeline.sh` doesn't error.
 | postAlignmentQC  | `rseqc`, `preseq`, `mosdepth`, `goleft`                |
 | Quantification   | `featurecounts`                                        |
 | VariantCalling   | `bcftools`, `tabix`                                    |
+| GATK_germline_short  | `gatk`                                             |
+| GATK_somatic_short   | `gatk` (Mutect2 + FilterMutectCalls)               |
+| Strelka2_germline    | `strelka2`, `bcftools`                             |
+| Strelka2_somatic     | `strelka2`, `bcftools` (T/N pair, requires `normal_sample`) |
+| MergeCounts          | `awk` (project-scope; merges per-sample counts)    |
+| postQuantificationQC | `rscript` (project-scope; base R PCA + correlation)|
+| DifferentialExpression | `rscript` (project-scope; edgeR QL F-test)       |
 
 Each is a self-contained example of the pattern above. Read the `pipeline.sh`
 of whichever is closest to what you're migrating before writing your own.
+
+## Project-scope pipelines
+
+Some workflows aggregate across the whole cohort once instead of running
+per sample (e.g. merge per-sample counts, batch correction, differential
+expression, project-level QC). Mark these in `meta.yml`:
+
+```yaml
+scope: project   # default is "sample" if omitted
+```
+
+The contract changes from `run_<Name>_for_sample` to `run_<Name>_for_project`:
+
+```bash
+run_MyProjectPipe_for_project() {
+  # No $sample arg. $samples[] is in scope so you can iterate the cohort.
+  local out_dir="$work_dir/$NGS_PROJECT_SENTINEL/MyProjectPipe"
+  mkdir -p "$out_dir"
+
+  # ... do project-level work using inputs from per-sample stages ...
+
+  # Provenance: state.json is recorded under $work_dir/_project/.state.json
+  ngs_state_stage_end "$NGS_PROJECT_SENTINEL" MyProjectPipe completed \
+    --params "$params_json" --tools "$tools_json" \
+    --inputs "$inputs_json" --outputs "$outputs_json"
+}
+```
+
+Things the orchestrator handles automatically:
+- **Dispatch:** `pipeline_run` reads `scope:` and routes to `_pipeline_run_project`
+  (no FIFO loop, single execution).
+- **Prereqs:** A per-sample prereq is treated as "must be complete for *all*
+  samples in `$samples[]`"; a project-scope prereq is checked once.
+- **State location:** Records go to `$work_dir/_project/.state.json` instead
+  of `$work_dir/<sample>/.state.json`. The `report` and `status` commands
+  pick this up automatically.
+- **Sentinel id:** Use `$NGS_PROJECT_SENTINEL` (= `_project`) anywhere a
+  sample id would normally appear.
+
+Real example: see `pipelines/core/MergeCounts/pipeline.sh` (pure-bash awk
+merge of per-sample counts) and `pipelines/core/DifferentialExpression/`
+(R-script wrapper running edgeR).
+
+When project-scope is *not* the right answer:
+- If your pipeline truly runs once per sample but produces a project-level
+  side-effect (e.g. logs to a shared dashboard), keep `scope: sample` and
+  do the side-effect inside the per-sample function.
+- If your pipeline aggregates pairs (tumor/normal, case/control) instead
+  of the whole cohort, keep `scope: sample` and use a `$normal_sample`
+  config var. See `GATK_somatic_short` and `Strelka2_somatic` for examples.
