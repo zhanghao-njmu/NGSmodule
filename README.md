@@ -173,7 +173,7 @@ API docs at <http://localhost:8000/api/v1/docs>.
 | AI provider | Pluggable (mock / Claude / OpenAI) | `AI_PROVIDER` env var hot-swaps backend; falls back to mock when offline |
 | Observability | Sentry + Prometheus + audit log | Optional; gracefully disabled when libs missing |
 
-See [docs/MULTI_REPLICA_DEPLOYMENT.md](docs/MULTI_REPLICA_DEPLOYMENT.md) for
+See [docs/deployment/MULTI_REPLICA.md](docs/deployment/MULTI_REPLICA.md) for
 horizontal scaling and Kubernetes manifests.
 
 ---
@@ -285,7 +285,7 @@ Recommended hardware sizing:
 
 ### Kubernetes
 
-See [docs/MULTI_REPLICA_DEPLOYMENT.md](docs/MULTI_REPLICA_DEPLOYMENT.md) for
+See [docs/deployment/MULTI_REPLICA.md](docs/deployment/MULTI_REPLICA.md) for
 manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 `PersistentVolumeClaim` for FASTQ storage.
 
@@ -332,12 +332,12 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 
 ## 📚 Documentation
 
-- [Multi-Replica Deployment Guide](docs/MULTI_REPLICA_DEPLOYMENT.md)
-- [Frontend-Backend Integration Report](FRONTEND_BACKEND_INTEGRATION_REPORT.md)
-- [Production Deployment](PRODUCTION_DEPLOYMENT.md)
-- [Security Best Practices](SECURITY_BEST_PRACTICES.md)
-- [API Test Collection](API_TEST_COLLECTION.md)
-- [Monitoring & Logging Guide](MONITORING_LOGGING_GUIDE.md)
+- [Multi-Replica Deployment Guide](docs/deployment/MULTI_REPLICA.md)
+- [Frontend-Backend Integration Report](docs/development/FRONTEND_BACKEND_INTEGRATION_REPORT.md)
+- [Production Deployment](docs/deployment/PRODUCTION.md)
+- [Security Best Practices](docs/deployment/SECURITY.md)
+- [API Test Collection](docs/api/TEST_COLLECTION.md)
+- [Monitoring & Logging Guide](docs/deployment/MONITORING.md)
 - Live API docs: <http://localhost:8000/api/v1/docs>
 
 ---

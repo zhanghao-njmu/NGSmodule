@@ -4,8 +4,9 @@ Celery tasks for NGS pipeline execution
 import logging
 import subprocess
 import os
+import re
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from uuid import UUID
 import asyncio
 
@@ -15,6 +16,14 @@ from app.core.database import SessionLocal
 from app.models.task import PipelineTask
 
 logger = logging.getLogger(__name__)
+
+
+# Structured-event protocol emitted by `pipelines/lib/runtime.sh`.
+# See docs/PIPELINE_MIGRATION_ANALYSIS.md for rationale.
+_EVENT_RE = re.compile(
+    r"^::(?P<kind>progress|status|artifact|metric|dry-run|error)::"
+    r"(?P<payload>.*)$"
+)
 
 
 def send_websocket_update(task_id: str, status: str, progress: float, message: str = ""):
@@ -38,6 +47,50 @@ def send_websocket_update(task_id: str, status: str, progress: float, message: s
             loop.close()
     except Exception as e:
         logger.warning(f"Error sending WebSocket update: {e}")
+
+
+def _publish_realtime(task_id: str, status: str, progress: float, message: str = ""):
+    """Publish to Redis pub/sub so other replicas' WebSocket clients see it."""
+    try:
+        from app.services.realtime import publish_task_event
+
+        publish_task_event(
+            task_id,
+            "task_update",
+            {
+                "task_id": task_id,
+                "status": status,
+                "progress": progress,
+                "message": message,
+            },
+        )
+    except Exception as exc:
+        logger.debug(f"realtime publish skipped: {exc}")
+
+
+def _persist_artifact(db, task_id: str, kind: str, path: str) -> None:
+    """Best-effort: register an artefact emitted by a pipeline step."""
+    try:
+        from app.models.result import Result
+
+        db.add(
+            Result(
+                task_id=task_id,
+                result_type=kind,
+                result_path=path,
+            )
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
+def _parse_event_line(line: str) -> Optional[Dict[str, str]]:
+    """Return {'kind': ..., 'payload': ...} or None if not an event line."""
+    m = _EVENT_RE.match(line.strip())
+    if not m:
+        return None
+    return {"kind": m.group("kind"), "payload": m.group("payload")}
 
 
 @celery_app.task(bind=True)
@@ -100,17 +153,76 @@ def run_ngs_pipeline(
         for key, value in config.items():
             cmd.extend([f"--{key}", str(value)])
 
-        # Run pipeline
+        # Run pipeline.
+        #
+        # We pipe stdout through a parser that:
+        #   - Persists every line to the log file (audit trail).
+        #   - Recognises the structured event protocol emitted by
+        #     `pipelines/lib/runtime.sh` and pushes them to the realtime
+        #     layer (WebSocket clients) without re-tailing the log.
         with open(log_file, "w") as log:
             process = subprocess.Popen(
                 cmd,
-                stdout=log,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=settings.NGS_PIPELINE_DIR,
-                env={**os.environ, "NGS_TASK_ID": task_id}
+                env={**os.environ, "NGS_TASK_ID": task_id},
+                bufsize=1,
+                text=True,
             )
 
-            # Wait for completion
+            last_status = "running"
+            last_progress = 0.0
+            assert process.stdout is not None
+            for raw_line in process.stdout:
+                # 1) Always preserve the original line in the log file.
+                log.write(raw_line)
+                log.flush()
+
+                # 2) Parse events.
+                event = _parse_event_line(raw_line)
+                if event is None:
+                    continue
+                kind = event["kind"]
+                payload = event["payload"]
+
+                if kind == "progress":
+                    try:
+                        pct = max(0.0, min(100.0, float(payload)))
+                    except ValueError:
+                        continue
+                    last_progress = pct
+                    task.progress = pct
+                    db.commit()
+                    self.update_state(
+                        state="PROGRESS",
+                        meta={"progress": pct, "status": last_status},
+                    )
+                    send_websocket_update(task_id, "running", pct, last_status)
+                    _publish_realtime(task_id, "running", pct / 100.0, last_status)
+
+                elif kind == "status":
+                    last_status = payload
+                    send_websocket_update(task_id, "running", last_progress, payload)
+                    _publish_realtime(task_id, "running", last_progress / 100.0, payload)
+
+                elif kind == "artifact":
+                    # payload like: "kind=qc_report path=/data/... .html"
+                    parts = dict(
+                        p.split("=", 1) for p in payload.split() if "=" in p
+                    )
+                    if "kind" in parts and "path" in parts:
+                        _persist_artifact(db, task_id, parts["kind"], parts["path"])
+
+                elif kind == "metric":
+                    # Metrics are surfaced via task message rather than a
+                    # dedicated table for now.
+                    logger.info(f"[task {task_id}] metric: {payload}")
+
+                elif kind == "error":
+                    logger.error(f"[task {task_id}] step error: {payload}")
+                    send_websocket_update(task_id, "running", last_progress, payload)
+
             return_code = process.wait()
 
             if return_code != 0:

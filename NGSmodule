@@ -189,10 +189,16 @@ help() {
 
 ##########################################################################################
 
-  Usage: 
-  
-    NGSmodule [MODE options] [ -c <Configuration file> ]
-  
+  Usage:
+
+    NGSmodule [MODE options] [ -c <Configuration file> ] [--dry-run] [--strict]
+
+  Global flags:
+    --dry-run               Preview commands without running them. Useful for
+                            validating a config file or training new lab members.
+    --strict                Enable `set -euo pipefail` inside step scripts that
+                            opt in (recommended for CI / automated runs).
+
   MODE options:
     # Prefetch_iGenomes
     # Prefetch_SRA
@@ -267,7 +273,7 @@ getopt -T &>/dev/null
   exit 1
 }
 
-parameters=$(getopt --options c:hv --longoptions ConfigFile,help,version -n "$0" -- "$@")
+parameters=$(getopt --options c:hv --longoptions ConfigFile,help,version,dry-run,strict -n "$0" -- "$@")
 [ $? -ne 0 ] && {
   echo -e "Try '$0 --help' for more information.\n"
   exit 1
@@ -279,6 +285,18 @@ while true; do
   -c | --ConfigFile)
     ConfigFile=$2
     shift 2
+    ;;
+  --dry-run)
+    # Print the commands each step would run instead of executing them.
+    # Honoured by GeneralSteps/*.sh that source pipelines/lib/runtime.sh.
+    export NGS_DRY_RUN=1
+    echo -e "DRY-RUN MODE: tools will not execute; commands will be echoed.\n"
+    shift
+    ;;
+  --strict)
+    # Enable `set -euo pipefail` + ERR trap inside step scripts that opt in.
+    export NGS_STRICT=1
+    shift
     ;;
   -h | --help)
     help

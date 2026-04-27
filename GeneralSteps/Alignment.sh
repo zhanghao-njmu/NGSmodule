@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 #######################################################################################
+# --- Hardening + structured progress (opt-in via NGS_STRICT/NGS_DRY_RUN) ---
+_ngs_runtime="${shell_folder:-$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/..}/pipelines/lib/runtime.sh"
+if [[ -f "$_ngs_runtime" ]]; then
+  # shellcheck source=/dev/null
+  source "$_ngs_runtime"
+fi
+
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 bwa &>/dev/null

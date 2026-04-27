@@ -7,6 +7,15 @@
 ##### 3. Align trimmed reads on multi-genomes to detect the contaminantion with fastq-screen
 ##### 4. Remove the rRNA with SortmeRNA
 
+# --- Hardening + structured progress (opt-in via NGS_STRICT/NGS_DRY_RUN) ---
+# Source the runtime helpers if available; falls back gracefully so the
+# script still works when invoked outside the new pipeline tree.
+_ngs_runtime="${shell_folder:-$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/..}/pipelines/lib/runtime.sh"
+if [[ -f "$_ngs_runtime" ]]; then
+  # shellcheck source=/dev/null
+  source "$_ngs_runtime"
+fi
+
 trap_add 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM
 
 fastqc --version &>/dev/null
