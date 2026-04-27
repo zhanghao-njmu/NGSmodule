@@ -1,0 +1,46 @@
+name: postQuantificationQC
+display_name: Post-Quantification QC
+category: Quantification
+version: 1.0.0
+scope: project
+description: >
+  Project-level quality control of the merged counts matrix produced by
+  MergeCounts. Runs a self-contained R script (base R only — no
+  Bioconductor) that emits library-size, detection-rate, sample-sample
+  Spearman correlation, and PCA tables + PDFs. Users can swap the
+  bundled script for one with limma/edgeR/ComplexHeatmap analyses by
+  pointing $qc_script at their own .R file.
+requires:
+  - MergeCounts
+tools:
+  - Rscript >= 4.0
+default_params:
+  Aligner: STAR
+params_schema:
+  Aligner:
+    type: enum
+    values: [STAR, bwa-mem2, hisat2]
+    default: STAR
+    required: true
+    description: Aligner used upstream (forwarded for output naming).
+  qc_script:
+    type: path
+    required: false
+    description: Override path to the R QC script (default = scripts/qc.R).
+estimated_minutes_per_sample: 5
+resources:
+  mem: 8G
+  time: "1:00:00"
+  cpus_per_task: 2
+  partition: short
+  queue: main
+inputs:
+  kind: counts_matrix
+  pattern: "_project/Quantification/counts.matrix.tab"
+outputs:
+  - kind: postQC_library_sizes
+    pattern: "library_sizes.tab"
+  - kind: postQC_correlation
+    pattern: "sample_correlation.tab"
+  - kind: postQC_pca
+    pattern: "pca.tab"
