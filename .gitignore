@@ -86,3 +86,9 @@ dist/
 tmp/
 *.bak
 *.tmp
+
+# Playwright E2E artifacts (videos / traces / screenshots / HTML report)
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/

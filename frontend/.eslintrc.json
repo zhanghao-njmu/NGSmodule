@@ -86,5 +86,15 @@
     "eqeqeq": ["error", "always"],
     "curly": ["error", "all"]
   },
-  "ignorePatterns": ["dist", "node_modules", "*.config.js", "*.config.ts", "coverage"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "*.config.js",
+    "*.config.ts",
+    "coverage",
+    "e2e",
+    "playwright.config.ts",
+    "test-results",
+    "playwright-report"
+  ]
 }
