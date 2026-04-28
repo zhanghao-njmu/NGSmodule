@@ -19,9 +19,9 @@ _cached: Optional[AIProvider] = None
 def _build_provider(name: str) -> AIProvider:
     name = (name or "mock").lower()
 
-    if name == "claude":
-        from app.services.ai_providers.claude import ClaudeProvider
-        return ClaudeProvider()
+    if name == "anthropic":
+        from app.services.ai_providers.anthropic import AnthropicProvider
+        return AnthropicProvider()
 
     if name == "openai":
         from app.services.ai_providers.openai_provider import OpenAIProvider

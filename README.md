@@ -33,7 +33,7 @@ NGS toolchain (`fastp`, `BWA-MEM2`, `STAR`, `HISAT2`, `Salmon`, `Kallisto`,
 - A **template-driven pipeline runner** with parameter recommendation
 - A **real-time task monitor** (WebSocket) so you can watch a 12-hour
   alignment from your phone
-- An **AI assistant** (Claude/OpenAI/local) that reads your QC reports and
+- An **AI assistant** (Anthropic/OpenAI/local) that reads your QC reports and
   suggests parameter changes
 - **Multi-user RBAC** with per-user storage quotas — suitable for shared
   lab compute servers
@@ -258,7 +258,7 @@ ngsmodule resume Alignment -c project.cfg
 | Frontend bundler | rsbuild (Rspack) | Rust-based; 5–10× faster than webpack/vite for large SPAs |
 | Server-state | TanStack Query | 74 typed hooks, optimistic mutations, realtime cache invalidation |
 | Charts | Plotly only | Genomics-grade visualizations (volcano plots, Manhattan plots, heatmaps) |
-| AI provider | Pluggable (mock / Claude / OpenAI) | `AI_PROVIDER` env var hot-swaps backend; falls back to mock when offline |
+| AI provider | Pluggable (mock / Anthropic / OpenAI) | `AI_PROVIDER` env var hot-swaps backend; falls back to mock when offline |
 | Observability | Sentry + Prometheus + audit log | Optional; gracefully disabled when libs missing |
 
 See [docs/deployment/MULTI_REPLICA.md](docs/deployment/MULTI_REPLICA.md) for
@@ -276,7 +276,7 @@ You shouldn't need to read a single line of code:
 - **Run any built-in pipeline** by clicking *Execute* and picking samples
 - **AI parameter recommendations** — click "Get Recommendations" in the
   pipeline modal; the assistant analyses your past successful runs (or
-  consults Claude/OpenAI if configured) and pre-fills sensible parameters
+  consults Anthropic/OpenAI if configured) and pre-fills sensible parameters
   with a confidence score
 - **Browser-based result viewer** — every QC report renders as interactive
   Plotly charts; volcano plots are zoomable, gene names searchable
@@ -316,9 +316,9 @@ If you live on the command line, NGSmodule still respects you:
 - **Audit log** records every admin action (user role change, password
   reset, system config update) with IP and User-Agent — exportable as
   JSON/CSV for compliance audits
-- **Self-hostable AI** — point `AI_PROVIDER=claude` + `ANTHROPIC_API_KEY` at
-  Anthropic's API (with **prompt caching** enabled to keep costs low), or
-  swap in a local model by implementing the `AIProvider` interface in
+- **Self-hostable AI** — point `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`
+  at Anthropic's API (with **prompt caching** enabled to keep costs low),
+  or swap in a local model by implementing the `AIProvider` interface in
   `app/services/ai_providers/`
 
 ### REST API examples
@@ -392,7 +392,7 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 |---------|---------------|
 | Sentry error tracking | `SENTRY_DSN=https://...sentry.io/...` |
 | Prometheus metrics | `pip install prometheus-fastapi-instrumentator` (auto-mounted at `/metrics`) |
-| Real Claude AI | `AI_PROVIDER=claude` + `ANTHROPIC_API_KEY=...` |
+| Real Anthropic AI | `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY=...` |
 | Real OpenAI | `AI_PROVIDER=openai` + `OPENAI_API_KEY=...` |
 | Multi-replica realtime | `REDIS_URL=redis://redis:6379/0` (defaults to in-memory) |
 | Backup retention | `BACKUP_DIR=/data/backups`, `BACKUP_RETENTION_DAYS=30` |
@@ -426,7 +426,7 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 | Frontend type-check | 0 errors |
 | Frontend lint | 0 errors |
 | Production build | rsbuild · 1.9 MB gzipped · 8s |
-| AI Intelligence | 28 endpoints (mock by default; Claude/OpenAI ready) |
+| AI Intelligence | 28 endpoints (mock by default; Anthropic/OpenAI ready) |
 | Admin Enhanced | 27 endpoints (audit, alerts, backups, jobs, metrics) |
 
 ---

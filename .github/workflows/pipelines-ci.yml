@@ -2,7 +2,7 @@ name: Pipelines CI
 
 on:
   push:
-    branches: [main, develop, "claude/**"]
+    branches: [main, develop]
     paths:
       - "pipelines/**"
       - "ngsmodule"

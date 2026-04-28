@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_STORAGE: Optional[str] = None  # Override REDIS_URL for slowapi
 
     # AI provider
-    AI_PROVIDER: str = "mock"  # mock | claude | openai
+    AI_PROVIDER: str = "mock"  # mock | anthropic | openai
     ANTHROPIC_API_KEY: Optional[str] = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
     OPENAI_API_KEY: Optional[str] = None

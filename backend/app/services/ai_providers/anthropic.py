@@ -1,5 +1,5 @@
 """
-Anthropic Claude AI provider.
+Anthropic AI provider.
 
 Uses the Anthropic Python SDK with prompt caching enabled. Requires
 `pip install anthropic` and ANTHROPIC_API_KEY in settings.
@@ -13,11 +13,11 @@ from app.services.ai_providers.base import AIProvider, AIProviderError
 logger = logging.getLogger(__name__)
 
 
-class ClaudeProvider(AIProvider):
-    name = "claude"
+class AnthropicProvider(AIProvider):
+    name = "anthropic"
 
-    # Default to the latest stable Claude Sonnet — operators can override
-    # via settings.ANTHROPIC_MODEL.
+    # Default model — operators can override via settings.ANTHROPIC_MODEL.
+    # Note: this string is the literal API parameter; do not paraphrase.
     default_model: str = "claude-sonnet-4-6"
 
     def __init__(self):
@@ -29,7 +29,7 @@ class ClaudeProvider(AIProvider):
         if self._client is None:
             if not self._api_key:
                 raise AIProviderError(
-                    "Claude provider selected but ANTHROPIC_API_KEY is not configured"
+                    "Anthropic provider selected but ANTHROPIC_API_KEY is not configured"
                 )
             try:
                 from anthropic import Anthropic
@@ -94,5 +94,5 @@ class ClaudeProvider(AIProvider):
             blocks = response.content or []
             return "".join(getattr(b, "text", "") for b in blocks)
         except Exception as exc:
-            logger.exception("Claude API call failed")
-            raise AIProviderError(f"Claude API error: {exc}") from exc
+            logger.exception("Anthropic API call failed")
+            raise AIProviderError(f"Anthropic API error: {exc}") from exc

@@ -1,7 +1,7 @@
 """
 AI provider abstractions.
 
-Allows swapping the AI backend (mock, Claude, OpenAI, local model) without
+Allows swapping the AI backend (mock, Anthropic, OpenAI, local model) without
 changing the consumer code in `ai_service.py`.
 """
 from app.services.ai_providers.base import AIProvider, AIProviderError
