@@ -11,7 +11,9 @@ alembic==1.13.1
 amqp==5.3.1
     # via kombu
 annotated-doc==0.0.4
-    # via typer
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.7.0
     # via pydantic
 anthropic==0.18.1 ; python_version >= "3.8"
@@ -80,7 +82,7 @@ ecdsa==0.19.2
     # via python-jose
 email-validator==2.3.0
     # via pydantic
-fastapi==0.109.0
+fastapi==0.125.0
     # via
     #   -r requirements.in
     #   prometheus-fastapi-instrumentator
@@ -212,7 +214,7 @@ sqlalchemy==2.0.25
     #   -r requirements.in
     #   alembic
     #   sentry-sdk
-starlette==0.35.1
+starlette==0.50.0
     # via fastapi
 tokenizers==0.23.1
     # via anthropic
@@ -232,6 +234,7 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
+    #   starlette
 tzdata==2026.2
     # via
     #   celery

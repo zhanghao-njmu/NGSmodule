@@ -121,6 +121,39 @@ export function useTaskProgress(taskId: string | null | undefined): void {
 }
 
 /**
+ * Listen for vendor data download progress and refresh the data-downloads
+ * jobs query whenever the worker pushes an update.
+ *
+ * The worker emits 'download_update' events on the per-task channel
+ * (`realtime:task:<job_id>`); we subscribe to each job id whose status
+ * is still in flight, then invalidate the cache on every event.
+ */
+export function useDownloadJobsRealtime(jobIds: string[]): void {
+  const queryClient = useQueryClient()
+
+  // Subscribe to each in-flight job's task channel.
+  useEffect(() => {
+    jobIds.forEach((id) => realtimeClient.subscribeToTask(id))
+    return () => {
+      jobIds.forEach((id) => realtimeClient.unsubscribeFromTask(id))
+    }
+    // Stringify for stable dep — same set of ids ⇒ same effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobIds.join(',')])
+
+  useRealtimeEvents(
+    (event) => {
+      if (event.type !== 'download_update') {
+        return
+      }
+      // Refresh the user's job list; React Query handles the diff.
+      queryClient.invalidateQueries({ queryKey: ['data-downloads', 'jobs'] })
+    },
+    [queryClient],
+  )
+}
+
+/**
  * Connect/disconnect lifecycle hook. Mount this once in the authenticated
  * shell layout so the WebSocket follows the user's session.
  */

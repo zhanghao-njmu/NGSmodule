@@ -25,6 +25,7 @@ import {
 } from 'antd'
 import { DeleteOutlined, ReloadOutlined, KeyOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useDownloadJobsRealtime } from '@/hooks/useRealtime'
 import { dataDownloadService, vendorCredentialService } from '@/services/data-download.service'
 import type { DownloadJob, DownloadJobCreateRequest, DownloadStatus, SessionLoginRequest } from '@/types/data-download'
 
@@ -62,15 +63,25 @@ export function DataDownloadsPage() {
     refetchInterval: 10_000,
   })
 
-  // User's download jobs (poll every 5s while any are running).
+  // User's download jobs. Realtime push (useDownloadJobsRealtime below)
+  // invalidates the cache on each progress event; the polling interval
+  // is just a slow safety net for missed events.
   const jobsQuery = useQuery({
     queryKey: ['data-downloads', 'jobs'],
     queryFn: () => dataDownloadService.listJobs().then((r) => r.items),
     refetchInterval: (query) => {
       const items = (query.state.data ?? []) as DownloadJob[]
-      return items.some((j) => j.status === 'running' || j.status === 'pending') ? 5_000 : false
+      return items.some((j) => j.status === 'running' || j.status === 'pending') ? 30_000 : false
     },
   })
+
+  // Subscribe to realtime progress for any in-flight job so the table
+  // updates within ~100ms of each lcbio progress line.
+  const inFlightIds = useMemo(
+    () => (jobsQuery.data ?? []).filter((j) => j.status === 'running' || j.status === 'pending').map((j) => j.id),
+    [jobsQuery.data],
+  )
+  useDownloadJobsRealtime(inFlightIds)
 
   const openSessionMutation = useMutation({
     mutationFn: (req: SessionLoginRequest) => dataDownloadService.openSession(req),

@@ -19,6 +19,7 @@ amqp==5.3.1
 annotated-doc==0.0.4
     # via
     #   -c requirements.txt
+    #   fastapi
     #   typer
 annotated-types==0.7.0
     # via
@@ -136,7 +137,7 @@ email-validator==2.3.0
     #   pydantic
 faker==40.15.0
     # via -r requirements-dev.in
-fastapi==0.109.0
+fastapi==0.125.0
     # via
     #   -c requirements.txt
     #   -r requirements.in
@@ -396,7 +397,7 @@ sqlalchemy==2.0.25
     #   -r requirements.in
     #   alembic
     #   sentry-sdk
-starlette==0.35.1
+starlette==0.50.0
     # via
     #   -c requirements.txt
     #   fastapi
@@ -427,6 +428,7 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pytest-asyncio
     #   sqlalchemy
+    #   starlette
 tzdata==2026.2
     # via
     #   -c requirements.txt
