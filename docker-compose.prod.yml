@@ -185,6 +185,15 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
+      # Celery worker imports app.workers.celery_app -> app.core.config,
+      # which instantiates Settings() at module load. Worker therefore
+      # needs the same required env vars as the backend even though it
+      # doesn't read most of them directly.
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - MINIO_URL=${MINIO_URL:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
       - NGS_PIPELINE_DIR=/app/NGSmodule
       - LC_BIO_BIN_DIR=/opt/lcbio/linux_download/bin
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -255,8 +264,18 @@ services:
     restart: unless-stopped
     command: celery -A app.workers.celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:?FLOWER_PASSWORD is required}
     environment:
+      # Same Settings() requirement as celery-worker — flower imports
+      # app.workers.celery_app which transitively triggers full env validation.
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ngsmodule}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ngsmodule}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - MINIO_URL=${MINIO_URL:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      - NGS_PIPELINE_DIR=/app/NGSmodule
     ports:
       - "5555:5555"
     depends_on:
