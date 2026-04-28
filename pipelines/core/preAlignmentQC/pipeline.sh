@@ -165,6 +165,27 @@ run_preAlignmentQC_for_sample() {
     emit_metric "${sample}.q30_rate" "$q30"
   fi
 
+  # Record provenance in state.json so the report's "tools" tally and
+  # lineage drawer pick up this stage. Without this, the orchestrator
+  # auto-fills only status + timing.
+  local inputs_json outputs_json params_json tools_json
+  if [[ "$layout" == "PE" ]]; then
+    inputs_json="$(ngs_state_files_json --kind=raw_fastq "$fq1_in" "$fq2_in")"
+    outputs_json="$(ngs_state_files_json --kind=trimmed_fastq "$fastp_out1" "$fastp_out2")"
+  else
+    inputs_json="$(ngs_state_files_json --kind=raw_fastq "$fq1_in")"
+    outputs_json="$(ngs_state_files_json --kind=trimmed_fastq "$fastp_out_se")"
+  fi
+  params_json="$(printf '{"layout":"%s","min_quality":%s,"min_length":%s,"threads_fastp":%s}' \
+    "$layout" "${min_quality:-20}" "${min_length:-50}" "${threads_fastp:-${threads:-4}}")"
+  tools_json='[{"name":"fastp"},{"name":"fastqc"}]'
+
+  ngs_state_stage_end "$sample" preAlignmentQC completed \
+    --params  "$params_json" \
+    --tools   "$tools_json" \
+    --inputs  "$inputs_json" \
+    --outputs "$outputs_json"
+
   return 0
 }
 

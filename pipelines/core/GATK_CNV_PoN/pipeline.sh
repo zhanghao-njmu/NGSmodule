@@ -102,8 +102,12 @@ run_GATK_CNV_PoN_for_project() {
   local pon="$out_dir/cnv.pon.hdf5"
   emit_status "[_project] PoN: CreateReadCountPanelOfNormals (${#count_files[@]} normals)"
   if (( ${#count_files[@]} > 0 )); then
-    module_gatk_create_read_count_pon --out "$pon" \
-      $(printf -- '--counts %s ' "${count_files[@]}")
+    # Build the --counts <hdf5> arg pairs into an array so paths with
+    # spaces survive (don't unquote $(printf …) — that word-splits).
+    local -a counts_args=()
+    local cf
+    for cf in "${count_files[@]}"; do counts_args+=(--counts "$cf"); done
+    module_gatk_create_read_count_pon --out "$pon" "${counts_args[@]}"
   elif is_dry_run; then
     # Dry-run with no normals: emit a synthetic call for the trace.
     module_gatk_create_read_count_pon --out "$pon" --counts "<normal.counts.hdf5>"

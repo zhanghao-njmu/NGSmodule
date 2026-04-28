@@ -108,7 +108,11 @@ cmd_list() {
 }
 
 cmd_info() {
-  local pipeline="${1:?ngsmodule info: pipeline name required}"
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule info: pipeline name required" >&2
+    return 2
+  fi
+  local pipeline="$1"
   local meta="$PIPELINES_DIR/$pipeline/meta.yml"
   if [[ ! -f "$meta" ]]; then
     echo "ERROR: unknown pipeline: $pipeline" >&2
@@ -119,7 +123,11 @@ cmd_info() {
 }
 
 cmd_run() {
-  local pipeline="${1:?ngsmodule run: pipeline name required}"; shift
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule run: pipeline name required" >&2
+    return 2
+  fi
+  local pipeline="$1"; shift
   local script="$PIPELINES_DIR/$pipeline/pipeline.sh"
   if [[ ! -f "$script" ]]; then
     echo "ERROR: unknown pipeline: $pipeline" >&2
@@ -278,7 +286,11 @@ cmd_status() {
 # this BAM come from?" without grepping logs.
 # ---------------------------------------------------------------------------
 cmd_trace() {
-  local sample="${1:?ngsmodule trace: sample required}"; shift
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule trace: sample required" >&2
+    return 2
+  fi
+  local sample="$1"; shift
   local config=""
   while (( $# > 0 )); do
     case "$1" in
@@ -709,7 +721,12 @@ cmd_test() {
 #   --force                  overwrite existing scaffold
 # ---------------------------------------------------------------------------
 cmd_init() {
-  local name="${1:?ngsmodule init: pipeline name required}"; shift
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule init: pipeline name required" >&2
+    echo "Usage: ngsmodule init <name> [--scope sample|project] [--requires a,b]" >&2
+    return 2
+  fi
+  local name="$1"; shift
 
   local scope="sample" category="Custom" requires_csv="" force=0
   while (( $# > 0 )); do
@@ -1112,7 +1129,12 @@ cmd_lint() {
 # everything else from cmd_run (--profile, --no-deps, etc.).
 # ---------------------------------------------------------------------------
 cmd_resume() {
-  local pipeline="${1:?ngsmodule resume: pipeline name required}"; shift
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule resume: pipeline name required" >&2
+    echo "Usage: ngsmodule resume <pipeline> -c <ConfigFile>" >&2
+    return 2
+  fi
+  local pipeline="$1"; shift
 
   # Pull --config out of the args so we can also resolve work_dir
   # ourselves; everything else is forwarded verbatim to `ngsmodule run`.
@@ -1188,7 +1210,12 @@ cmd_resume() {
 # The terminal pipeline is at the top; its prereqs indented below.
 # ---------------------------------------------------------------------------
 cmd_deps() {
-  local pipeline="${1:?ngsmodule deps: pipeline name required}"
+  if [[ -z "${1:-}" ]]; then
+    echo "ERROR: ngsmodule deps: pipeline name required" >&2
+    echo "Usage: ngsmodule deps <pipeline>" >&2
+    return 2
+  fi
+  local pipeline="$1"
   local meta="$PIPELINES_DIR/$pipeline/meta.yml"
   if [[ ! -f "$meta" ]]; then
     echo "ERROR: unknown pipeline: $pipeline" >&2
