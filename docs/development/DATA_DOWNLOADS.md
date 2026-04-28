@@ -124,3 +124,24 @@ adapter can be filled in.
 - Stale job timeout is hard-coded at 10 min without progress; tune
   `_STALE_TIMEOUT` in `workers/download_tasks.py` if you regularly
   download from slow OBS regions.
+
+## Deployment notes
+
+### alembic migration chain
+
+The repo has no baseline-create-tables migration; the existing chain
+(`add_notifications_001` → `admin_enhanced_001` → `data_downloads_001`)
+contains only incremental ALTERs. First-time deployments must therefore:
+
+```bash
+# 1. let SQLAlchemy create the canonical schema from models
+python -c "from app.core.database import init_db; init_db()"
+
+# 2. tell alembic the DB is already at HEAD (skips the chain)
+alembic stamp head
+```
+
+Subsequent schema changes can use `alembic upgrade head` normally.
+
+`alembic/env.py` reads `DATABASE_URL` from the environment when set,
+so containerised deployments don't need to template `alembic.ini`.

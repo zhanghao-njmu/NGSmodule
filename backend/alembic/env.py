@@ -1,6 +1,7 @@
 """
 Alembic environment configuration
 """
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -18,6 +19,14 @@ config = context.config
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Production-friendly url override: respect DATABASE_URL env var (the same
+# variable the FastAPI app reads via Settings) so containerised deployments
+# don't need to template alembic.ini. Falls back to alembic.ini when unset
+# (useful for the standard 'alembic revision --autogenerate' developer flow).
+_env_url = os.environ.get("DATABASE_URL")
+if _env_url:
+    config.set_main_option("sqlalchemy.url", _env_url)
 
 # Add your model's MetaData object here
 target_metadata = Base.metadata

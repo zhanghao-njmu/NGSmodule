@@ -233,11 +233,11 @@ def test_session_login_validation_error(client, auth_headers):
 
 # ---------------- lcbio log parser ----------------
 
-def test_lcbio_parse_progress_line():
+def test_lcbio_parse_progress_line(tmp_path):
     """Sanity-check the regex against actual log samples."""
     from app.services.data_provider.lc_bio import LcBioProvider
 
-    log = Path(__file__).parent / "_lcbio_sample.txt"
+    log = tmp_path / "running.txt"
     log.write_text(
         "已开始下载，请耐心等待......\n"
         "X ：下载中......       2026-04-27-16:20:54.820\n"
