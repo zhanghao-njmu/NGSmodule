@@ -14,7 +14,7 @@ fi
 
 cat <<- EOF >$ConfigFile
 ############# Prefetch_iGenomes Paramaters #######################################################################
-iGenomes_dir="/data/reference/iGenomes"
+iGenomes_dir="/ssd/reference/iGenomes"
 Species=("Homo_sapiens" "Mus_musculus" "Macaca_mulatta" "Rattus norvegicus")
 Sources=("Ensembl" "NCBI" "UCSC")
 kmers=(150 100 50)
@@ -58,21 +58,21 @@ cut_mean_quality=20                 ## the mean quality requirement option share
 length_required=20                  ## reads shorter than length_required will be discarded.
 
 ### FastqScreen ###
-FastqScreen_config="/data/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
+FastqScreen_config="/ssd/reference/FastQ_Screen/FastQ_Screen_Genomes/fastq_screen.conf"
 
 ### SortmeRNA ###
-SortmeRNA_Dir="/data/reference/SortmeRNA"        ## the path of the dir containing the reference sequence.
+SortmeRNA_Dir="/ssd/reference/SortmeRNA"        ## the path of the dir containing the reference sequence.
 SortmeRNA_Type="rRNA"                               ## rRNA,Mt_tRNA,Mt_rRNA
-SortmeRNA_Species="Homo_sapiens"                    ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
+SortmeRNA_Species="Mus_musculus"                    ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster 
 SortmeRNA_DataVersion="101"                         ## the version of the sequence 
 SortmeRNA_ref_direct=""                             ## Optional. Specify the path of the reference sequence file for SortmeRNA. 
 
 
 ############# Alignment Paramaters ##########################################################################
-iGenomes_Dir="/data/reference/iGenomes"          ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
-Species="Homo_sapiens"                              ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster, ...
+iGenomes_Dir="/ssd/reference/iGenomes"          ## The iGenomes dir containing the index under a directory tree: {iGenomes_Dir}/{Species}/{Source}/Sequence/{Aligner}
+Species="Mus_musculus"                              ## Homo_sapiens,Mus_musculus,Macaca_fascicularis,Macaca_mulatta,Drosophila_melanogaster, ...
 Source="Ensembl"                                    ## Ensembl,NCBI,UCSC
-Build="GRCh38"                                      ## The genome build version.
+Build="GRCm38"                                      ## The genome build version.
 Aligner="hisat2"                                    ## bwa_mem,bwa_aln,bowtie,bowtie2,hisat2,tophat2,star,bismark_bowtie2,bismark_hisat2
 Deduplication="automatic"                           ## Whether to perfomrm deduplication. Default is automatic: dna/BSdna = "TRUE", rna = "FALSE".
 Subsample_proportion=1                              ## The proportion of the subsamples. 1 indicates no subsampling.

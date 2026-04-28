@@ -1,7 +1,8 @@
+#!/usr/bin/env Rscript
 suppressWarnings(suppressPackageStartupMessages(invisible(lapply(
   c(
     "BiocParallel", "edgeR", "DESeq2", "dplyr", "stringr", "scales", "RColorBrewer",
-    "ggpubr", "ggsci", "ggforce", "reshape2", "VennDiagram", "gridExtra",
+    "ggpubr", "ggsci", "ggforce", "reshape2", "VennDiagram", "gridExtra", "clusterProfiler", "enrichplot",
     "gplots", "openxlsx", "ggalluvial", "ggfittext", "ComplexHeatmap", "circlize", "nord"
   ), require,
   character.only = TRUE
@@ -359,13 +360,13 @@ heatmap <- function(LogNormCounts, genes, res, res_log2fc_col, res_padj_col, row
 
   if (anno_genebiotype) {
     protcode <- res[genes, "gene_biotype"] == "protein_coding"
-    lincRNA <- res[genes, "gene_biotype"] == "lincRNA"
+    lncRNA <- res[genes, "gene_biotype"] == "lncRNA"
     miRNA <- res[genes, "gene_biotype"] == "miRNA"
     pseudogene <- str_detect(string = res[genes, "gene_biotype"], pattern = "pseudogene")
     antisense <- res[genes, "gene_biotype"] == "antisense"
     genebiotype <- HeatmapAnnotation(
       "protein_coding" = anno_simple(protcode + 0, col = c("0" = "white", "1" = nord("polarnight")[1]), width = unit(0.5, "cm")),
-      "lincRNA" = anno_simple(lincRNA + 0, col = c("0" = "white", "1" = nord("polarnight")[4]), width = unit(0.5, "cm")),
+      "lncRNA" = anno_simple(lncRNA + 0, col = c("0" = "white", "1" = nord("polarnight")[4]), width = unit(0.5, "cm")),
       "miRNA" = anno_simple(miRNA + 0, col = c("0" = "white", "1" = nord("mountain_forms")[1]), width = unit(0.5, "cm")),
       "pseudogene" = anno_simple(pseudogene + 0, col = c("0" = "white", "1" = nord("mountain_forms")[2]), width = unit(0.5, "cm")),
       "antisense" = anno_simple(antisense + 0, col = c("0" = "white", "1" = nord("mountain_forms")[4]), width = unit(0.5, "cm")),
@@ -417,22 +418,17 @@ heatmap <- function(LogNormCounts, genes, res, res_log2fc_col, res_padj_col, row
   ht <- ComplexHeatmap::Heatmap(
     matrix = df,
     col = colorRamp2(seq(-lim, lim, length = 100), color_palette),
-
     row_split = row_split,
     column_split = column_split,
     cluster_row_slices = cluster_row_slices,
     cluster_column_slices = cluster_column_slices,
-
     row_title = row_title,
     column_title = column_title,
-
     show_row_names = F,
     column_names_gp = gpar(rot = 60, fontsize = 8),
-
     top_annotation = df_top_annotation,
     left_annotation = df_left_annotation,
     right_annotation = df_right_annotation,
-
     border = T,
     heatmap_legend_param = ht_legend,
     ...
@@ -442,7 +438,7 @@ heatmap <- function(LogNormCounts, genes, res, res_log2fc_col, res_padj_col, row
     ComplexHeatmap::draw(ht, heatmap_legend_side = "right")
     annotation_titles <- c(
       protein_coding = "Protein-coding",
-      lincRNA = "lincRNA",
+      lncRNA = "lncRNA",
       miRNA = "miRNA",
       pseudogene = "pseudogene",
       antisense = "antisense",
@@ -531,6 +527,71 @@ heatmap <- function(LogNormCounts, genes, res, res_log2fc_col, res_padj_col, row
     p <- draw_ht()
   }
   return(p)
+}
+
+enrichment <- function(DEGs_up, DEGs_down, label = NULL) {
+  if (any(grep("ENSMUSG", c(DEGs_up, DEGs_down)))) {
+    library(org.Mm.eg.db)
+    OrgDb <- org.Mm.eg.db
+  } else {
+    library(org.Hs.eg.db)
+    OrgDb <- org.Hs.eg.db
+  }
+  enrich_up <- enrichGO(
+    gene = DEGs_up, OrgDb = OrgDb, keyType = "ENSEMBL", ont = "ALL",
+    pvalueCutoff = 1, qvalueCutoff = 1, minGSSize = 10, maxGSSize = 500, readable = TRUE
+  )
+  enrich_down <- enrichGO(
+    gene = DEGs_down, OrgDb = OrgDb, keyType = "ENSEMBL", ont = "ALL",
+    pvalueCutoff = 1, qvalueCutoff = 1, minGSSize = 10, maxGSSize = 500, readable = TRUE
+  )
+  enrich_compare <- compareCluster(
+    geneClusters = list(Up = DEGs_up, down = DEGs_down), fun = "enrichGO", OrgDb = OrgDb, keyType = "ENSEMBL", ont = "ALL",
+    pvalueCutoff = 1, qvalueCutoff = 1, minGSSize = 10, maxGSSize = 500, readable = TRUE
+  )
+
+  p1 <- barplot(enrich_up, showCategory = 6) +
+    geom_col(color = "black") +
+    scale_fill_material(
+      reverse = TRUE, palette = "red", labels = scales::label_scientific(),
+      guide = guide_legend(override.aes = list(color = "black"))
+    ) +
+    labs(title = paste0("DEGs_up (", label, ")")) +
+    theme_classic(base_size = 9) +
+    theme(
+      axis.text = element_text(colour = "black"),
+      title = element_text(size = 7)
+    )
+
+  p2 <- barplot(enrich_down, showCategory = 6) +
+    geom_col(color = "black") +
+    scale_fill_material(
+      reverse = TRUE, palette = "indigo", labels = scales::label_scientific(),
+      guide = guide_legend(override.aes = list(color = "black"))
+    ) +
+    labs(title = paste0("DEGs_down(", label, ")")) +
+    theme_classic(base_size = 9) +
+    theme(
+      axis.text = element_text(colour = "black"),
+      title = element_text(size = 7)
+    )
+
+  p3 <- dotplot(enrich_compare, showCategory = 8) +
+    scale_fill_material(reverse = TRUE, palette = "blue-grey", labels = scales::label_scientific()) +
+    labs(title = paste0("GO comparison (", label, ")")) +
+    theme_classic(base_size = 9) +
+    theme(
+      panel.grid.major.y = element_line(),
+      axis.text = element_text(colour = "black"),
+      title = element_text(size = 7)
+    )
+
+  p <- (p1 / p2) | p3
+
+  return(list(
+    enrichment_plot = p,
+    enrichment_data = enrich_compare@compareClusterResult
+  ))
 }
 
 pie_chart <- function(res, annotation_matrix, label) {

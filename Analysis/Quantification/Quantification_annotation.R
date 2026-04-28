@@ -18,10 +18,10 @@ database <- args[5]
 # database <- "Ensembl"
 ##############################
 
-merge_gtf_by = "gene_id"
-columns = c(
+merge_gtf_by <- "gene_id"
+columns <- c(
   "seqname", "feature", "start", "end", "strand",
-  "gene_id", "gene_name", "gene_type"
+  "gene_id", "gene_name", "gene_biotype"
 )
 
 gtf_all <- suppressWarnings(fread(gtf, sep = "\t"))
@@ -68,7 +68,7 @@ if (aligner == "kallisto") {
   output <- Reduce(function(x, y) merge(x, y, by = 1, all = TRUE), df_list)
   write.table(x = output, file = paste("Quantification", ".", aligner, ".", "tpm", ".tsv", sep = ""), sep = "\t", row.names = F)
 } else {
-  for (type in c("count", "rpkm", "fpkm", "tpm","cpm", "log2cpm")) {
+  for (type in c("count", "rpkm", "fpkm", "tpm", "cpm", "log2cpm")) {
     files <- list.files(work_dir, recursive = T, full.names = T) %>%
       grep(x = ., pattern = paste0("Quantification/.*", aligner, ".", type, "$"), perl = T, value = T) %>%
       sort()
@@ -78,7 +78,7 @@ if (aligner == "kallisto") {
       })
       output <- Reduce(function(x, y) merge(x, y, by = 1, all = TRUE), df_list)
       if (exists("gtf_columns_collapse")) {
-        output <- cbind(output,"Annotation.GTF")
+        output <- cbind(output, ">>Annotation" = "Annotation.GTF")
         output <- merge(x = output, by.x = "GeneID", y = gtf_columns_collapse, by.y = "row.names", all.x = TRUE)
       }
       write.table(x = output, file = paste("Quantification", ".", aligner, ".", type, ".tsv", sep = ""), sep = "\t", row.names = F)

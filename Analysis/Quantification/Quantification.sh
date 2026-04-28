@@ -10,7 +10,7 @@ Rscript &>/dev/null
   exit 1
 }
 
-R_packages=("Rsubread" "edgeR" "Rsamtools" "data.table")
+R_packages=("Rsubread" "edgeR" "Rsamtools" "data.table" "dplyr")
 
 all_installed=$(Rscript -e "installed.packages()" | awk '{print $1}')
 Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager',repos='https://cran.r-project.org/')"

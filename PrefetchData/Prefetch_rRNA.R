@@ -3,10 +3,10 @@ args <- commandArgs(trailingOnly = TRUE)
 maindir <- args[1]
 version <- args[2]
 
-maindir <- "/reference/SortmeRNA/"
+maindir <- "/ssd/reference/SortmeRNA/"
 version <- 101
 
-species <- c("Homo_sapiens", "Mus_musculus", "Macaca_fascicularis", "Macaca_mulatta", "Drosophila_melanogaster")
+species <- c("Homo_sapiens", "Mus_musculus", "Macaca_fascicularis", "Macaca_mulatta", "Rattus_norvegicus")
 sequence_type<-c("rRNA", "Mt_rRNA", "Mt_tRNA")
 # fastq_screen_dir <- "/data/database/FastQ_Screen/FastQ_Screen_Genomes/"
 
@@ -29,7 +29,7 @@ for (s in species) {
   )
   attributes <- listAttributes(mart)
   filters <- listFilters(mart)
-  filtervalues <- listFilterValues(mart, filter = "biotype")
+  filtervalues <- listFilterOptions(mart, filter = "biotype")
 
   result <- getBM(
     mart = mart,

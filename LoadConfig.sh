@@ -31,9 +31,11 @@ if [[ -f $SampleInfoFile ]]; then
   while IFS=',' read -r RunID SampleID Group Layout BatchID BatchInfo Other; do
     RunID="$(echo -e "${RunID}" | tr -d '[:space:]')"
     SampleID="$(echo -e "${SampleID}" | tr -d '[:space:]')"
-    Sample_dict[$RunID]=$SampleID
-    Group_dict[$SampleID]=$Group
-    Layout_dict[$SampleID]=$Layout
+    if [[ -n "$RunID" ]]; then
+      Sample_dict[$RunID]=$SampleID
+      Group_dict[$SampleID]=$Group
+      Layout_dict[$SampleID]=$Layout
+    fi
   done < <(cat $SampleInfoFile; echo)
 
 else

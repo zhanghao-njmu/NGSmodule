@@ -20,16 +20,16 @@ DGEs_multi_compare <- as.numeric(args[8])
 script_path <- as.character(args[9])
 
 ######## example 1 ############
-# setwd("/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/NGSmodule_analysis/DifferentialExpression/")
-# maindir <- "/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/"
+# setwd("/ssd/lab/caiwenjin/RNA-seq/aging_msc/NGSmodule_analysis/DifferentialExpression")
+# maindir <- "/ssd/lab/caiwenjin/RNA-seq/aging_msc"
 # aligner <- "hisat2"
-# SampleInfoFile <- "/storage/shihongjunLab/lichenxi/zhanghao/lichenxi/temp_20230804094002.Sample_info.csv"
-# comparison <- "CFR,FR;"
+# SampleInfoFile <- "/ssd/lab/caiwenjin/RNA-seq/aging_msc/temp_20250616122220.Sample_info.csv"
+# comparison <- "ap_500,ap;ap_500,a500;ap_500,ctrl;"
 # max_padj <- 0.05
 # min_fc <- 2
 # min_count <- 10
 # DGEs_multi_compare <- 1
-# script_path <- "/home/shihongjunLab/lichenxi/Program/NGSmodule/Analysis/DifferentialExpression/DifferentialExpression.R"
+# script_path <- "/home/zhanghao/programs/NGSmodule/Analysis/DifferentialExpression/DifferentialExpression.R"
 ##############################
 
 ######### example 2 ############
@@ -52,7 +52,7 @@ source(paste0(script_dir, "/DifferentialExpression_function.R"))
 
 ##### Load data ######
 
-count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tab")
+count_file <- paste0(maindir, "/NGSmodule_analysis/Quantification/Quantification.", aligner, ".count.tsv")
 
 if (!file.exists(count_file)) {
   print(paste0("Can not find count file: ", count_file, "\nPlease run NGSmodule Quantification first!\n"))
@@ -86,7 +86,7 @@ comparison_list <- lapply(as.list(str_split(string = comparison, pattern = ";")[
 })
 comparison_list_name <- gsub(x = str_split(string = comparison, pattern = ";")[[1]], pattern = ",", replacement = "_vs_")
 names(comparison_list) <- comparison_list_name
-comparison_list <- comparison_list[comparison_list!=""]
+comparison_list <- comparison_list[comparison_list != ""]
 
 ###### START #####
 
@@ -114,7 +114,6 @@ for (compare in comparison_list) {
 
   wb <- createWorkbook(title = "NGSmodule DifferentialExpression analysis")
   if (min(length(sample1), length(sample2)) == 1) {
-
     ##### edgeR #####
     genelist <- DGEList(counts = compare_counts, group = relevel(compare_groups, ref = "Group2"))
     keep <- filterByExpr(genelist, min.count = min_count)
@@ -198,11 +197,23 @@ for (compare in comparison_list) {
         row_split = row_split, column_split = column_split,
         label = paste("edgeR:", label)
       )
+      
+      edgeR_enrichment <- enrichment(DEGs_up = edgeR_up, DEGs_down = edgeR_down, label = paste("edgeR:", label))
+      edgeR_p5 <- edgeR_enrichment[[1]]
+      sheetname <- "edgeR@enrichment"
+      addWorksheet(wb, sheetName = sheetname)
+      writeData(
+        wb = wb,
+        x = edgeR_enrichment[[2]],
+        sheet = sheetname,
+        withFilter = F
+      )
     } else {
       edgeR_p4 <- NULL
+      edgeR_p5 <- NULL
     }
-    edgeR_p5 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("edgeR:", label))
-    edgeR_p6 <- gene_test_plot(
+    edgeR_p6 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("edgeR:", label))
+    edgeR_p7 <- gene_test_plot(
       test = c(edgeR_up, edgeR_down, edgeR_nonsig), drop_low = edgeR_drop,
       annotation_matrix = annotation_matrix, label = paste("edgeR:", label)
     )
@@ -223,7 +234,6 @@ for (compare in comparison_list) {
     )
     res_plot[[paste0("general_p3-", label)]] <- general_p3
   } else {
-
     ##### edgeR #####
     genelist <- DGEList(counts = compare_counts, group = relevel(compare_groups, ref = "Group2"))
     keep <- filterByExpr(genelist, min.count = min_count)
@@ -307,17 +317,29 @@ for (compare in comparison_list) {
         row_split = row_split, column_split = column_split,
         label = paste("edgeR:", label)
       )
+      
+      edgeR_enrichment <- enrichment(DEGs_up = edgeR_up, DEGs_down = edgeR_down, label = paste("edgeR:", label))
+      edgeR_p5 <- edgeR_enrichment[[1]]
+      sheetname <- "edgeR@enrichment"
+      addWorksheet(wb, sheetName = sheetname)
+      writeData(
+        wb = wb,
+        x = edgeR_enrichment[[2]],
+        sheet = sheetname,
+        withFilter = F
+      )
     } else {
       edgeR_p4 <- NULL
+      edgeR_p5 <- NULL
     }
 
-    edgeR_p5 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("edgeR:", label))
-    edgeR_p6 <- gene_test_plot(
+    edgeR_p6 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("edgeR:", label))
+    edgeR_p7 <- gene_test_plot(
       test = c(edgeR_up, edgeR_down, edgeR_nonsig), drop_low = edgeR_drop,
       annotation_matrix = annotation_matrix, label = paste("edgeR:", label)
     )
 
-    for (i in 1:6) {
+    for (i in 1:7) {
       var_name <- paste0("edgeR_p", i)
       if (!is.null(get(var_name))) {
         res_plot[[paste0(var_name, "-", label)]] <- get(var_name)
@@ -409,17 +431,29 @@ for (compare in comparison_list) {
         row_split = row_split, column_split = column_split,
         label = paste("DESeq2:", label)
       )
+      
+      DESeq2_enrichment <- enrichment(DEGs_up = DESeq2_up, DEGs_down = DESeq2_down, label = paste("DESeq2:", label))
+      DESeq2_p6 <- DESeq2_enrichment[[1]]
+      sheetname <- "DESeq2@enrichment"
+      addWorksheet(wb, sheetName = sheetname)
+      writeData(
+        wb = wb,
+        x = DESeq2_enrichment[[2]],
+        sheet = sheetname,
+        withFilter = F
+      )
     } else {
       DESeq2_p5 <- NULL
+      DESeq2_p6 <- NULL
     }
-    DESeq2_p6 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("DESeq2:", label))
-    DESeq2_p7 <- gene_test_plot(
+    DESeq2_p7 <- pie_chart(res = res, annotation_matrix = annotation_matrix, label = paste("DESeq2:", label))
+    DESeq2_p8 <- gene_test_plot(
       test = c(DESeq2_up, DESeq2_down, DESeq2_nonsig),
       drop_low = DESeq2_drop_low, drop_outlier = DESeq2_drop_outlier,
       annotation_matrix = annotation_matrix, label = paste("DESeq2:", label)
     )
 
-    for (i in 1:7) {
+    for (i in 1:8) {
       var_name <- paste0("DESeq2_p", i)
       if (!is.null(get(var_name))) {
         res_plot[[paste0(var_name, "-", label)]] <- get(var_name)
@@ -427,6 +461,8 @@ for (compare in comparison_list) {
         next
       }
     }
+
+
 
     ##### scaling factor #####
     edgeR_sf <- setNames(object = genelist_norm$samples$norm.factors, nm = rownames(genelist_norm$samples))
@@ -517,11 +553,11 @@ for (compare in comparison_list) {
     DGEs_stat_1[(nrow(DGEs_stat_1) + 1):nrow(DGEs_stat_2), ] <- NA
     DGEs_stat <- cbind(DGEs_stat_1, DGEs_stat_2)
 
-    addWorksheet(wb, sheetName = "Stat")
+    addWorksheet(wb, sheetName = "VennStat")
     writeData(
       wb = wb,
       x = DGEs_stat,
-      sheet = "Stat",
+      sheet = "VennStat",
       withFilter = F
     )
     saveWorkbook(wb, file = paste0("./DGEs_data/DGEs@", paste0(compare, collapse = "_vs_"), ".xlsx"), overwrite = TRUE)
