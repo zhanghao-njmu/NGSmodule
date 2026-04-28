@@ -81,6 +81,22 @@ class DataDownloadService:
         self.db.add(job)
         self.db.commit()
         self.db.refresh(job)
+
+        # Hand off to Celery worker for long-running progress tailing +
+        # realtime event publishing. Best-effort: if the broker is down
+        # the row is still persisted and the API still works (clients can
+        # poll GET /jobs/:id which calls refresh_progress synchronously).
+        try:
+            from app.workers.download_tasks import watch_progress
+            watch_progress.delay(str(job.id))
+        except Exception:
+            # Worker enqueue failure is logged but doesn't fail the request.
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to enqueue watch_progress task; job will rely on sync polling",
+                exc_info=True,
+            )
+
         return job
 
     def get_by_id(self, job_id: UUID, user_id: UUID) -> Optional[DownloadJob]:

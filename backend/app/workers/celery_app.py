@@ -38,6 +38,8 @@ celery_app.conf.task_routes = {
     "admin.sync_celery_jobs": {"queue": "admin"},
     # NGS pipeline tasks
     "app.workers.pipeline_tasks.*": {"queue": "ngs_pipeline"},
+    # Vendor data downloads (long-running tail loops, IO-bound)
+    "data_downloads.*": {"queue": "default"},
 }
 
 # Configuration
