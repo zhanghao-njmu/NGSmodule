@@ -65,7 +65,7 @@ jobs:
         run: npm run build
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: frontend/dist
@@ -162,14 +162,21 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_ngsmodule
           REDIS_URL: redis://localhost:6379/0
-          SECRET_KEY: test-secret-key-for-ci
-          ALGORITHM: HS256
+          SECRET_KEY: test-secret-key-32-bytes-long-padding!!
+          JWT_SECRET_KEY: test-jwt-secret-key-32-bytes-padding!!
+          JWT_ALGORITHM: HS256
           ACCESS_TOKEN_EXPIRE_MINUTES: 30
+          MINIO_ACCESS_KEY: testaccesskey
+          MINIO_SECRET_KEY: testsecretkey
+          NGS_PIPELINE_DIR: /tmp/ngs_pipeline
+          NGS_WORK_DIR: /tmp/ngs_work
+          NGS_RESULT_DIR: /tmp/ngs_results
         run: |
+          mkdir -p /tmp/ngs_pipeline /tmp/ngs_work /tmp/ngs_results
           pytest --cov=app --cov-report=xml --cov-report=html --cov-report=term-missing -v
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./backend/coverage.xml
           flags: backend
