@@ -45,23 +45,68 @@ NGSmodule is the missing self-service layer on top.
 
 ## 🧪 Supported Pipelines
 
-Built-in templates target common NGS workflows. Each is a versioned
-`PipelineTemplate` you can clone, edit parameters on, and execute against
-any subset of samples.
+18 pipelines ship out of the box, covering the full RNA-seq, WGS/WES,
+bisulfite, and circular-RNA workflows. Each lives under
+`pipelines/core/<Name>/` as a self-contained directory with `meta.yml`
+(schema + resources), `env.yml` (conda env), `pipeline.sh` (the
+implementation), and a `tests/` fixture.
 
-| Category | Template | Tools | Typical use |
-|----------|----------|-------|-------------|
-| **Quality Control** | Pre-Alignment QC | `fastp`, `FastQC`, `Trimmomatic` | Adapter trimming, quality filtering before mapping |
-| | Post-Alignment QC | `RSeQC`, `Qualimap`, `dupRadar` | Strand specificity, duplication, coverage |
-| **Alignment** | Sequence Alignment | `BWA-MEM2`, `STAR`, `HISAT2`, `samtools` | DNA-seq / RNA-seq mapping with stats |
-| **RNA-seq** | Gene Expression Quantification | `Salmon`, `Kallisto`, `featureCounts` | TPM / counts matrices |
-| | Differential Expression | `DESeq2`, `edgeR`, `limma-voom` | Two-condition comparisons + volcano plot |
-| **DNA-seq** | GATK Germline Variant Calling | `GATK4 HaplotypeCaller`, `bcftools` | Single-sample / joint variant calling |
-| | GATK Somatic Variant Calling | `Mutect2`, `GATK4` | Tumor-normal somatic mutations |
-| | Copy Number Variation | `CNVkit` | Targeted/WES CNV |
+Pipelines are split into two scopes:
 
-> Pipelines are shell scripts under `GeneralSteps/` — fully readable, fully
-> hackable. You can register new templates without touching the backend code.
+- **`scope: sample`** — runs once per sample under FIFO concurrency
+- **`scope: project`** — runs once across the cohort (e.g. merging,
+  batch correction, differential analysis)
+
+| Scope     | Pipeline                  | Category       | Tools                                            |
+| --------- | ------------------------- | -------------- | ------------------------------------------------ |
+| sample    | `preAlignmentQC`          | QC             | fastp, FastQC                                    |
+| sample    | `Alignment`               | Alignment      | STAR / bwa-mem2 / hisat2 / bismark               |
+| sample    | `postAlignmentQC`         | QC             | RSeQC, preseq, mosdepth, goleft                  |
+| sample    | `Quantification`          | Quantification | featureCounts                                    |
+| sample    | `MethylationExtraction`   | Methylation    | bismark methylation_extractor                    |
+| sample    | `CircRNA`                 | CircRNA        | STAR (chim) + CIRCexplorer2                      |
+| sample    | `VariantCalling`          | VariantCalling | bcftools mpileup/call                            |
+| sample    | `GATK_germline_short`     | VariantCalling | GATK4 HaplotypeCaller                            |
+| sample    | `GATK_somatic_short`      | VariantCalling | GATK4 Mutect2 (tumor-only or T/N)                |
+| sample    | `GATK_CNV`                | VariantCalling | GATK4 ModelSegments (consumes PoN)               |
+| sample    | `Strelka2_germline`       | VariantCalling | Strelka2                                         |
+| sample    | `Strelka2_somatic`        | VariantCalling | Strelka2 T/N                                     |
+| project   | `MergeCounts`             | Quantification | awk merge of per-sample counts                   |
+| project   | `postQuantificationQC`    | Quantification | base-R PCA + Spearman correlation                |
+| project   | `BatchCorrection`         | Quantification | sva ComBat-seq / limma `removeBatchEffect`       |
+| project   | `DifferentialExpression`  | Quantification | edgeR (auto-uses corrected matrix when present)  |
+| project   | `DifferentialMethylation` | Methylation    | base-R CpG Welch t-test                          |
+| project   | `GATK_CNV_PoN`            | VariantCalling | GATK4 CreateReadCountPanelOfNormals              |
+
+> Run `ngsmodule list` to see them on your local install, or
+> `ngsmodule deps DifferentialExpression` to preview the full
+> dependency chain that gets resolved automatically.
+
+### CLI surface
+
+The framework ships a single dispatcher script (`./ngsmodule`) with 13
+subcommands. Most users never need to source individual `pipeline.sh`
+files directly:
+
+```bash
+ngsmodule list                                  # 18 discovered pipelines
+ngsmodule version                               # framework + module manifest
+ngsmodule deps DifferentialExpression           # what 'run' would resolve
+ngsmodule run Alignment -c project.cfg          # auto-resolves prereqs
+ngsmodule run Alignment -c project.cfg \
+  --filter '^sample_4[0-9]$'                    # ad-hoc sample subset
+ngsmodule resume Alignment -c project.cfg       # re-run failed samples only
+ngsmodule clean Alignment -c project.cfg --yes  # wipe stage from state.json
+ngsmodule status -c project.cfg                 # sample × stage grid
+ngsmodule trace sample_42 -c project.cfg        # lineage of one sample
+ngsmodule report -c project.cfg -o run.html     # self-contained HTML
+ngsmodule init MyPipe --requires Alignment      # scaffold a new pipeline
+ngsmodule lint                                  # offline schema validation
+ngsmodule test                                  # dry-run regression suite
+```
+
+Cluster execution swaps in via `--profile slurm|sge|lsf`; the same
+pipeline source runs locally or against a scheduler without code changes.
 
 ### Sample → Result data flow
 
@@ -69,20 +114,35 @@ any subset of samples.
 FASTQ (uploaded)
     │
     ▼
-┌───────────────────┐    ┌───────────────────┐    ┌───────────────────┐
-│ Pre-Alignment QC  │ →  │   Alignment       │ →  │ Post-Alignment QC │
-│ (fastp / FastQC)  │    │ (STAR / BWA-MEM2) │    │ (Qualimap, dupRadar)│
-└───────────────────┘    └───────────────────┘    └───────────────────┘
-                                   │
-                                   ├─→ RNA-seq quantification (Salmon/Kallisto)
-                                   │      └─→ Differential expression (DESeq2)
-                                   │
-                                   └─→ Variant calling (GATK)
-                                          └─→ CNV analysis (CNVkit)
+┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
+│  preAlignmentQC   │→ │     Alignment     │→ │  postAlignmentQC  │   per
+│ (fastp + FastQC)  │  │ (STAR/bwa-mem2/   │  │ (RSeQC, preseq,   │ sample
+│                   │  │  hisat2/bismark)  │  │  mosdepth, goleft)│
+└───────────────────┘  └─────────┬─────────┘  └───────────────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────────────┐
+        ▼                        ▼                                ▼
+┌─────────────────┐    ┌──────────────────┐         ┌──────────────────────┐
+│ Quantification  │    │ VariantCalling / │         │ MethylationExtraction│ per
+│ (featureCounts) │    │ GATK / Strelka2  │         │ (bismark)            │ sample
+└────────┬────────┘    │ ± GATK_CNV(+PoN) │         └──────────┬───────────┘
+         │             └──────────────────┘                    │
+         ▼                                                     ▼
+┌────────────────────────────────────┐     ┌──────────────────────────────┐
+│  MergeCounts → postQuantificationQC│     │   DifferentialMethylation    │ project
+│  → BatchCorrection                 │     │                              │ scope
+│  → DifferentialExpression          │     │                              │
+└────────────────────────────────────┘     └──────────────────────────────┘
 ```
 
-Each box becomes a `Task` in the database with its own log file, progress
-bar, and result artefacts (FASTQ, BAM, VCF, count matrices, HTML reports).
+Every box becomes a per-sample (or per-project) stage with its own
+`.state.json` recording status, timing, params, tools used, inputs, and
+outputs — surfaced in the HTML report via the `report` command.
+
+> The framework lives entirely under `pipelines/` — see
+> [`pipelines/README.md`](pipelines/README.md) for the full layout and
+> [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md) to add a new
+> pipeline (or use `ngsmodule init <Name>` for the scaffold).
 
 ---
 
@@ -108,6 +168,8 @@ API docs at <http://localhost:8000/api/v1/docs>.
 
 ### First analysis (5 minutes)
 
+**Web UI**:
+
 1. **Login** as `admin` (change the password in *Settings* immediately)
 2. *Projects* → *New Project* → "RNA-seq pilot study"
 3. *Samples* → *Import CSV* (use the template at
@@ -119,6 +181,32 @@ API docs at <http://localhost:8000/api/v1/docs>.
 6. *Tasks* → watch live progress (WebSocket, no refresh needed)
 7. *Results* → interactive Plotly QC report (per-base quality, GC content,
    duplication, adapter content)
+
+**CLI** (no web layer required):
+
+```bash
+# Edit a ConfigFile pointing at your rawdata + work dirs
+cat > project.cfg <<EOF
+work_dir=/data/work
+rawdata_dir=/data/raw
+SampleInfoFile=samples.csv
+ntask_per_run=4
+threads=8
+Aligner=STAR
+EOF
+
+# Run the entire RNA-seq chain — auto-resolves preAlignmentQC →
+# Alignment → Quantification → MergeCounts → DifferentialExpression
+ngsmodule run DifferentialExpression -c project.cfg \
+  group_a=control group_b=treatment
+
+# Watch progress
+ngsmodule status -c project.cfg            # sample × stage grid
+ngsmodule report -c project.cfg -o run.html  # browser-friendly summary
+
+# Re-run only the samples that failed
+ngsmodule resume Alignment -c project.cfg
+```
 
 ---
 
@@ -205,8 +293,17 @@ You shouldn't need to read a single line of code:
 
 If you live on the command line, NGSmodule still respects you:
 
-- **Every pipeline is a shell script** in `GeneralSteps/` — readable, forkable,
-  testable
+- **Every pipeline is a directory** under `pipelines/core/<Name>/` — a
+  `meta.yml` (typed schema + cluster resources + deps), `env.yml` (conda),
+  `pipeline.sh` (one bash function per scope). Readable, forkable, testable.
+- **`ngsmodule` CLI** with 13 subcommands — `run`/`resume`/`clean`/`deps`/
+  `init`/`lint`/`test`/etc. — covers the full dev → production loop
+  without the web layer. See the [CLI surface](#cli-surface) above.
+- **Reusable tool modules** under `pipelines/modules/<tool>.sh` — each
+  binary (STAR, GATK4, bcftools, …) wrapped once, composed by every
+  pipeline that needs it. Auto-tracks tool usage for the report.
+- **Cluster execution** via `--profile slurm|sge|lsf` — same pipeline,
+  no code changes; resources come from `meta.yml`.
 - **Pipeline templates are JSON-defined** parameter schemas in
   `init_pipeline_templates.py`; add new ones without touching Python
 - **Full REST API** at `/api/v1/docs` — automate the entire UI, including
@@ -319,6 +416,10 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 
 | Layer | Coverage |
 |-------|----------|
+| Pipeline framework | 18 pipelines · 18 tool modules · 4 cluster profiles |
+| Pipeline lint | 18/18 clean |
+| Pipeline regression (dry-run) | 18/18 passing |
+| Pipeline CI | 6 unit-level regressions for known latent bugs |
 | Backend API | 146 routes across 14 modules |
 | Backend tests | 33/33 passing |
 | Frontend pages | 18 pages, all on TanStack Query |
@@ -332,12 +433,22 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 
 ## 📚 Documentation
 
+**Pipeline framework:**
+
+- [`pipelines/README.md`](pipelines/README.md) — full layout + 18-pipeline catalogue + CLI cheatsheet
+- [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md) — step-by-step guide to writing a new pipeline (or porting a legacy one)
+
+**Deployment & operations:**
+
 - [Multi-Replica Deployment Guide](docs/deployment/MULTI_REPLICA.md)
-- [Frontend-Backend Integration Report](docs/development/FRONTEND_BACKEND_INTEGRATION_REPORT.md)
 - [Production Deployment](docs/deployment/PRODUCTION.md)
 - [Security Best Practices](docs/deployment/SECURITY.md)
-- [API Test Collection](docs/api/TEST_COLLECTION.md)
 - [Monitoring & Logging Guide](docs/deployment/MONITORING.md)
+
+**API + integration:**
+
+- [Frontend-Backend Integration Report](docs/development/FRONTEND_BACKEND_INTEGRATION_REPORT.md)
+- [API Test Collection](docs/api/TEST_COLLECTION.md)
 - Live API docs: <http://localhost:8000/api/v1/docs>
 
 ---
@@ -347,8 +458,9 @@ manifests covering `Deployment`, `Service`, `HorizontalPodAutoscaler`, and
 NGSmodule is built primarily as a self-hosted tool, but contributions are
 welcome. Common areas:
 
-- **New pipeline templates** — drop a shell script into `GeneralSteps/`,
-  register it in `init_pipeline_templates.py`
+- **New pipelines** — `ngsmodule init <Name>` scaffolds a working pipeline
+  under `pipelines/core/`; see [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md)
+  for the full pattern
 - **Additional AI providers** — implement `AIProvider` from
   `app/services/ai_providers/base.py`
 - **Bioinformatics-specific visualizations** — Plotly volcano/Manhattan/heatmap
