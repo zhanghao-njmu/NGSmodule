@@ -1,0 +1,49 @@
+# NGSmodule Backend - production dependencies
+#
+# Source of truth for prod deps. Edit this file, then run:
+#   pip-compile --output-file=requirements.txt requirements.in
+#
+# Lower bounds reflect minimum versions known to fix security advisories
+# (see GitHub dependabot history). Upper bounds avoid silently upgrading
+# across major versions which may introduce breaking changes.
+
+# Web framework
+fastapi>=0.109,<1
+uvicorn[standard]>=0.27
+pydantic[email]>=2.5,<3
+pydantic-settings>=2.1,<3
+python-multipart>=0.0.27  # security: AFW + ReDoS fixes
+
+# Database
+sqlalchemy>=2.0,<3
+alembic>=1.13
+psycopg2-binary>=2.9.12   # Python 3.13 wheel
+asyncpg>=0.30             # Python 3.13 wheel
+
+# Authentication
+python-jose[cryptography]>=3.5  # security: ECDSA confusion fix
+passlib[bcrypt]>=1.7
+bcrypt>=4.1
+
+# Task queue
+celery>=5.3,<6
+redis>=5.0
+
+# Storage
+boto3>=1.34
+minio>=7.2
+
+# Utilities
+python-dotenv>=1.2.2  # security: symlink AFW fix
+aiofiles>=23.2
+httpx>=0.26
+slowapi>=0.1.9
+psutil>=5.9
+
+# Observability
+sentry-sdk[fastapi,celery,sqlalchemy]>=1.45.1  # security
+prometheus-fastapi-instrumentator>=6.1
+
+# AI providers (optional — uncomment what you use)
+anthropic>=0.18; python_version >= "3.8"
+# openai>=1.12

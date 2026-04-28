@@ -46,12 +46,15 @@
 ## 安装
 
 ```bash
-# 安装测试依赖
-pip install -r requirements-test.txt
+# 装 dev 依赖（含测试 + lint + format + 类型检查工具）
+pip install -r ../requirements-dev.txt
 
-# 或者使用主requirements.txt（包含测试依赖）
+# 或仅 prod 依赖（不含测试工具）
 pip install -r ../requirements.txt
 ```
+
+依赖管理由 pip-compile 维护，编辑 `../requirements.in` / `../requirements-dev.in`
+后跑 `pip-compile` 重新生成 lock 文件。
 
 ## 运行测试
 
