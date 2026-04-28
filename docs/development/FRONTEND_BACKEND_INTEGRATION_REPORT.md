@@ -496,7 +496,7 @@ curl http://localhost:8000/api/v1/openapi.json > ngsmodule_api.json
 ```
 
 ### 2. 自动化测试脚本
-参考 `test-integration.sh` 文件
+参考 `test-api-integration.sh` 文件
 
 ### 3. 浏览器开发者工具
 - Network 标签页监控 API 调用
