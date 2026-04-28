@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     NGS_WORK_DIR: str = "/data/ngsmodule_work"
     NGS_RESULT_DIR: str = "/data/ngsmodule_results"
 
+    # Vendor data-download CLIs
+    LC_BIO_BIN_DIR: str = "/home/zhanghao/programs/lcbio/linux_download/bin"
+
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: Optional[str] = None

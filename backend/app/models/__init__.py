@@ -12,6 +12,7 @@ from app.models.audit_log import AuditLog
 from app.models.alert import SystemAlert
 from app.models.system_job import SystemJob
 from app.models.backup import SystemBackup
+from app.models.data_download import DownloadJob
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "SystemAlert",
     "SystemJob",
     "SystemBackup",
+    "DownloadJob",
 ]
