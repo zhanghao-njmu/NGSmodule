@@ -13,7 +13,7 @@
 
 name: preAlignmentQC
 display_name: Pre-Alignment Quality Control
-category: Quality Control
+category: QC
 version: 1.0.0
 description: >
   Adapter trimming and quality filtering of raw FASTQ reads before alignment.

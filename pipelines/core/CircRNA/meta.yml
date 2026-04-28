@@ -1,6 +1,6 @@
 name: CircRNA
 display_name: Circular RNA Detection (CIRCexplorer2)
-category: Quantification
+category: CircRNA
 version: 1.0.0
 description: >
   Per-sample circular-RNA detection using CIRCexplorer2 against STAR's

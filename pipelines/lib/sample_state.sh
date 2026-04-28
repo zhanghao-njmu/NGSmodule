@@ -73,6 +73,12 @@ ngs_state_init() {
   mkdir -p "$(dirname "$file")"
 
   if [[ ! -f "$file" ]]; then
+    # Write atomically (mktemp + mv) so two concurrent ngs_state_init
+    # calls for the same sample (e.g. parallel prereq resolution) can't
+    # leave a partially-written .state.json. If we lose the rename race,
+    # the other process's file wins — both contain identical seed JSON.
+    local tmp
+    tmp="$(mktemp "$file.XXXXXX")"
     if ngs_has_jq; then
       jq -n \
         --arg sid "$sample" \
@@ -81,14 +87,19 @@ ngs_state_init() {
         --arg group "${Group_dict[$sample]:-}" \
         --arg batch "${Batch_dict[$sample]:-}" \
         '{sample_id:$sid, created_at:$ts, layout:$layout, group:$group, batch:$batch, stages:{}}' \
-        > "$file"
+        > "$tmp"
     else
       printf '{"sample_id":"%s","created_at":"%s","layout":"%s","group":"%s","batch":"%s","stages":{}}\n' \
         "$sample" "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
         "${Layout_dict[$sample]:-}" \
         "${Group_dict[$sample]:-}" \
         "${Batch_dict[$sample]:-}" \
-        > "$file"
+        > "$tmp"
+    fi
+    # `mv -n` (no-clobber) is the cleanest atomic claim: if a sibling
+    # raced ahead, our seed file is dropped and theirs wins.
+    if ! mv -n "$tmp" "$file" 2>/dev/null; then
+      rm -f "$tmp"
     fi
   fi
 }
