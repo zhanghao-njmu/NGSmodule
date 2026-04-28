@@ -42,10 +42,7 @@ class TaskResponse(TaskBase):
     log_file_path: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class TaskListResponse(BaseModel):
     """Schema for task list response"""
     total: int

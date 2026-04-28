@@ -118,7 +118,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """Handle FastAPI request validation errors"""
     logger.warning(f"Validation error: {exc.errors()}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "error": "Validation error",
             "detail": exc.errors(),
@@ -132,7 +132,7 @@ async def pydantic_validation_error_handler(request: Request, exc: ValidationErr
     """Handle Pydantic validation errors"""
     logger.warning(f"Pydantic validation error: {exc.errors()}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "error": "Validation error",
             "detail": exc.errors(),

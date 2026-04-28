@@ -74,10 +74,7 @@ class DownloadJobResponse(BaseModel):
     created_at: datetime
     project_id: Optional[UUID] = None  # set when auto_register triggered
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class DownloadJobListResponse(BaseModel):
     total: int
     items: list[DownloadJobResponse]

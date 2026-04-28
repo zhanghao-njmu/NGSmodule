@@ -46,10 +46,7 @@ class UserResponse(UserBase):
     storage_used: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class Token(BaseModel):
     """Schema for authentication token"""
     access_token: str

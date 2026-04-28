@@ -44,10 +44,7 @@ class ProjectResponse(ProjectBase):
     sample_count: Optional[int] = None
     task_count: Optional[int] = None
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class ProjectListResponse(BaseModel):
     """Schema for project list response"""
     total: int

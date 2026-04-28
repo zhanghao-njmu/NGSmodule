@@ -49,9 +49,7 @@ class SampleResponse(SampleBase):
     # Computed fields
     file_count: Optional[int] = None
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class SampleListResponse(BaseModel):

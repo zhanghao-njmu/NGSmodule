@@ -51,10 +51,7 @@ class PipelineTemplateResponse(PipelineTemplateBase):
     is_active: bool
     is_builtin: bool
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class PipelineTemplateListResponse(BaseModel):
     """Schema for pipeline template list response"""
     total: int

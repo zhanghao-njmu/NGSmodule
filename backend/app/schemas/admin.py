@@ -1,7 +1,7 @@
 """
 Admin schemas for user management, system configuration, and logs
 """
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from enum import Enum
@@ -40,10 +40,7 @@ class AdminUserList(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class AdminUserDetail(AdminUserList):
     """Detailed user information for admin"""
     total_projects: int = 0
@@ -71,7 +68,8 @@ class UserUpdateRequest(BaseModel):
     organization: Optional[str] = Field(None, max_length=100)
     storage_quota: Optional[int] = Field(None, gt=0)
 
-    @validator('username')
+    @field_validator('username')
+    @classmethod
     def validate_username(cls, v):
         if v and not v.replace('_', '').replace('-', '').isalnum():
             raise ValueError('Username must contain only letters, numbers, underscores, and hyphens')
@@ -94,7 +92,8 @@ class PasswordResetRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=100)
     notify_user: bool = True  # Send email notification to user
 
-    @validator('new_password')
+    @field_validator('new_password')
+    @classmethod
     def validate_password(cls, v):
         if not any(c.isupper() for c in v):
             raise ValueError('Password must contain at least one uppercase letter')

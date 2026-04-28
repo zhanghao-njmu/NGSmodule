@@ -152,8 +152,7 @@ class BatchQCRequest(BaseModel):
     """Batch QC request"""
     sampleIds: List[str] = Field(..., alias="sampleIds", min_length=1)
 
-    class Config:
-        populate_by_name = True
+    model_config = {"populate_by_name": True}
 
 
 class QCIssuePrediction(BaseModel):
@@ -357,8 +356,7 @@ class ResourcePredictionRequest(BaseModel):
     dataSize: int
     parameters: Optional[Dict[str, Any]] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = {"populate_by_name": True}
 
 
 class ResourcePrediction(BaseModel):

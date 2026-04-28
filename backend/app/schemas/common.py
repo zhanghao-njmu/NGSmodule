@@ -40,9 +40,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page_size: int = Field(..., description="Number of items per page")
     has_more: bool = Field(False, description="Whether there are more pages")
 
-    class Config:
-        from_attributes = True
-
+    model_config = {"from_attributes": True}
     @classmethod
     def create(cls, items: List[T], total: int, page: int, page_size: int):
         """

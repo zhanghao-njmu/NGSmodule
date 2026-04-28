@@ -9,7 +9,7 @@ from uuid import UUID
 
 class NotificationBase(BaseModel):
     """Base notification schema"""
-    type: str = Field(..., description="Notification type", example="info")
+    type: str = Field(..., description="Notification type", json_schema_extra={"example": "info"})
     title: str = Field(..., max_length=255, description="Notification title")
     message: str = Field(..., description="Notification message")
     data: Optional[Dict[str, Any]] = Field(None, description="Additional data")
@@ -40,10 +40,7 @@ class NotificationInDB(NotificationBase):
     created_at: datetime
     read_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class Notification(NotificationInDB):
     """Schema for notification API response"""
     pass
@@ -95,10 +92,7 @@ class NotificationSettingsInDB(NotificationSettingsBase):
     user_id: UUID
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = {"from_attributes": True}
 class NotificationSettings(NotificationSettingsInDB):
     """Schema for notification settings API response"""
     pass
