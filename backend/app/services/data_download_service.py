@@ -54,6 +54,8 @@ class DataDownloadService:
         vendor: str,
         source_path: str,
         dest_path: str,
+        auto_register: bool = False,
+        project_name: Optional[str] = None,
     ) -> DownloadJob:
         """Persist a job and start the download. Returns the row.
 
@@ -77,6 +79,8 @@ class DataDownloadService:
             log_path=str(log_path),
             status="running",
             started_at=utc_now_naive(),
+            auto_register="true" if auto_register else "false",
+            project_name_hint=project_name,
         )
         self.db.add(job)
         self.db.commit()

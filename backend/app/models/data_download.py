@@ -45,7 +45,14 @@ class DownloadJob(Base):
     finished_at = Column(DateTime)
     created_at = Column(DateTime, default=utc_now_naive, nullable=False)
 
+    # Phase 5: optional auto-registration of the delivered tarball as an
+    # NGSmodule project once download finishes.
+    auto_register = Column("auto_register", String(8))  # "true"/"false"; nullable for backward compat
+    project_name_hint = Column(String(100))  # user-supplied project name override
+    project_id = Column(UUID(), ForeignKey("projects.id", ondelete="SET NULL"))
+
     user = relationship("User")
+    project = relationship("Project")
 
     def __repr__(self):
         return f"<DownloadJob {self.vendor}:{self.source_path} status={self.status}>"

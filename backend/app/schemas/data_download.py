@@ -34,6 +34,19 @@ class DownloadJobCreate(BaseModel):
     vendor: str = Field(..., description="Vendor id, see /data-downloads/vendors")
     source_path: str = Field(..., min_length=1, description="Vendor-side path; for lcbio this is the obs_path copied from web UI")
     dest_path: str = Field(..., min_length=1, description="Local destination directory")
+    auto_register: bool = Field(
+        default=False,
+        description="If true and the delivery is a tar archive, the worker will "
+                    "extract it on completion and create an NGSmodule Project "
+                    "scaffold pointing at the extracted files (samples are NOT "
+                    "auto-created; user reviews them via UI).",
+    )
+    project_name: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Project name when auto_register is true. If omitted, "
+                    "derived from the first segment of source_path.",
+    )
 
 
 class DownloadJobResponse(BaseModel):
@@ -51,6 +64,7 @@ class DownloadJobResponse(BaseModel):
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     created_at: datetime
+    project_id: Optional[UUID] = None  # set when auto_register triggered
 
     class Config:
         from_attributes = True

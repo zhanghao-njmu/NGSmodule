@@ -149,10 +149,104 @@ def watch_progress(self, job_id: str) -> dict:
 
 
 def _maybe_post_download_hook(db, job: DownloadJob) -> None:
-    """Hook for Phase 5 (auto-extract + register as NGSmodule project).
+    """If `auto_register` was set when the job was created, untar the
+    delivery archive into `dest_path/extracted/` and create an NGSmodule
+    Project pointing at it. Samples are NOT auto-created — naming is
+    vendor-specific, so we leave that for the user to review in the UI.
 
-    In Phase 2 this is a noop so the worker doesn't yet depend on
-    project_service / sample_service. Phase 5 will replace it with
-    untar + Project/Sample creation; signature is kept stable.
+    Best-effort: any failure is logged + recorded in error_message but
+    doesn't change the job's terminal status (it's already "completed"
+    by the caller before this hook runs).
     """
-    _ = (db, job)  # silence unused-warning until Phase 5
+    if (job.auto_register or "").lower() != "true":
+        return
+
+    import tarfile
+    from pathlib import Path
+    from app.schemas.project import ProjectCreate
+    from app.services.project_service import ProjectService
+
+    dest = Path(job.dest_path)
+    archive = _find_archive(dest, basename=job.source_path.rstrip("/").split("/")[-1])
+    if archive is None:
+        logger.info(f"job {job.id}: no tar archive found in {dest}; skipping registration")
+        return
+
+    extract_dir = dest / "extracted"
+    extract_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        with tarfile.open(archive, "r:*") as tf:
+            # Refuse anything that escapes the target dir (path traversal guard)
+            for m in tf.getmembers():
+                if m.name.startswith("/") or ".." in Path(m.name).parts:
+                    raise ValueError(f"unsafe archive entry: {m.name!r}")
+            tf.extractall(extract_dir)
+    except (tarfile.TarError, ValueError, OSError) as exc:
+        msg = f"auto-extract failed: {exc}"
+        logger.warning(f"job {job.id}: {msg}")
+        job.error_message = (job.error_message or "") + f" | {msg}"
+        db.commit()
+        return
+
+    # Pick a project name: user override → first segment of source_path → archive stem
+    name = (
+        job.project_name_hint
+        or job.source_path.split("/", 1)[0]
+        or archive.stem
+    )[:100]
+
+    try:
+        svc = ProjectService(db)
+        project = svc.create(
+            user_id=job.user_id,
+            project_data=ProjectCreate(
+                name=name,
+                description=f"Auto-created from {job.vendor} download {job.source_path!r}",
+                project_type=None,  # user picks type later via UI
+                config={
+                    "source": job.vendor,
+                    "source_path": job.source_path,
+                    "extracted_path": str(extract_dir),
+                    "fastq_inventory": _inventory_fastqs(extract_dir),
+                    "auto_registered_from_download": str(job.id),
+                },
+            ),
+        )
+        job.project_id = project.id
+        db.commit()
+        logger.info(f"job {job.id}: registered project {project.id} ({project.name})")
+    except Exception as exc:
+        # ProjectService raises HTTPException for validation errors; we
+        # surface them to the user via error_message but don't fail the
+        # job (download itself succeeded).
+        msg = f"project auto-register failed: {exc}"
+        logger.warning(f"job {job.id}: {msg}")
+        job.error_message = (job.error_message or "") + f" | {msg}"
+        db.commit()
+
+
+def _find_archive(dest: Path, basename: str) -> Optional[Path]:
+    """Return the most-recently-modified tar archive matching the delivery."""
+    # Prefer exact basename (e.g. Data.tar) if present, otherwise any tar in dest
+    exact = dest / basename
+    if exact.exists() and exact.is_file():
+        return exact
+    candidates = list(dest.glob("*.tar")) + list(dest.glob("*.tar.gz")) + list(dest.glob("*.tgz"))
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
+def _inventory_fastqs(root: Path, limit: int = 1000) -> list[str]:
+    """Collect fastq filenames so the user can review samples in the UI.
+
+    Capped at `limit` to keep the JSONB column small even on jumbo deliveries.
+    """
+    patterns = ("*.fastq.gz", "*.fq.gz", "*.fastq", "*.fq")
+    found: list[str] = []
+    for pat in patterns:
+        for p in root.rglob(pat):
+            found.append(str(p.relative_to(root)))
+            if len(found) >= limit:
+                return found
+    return found

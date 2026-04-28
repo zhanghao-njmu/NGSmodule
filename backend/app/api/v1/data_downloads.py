@@ -87,6 +87,8 @@ async def create_job(
         vendor=payload.vendor,
         source_path=payload.source_path,
         dest_path=payload.dest_path,
+        auto_register=payload.auto_register,
+        project_name=payload.project_name,
     )
     return job
 

@@ -5,11 +5,12 @@ from typing import Dict, Type
 
 from app.services.data_provider.base import DataProviderBase
 from app.services.data_provider.lc_bio import LcBioProvider
+from app.services.data_provider.novogene import NovogeneProvider
 
 
 _REGISTRY: Dict[str, Type[DataProviderBase]] = {
     "lc_bio": LcBioProvider,
-    # "novogene": NovogeneProvider,   # Phase 6
+    "novogene": NovogeneProvider,  # stub — see novogene.py
 }
 
 
