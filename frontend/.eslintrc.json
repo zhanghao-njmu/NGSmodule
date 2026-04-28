@@ -10,7 +10,8 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:react/jsx-runtime"
+    "plugin:react/jsx-runtime",
+    "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -21,12 +22,7 @@
     },
     "project": "./tsconfig.json"
   },
-  "plugins": [
-    "@typescript-eslint",
-    "react",
-    "react-hooks",
-    "react-refresh"
-  ],
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "react-refresh"],
   "settings": {
     "react": {
       "version": "detect"
@@ -88,53 +84,7 @@
     "prefer-const": "warn",
     "no-var": "error",
     "eqeqeq": ["error", "always"],
-    "curly": ["error", "all"],
-    "brace-style": ["error", "1tbs"],
-    "quotes": [
-      "error",
-      "single",
-      {
-        "avoidEscape": true,
-        "allowTemplateLiterals": true
-      }
-    ],
-    "semi": ["error", "never"],
-    "comma-dangle": ["error", "always-multiline"],
-    "arrow-parens": ["error", "always"],
-    "object-curly-spacing": ["error", "always"],
-    "array-bracket-spacing": ["error", "never"],
-    "indent": [
-      "error",
-      2,
-      {
-        "SwitchCase": 1
-      }
-    ],
-    "linebreak-style": ["error", "unix"],
-    "max-len": [
-      "warn",
-      {
-        "code": 120,
-        "ignoreStrings": true,
-        "ignoreTemplateLiterals": true,
-        "ignoreComments": true
-      }
-    ],
-    "no-trailing-spaces": "error",
-    "no-multiple-empty-lines": [
-      "error",
-      {
-        "max": 1,
-        "maxEOF": 0
-      }
-    ],
-    "eol-last": ["error", "always"]
+    "curly": ["error", "all"]
   },
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    "*.config.js",
-    "*.config.ts",
-    "coverage"
-  ]
+  "ignorePatterns": ["dist", "node_modules", "*.config.js", "*.config.ts", "coverage"]
 }

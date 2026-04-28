@@ -14,7 +14,9 @@
 .statCard {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .statCard:hover {

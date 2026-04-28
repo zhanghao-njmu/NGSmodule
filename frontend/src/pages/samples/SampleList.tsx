@@ -166,10 +166,7 @@ export const SampleList: React.FC = () => {
     [samples],
   )
 
-  const totalFiles = useMemo(
-    () => samples.reduce((sum, sample) => sum + (sample.file_count || 0), 0),
-    [samples],
-  )
+  const totalFiles = useMemo(() => samples.reduce((sum, sample) => sum + (sample.file_count || 0), 0), [samples])
 
   // ---- handlers ------------------------------------------------------------
 
@@ -296,8 +293,7 @@ export const SampleList: React.FC = () => {
       dataIndex: 'layout',
       key: 'layout',
       width: 100,
-      render: (layout) =>
-        layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-',
+      render: (layout) => (layout ? <Tag color={layout === 'PE' ? 'purple' : 'orange'}>{layout}</Tag> : '-'),
     },
     {
       title: 'Batch',
@@ -440,20 +436,11 @@ export const SampleList: React.FC = () => {
           right={
             <>
               <Upload beforeUpload={handleCSVImport} accept=".csv" showUploadList={false}>
-                <Button
-                  icon={<UploadOutlined />}
-                  disabled={!selectedProject}
-                  loading={importMutation.isPending}
-                >
+                <Button icon={<UploadOutlined />} disabled={!selectedProject} loading={importMutation.isPending}>
                   Import CSV
                 </Button>
               </Upload>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => showModal()}
-                disabled={!selectedProject}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()} disabled={!selectedProject}>
                 New Sample
               </Button>
             </>
@@ -472,11 +459,7 @@ export const SampleList: React.FC = () => {
           />
         ) : filteredSamples.length === 0 && !isFetching ? (
           <EnhancedEmptyState
-            type={
-              filters.search || filters.group !== 'all' || filters.layout !== 'all'
-                ? 'noSearchResults'
-                : 'noData'
-            }
+            type={filters.search || filters.group !== 'all' || filters.layout !== 'all' ? 'noSearchResults' : 'noData'}
             title={
               filters.search || filters.group !== 'all' || filters.layout !== 'all'
                 ? 'No matching samples'
@@ -518,11 +501,7 @@ export const SampleList: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="sample_id"
-            label="Sample ID"
-            rules={[{ required: true, message: 'Please enter sample ID' }]}
-          >
+          <Form.Item name="sample_id" label="Sample ID" rules={[{ required: true, message: 'Please enter sample ID' }]}>
             <Input placeholder="e.g., Sample001" />
           </Form.Item>
 

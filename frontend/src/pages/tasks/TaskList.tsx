@@ -26,13 +26,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 
-import {
-  useTaskList,
-  useTaskStatsSummary,
-  useCancelTask,
-  useTaskLogs,
-  useProjectList,
-} from '@/hooks/queries'
+import { useTaskList, useTaskStatsSummary, useCancelTask, useTaskLogs, useProjectList } from '@/hooks/queries'
 import {
   PageHeader,
   DataTable,
@@ -66,21 +60,14 @@ export const TaskList: React.FC = () => {
 
   // Task list — query key changes when filter changes, so refetch is automatic
   const taskListParams = selectedProject ? { project_id: selectedProject } : {}
-  const { data: taskListData, isLoading: tasksLoading, isFetching: tasksFetching } = useTaskList(
-    taskListParams,
-  )
-  const tasks: Task[] = useMemo(
-    () => (taskListData as any)?.items ?? (taskListData as any) ?? [],
-    [taskListData],
-  )
+  const { data: taskListData, isLoading: tasksLoading, isFetching: tasksFetching } = useTaskList(taskListParams)
+  const tasks: Task[] = useMemo(() => (taskListData as any)?.items ?? (taskListData as any) ?? [], [taskListData])
 
   // Stats — kept fresh by realtime invalidation when tasks finish
   const { data: stats } = useTaskStatsSummary(selectedProject ? { project_id: selectedProject } : undefined)
 
   // Logs — only fetched while the drawer is open (enabled via taskId)
-  const { data: logsResponse, isLoading: loadingLogs } = useTaskLogs(
-    logDrawerVisible ? currentTask?.id : undefined,
-  )
+  const { data: logsResponse, isLoading: loadingLogs } = useTaskLogs(logDrawerVisible ? currentTask?.id : undefined)
   const taskLogs = (logsResponse as any)?.log_content || ''
 
   // ---- mutations -----------------------------------------------------------
@@ -148,11 +135,7 @@ export const TaskList: React.FC = () => {
       key: 'progress',
       width: 150,
       render: (progress) => (
-        <Progress
-          percent={Math.round(progress)}
-          size="small"
-          status={progress === 100 ? 'success' : 'active'}
-        />
+        <Progress percent={Math.round(progress)} size="small" status={progress === 100 ? 'success' : 'active'} />
       ),
     },
     {
@@ -362,10 +345,7 @@ export const TaskList: React.FC = () => {
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <div>
               <Text type="secondary">Task ID: </Text>
-              <Text
-                copyable={{ text: currentTask?.id || '' }}
-                style={{ fontFamily: 'monospace', fontSize: 12 }}
-              >
+              <Text copyable={{ text: currentTask?.id || '' }} style={{ fontFamily: 'monospace', fontSize: 12 }}>
                 {currentTask?.id}
               </Text>
             </div>

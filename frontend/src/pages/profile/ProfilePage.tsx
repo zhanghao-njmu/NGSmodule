@@ -38,13 +38,7 @@ import {
 import { authStore } from '@/store/authStore'
 import { PageHeader, StatisticCard } from '@/components/common'
 import { DesignTokens } from '@/styles/design-tokens'
-import {
-  useUserStats,
-  useUserActivity,
-  useUpdateProfile,
-  useChangePassword,
-  useUploadAvatar,
-} from '@/hooks/queries'
+import { useUserStats, useUserActivity, useUpdateProfile, useChangePassword, useUploadAvatar } from '@/hooks/queries'
 import type { UserStats, UserActivity } from '@/services/user.service'
 import { logger } from '@/utils/logger'
 import './ProfilePage.css'
@@ -74,10 +68,7 @@ export const ProfilePage: React.FC = () => {
   const updateProfileMutation = useUpdateProfile()
   const changePasswordMutation = useChangePassword()
   const uploadAvatarMutation = useUploadAvatar()
-  const loading =
-    updateProfileMutation.isPending ||
-    changePasswordMutation.isPending ||
-    uploadAvatarMutation.isPending
+  const loading = updateProfileMutation.isPending || changePasswordMutation.isPending || uploadAvatarMutation.isPending
 
   const handleEditProfile = async (values: any) => {
     try {

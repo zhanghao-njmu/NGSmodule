@@ -43,8 +43,7 @@ export function useProjectInsights(projectId: string | undefined) {
 export function useCreateAIConversation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ title, context }: { title: string; context?: any }) =>
-      aiService.createConversation(title, context),
+    mutationFn: ({ title, context }: { title: string; context?: any }) => aiService.createConversation(title, context),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.ai.conversations })
     },
@@ -54,15 +53,8 @@ export function useCreateAIConversation() {
 export function useSendAIMessage() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      conversationId,
-      message,
-      context,
-    }: {
-      conversationId: string
-      message: string
-      context?: any
-    }) => aiService.sendAssistantMessage(conversationId, message, context),
+    mutationFn: ({ conversationId, message, context }: { conversationId: string; message: string; context?: any }) =>
+      aiService.sendAssistantMessage(conversationId, message, context),
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.ai.conversation(conversationId) })
     },

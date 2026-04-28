@@ -4,14 +4,7 @@
 
 export type NotificationType = 'success' | 'info' | 'warning' | 'error'
 
-export type NotificationCategory =
-  | 'pipeline'
-  | 'task'
-  | 'system'
-  | 'security'
-  | 'project'
-  | 'sample'
-  | 'result'
+export type NotificationCategory = 'pipeline' | 'task' | 'system' | 'security' | 'project' | 'sample' | 'result'
 
 export interface Notification {
   id: string

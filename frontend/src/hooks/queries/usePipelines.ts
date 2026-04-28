@@ -56,10 +56,7 @@ export function useBatchExecutePipeline() {
   })
 }
 
-export function usePipelineParameterRecommendations(
-  templateId: string | undefined,
-  params?: any,
-) {
+export function usePipelineParameterRecommendations(templateId: string | undefined, params?: any) {
   return useQuery({
     queryKey: [...queryKeys.pipelines.all, 'recommendations', templateId, params],
     queryFn: () => pipelineService.getParameterRecommendations(templateId as string, params),

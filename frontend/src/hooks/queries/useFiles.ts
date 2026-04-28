@@ -52,11 +52,8 @@ export function useUploadFile() {
 export function useBatchUploadFiles() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (params: {
-      sampleId: string
-      files: File[]
-      onProgress?: (p: number) => void
-    }) => fileService.batchUpload(params.sampleId, params.files, params.onProgress),
+    mutationFn: (params: { sampleId: string; files: File[]; onProgress?: (p: number) => void }) =>
+      fileService.batchUpload(params.sampleId, params.files, params.onProgress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.stats.storage })

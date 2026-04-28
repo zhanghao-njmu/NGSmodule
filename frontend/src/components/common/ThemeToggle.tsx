@@ -25,25 +25,16 @@ interface ThemeToggleProps {
  * // With text
  * <ThemeToggle mode="full" />
  */
-export const ThemeToggle: React.FC<ThemeToggleProps> = ({
-  mode = 'icon',
-  size = 'default',
-}) => {
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({ mode = 'icon', size = 'default' }) => {
   const { isDark, toggleMode } = useTheme()
 
   if (mode === 'icon') {
     return (
       <div className="theme-toggle-icon" onClick={toggleMode}>
         {isDark ? (
-          <BulbFilled
-            className="theme-icon theme-icon-dark"
-            style={{ fontSize: size === 'small' ? 18 : 20 }}
-          />
+          <BulbFilled className="theme-icon theme-icon-dark" style={{ fontSize: size === 'small' ? 18 : 20 }} />
         ) : (
-          <BulbOutlined
-            className="theme-icon theme-icon-light"
-            style={{ fontSize: size === 'small' ? 18 : 20 }}
-          />
+          <BulbOutlined className="theme-icon theme-icon-light" style={{ fontSize: size === 'small' ? 18 : 20 }} />
         )}
       </div>
     )
@@ -53,13 +44,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     <div className="theme-toggle-full">
       <BulbOutlined className="theme-icon-inline" />
       <span className="theme-label">深色模式</span>
-      <Switch
-        checked={isDark}
-        onChange={toggleMode}
-        size={size}
-        checkedChildren="开"
-        unCheckedChildren="关"
-      />
+      <Switch checked={isDark} onChange={toggleMode} size={size} checkedChildren="开" unCheckedChildren="关" />
     </div>
   )
 }

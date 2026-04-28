@@ -136,7 +136,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -145,7 +146,11 @@
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -201,12 +206,7 @@
 }
 
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 0%,
-    var(--bg-hover) 50%,
-    var(--bg-secondary) 100%
-  );
+  background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-hover) 50%, var(--bg-secondary) 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
@@ -262,16 +262,36 @@
    Stagger Delays
    ================= */
 
-.stagger-item-1 { animation-delay: 0.05s; }
-.stagger-item-2 { animation-delay: 0.1s; }
-.stagger-item-3 { animation-delay: 0.15s; }
-.stagger-item-4 { animation-delay: 0.2s; }
-.stagger-item-5 { animation-delay: 0.25s; }
-.stagger-item-6 { animation-delay: 0.3s; }
-.stagger-item-7 { animation-delay: 0.35s; }
-.stagger-item-8 { animation-delay: 0.4s; }
-.stagger-item-9 { animation-delay: 0.45s; }
-.stagger-item-10 { animation-delay: 0.5s; }
+.stagger-item-1 {
+  animation-delay: 0.05s;
+}
+.stagger-item-2 {
+  animation-delay: 0.1s;
+}
+.stagger-item-3 {
+  animation-delay: 0.15s;
+}
+.stagger-item-4 {
+  animation-delay: 0.2s;
+}
+.stagger-item-5 {
+  animation-delay: 0.25s;
+}
+.stagger-item-6 {
+  animation-delay: 0.3s;
+}
+.stagger-item-7 {
+  animation-delay: 0.35s;
+}
+.stagger-item-8 {
+  animation-delay: 0.4s;
+}
+.stagger-item-9 {
+  animation-delay: 0.45s;
+}
+.stagger-item-10 {
+  animation-delay: 0.5s;
+}
 
 /* =================
    Hover Effects
@@ -315,12 +335,7 @@
    ================= */
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 0%,
-    var(--bg-hover) 50%,
-    var(--bg-secondary) 100%
-  );
+  background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-hover) 50%, var(--bg-secondary) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-md);
@@ -360,7 +375,9 @@
 }
 
 .transition-colors {
-  transition: color var(--transition-base), background-color var(--transition-base),
+  transition:
+    color var(--transition-base),
+    background-color var(--transition-base),
     border-color var(--transition-base);
 }
 
@@ -384,7 +401,9 @@
 .page-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
 }
 
 .page-exit {
@@ -470,7 +489,9 @@
   border-radius: inherit;
   padding: 2px;
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }

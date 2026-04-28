@@ -111,13 +111,15 @@ class EnhancedAdminService {
     return result
   }
 
-  async listBackups(): Promise<Array<{
-    id: string
-    type: string
-    createdAt: string
-    size: number
-    status: string
-  }>> {
+  async listBackups(): Promise<
+    Array<{
+      id: string
+      type: string
+      createdAt: string
+      size: number
+      status: string
+    }>
+  > {
     const backups = await apiClient.get('/admin/backups')
     return backups
   }
@@ -126,13 +128,15 @@ class EnhancedAdminService {
   // Job Management
   // ============================================================
 
-  async listJobs(status?: string): Promise<Array<{
-    id: string
-    type: string
-    status: string
-    userId: string
-    createdAt: string
-  }>> {
+  async listJobs(status?: string): Promise<
+    Array<{
+      id: string
+      type: string
+      status: string
+      userId: string
+      createdAt: string
+    }>
+  > {
     const jobs = await apiClient.get('/admin/jobs', {
       params: { status },
     })

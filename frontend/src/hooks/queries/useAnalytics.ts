@@ -8,9 +8,7 @@ import analyticsService from '@/services/analytics.service'
 
 // ----- analytics ----------------------------------------------------------
 
-export function useAnalyticsSummary(
-  period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week',
-) {
+export function useAnalyticsSummary(period: 'today' | 'week' | 'month' | 'year' | 'all' = 'week') {
   return useQuery({
     queryKey: [...queryKeys.analytics.dashboard, period],
     queryFn: () => analyticsService.getAnalyticsSummary(period),

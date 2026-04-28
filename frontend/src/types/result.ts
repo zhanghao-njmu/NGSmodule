@@ -85,9 +85,12 @@ export interface ResultSummary {
   task_id: string
   total_results: number
   result_types: ResultType[]
-  results_by_type?: Record<string, {
-    count: number
-    latest: string
-  }>
+  results_by_type?: Record<
+    string,
+    {
+      count: number
+      latest: string
+    }
+  >
   summary?: string
 }

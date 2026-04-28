@@ -41,8 +41,7 @@ export function useUpdateAdminUser() {
 export function useChangeUserRole() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, role }: { id: string; role: 'user' | 'admin' }) =>
-      adminService.changeUserRole(id, role),
+    mutationFn: ({ id, role }: { id: string; role: 'user' | 'admin' }) => adminService.changeUserRole(id, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
     },
@@ -62,15 +61,8 @@ export function useToggleUserStatus() {
 
 export function useResetUserPassword() {
   return useMutation({
-    mutationFn: ({
-      id,
-      newPassword,
-      notifyUser,
-    }: {
-      id: string
-      newPassword: string
-      notifyUser?: boolean
-    }) => adminService.resetUserPassword(id, newPassword, notifyUser),
+    mutationFn: ({ id, newPassword, notifyUser }: { id: string; newPassword: string; notifyUser?: boolean }) =>
+      adminService.resetUserPassword(id, newPassword, notifyUser),
   })
 }
 

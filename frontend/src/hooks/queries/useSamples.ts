@@ -13,10 +13,7 @@ import sampleService from '@/services/sample.service'
 export function useSampleList(projectId: string | undefined, params?: any) {
   return useQuery({
     queryKey: queryKeys.samples.list(projectId ?? '', params),
-    queryFn: () =>
-      projectId
-        ? sampleService.getSamplesByProject(projectId, params)
-        : sampleService.getAll(params),
+    queryFn: () => (projectId ? sampleService.getSamplesByProject(projectId, params) : sampleService.getAll(params)),
     enabled: !!projectId,
   })
 }

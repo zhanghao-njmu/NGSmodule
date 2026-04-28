@@ -45,8 +45,11 @@ export interface CrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>> {
 /**
  * Extended CRUD service interface with additional common methods
  */
-export interface ExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>>
-  extends CrudService<T, CreateT, UpdateT> {
+export interface ExtendedCrudService<T, CreateT = Partial<T>, UpdateT = Partial<T>> extends CrudService<
+  T,
+  CreateT,
+  UpdateT
+> {
   /**
    * Batch delete multiple items
    */

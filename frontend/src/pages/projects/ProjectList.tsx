@@ -49,10 +49,7 @@ export const ProjectList: React.FC = () => {
   const { data: listData, isLoading, isFetching } = useProjectList()
   const { data: stats } = useGlobalProjectStats()
 
-  const items: Project[] = useMemo(
-    () => (listData as any)?.items ?? (listData as any) ?? [],
-    [listData],
-  )
+  const items: Project[] = useMemo(() => (listData as any)?.items ?? (listData as any) ?? [], [listData])
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
@@ -207,8 +204,7 @@ export const ProjectList: React.FC = () => {
                 key: 'archive',
                 label: record.status === 'archived' ? 'Restore' : 'Archive',
                 icon: record.status === 'archived' ? <RestOutlined /> : <InboxOutlined />,
-                onClick: () =>
-                  record.status === 'archived' ? handleRestore(record) : handleArchive(record),
+                onClick: () => (record.status === 'archived' ? handleRestore(record) : handleArchive(record)),
               },
               { type: 'divider' },
               {
@@ -290,9 +286,7 @@ export const ProjectList: React.FC = () => {
         {filteredProjects.length === 0 && !isFetching ? (
           <EnhancedEmptyState
             type={filters.search || filters.status !== 'all' ? 'noSearchResults' : 'noData'}
-            title={
-              filters.search || filters.status !== 'all' ? 'No matching items' : 'No items yet'
-            }
+            title={filters.search || filters.status !== 'all' ? 'No matching items' : 'No items yet'}
             description={
               filters.search || filters.status !== 'all'
                 ? 'Try adjusting your search criteria or filters'

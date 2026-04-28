@@ -35,10 +35,7 @@ import {
 } from '@ant-design/icons'
 import { PageHeader } from '@/components/common'
 import { useTheme } from '@/store/themeStore'
-import {
-  userService,
-  type ApiToken,
-} from '@/services/user.service'
+import { userService, type ApiToken } from '@/services/user.service'
 import {
   useApiTokens,
   useCreateApiToken,
