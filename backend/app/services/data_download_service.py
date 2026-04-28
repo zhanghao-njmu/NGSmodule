@@ -43,6 +43,20 @@ class DataDownloadService:
         except LoginFailedError as exc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
 
+    def login_with_credential(self, vendor: str, credential_id: UUID, user_id: UUID) -> SessionInfo:
+        """Open a session using a previously-saved credential."""
+        from app.services.vendor_credential_service import VendorCredentialService
+
+        cred_svc = VendorCredentialService(self.db)
+        cred = cred_svc.get(credential_id, user_id)
+        if cred.vendor != vendor:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Credential {credential_id} is for vendor {cred.vendor!r}, not {vendor!r}",
+            )
+        email, password = cred_svc.reveal(credential_id, user_id)
+        return self.login(vendor, email, password)
+
     def logout(self, vendor: str) -> None:
         get_provider(vendor).logout()
 

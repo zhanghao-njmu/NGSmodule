@@ -13,6 +13,7 @@ from app.models.alert import SystemAlert
 from app.models.system_job import SystemJob
 from app.models.backup import SystemBackup
 from app.models.data_download import DownloadJob
+from app.models.vendor_credential import VendorCredential
 
 __all__ = [
     "User",
@@ -28,4 +29,5 @@ __all__ = [
     "SystemJob",
     "SystemBackup",
     "DownloadJob",
+    "VendorCredential",
 ]

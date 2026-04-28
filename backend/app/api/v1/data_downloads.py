@@ -6,7 +6,7 @@ through the unified `DataDownloadService`.
 """
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -54,11 +54,22 @@ async def get_session(
 @router.post("/sessions", response_model=SessionStatus, status_code=status.HTTP_201_CREATED)
 async def open_session(
     payload: SessionLogin,
-    _: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     service: DataDownloadService = Depends(get_service),
 ):
-    """Start the vendor daemon and authenticate."""
-    info = service.login(payload.vendor, payload.email, payload.password)
+    """Start the vendor daemon and authenticate.
+
+    Either inline email+password or `credential_id` from a saved entry.
+    """
+    if payload.credential_id is not None:
+        info = service.login_with_credential(payload.vendor, payload.credential_id, user.id)
+    elif payload.email and payload.password:
+        info = service.login(payload.vendor, payload.email, payload.password)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide either credential_id or both email and password",
+        )
     return SessionStatus(vendor=payload.vendor, active=info.active, pid=info.pid)
 
 

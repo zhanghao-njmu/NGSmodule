@@ -1,9 +1,13 @@
 """
 Security utilities for authentication and authorization
 """
+import base64
+import hashlib
 from datetime import timedelta
+from functools import lru_cache
 from typing import Any, Union
 import bcrypt
+from cryptography.fernet import Fernet, InvalidToken
 from jose import jwt
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
@@ -93,3 +97,38 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         )
     except (ValueError, TypeError):
         return False
+
+
+# ----------- symmetric secret encryption (vendor credentials, API keys) -----------
+#
+# Stored secrets (e.g. lcbio email/password the user opted to save) are
+# encrypted at rest with fernet. The key is derived from SECRET_KEY so
+# rotating SECRET_KEY also invalidates stored ciphertexts — recommended
+# behavior, since it forces re-entry of vendor passwords after a key
+# rotation event.
+
+@lru_cache(maxsize=1)
+def _fernet() -> Fernet:
+    # SHA-256 of SECRET_KEY → 32 bytes → base64-urlsafe → fernet key
+    digest = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def encrypt_secret(plaintext: str) -> str:
+    """Encrypt a string (e.g. vendor password) for at-rest storage."""
+    return _fernet().encrypt(plaintext.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_secret(ciphertext: str) -> str:
+    """Decrypt a fernet token. Raises InvalidToken on tamper / wrong key."""
+    return _fernet().decrypt(ciphertext.encode("utf-8")).decode("utf-8")
+
+
+def try_decrypt_secret(ciphertext: str) -> Union[str, None]:
+    """Best-effort decrypt — returns None if the token is invalid / key
+    has rotated. Useful when migrating or showing 'credentials need
+    re-entry' messages."""
+    try:
+        return decrypt_secret(ciphertext)
+    except (InvalidToken, ValueError):
+        return None

@@ -14,10 +14,18 @@ DownloadStatus = Literal["pending", "running", "completed", "failed", "cancelled
 # ---------------- session ----------------
 
 class SessionLogin(BaseModel):
-    """Open a vendor session (e.g. lcbio `run email password`)."""
+    """Open a vendor session (e.g. lcbio `run email password`).
+
+    Either pass `email` + `password`, or `credential_id` referring to a
+    saved entry from POST /api/v1/vendor-credentials.
+    """
     vendor: str = Field(..., description="Vendor id, see /data-downloads/vendors")
-    email: str
-    password: str = Field(..., min_length=1)
+    email: Optional[str] = None
+    password: Optional[str] = Field(default=None, min_length=1)
+    credential_id: Optional[UUID] = Field(
+        default=None,
+        description="If set, decrypt and use the saved credential instead of the inline email/password.",
+    )
 
 
 class SessionStatus(BaseModel):
