@@ -92,7 +92,7 @@ class Settings(BaseSettings):
     # AI provider
     AI_PROVIDER: str = "mock"  # mock | anthropic | openai
     ANTHROPIC_API_KEY: Optional[str] = None
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
+    ANTHROPIC_MODEL: str = "claude-opus-4-7"
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o-mini"
 

@@ -18,7 +18,7 @@ class AnthropicProvider(AIProvider):
 
     # Default model — operators can override via settings.ANTHROPIC_MODEL.
     # Note: this string is the literal API parameter; do not paraphrase.
-    default_model: str = "claude-sonnet-4-6"
+    default_model: str = "claude-opus-4-7"
 
     def __init__(self):
         self._client = None
