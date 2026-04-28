@@ -75,11 +75,17 @@ services:
       - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
       - DEBUG=True
       - NGS_PIPELINE_DIR=/app/NGSmodule
+      - LC_BIO_BIN_DIR=/opt/lcbio/linux_download/bin
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./:/app/NGSmodule  # Mount NGS pipeline scripts
+      # Mount lcbio (联川) bin so the data-downloads feature can spawn the
+      # Java daemon. Read-write because the daemon persists state files
+      # (linuxLogin.txt / linuxDown.txt / log.txt) under linux_download/lib/.
+      # Set LCBIO_HOST_DIR in .env to point at where you installed lcbio.
+      - ${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio
       - upload_data:/data/uploads
       - work_data:/data/ngsmodule_work
       - result_data:/data/ngsmodule_results

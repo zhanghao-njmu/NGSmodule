@@ -7,6 +7,7 @@ from app.models.sample import Sample
 from app.models.file import File
 from app.models.task import PipelineTask
 from app.models.result import Result
+from app.models.pipeline_template import PipelineTemplate
 from app.models.notification import Notification, NotificationSettings
 from app.models.audit_log import AuditLog
 from app.models.alert import SystemAlert
@@ -22,6 +23,7 @@ __all__ = [
     "File",
     "PipelineTask",
     "Result",
+    "PipelineTemplate",
     "Notification",
     "NotificationSettings",
     "AuditLog",

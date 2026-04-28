@@ -11,14 +11,25 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'add_notifications_001'
-down_revision = None  # Update this to your latest revision
+down_revision = 'baseline_001'  # chained after baseline (which creates users/projects/etc.)
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    # Add last_login column to users table
-    op.add_column('users', sa.Column('last_login', sa.DateTime(), nullable=True))
+    # Idempotent: baseline_001 creates the canonical Base.metadata schema
+    # (which already includes last_login + the notifications/* tables),
+    # so on a fresh deployment those objects exist. We guard each op so
+    # the migration is also safe on a legacy DB that ran add_notifications
+    # before baseline existed.
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if 'last_login' not in {c['name'] for c in inspector.get_columns('users')}:
+        op.add_column('users', sa.Column('last_login', sa.DateTime(), nullable=True))
+
+    if 'notifications' in inspector.get_table_names():
+        return  # everything below already exists, baseline created it
 
     # Create notifications table
     op.create_table('notifications',

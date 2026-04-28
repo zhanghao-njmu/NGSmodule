@@ -18,6 +18,14 @@ depends_on = None
 
 
 def upgrade():
+    # Idempotent (see add_notifications_and_stats.py / add_admin_enhanced_tables.py
+    # for the rationale): baseline_001 already created the full Base.metadata
+    # schema, so on a fresh deployment these tables exist; skip if so.
+    bind = op.get_bind()
+    existing = set(sa.inspect(bind).get_table_names())
+    if {'download_jobs', 'vendor_credentials'}.issubset(existing):
+        return
+
     # ====================================================================
     # download_jobs table — vendor data delivery tracking
     # ====================================================================

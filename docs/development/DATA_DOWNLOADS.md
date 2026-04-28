@@ -127,6 +127,39 @@ adapter can be filled in.
 
 ## Deployment notes
 
+### lcbio container mount (required for 联川 downloads)
+
+The lcbio bash CLI (`run` / `download` / `stop`) ships with an embedded
+JRE and persists state under `linux_download/lib/.obs_service/`. The
+backend container needs **read-write** access to this tree because the
+Java daemon writes `linuxLogin.txt` / `linuxDown.txt` / `log.txt` and
+expects to spawn the JVM from the bundled `jre1.8.0_431/`.
+
+`docker-compose.yml` and `docker-compose.prod.yml` mount
+`${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio` and set
+`LC_BIO_BIN_DIR=/opt/lcbio/linux_download/bin` for both the backend API
+and the celery worker. Set `LCBIO_HOST_DIR` in your `.env` to wherever
+lcbio is installed on the host (the official installer is
+`https://www.omicstudio.cn/attached/file/newObs/lcbio_download.run`).
+
+If you don't use 联川 deliveries, the default `/opt/lcbio` path is fine
+even when nothing is there — the data-downloads endpoints will simply
+return errors when invoked, but unrelated features keep working.
+
+### Single-replica limitation
+
+The lcbio Java daemon is **process-level singleton** (the `run` script
+refuses to start a second instance via `ps grep`). Concurrent downloads
+inside one session are sequential because `linuxDown.txt` is overwritten
+on each request. **Don't scale the backend container beyond 1 replica**
+until the daemon is moved to a dedicated sidecar service that all
+backend replicas talk to.
+
+To scale: extract the daemon into its own `lcbio-daemon` compose
+service, share `/opt/lcbio/linux_download/lib/.obs_service/` between
+that container and the backend via a named volume, and have backend
+replicas write to `linuxDown.txt` with file locking.
+
 ### alembic migration chain
 
 The repo has no baseline-create-tables migration; the existing chain

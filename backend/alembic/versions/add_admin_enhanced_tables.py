@@ -18,6 +18,15 @@ depends_on = None
 
 
 def upgrade():
+    # Idempotent: baseline_001 creates the full Base.metadata so on fresh
+    # deployments these tables already exist. Skip the migration body if
+    # so. Legacy deployments that ran admin_enhanced before baseline
+    # existed will still fall through and execute the create_table calls.
+    bind = op.get_bind()
+    existing = set(sa.inspect(bind).get_table_names())
+    if {'audit_logs', 'system_alerts', 'system_jobs', 'system_backups'}.issubset(existing):
+        return
+
     # ====================================================================
     # audit_logs table
     # ====================================================================

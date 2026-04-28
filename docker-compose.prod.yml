@@ -129,6 +129,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
       - NGS_PIPELINE_DIR=/app/NGSmodule
+      - LC_BIO_BIN_DIR=/opt/lcbio/linux_download/bin
       - STORAGE_PATH=/data/storage
       - UPLOAD_PATH=/data/uploads
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -137,6 +138,12 @@ services:
       - "8000:8000"
     volumes:
       - ./:/app/NGSmodule:ro
+      # lcbio (联川) Java daemon bin + state files. Read-write so the daemon
+      # can persist linuxLogin.txt / linuxDown.txt / log.txt. Set
+      # LCBIO_HOST_DIR in .env to where you installed lcbio on the host.
+      # NOTE: process-level singleton, so backend should NOT scale beyond
+      # 1 replica until the daemon is moved to its own sidecar.
+      - ${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio
       - upload_data:/data/uploads
       - work_data:/data/ngsmodule_work
       - result_data:/data/ngsmodule_results
@@ -179,9 +186,13 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
       - NGS_PIPELINE_DIR=/app/NGSmodule
+      - LC_BIO_BIN_DIR=/opt/lcbio/linux_download/bin
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       - ./:/app/NGSmodule:ro
+      # Worker shares the same lcbio mount so watch_progress can tail logs
+      # written by the daemon running inside the backend container.
+      - ${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio:ro
       - work_data:/data/ngsmodule_work
       - result_data:/data/ngsmodule_results
       - storage_data:/data/storage
