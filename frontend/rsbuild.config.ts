@@ -23,11 +23,14 @@ export default defineConfig({
 
   source: {
     entry: { index: './src/main.tsx' },
+    // Expose VITE_* / PUBLIC_* env vars on import.meta.env
+    define: publicVars,
+  },
+
+  resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    // Expose VITE_* / PUBLIC_* env vars on import.meta.env
-    define: publicVars,
   },
 
   html: {
