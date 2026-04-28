@@ -54,6 +54,9 @@ dist-ssr/
 *~
 .DS_Store
 
+# AI assistant local state (Claude Code, etc.)
+.claude/
+
 # Database
 *.db
 *.sqlite
