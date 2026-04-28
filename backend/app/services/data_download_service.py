@@ -5,6 +5,7 @@ The service owns the `DownloadJob` lifecycle. Vendor-specific work
 (spawning the lcbio daemon, parsing logs) is delegated to a
 `DataProviderBase` from `app.services.data_provider`.
 """
+
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
@@ -15,11 +16,11 @@ from sqlalchemy.orm import Session
 from app.core.datetime_utils import utc_now_naive
 from app.models.data_download import DownloadJob
 from app.services.data_provider import (
-    get_provider,
-    SessionExistsError,
-    NoSessionError,
-    LoginFailedError,
     DownloadFailedError,
+    LoginFailedError,
+    NoSessionError,
+    SessionExistsError,
+    get_provider,
 )
 from app.services.data_provider.base import SessionInfo
 
@@ -106,10 +107,12 @@ class DataDownloadService:
         # poll GET /jobs/:id which calls refresh_progress synchronously).
         try:
             from app.workers.download_tasks import watch_progress
+
             watch_progress.delay(str(job.id))
         except Exception:
             # Worker enqueue failure is logged but doesn't fail the request.
             import logging
+
             logging.getLogger(__name__).warning(
                 "Failed to enqueue watch_progress task; job will rely on sync polling",
                 exc_info=True,
@@ -118,11 +121,7 @@ class DataDownloadService:
         return job
 
     def get_by_id(self, job_id: UUID, user_id: UUID) -> Optional[DownloadJob]:
-        return (
-            self.db.query(DownloadJob)
-            .filter(DownloadJob.id == job_id, DownloadJob.user_id == user_id)
-            .first()
-        )
+        return self.db.query(DownloadJob).filter(DownloadJob.id == job_id, DownloadJob.user_id == user_id).first()
 
     def get_by_id_or_raise(self, job_id: UUID, user_id: UUID) -> DownloadJob:
         job = self.get_by_id(job_id, user_id)

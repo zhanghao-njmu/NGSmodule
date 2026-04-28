@@ -1,20 +1,21 @@
 """
 Project Service - Business logic for project management
 """
-from typing import List, Optional, Dict, Any, Tuple
+
+from typing import List, Optional, Tuple
 from uuid import UUID
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+
 from fastapi import HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.models.project import Project
 from app.models.sample import Sample
 from app.models.task import PipelineTask
-from app.models.user import User
 from app.schemas.project import (
     ProjectCreate,
-    ProjectUpdate,
     ProjectStats,
+    ProjectUpdate,
 )
 
 
@@ -91,10 +92,7 @@ class ProjectService:
         """
         project = self.get_by_id(project_id, user_id, is_admin=is_admin)
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project {project_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project {project_id} not found")
         return project
 
     def list_projects(
@@ -153,44 +151,40 @@ class ProjectService:
             ProjectStats with counts
         """
         # Count projects by status
-        total_projects = self.db.query(Project).filter(
-            Project.user_id == user_id
-        ).count()
+        total_projects = self.db.query(Project).filter(Project.user_id == user_id).count()
 
-        active_projects = self.db.query(Project).filter(
-            Project.user_id == user_id,
-            Project.status == "active"
-        ).count()
+        active_projects = self.db.query(Project).filter(Project.user_id == user_id, Project.status == "active").count()
 
-        archived_projects = self.db.query(Project).filter(
-            Project.user_id == user_id,
-            Project.status == "archived"
-        ).count()
+        archived_projects = (
+            self.db.query(Project).filter(Project.user_id == user_id, Project.status == "archived").count()
+        )
 
         # Count samples across all user projects
-        total_samples = self.db.query(Sample).join(Project).filter(
-            Project.user_id == user_id
-        ).count()
+        total_samples = self.db.query(Sample).join(Project).filter(Project.user_id == user_id).count()
 
         # Count tasks across all user projects
-        total_tasks = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id
-        ).count()
+        total_tasks = self.db.query(PipelineTask).join(Project).filter(Project.user_id == user_id).count()
 
-        running_tasks = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id,
-            PipelineTask.status == "running"
-        ).count()
+        running_tasks = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(Project.user_id == user_id, PipelineTask.status == "running")
+            .count()
+        )
 
-        completed_tasks = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id,
-            PipelineTask.status == "completed"
-        ).count()
+        completed_tasks = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(Project.user_id == user_id, PipelineTask.status == "completed")
+            .count()
+        )
 
-        failed_tasks = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id,
-            PipelineTask.status == "failed"
-        ).count()
+        failed_tasks = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(Project.user_id == user_id, PipelineTask.status == "failed")
+            .count()
+        )
 
         return ProjectStats(
             total_projects=total_projects,
@@ -220,15 +214,11 @@ class ProjectService:
             HTTPException: If project name already exists for user
         """
         # Check for duplicate name
-        existing = self.db.query(Project).filter(
-            Project.user_id == user_id,
-            Project.name == project_data.name
-        ).first()
+        existing = self.db.query(Project).filter(Project.user_id == user_id, Project.name == project_data.name).first()
 
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Project '{project_data.name}' already exists"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Project '{project_data.name}' already exists"
             )
 
         # Create project
@@ -238,7 +228,7 @@ class ProjectService:
             description=project_data.description,
             project_type=project_data.project_type,
             config=project_data.config,
-            status="active"
+            status="active",
         )
 
         self.db.add(project)
@@ -253,12 +243,7 @@ class ProjectService:
 
     # ============= UPDATE OPERATIONS =============
 
-    def update(
-        self,
-        project_id: UUID,
-        user_id: UUID,
-        update_data: ProjectUpdate
-    ) -> Project:
+    def update(self, project_id: UUID, user_id: UUID, update_data: ProjectUpdate) -> Project:
         """
         Update an existing project
 
@@ -278,16 +263,15 @@ class ProjectService:
 
         # Check for name conflict if name is being changed
         if update_data.name and update_data.name != project.name:
-            existing = self.db.query(Project).filter(
-                Project.user_id == user_id,
-                Project.name == update_data.name,
-                Project.id != project_id
-            ).first()
+            existing = (
+                self.db.query(Project)
+                .filter(Project.user_id == user_id, Project.name == update_data.name, Project.id != project_id)
+                .first()
+            )
 
             if existing:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Project '{update_data.name}' already exists"
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=f"Project '{update_data.name}' already exists"
                 )
 
         # Update fields
@@ -361,7 +345,7 @@ class ProjectService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Cannot delete project with {sample_count} samples and {task_count} tasks. "
-                       "Delete or move them first, or use archive instead."
+                "Delete or move them first, or use archive instead.",
             )
 
         self.db.delete(project)

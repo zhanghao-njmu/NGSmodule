@@ -4,13 +4,15 @@ Rate limiting configuration for API endpoints
 Uses slowapi with Redis storage when available; falls back to in-memory
 storage for local development/tests.
 """
+
+import logging
 import os
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
-import logging
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.core.config import settings
 
@@ -28,6 +30,7 @@ def _resolve_storage_uri() -> str:
     During tests (pytest detected via sys.modules) we always use memory://.
     """
     import sys
+
     if "pytest" in sys.modules:
         return "memory://"
 
@@ -41,15 +44,13 @@ def _resolve_storage_uri() -> str:
         # so the app still starts when Redis is temporarily down.
         try:
             import redis as _redis
+
             _client = _redis.Redis.from_url(redis_url, socket_connect_timeout=1)
             _client.ping()
             _client.close()
             return redis_url
         except Exception as exc:
-            logger.warning(
-                f"Configured Redis ({redis_url}) is not reachable "
-                f"({exc}); using in-memory rate limiter"
-            )
+            logger.warning(f"Configured Redis ({redis_url}) is not reachable " f"({exc}); using in-memory rate limiter")
 
     return "memory://"
 
@@ -65,17 +66,15 @@ limiter = Limiter(
 # Disable rate limiting under pytest. The default 100/min limit (and the
 # tighter login/register limits) trip during test suites that hit dozens
 # of endpoints in rapid succession with the same `testclient` IP.
-import sys as _sys
+import sys as _sys  # noqa: E402
+
 if "pytest" in _sys.modules:
     limiter.enabled = False
     logger.info("Rate limiter disabled (pytest detected)")
 elif RATE_LIMIT_STORAGE.startswith("redis"):
     logger.info(f"Rate limiter using Redis: {RATE_LIMIT_STORAGE}")
 else:
-    logger.warning(
-        "Rate limiter using in-memory storage "
-        "(not suitable for multi-instance deployment)"
-    )
+    logger.warning("Rate limiter using in-memory storage " "(not suitable for multi-instance deployment)")
 
 
 # Rate limit configurations for different endpoint types
@@ -83,6 +82,7 @@ class RateLimits:
     """
     Rate limit presets for different types of endpoints
     """
+
     # Authentication endpoints (more restrictive)
     LOGIN = "5/minute"  # 5 login attempts per minute
     REGISTER = "3/minute"  # 3 registration attempts per minute
@@ -118,10 +118,7 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSO
     Returns:
         JSONResponse with rate limit error details
     """
-    logger.warning(
-        f"Rate limit exceeded for {get_remote_address(request)} "
-        f"on {request.url.path}"
-    )
+    logger.warning(f"Rate limit exceeded for {get_remote_address(request)} " f"on {request.url.path}")
 
     return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -129,11 +126,9 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSO
             "error": "Rate limit exceeded",
             "detail": "Too many requests. Please slow down and try again later.",
             "code": "RATE_LIMIT_EXCEEDED",
-            "retry_after": exc.detail  # Time until rate limit resets
+            "retry_after": exc.detail,  # Time until rate limit resets
         },
-        headers={
-            "Retry-After": str(exc.detail)
-        }
+        headers={"Retry-After": str(exc.detail)},
     )
 
 

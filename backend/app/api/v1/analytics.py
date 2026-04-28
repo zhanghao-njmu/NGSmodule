@@ -1,17 +1,18 @@
 """
 Analytics API endpoints
 """
+
+from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, get_current_admin as get_current_admin_user
+from app.core.deps import get_current_user
 from app.models.user import User
-from app.services.analytics_service import AnalyticsService
 from app.schemas.analytics import *
-
+from app.services.analytics_service import AnalyticsService
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ router = APIRouter()
 # Time Series Analytics
 # ============================================================================
 
+
 @router.get("/timeseries/{metric}", response_model=TimeSeriesData)
 async def get_time_series(
     metric: str,
@@ -27,7 +29,7 @@ async def get_time_series(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get time series data for a metric
@@ -46,11 +48,7 @@ async def get_time_series(
     user_id = None if current_user.is_admin else str(current_user.id)
 
     return service.get_time_series_data(
-        metric=metric,
-        time_range=time_range,
-        start_date=start_date,
-        end_date=end_date,
-        user_id=user_id
+        metric=metric, time_range=time_range, start_date=start_date, end_date=end_date, user_id=user_id
     )
 
 
@@ -58,11 +56,10 @@ async def get_time_series(
 # Project Analytics
 # ============================================================================
 
+
 @router.get("/projects/{project_id}/performance", response_model=ProjectPerformanceMetrics)
 async def get_project_performance(
-    project_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    project_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Get performance metrics for a specific project
@@ -80,10 +77,7 @@ async def get_project_performance(
 
     metrics = service.get_project_performance(project_id, user_id)
     if not metrics:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or access denied"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found or access denied")
 
     return metrics
 
@@ -93,7 +87,7 @@ async def compare_projects(
     project_ids: List[str],
     metric: str = Query("success_rate", description="Metric to compare"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Compare multiple projects based on a metric
@@ -115,12 +109,13 @@ async def compare_projects(
 # Sample Quality Analytics
 # ============================================================================
 
+
 @router.get("/samples/quality/distribution", response_model=SampleQualityDistribution)
 async def get_sample_quality_distribution(
     metric_name: str = Query("quality_score", description="Quality metric name"),
     project_id: Optional[str] = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get distribution of sample quality metrics
@@ -136,22 +131,17 @@ async def get_sample_quality_distribution(
 
     user_id = None if current_user.is_admin else str(current_user.id)
 
-    return service.get_sample_quality_distribution(
-        metric_name=metric_name,
-        project_id=project_id,
-        user_id=user_id
-    )
+    return service.get_sample_quality_distribution(metric_name=metric_name, project_id=project_id, user_id=user_id)
 
 
 # ============================================================================
 # Task Execution Analytics
 # ============================================================================
 
+
 @router.get("/pipelines/performance", response_model=List[PipelinePerformanceMetrics])
 async def get_pipeline_performance(
-    pipeline_name: Optional[str] = None,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    pipeline_name: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Get performance metrics for pipelines
@@ -175,7 +165,7 @@ async def get_task_execution_trend(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get task execution trend over time
@@ -191,10 +181,7 @@ async def get_task_execution_trend(
     user_id = None if current_user.is_admin else str(current_user.id)
 
     return service.get_task_execution_trend(
-        time_range=time_range,
-        start_date=start_date,
-        end_date=end_date,
-        user_id=user_id
+        time_range=time_range, start_date=start_date, end_date=end_date, user_id=user_id
     )
 
 
@@ -202,11 +189,9 @@ async def get_task_execution_trend(
 # Resource Analytics
 # ============================================================================
 
+
 @router.get("/storage", response_model=StorageAnalytics)
-async def get_storage_analytics(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+async def get_storage_analytics(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get storage analytics
 
@@ -224,10 +209,7 @@ async def get_storage_analytics(
 
     analytics = service.get_storage_analytics(user_id)
     if not analytics:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storage analytics not available"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Storage analytics not available")
 
     return analytics
 
@@ -236,13 +218,14 @@ async def get_storage_analytics(
 # Comparative Analytics
 # ============================================================================
 
+
 @router.get("/compare/{entity_type}", response_model=ComparativeAnalysis)
 async def get_comparative_analysis(
     entity_type: str,
     metric: str = Query(..., description="Metric to compare"),
     limit: int = Query(10, ge=1, le=100, description="Number of entities to compare"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get comparative analysis for entities
@@ -262,30 +245,20 @@ async def get_comparative_analysis(
 
     # Only admins can compare users
     if entity_type == "user" and not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can compare users"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only administrators can compare users")
 
     user_id = None if current_user.is_admin else str(current_user.id)
 
-    return service.get_comparative_analysis(
-        entity_type=entity_type,
-        metric=metric,
-        limit=limit,
-        user_id=user_id
-    )
+    return service.get_comparative_analysis(entity_type=entity_type, metric=metric, limit=limit, user_id=user_id)
 
 
 # ============================================================================
 # Dashboard Analytics
 # ============================================================================
 
+
 @router.get("/dashboard", response_model=DashboardAnalytics)
-async def get_dashboard_analytics(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+async def get_dashboard_analytics(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get dashboard analytics summary
 
@@ -308,12 +281,13 @@ async def get_dashboard_analytics(
 # Trend Analysis
 # ============================================================================
 
+
 @router.get("/trends/{metric}", response_model=TrendAnalysis)
 async def get_trend_analysis(
     metric: str,
     time_range: TimeRange = Query(TimeRange.MONTH),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get trend analysis for a metric
@@ -335,22 +309,17 @@ async def get_trend_analysis(
 
     user_id = None if current_user.is_admin else str(current_user.id)
 
-    return service.get_trend_analysis(
-        metric=metric,
-        time_range=time_range,
-        user_id=user_id
-    )
+    return service.get_trend_analysis(metric=metric, time_range=time_range, user_id=user_id)
 
 
 # ============================================================================
 # Export Analytics
 # ============================================================================
 
+
 @router.post("/export")
 async def export_analytics(
-    export_request: ExportRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    export_request: ExportRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Export analytics data in various formats
@@ -371,7 +340,7 @@ async def export_analytics(
         "status": "success",
         "message": f"Export request received for {export_request.data_type} in {export_request.format} format",
         "download_url": "/downloads/analytics_export_123.json",
-        "expires_at": datetime.utcnow().isoformat()
+        "expires_at": datetime.utcnow().isoformat(),
     }
 
 
@@ -379,13 +348,10 @@ async def export_analytics(
 # Health Check
 # ============================================================================
 
+
 @router.get("/health")
 async def analytics_health_check():
     """
     Health check endpoint for analytics service
     """
-    return {
-        "status": "healthy",
-        "service": "analytics",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"status": "healthy", "service": "analytics", "timestamp": datetime.utcnow().isoformat()}

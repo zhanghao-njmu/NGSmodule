@@ -2,14 +2,15 @@
 Audit Log Service
 Provides centralized audit logging for sensitive operations.
 """
+
 import logging
-from typing import Optional, List, Dict, Any
 from datetime import datetime
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
-
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +88,7 @@ class AuditService:
         if status:
             query = query.filter(AuditLog.status == status)
 
-        return (
-            query.order_by(desc(AuditLog.timestamp))
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(desc(AuditLog.timestamp)).offset(skip).limit(limit).all()
 
     def count_logs(
         self,
@@ -139,27 +135,40 @@ class AuditService:
         writer = csv.writer(output)
 
         # Header
-        writer.writerow([
-            "ID", "Timestamp", "Action", "Admin User ID", "Admin Username",
-            "Target User ID", "Target Username", "Resource Type", "Resource ID",
-            "Status", "IP Address", "Details"
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "Timestamp",
+                "Action",
+                "Admin User ID",
+                "Admin Username",
+                "Target User ID",
+                "Target Username",
+                "Resource Type",
+                "Resource ID",
+                "Status",
+                "IP Address",
+                "Details",
+            ]
+        )
 
         # Rows
         for log in logs:
-            writer.writerow([
-                str(log.id),
-                log.timestamp.isoformat() if log.timestamp else "",
-                log.action,
-                str(log.admin_user_id),
-                log.admin_username,
-                str(log.target_user_id) if log.target_user_id else "",
-                log.target_username or "",
-                log.target_resource_type or "",
-                log.target_resource_id or "",
-                log.status,
-                log.ip_address or "",
-                str(log.details or {}),
-            ])
+            writer.writerow(
+                [
+                    str(log.id),
+                    log.timestamp.isoformat() if log.timestamp else "",
+                    log.action,
+                    str(log.admin_user_id),
+                    log.admin_username,
+                    str(log.target_user_id) if log.target_user_id else "",
+                    log.target_username or "",
+                    log.target_resource_type or "",
+                    log.target_resource_id or "",
+                    log.status,
+                    log.ip_address or "",
+                    str(log.details or {}),
+                ]
+            )
 
         return output.getvalue()

@@ -5,6 +5,7 @@ Note: response schemas NEVER expose the raw email or password — only
 metadata. To use a credential the client passes the credential id
 when opening a vendor session; the backend decrypts internally.
 """
+
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -28,6 +29,8 @@ class VendorCredentialResponse(BaseModel):
     last_used_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
 class VendorCredentialListResponse(BaseModel):
     total: int
     items: list[VendorCredentialResponse]

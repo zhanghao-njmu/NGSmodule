@@ -1,14 +1,17 @@
 """
 Analytics schemas for data analysis and visualization
 """
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Any
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
 
 
 class AnalysisType(str, Enum):
     """Analysis type enumeration"""
+
     TIME_SERIES = "time_series"
     COMPARISON = "comparison"
     DISTRIBUTION = "distribution"
@@ -18,6 +21,7 @@ class AnalysisType(str, Enum):
 
 class TimeRange(str, Enum):
     """Time range enumeration"""
+
     HOUR = "hour"
     DAY = "day"
     WEEK = "week"
@@ -28,6 +32,7 @@ class TimeRange(str, Enum):
 
 class MetricType(str, Enum):
     """Metric type enumeration"""
+
     TASKS = "tasks"
     SAMPLES = "samples"
     STORAGE = "storage"
@@ -39,8 +44,10 @@ class MetricType(str, Enum):
 # Time Series Analytics
 # ============================================================================
 
+
 class TimeSeriesDataPoint(BaseModel):
     """Single data point in time series"""
+
     timestamp: datetime
     value: float
     label: Optional[str] = None
@@ -49,6 +56,7 @@ class TimeSeriesDataPoint(BaseModel):
 
 class TimeSeriesData(BaseModel):
     """Time series data"""
+
     metric: str
     time_range: TimeRange
     data_points: List[TimeSeriesDataPoint]
@@ -62,8 +70,10 @@ class TimeSeriesData(BaseModel):
 # Project Analytics
 # ============================================================================
 
+
 class ProjectPerformanceMetrics(BaseModel):
     """Project performance metrics"""
+
     project_id: str
     project_name: str
     total_samples: int
@@ -80,6 +90,7 @@ class ProjectPerformanceMetrics(BaseModel):
 
 class ProjectComparison(BaseModel):
     """Compare multiple projects"""
+
     projects: List[ProjectPerformanceMetrics]
     comparison_metric: str
     generated_at: datetime
@@ -89,8 +100,10 @@ class ProjectComparison(BaseModel):
 # Sample Analytics
 # ============================================================================
 
+
 class SampleQualityMetrics(BaseModel):
     """Sample quality metrics"""
+
     sample_id: str
     sample_name: str
     project_id: str
@@ -107,6 +120,7 @@ class SampleQualityMetrics(BaseModel):
 
 class SampleQualityDistribution(BaseModel):
     """Distribution of sample quality metrics"""
+
     metric_name: str
     bins: List[Dict[str, Any]]  # [{"range": "0-10", "count": 5}, ...]
     total_samples: int
@@ -117,8 +131,10 @@ class SampleQualityDistribution(BaseModel):
 # Task Analytics
 # ============================================================================
 
+
 class TaskExecutionMetrics(BaseModel):
     """Task execution metrics"""
+
     task_id: str
     task_name: str
     pipeline: str
@@ -134,6 +150,7 @@ class TaskExecutionMetrics(BaseModel):
 
 class PipelinePerformanceMetrics(BaseModel):
     """Pipeline performance metrics"""
+
     pipeline_name: str
     total_runs: int
     successful_runs: int
@@ -148,6 +165,7 @@ class PipelinePerformanceMetrics(BaseModel):
 
 class TaskExecutionTrend(BaseModel):
     """Task execution trend over time"""
+
     period: TimeRange
     data: List[Dict[str, Any]]  # [{"date": "2024-01-01", "completed": 10, "failed": 2}, ...]
     total_periods: int
@@ -158,8 +176,10 @@ class TaskExecutionTrend(BaseModel):
 # Resource Analytics
 # ============================================================================
 
+
 class ResourceUtilization(BaseModel):
     """Resource utilization metrics"""
+
     timestamp: datetime
     cpu_usage: float  # percentage
     memory_usage: float  # percentage
@@ -172,6 +192,7 @@ class ResourceUtilization(BaseModel):
 
 class ResourceUtilizationTrend(BaseModel):
     """Resource utilization trend"""
+
     resource_type: str  # cpu, memory, disk
     time_range: TimeRange
     data_points: List[ResourceUtilization]
@@ -182,6 +203,7 @@ class ResourceUtilizationTrend(BaseModel):
 
 class StorageAnalytics(BaseModel):
     """Storage analytics"""
+
     total_storage: int  # bytes
     used_storage: int  # bytes
     available_storage: int  # bytes
@@ -196,8 +218,10 @@ class StorageAnalytics(BaseModel):
 # Correlation Analytics
 # ============================================================================
 
+
 class CorrelationData(BaseModel):
     """Correlation between two metrics"""
+
     metric_x: str
     metric_y: str
     correlation_coefficient: float  # -1 to 1
@@ -208,6 +232,7 @@ class CorrelationData(BaseModel):
 
 class MultiMetricCorrelation(BaseModel):
     """Correlation matrix for multiple metrics"""
+
     metrics: List[str]
     correlation_matrix: List[List[float]]
     generated_at: datetime
@@ -217,8 +242,10 @@ class MultiMetricCorrelation(BaseModel):
 # Distribution Analytics
 # ============================================================================
 
+
 class DistributionData(BaseModel):
     """Distribution of a metric"""
+
     metric: str
     bins: List[Dict[str, Any]]  # [{"range": "0-10", "count": 5, "percentage": 25}, ...]
     total_count: int
@@ -229,8 +256,10 @@ class DistributionData(BaseModel):
 # Comparative Analytics
 # ============================================================================
 
+
 class ComparisonMetric(BaseModel):
     """Single metric for comparison"""
+
     entity_id: str
     entity_name: str
     metric_name: str
@@ -241,6 +270,7 @@ class ComparisonMetric(BaseModel):
 
 class ComparativeAnalysis(BaseModel):
     """Comparative analysis results"""
+
     entity_type: str  # project, sample, pipeline, user
     metric: str
     entities: List[ComparisonMetric]
@@ -254,8 +284,10 @@ class ComparativeAnalysis(BaseModel):
 # Custom Reports
 # ============================================================================
 
+
 class ReportType(str, Enum):
     """Report type enumeration"""
+
     PROJECT_SUMMARY = "project_summary"
     SAMPLE_QUALITY = "sample_quality"
     PIPELINE_PERFORMANCE = "pipeline_performance"
@@ -265,6 +297,7 @@ class ReportType(str, Enum):
 
 class ReportFilter(BaseModel):
     """Report filter parameters"""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     project_ids: Optional[List[str]] = None
@@ -275,6 +308,7 @@ class ReportFilter(BaseModel):
 
 class ReportSection(BaseModel):
     """Single section in a report"""
+
     title: str
     type: str  # chart, table, text, metrics
     data: Any
@@ -283,6 +317,7 @@ class ReportSection(BaseModel):
 
 class CustomReport(BaseModel):
     """Custom analytics report"""
+
     report_id: str
     report_type: ReportType
     title: str
@@ -295,6 +330,7 @@ class CustomReport(BaseModel):
 
 class ReportCreate(BaseModel):
     """Create custom report request"""
+
     report_type: ReportType
     title: str
     description: Optional[str] = None
@@ -306,8 +342,10 @@ class ReportCreate(BaseModel):
 # Dashboard Analytics
 # ============================================================================
 
+
 class DashboardMetric(BaseModel):
     """Single metric for dashboard"""
+
     name: str
     value: float
     unit: Optional[str] = None
@@ -318,6 +356,7 @@ class DashboardMetric(BaseModel):
 
 class DashboardAnalytics(BaseModel):
     """Dashboard analytics summary"""
+
     key_metrics: List[DashboardMetric]
     recent_activity: List[Dict[str, Any]]
     alerts: List[Dict[str, Any]]
@@ -329,8 +368,10 @@ class DashboardAnalytics(BaseModel):
 # Trend Analytics
 # ============================================================================
 
+
 class TrendAnalysis(BaseModel):
     """Trend analysis for a metric"""
+
     metric: str
     time_range: TimeRange
     direction: str  # increasing, decreasing, stable
@@ -345,8 +386,10 @@ class TrendAnalysis(BaseModel):
 # Export/Download
 # ============================================================================
 
+
 class ExportFormat(str, Enum):
     """Export format enumeration"""
+
     JSON = "json"
     CSV = "csv"
     EXCEL = "excel"
@@ -355,6 +398,7 @@ class ExportFormat(str, Enum):
 
 class ExportRequest(BaseModel):
     """Export analytics data request"""
+
     data_type: str  # time_series, comparison, distribution, etc.
     format: ExportFormat
     filters: Optional[ReportFilter] = None

@@ -1,11 +1,12 @@
 """
 File storage service for MinIO/S3
 """
+
 import hashlib
 import logging
 import os
-from pathlib import Path
 from typing import BinaryIO, Optional
+
 import aiofiles
 from minio import Minio
 from minio.error import S3Error
@@ -23,7 +24,7 @@ class StorageService:
             settings.MINIO_URL,
             access_key=settings.MINIO_ACCESS_KEY,
             secret_key=settings.MINIO_SECRET_KEY,
-            secure=settings.MINIO_SECURE
+            secure=settings.MINIO_SECURE,
         )
         self.bucket_name = settings.MINIO_BUCKET
         self._ensure_bucket()
@@ -37,11 +38,7 @@ class StorageService:
             logger.error(f"Error ensuring bucket: {e}")
 
     async def save_upload_file(
-        self,
-        file: BinaryIO,
-        user_id: str,
-        filename: str,
-        project_id: Optional[str] = None
+        self, file: BinaryIO, user_id: str, filename: str, project_id: Optional[str] = None
     ) -> str:
         """
         Save uploaded file to MinIO
@@ -69,12 +66,7 @@ class StorageService:
             file.seek(0)
 
             # Upload
-            self.client.put_object(
-                self.bucket_name,
-                object_path,
-                file,
-                file_size
-            )
+            self.client.put_object(self.bucket_name, object_path, file, file_size)
 
             return object_path
 
@@ -125,11 +117,7 @@ class StorageService:
                 md5_hash.update(chunk)
         return md5_hash.hexdigest()
 
-    def get_presigned_url(
-        self,
-        object_path: str,
-        expires_minutes: int = 60
-    ) -> str:
+    def get_presigned_url(self, object_path: str, expires_minutes: int = 60) -> str:
         """
         Get presigned URL for direct download
 
@@ -142,10 +130,9 @@ class StorageService:
         """
         try:
             from datetime import timedelta
+
             url = self.client.presigned_get_object(
-                self.bucket_name,
-                object_path,
-                expires=timedelta(minutes=expires_minutes)
+                self.bucket_name, object_path, expires=timedelta(minutes=expires_minutes)
             )
             return url
         except S3Error as e:

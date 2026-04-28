@@ -5,6 +5,7 @@ Stores email/password for sequencing data-delivery vendors so users
 don't have to retype on every download. Plaintext is never returned —
 the frontend only sees masked previews.
 """
+
 from typing import Optional
 from uuid import UUID
 
@@ -14,13 +15,13 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.services.vendor_credential_service import VendorCredentialService
+from app.schemas.common import MessageResponse
 from app.schemas.vendor_credential import (
     VendorCredentialCreate,
-    VendorCredentialResponse,
     VendorCredentialListResponse,
+    VendorCredentialResponse,
 )
-from app.schemas.common import MessageResponse
+from app.services.vendor_credential_service import VendorCredentialService
 
 router = APIRouter()
 

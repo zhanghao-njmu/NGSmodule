@@ -4,33 +4,36 @@ Pipeline Template management API endpoints (Refactored with Service Layer)
 This is the refactored version using PipelineService for business logic.
 Routers are now thin HTTP adapters that delegate to the service layer.
 """
-from fastapi import APIRouter, Depends, status, Query
-from sqlalchemy.orm import Session
-from typing import Optional, List
+
+from typing import List, Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.deps import get_current_user, get_current_admin
+from app.core.deps import get_current_admin, get_current_user
 from app.models.user import User
-from app.services.pipeline_service import PipelineService
+from app.schemas.common import MessageResponse
 from app.schemas.pipeline import (
-    PipelineTemplateCreate,
-    PipelineTemplateUpdate,
-    PipelineTemplateResponse,
-    PipelineTemplateListResponse,
-    PipelineExecuteRequest,
-    PipelineTemplateCategory,
+    ParameterRecommendationResponse,
     PipelineBatchExecuteRequest,
     PipelineBatchExecuteResponse,
-    ParameterRecommendationResponse,
+    PipelineExecuteRequest,
+    PipelineTemplateCategory,
+    PipelineTemplateCreate,
+    PipelineTemplateListResponse,
+    PipelineTemplateResponse,
+    PipelineTemplateUpdate,
 )
 from app.schemas.task import TaskResponse
-from app.schemas.common import MessageResponse
+from app.services.pipeline_service import PipelineService
 
 router = APIRouter()
 
 
 # ============= DEPENDENCY INJECTION =============
+
 
 def get_pipeline_service(db: Session = Depends(get_db)) -> PipelineService:
     """Dependency to get PipelineService instance"""
@@ -39,33 +42,26 @@ def get_pipeline_service(db: Session = Depends(get_db)) -> PipelineService:
 
 # ============= ENDPOINTS =============
 
+
 @router.get("", response_model=PipelineTemplateListResponse)
 async def list_pipeline_templates(
     category: Optional[str] = Query(None, description="Filter by category"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     search: Optional[str] = Query(None, description="Search in name and description"),
     current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     List all available pipeline templates
     """
-    templates = service.list_templates(
-        category=category,
-        is_active=is_active,
-        search=search
-    )
+    templates = service.list_templates(category=category, is_active=is_active, search=search)
 
-    return PipelineTemplateListResponse(
-        total=len(templates),
-        items=templates
-    )
+    return PipelineTemplateListResponse(total=len(templates), items=templates)
 
 
 @router.get("/categories", response_model=List[PipelineTemplateCategory])
 async def get_pipeline_categories(
-    current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    current_user: User = Depends(get_current_user), service: PipelineService = Depends(get_pipeline_service)
 ):
     """
     Get all pipeline categories with template counts
@@ -77,7 +73,7 @@ async def get_pipeline_categories(
 async def get_pipeline_template(
     template_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Get pipeline template details by ID
@@ -89,7 +85,7 @@ async def get_pipeline_template(
 async def create_pipeline_template(
     template_data: PipelineTemplateCreate,
     current_user: User = Depends(get_current_admin),  # Only admin can create templates
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Create a new custom pipeline template (Admin only)
@@ -102,7 +98,7 @@ async def update_pipeline_template(
     template_id: UUID,
     template_data: PipelineTemplateUpdate,
     current_user: User = Depends(get_current_admin),  # Only admin can update
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Update pipeline template (Admin only)
@@ -116,7 +112,7 @@ async def update_pipeline_template(
 async def delete_pipeline_template(
     template_id: UUID,
     current_user: User = Depends(get_current_admin),  # Only admin can delete
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Delete pipeline template (Admin only)
@@ -131,7 +127,7 @@ async def delete_pipeline_template(
 async def toggle_pipeline_template(
     template_id: UUID,
     current_user: User = Depends(get_current_admin),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Toggle pipeline template active status (Admin only)
@@ -144,7 +140,7 @@ async def toggle_pipeline_template(
 async def execute_pipeline(
     execute_data: PipelineExecuteRequest,
     current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Execute a pipeline with specified parameters
@@ -158,7 +154,7 @@ async def execute_pipeline(
 async def batch_execute_pipeline(
     execute_data: PipelineBatchExecuteRequest,
     current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Execute a pipeline on multiple samples in batch
@@ -173,15 +169,11 @@ async def recommend_parameters(
     template_id: UUID,
     project_id: Optional[UUID] = Query(None, description="Filter by project for personalized recommendations"),
     current_user: User = Depends(get_current_user),
-    service: PipelineService = Depends(get_pipeline_service)
+    service: PipelineService = Depends(get_pipeline_service),
 ):
     """
     Get AI-powered parameter recommendations based on historical successful tasks
 
     Analyzes completed tasks using the same template to recommend optimal parameters
     """
-    return service.recommend_parameters(
-        template_id=template_id,
-        user_id=current_user.id,
-        project_id=project_id
-    )
+    return service.recommend_parameters(template_id=template_id, user_id=current_user.id, project_id=project_id)

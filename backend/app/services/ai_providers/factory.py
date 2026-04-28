@@ -4,6 +4,7 @@ AI provider factory.
 Selects the configured provider based on settings.AI_PROVIDER, falling back
 to the mock provider when the requested backend is unavailable.
 """
+
 import logging
 from typing import Optional
 
@@ -21,10 +22,12 @@ def _build_provider(name: str) -> AIProvider:
 
     if name == "anthropic":
         from app.services.ai_providers.anthropic import AnthropicProvider
+
         return AnthropicProvider()
 
     if name == "openai":
         from app.services.ai_providers.openai_provider import OpenAIProvider
+
         return OpenAIProvider()
 
     if name == "mock":
@@ -43,10 +46,7 @@ def get_ai_provider(refresh: bool = False) -> AIProvider:
     try:
         provider = _build_provider(name)
         if not provider.is_available():
-            logger.warning(
-                f"AI provider '{name}' is configured but not available; "
-                "falling back to mock provider"
-            )
+            logger.warning(f"AI provider '{name}' is configured but not available; " "falling back to mock provider")
             provider = MockAIProvider()
     except AIProviderError as exc:
         logger.warning(f"AI provider initialization failed ({exc}); using mock")

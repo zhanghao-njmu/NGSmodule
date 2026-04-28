@@ -1,18 +1,18 @@
 """
 Result Service - Business logic for analysis result management
 """
-from typing import List, Optional, Dict, Any, Tuple
-from uuid import UUID
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-import json
-import random
-import math
-from pathlib import Path
 
+import math
+import random
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.models.project import Project
 from app.models.result import Result
 from app.models.task import PipelineTask
-from app.models.project import Project
 from app.schemas.result import ResultVisualizationData
 
 
@@ -41,10 +41,13 @@ class ResultService:
         Returns:
             Result if found and belongs to user, None otherwise
         """
-        result = self.db.query(Result).join(PipelineTask).join(Project).filter(
-            Result.id == result_id,
-            Project.user_id == user_id
-        ).first()
+        result = (
+            self.db.query(Result)
+            .join(PipelineTask)
+            .join(Project)
+            .filter(Result.id == result_id, Project.user_id == user_id)
+            .first()
+        )
 
         return result
 
@@ -64,10 +67,7 @@ class ResultService:
         """
         result = self.get_by_id(result_id, user_id)
         if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Result {result_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Result {result_id} not found")
         return result
 
     def list_results(
@@ -91,9 +91,7 @@ class ResultService:
         Returns:
             Tuple of (list of results, total count)
         """
-        query = self.db.query(Result).join(PipelineTask).join(Project).filter(
-            Project.user_id == user_id
-        )
+        query = self.db.query(Result).join(PipelineTask).join(Project).filter(Project.user_id == user_id)
 
         # Apply filters
         if task_id:
@@ -110,11 +108,7 @@ class ResultService:
 
         return results, total
 
-    def get_task_results_summary(
-        self,
-        task_id: UUID,
-        user_id: UUID
-    ) -> Dict[str, Any]:
+    def get_task_results_summary(self, task_id: UUID, user_id: UUID) -> Dict[str, Any]:
         """
         Get a summary of all results for a specific task
 
@@ -129,16 +123,15 @@ class ResultService:
             HTTPException: If task not found or unauthorized
         """
         # Verify task belongs to user
-        task = self.db.query(PipelineTask).join(Project).filter(
-            PipelineTask.id == task_id,
-            Project.user_id == user_id
-        ).first()
+        task = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(PipelineTask.id == task_id, Project.user_id == user_id)
+            .first()
+        )
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
         # Get results
         results = self.db.query(Result).filter(Result.task_id == task_id).all()
@@ -172,11 +165,7 @@ class ResultService:
 
     # ============= VISUALIZATION OPERATIONS =============
 
-    def get_visualization_data(
-        self,
-        result_id: UUID,
-        user_id: UUID
-    ) -> ResultVisualizationData:
+    def get_visualization_data(self, result_id: UUID, user_id: UUID) -> ResultVisualizationData:
         """
         Get visualization data for a specific result
 
@@ -205,7 +194,7 @@ class ResultService:
             return ResultVisualizationData(
                 type=result.result_type,
                 message="Visualization not yet implemented for this result type",
-                raw_metadata=result.result_metadata
+                raw_metadata=result.result_metadata,
             )
 
     # ============= HELPER METHODS =============
@@ -249,12 +238,7 @@ class ResultService:
 
         status = "pass" if metrics["quality_score"] > 30 else "warning"
 
-        return ResultVisualizationData(
-            type="qc_report",
-            metrics=metrics,
-            charts=charts,
-            status=status
-        )
+        return ResultVisualizationData(type="qc_report", metrics=metrics, charts=charts, status=status)
 
     def _generate_alignment_visualization(self, result: Result) -> ResultVisualizationData:
         """
@@ -286,12 +270,7 @@ class ResultService:
             },
         }
 
-        return ResultVisualizationData(
-            type="alignment",
-            metrics=metrics,
-            charts=charts,
-            status="pass"
-        )
+        return ResultVisualizationData(type="alignment", metrics=metrics, charts=charts, status="pass")
 
     def _generate_quantification_visualization(self, result: Result) -> ResultVisualizationData:
         """
@@ -331,12 +310,7 @@ class ResultService:
             for i in sorted(range(len(expression)), key=lambda i: expression[i], reverse=True)[:10]
         ]
 
-        return ResultVisualizationData(
-            type="quantification",
-            metrics=metrics,
-            charts=charts,
-            top_genes=top_genes
-        )
+        return ResultVisualizationData(type="quantification", metrics=metrics, charts=charts, top_genes=top_genes)
 
     def _generate_de_visualization(self, result: Result) -> ResultVisualizationData:
         """
@@ -383,21 +357,15 @@ class ResultService:
             }
             for i in range(len(genes))
             if pvalues[i] < 0.05
-        ][:20]  # Top 20 significant
+        ][
+            :20
+        ]  # Top 20 significant
 
         return ResultVisualizationData(
-            type="de_analysis",
-            metrics=metrics,
-            charts=charts,
-            significant_genes=significant_genes
+            type="de_analysis", metrics=metrics, charts=charts, significant_genes=significant_genes
         )
 
-    def get_results_by_task(
-        self,
-        task_id: UUID,
-        user_id: UUID,
-        result_type: Optional[str] = None
-    ) -> List[Result]:
+    def get_results_by_task(self, task_id: UUID, user_id: UUID, result_type: Optional[str] = None) -> List[Result]:
         """
         Get all results for a specific task
 
@@ -413,16 +381,15 @@ class ResultService:
             HTTPException: If task not found
         """
         # Verify task belongs to user
-        task = self.db.query(PipelineTask).join(Project).filter(
-            PipelineTask.id == task_id,
-            Project.user_id == user_id
-        ).first()
+        task = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(PipelineTask.id == task_id, Project.user_id == user_id)
+            .first()
+        )
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
         query = self.db.query(Result).filter(Result.task_id == task_id)
 

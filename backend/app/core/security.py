@@ -1,14 +1,17 @@
 """
 Security utilities for authentication and authorization
 """
+
 import base64
 import hashlib
 from datetime import timedelta
 from functools import lru_cache
 from typing import Any, Union
+
 import bcrypt
-from cryptography.fernet import Fernet, InvalidToken
 import jwt
+from cryptography.fernet import Fernet, InvalidToken
+
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
 
@@ -18,10 +21,7 @@ from app.core.datetime_utils import utc_now_naive
 _BCRYPT_MAX_BYTES = 72
 
 
-def create_access_token(
-    data: dict[str, Any],
-    expires_delta: timedelta | None = None
-) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """
     Create JWT access token
 
@@ -37,17 +37,11 @@ def create_access_token(
     if expires_delta:
         expire = utc_now_naive() + expires_delta
     else:
-        expire = utc_now_naive() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = utc_now_naive() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(
-        to_encode,
-        settings.JWT_SECRET_KEY,
-        algorithm=settings.JWT_ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     return encoded_jwt
 
@@ -63,11 +57,7 @@ def verify_token(token: str) -> dict[str, Any] | None:
         Decoded payload or None if invalid
     """
     try:
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except jwt.PyJWTError:
         return None
@@ -106,6 +96,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # rotating SECRET_KEY also invalidates stored ciphertexts — recommended
 # behavior, since it forces re-entry of vendor passwords after a key
 # rotation event.
+
 
 @lru_cache(maxsize=1)
 def _fernet() -> Fernet:

@@ -1,29 +1,38 @@
 """
 Statistics schemas for API responses
 """
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ProjectStats(BaseModel):
     """Project statistics"""
+
     total: int = Field(..., description="Total number of projects")
     active: int = Field(..., description="Number of active projects")
     completed: int = Field(..., description="Number of completed projects")
     failed: int = Field(..., description="Number of failed projects")
 
     model_config = {"from_attributes": True}
+
+
 class SampleStats(BaseModel):
     """Sample statistics"""
+
     total: int = Field(..., description="Total number of samples")
     processing: int = Field(..., description="Number of samples being processed")
     completed: int = Field(..., description="Number of completed samples")
     failed: int = Field(..., description="Number of failed samples")
 
     model_config = {"from_attributes": True}
+
+
 class TaskStats(BaseModel):
     """Task statistics"""
+
     total: int = Field(..., description="Total number of tasks")
     pending: int = Field(..., description="Number of pending tasks")
     running: int = Field(..., description="Number of running tasks")
@@ -32,15 +41,21 @@ class TaskStats(BaseModel):
     cancelled: int = Field(..., description="Number of cancelled tasks")
 
     model_config = {"from_attributes": True}
+
+
 class FileStats(BaseModel):
     """File statistics"""
+
     total: int = Field(..., description="Total number of files")
     total_size: int = Field(..., description="Total size in bytes")
     by_type: Dict[str, int] = Field(default_factory=dict, description="Files grouped by type")
 
     model_config = {"from_attributes": True}
+
+
 class StorageStats(BaseModel):
     """Storage usage statistics"""
+
     total_space: int = Field(..., description="Total storage space in bytes")
     used_space: int = Field(..., description="Used storage space in bytes")
     available_space: int = Field(..., description="Available storage space in bytes")
@@ -51,8 +66,11 @@ class StorageStats(BaseModel):
     results_space: int = Field(..., description="Space used by results")
 
     model_config = {"from_attributes": True}
+
+
 class UserActivityStats(BaseModel):
     """User activity statistics"""
+
     total_users: int = Field(..., description="Total number of users")
     active_users_today: int = Field(..., description="Active users today")
     active_users_week: int = Field(..., description="Active users this week")
@@ -61,16 +79,22 @@ class UserActivityStats(BaseModel):
     new_users_month: int = Field(..., description="New users this month")
 
     model_config = {"from_attributes": True}
+
+
 class PipelineStats(BaseModel):
     """Pipeline execution statistics"""
+
     total_runs: int = Field(..., description="Total pipeline runs")
     success_rate: float = Field(..., description="Success rate percentage")
     average_duration: float = Field(..., description="Average duration in seconds")
     most_used: List[Dict[str, Any]] = Field(default_factory=list, description="Most used pipelines")
 
     model_config = {"from_attributes": True}
+
+
 class SystemStats(BaseModel):
     """Overall system statistics"""
+
     uptime: float = Field(..., description="System uptime in seconds")
     api_calls_today: int = Field(..., description="API calls today")
     api_calls_hour: int = Field(..., description="API calls in the last hour")
@@ -78,8 +102,11 @@ class SystemStats(BaseModel):
     queue_size: int = Field(..., description="Task queue size")
 
     model_config = {"from_attributes": True}
+
+
 class StatsSummary(BaseModel):
     """Comprehensive statistics summary for dashboard"""
+
     projects: ProjectStats
     samples: SampleStats
     tasks: TaskStats
@@ -91,15 +118,21 @@ class StatsSummary(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = {"from_attributes": True}
+
+
 class TrendData(BaseModel):
     """Trend data for time-series analysis"""
+
     metric: str = Field(..., description="Metric name")
     period: str = Field(..., description="Time period (day, week, month)")
     data_points: List[Dict[str, Any]] = Field(..., description="Time-series data points")
 
     model_config = {"from_attributes": True}
+
+
 class QuickStats(BaseModel):
     """Quick statistics for header/widget display"""
+
     total_projects: int
     total_samples: int
     running_tasks: int

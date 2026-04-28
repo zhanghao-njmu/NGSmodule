@@ -4,27 +4,31 @@ File management API endpoints (Refactored with Service Layer)
 This is the refactored version using FileService for business logic.
 Routers are now thin HTTP adapters that delegate to the service layer.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File as FileUpload, Request
-from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
+
 from typing import Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Depends
+from fastapi import File as FileUpload
+from fastapi import Query, Request, UploadFile, status
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.rate_limit import limiter, RateLimits
+from app.core.rate_limit import RateLimits, limiter
 from app.models.user import User
-from app.services.file_service import FileService
 from app.schemas.file import (
-    FileResponse,
     FileListResponse,
+    FileResponse,
 )
-from app.schemas.common import MessageResponse
+from app.services.file_service import FileService
 
 router = APIRouter()
 
 
 # ============= DEPENDENCY INJECTION =============
+
 
 def get_file_service(db: Session = Depends(get_db)) -> FileService:
     """Dependency to get FileService instance"""
@@ -33,28 +37,21 @@ def get_file_service(db: Session = Depends(get_db)) -> FileService:
 
 # ============= ENDPOINTS =============
 
+
 @router.get("", response_model=FileListResponse)
 async def list_files(
     sample_id: Optional[UUID] = Query(None, description="Filter by sample"),
     project_id: Optional[UUID] = Query(None, description="Filter by project"),
     file_type: Optional[str] = Query(None, description="Filter by file type"),
     current_user: User = Depends(get_current_user),
-    service: FileService = Depends(get_file_service)
+    service: FileService = Depends(get_file_service),
 ):
     """
     List files with optional filters
     """
-    files = service.list_files(
-        user_id=current_user.id,
-        sample_id=sample_id,
-        project_id=project_id,
-        file_type=file_type
-    )
+    files = service.list_files(user_id=current_user.id, sample_id=sample_id, project_id=project_id, file_type=file_type)
 
-    return FileListResponse(
-        total=len(files),
-        items=files
-    )
+    return FileListResponse(total=len(files), items=files)
 
 
 @router.post("/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
@@ -64,7 +61,7 @@ async def upload_file(
     sample_id: UUID,
     file: UploadFile = FileUpload(...),
     current_user: User = Depends(get_current_user),
-    service: FileService = Depends(get_file_service)
+    service: FileService = Depends(get_file_service),
 ):
     """
     Upload a file and associate with sample
@@ -74,18 +71,12 @@ async def upload_file(
 
     Maximum file size: 50GB
     """
-    return await service.upload(
-        user_id=current_user.id,
-        sample_id=sample_id,
-        file=file
-    )
+    return await service.upload(user_id=current_user.id, sample_id=sample_id, file=file)
 
 
 @router.get("/{file_id}", response_model=FileResponse)
 async def get_file(
-    file_id: UUID,
-    current_user: User = Depends(get_current_user),
-    service: FileService = Depends(get_file_service)
+    file_id: UUID, current_user: User = Depends(get_current_user), service: FileService = Depends(get_file_service)
 ):
     """
     Get file information by ID
@@ -99,7 +90,7 @@ async def download_file(
     request: Request,
     file_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: FileService = Depends(get_file_service)
+    service: FileService = Depends(get_file_service),
 ):
     """
     Download file
@@ -116,7 +107,7 @@ async def delete_file(
     request: Request,
     file_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: FileService = Depends(get_file_service)
+    service: FileService = Depends(get_file_service),
 ):
     """
     Delete file

@@ -4,6 +4,7 @@ Data download API endpoints.
 Bridges the frontend to vendor-specific download tools (联川 / 诺禾致源 / ...)
 through the unified `DataDownloadService`.
 """
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,16 +13,16 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.services.data_download_service import DataDownloadService
-from app.services.data_provider.factory import list_vendors
+from app.schemas.common import MessageResponse
 from app.schemas.data_download import (
+    DownloadJobCreate,
+    DownloadJobListResponse,
+    DownloadJobResponse,
     SessionLogin,
     SessionStatus,
-    DownloadJobCreate,
-    DownloadJobResponse,
-    DownloadJobListResponse,
 )
-from app.schemas.common import MessageResponse
+from app.services.data_download_service import DataDownloadService
+from app.services.data_provider.factory import list_vendors
 
 router = APIRouter()
 
@@ -32,6 +33,7 @@ def get_service(db: Session = Depends(get_db)) -> DataDownloadService:
 
 # ---------------- vendor list ----------------
 
+
 @router.get("/vendors", response_model=list[str])
 async def supported_vendors():
     """List vendor IDs the backend has adapters for."""
@@ -39,6 +41,7 @@ async def supported_vendors():
 
 
 # ---------------- session ----------------
+
 
 @router.get("/sessions/{vendor}", response_model=SessionStatus)
 async def get_session(
@@ -85,6 +88,7 @@ async def close_session(
 
 
 # ---------------- jobs ----------------
+
 
 @router.post("/jobs", response_model=DownloadJobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(

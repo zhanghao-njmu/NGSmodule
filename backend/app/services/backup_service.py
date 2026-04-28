@@ -2,20 +2,21 @@
 Backup Service
 Real implementation using pg_dump for database backups and tar for files.
 """
-import os
-import subprocess
+
 import hashlib
 import logging
-from pathlib import Path
+import os
+import subprocess
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
-from sqlalchemy.orm import Session
 from urllib.parse import urlparse
+
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
 from app.models.backup import SystemBackup
-
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +65,18 @@ class BackupService:
 
         cmd = [
             "pg_dump",
-            "-h", db_params["host"],
-            "-p", db_params["port"],
-            "-U", db_params["user"],
-            "-d", db_params["database"],
-            "-F", "c" if compress else "p",  # custom (compressed) or plain format
-            "-f", str(output_path),
+            "-h",
+            db_params["host"],
+            "-p",
+            db_params["port"],
+            "-U",
+            db_params["user"],
+            "-d",
+            db_params["database"],
+            "-F",
+            "c" if compress else "p",  # custom (compressed) or plain format
+            "-f",
+            str(output_path),
         ]
 
         try:
@@ -196,7 +203,8 @@ class BackupService:
                         "tar",
                         "-czf" if compress else "-cf",
                         str(file_path),
-                        "-C", str(self.backup_dir),
+                        "-C",
+                        str(self.backup_dir),
                         db_path.name,
                         files_path.name,
                     ]
@@ -229,12 +237,7 @@ class BackupService:
 
     def list_backups(self, limit: int = 100) -> list:
         """List all backups, newest first"""
-        return (
-            self.db.query(SystemBackup)
-            .order_by(SystemBackup.created_at.desc())
-            .limit(limit)
-            .all()
-        )
+        return self.db.query(SystemBackup).order_by(SystemBackup.created_at.desc()).limit(limit).all()
 
     def get_backup(self, backup_id: str) -> Optional[SystemBackup]:
         """Get backup by ID"""
@@ -261,11 +264,7 @@ class BackupService:
     def cleanup_expired_backups(self) -> int:
         """Delete backups past their expiration date"""
         now = utc_now_naive()
-        expired = (
-            self.db.query(SystemBackup)
-            .filter(SystemBackup.expires_at < now)
-            .all()
-        )
+        expired = self.db.query(SystemBackup).filter(SystemBackup.expires_at < now).all()
 
         count = 0
         for backup in expired:

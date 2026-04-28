@@ -1,12 +1,12 @@
 """
 Vendor → provider lookup.
 """
+
 from typing import Dict, Type
 
 from app.services.data_provider.base import DataProviderBase
 from app.services.data_provider.lc_bio import LcBioProvider
 from app.services.data_provider.novogene import NovogeneProvider
-
 
 _REGISTRY: Dict[str, Type[DataProviderBase]] = {
     "lc_bio": LcBioProvider,
@@ -22,9 +22,7 @@ def get_provider(vendor: str) -> DataProviderBase:
     """
     cls = _REGISTRY.get(vendor)
     if cls is None:
-        raise ValueError(
-            f"Unknown vendor {vendor!r}. Supported: {list(_REGISTRY)}"
-        )
+        raise ValueError(f"Unknown vendor {vendor!r}. Supported: {list(_REGISTRY)}")
     return cls()
 
 

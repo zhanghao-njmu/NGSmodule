@@ -1,29 +1,26 @@
 """
 Celery tasks for NGS pipeline execution
 """
+
+import asyncio
 import logging
-import subprocess
 import os
 import re
+import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional
-from uuid import UUID
-import asyncio
+from typing import Any, Dict, Optional
 
-from app.workers.celery_app import celery_app
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.task import PipelineTask
+from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
 
 # Structured-event protocol emitted by `pipelines/lib/runtime.sh`.
 # See docs/PIPELINE_MIGRATION_ANALYSIS.md for rationale.
-_EVENT_RE = re.compile(
-    r"^::(?P<kind>progress|status|artifact|metric|dry-run|error)::"
-    r"(?P<payload>.*)$"
-)
+_EVENT_RE = re.compile(r"^::(?P<kind>progress|status|artifact|metric|dry-run|error)::" r"(?P<payload>.*)$")
 
 
 def send_websocket_update(task_id: str, status: str, progress: float, message: str = ""):
@@ -40,9 +37,7 @@ def send_websocket_update(task_id: str, status: str, progress: float, message: s
         asyncio.set_event_loop(loop)
 
         try:
-            loop.run_until_complete(
-                manager.send_task_status(task_id, status, progress, message)
-            )
+            loop.run_until_complete(manager.send_task_status(task_id, status, progress, message))
         finally:
             loop.close()
     except Exception as e:
@@ -94,12 +89,7 @@ def _parse_event_line(line: str) -> Optional[Dict[str, str]]:
 
 
 @celery_app.task(bind=True)
-def run_ngs_pipeline(
-    self,
-    task_id: str,
-    pipeline_script: str,
-    config: Dict[str, Any]
-):
+def run_ngs_pipeline(self, task_id: str, pipeline_script: str, config: Dict[str, Any]):  # noqa: C901
     """
     Run NGS pipeline script
 
@@ -126,10 +116,7 @@ def run_ngs_pipeline(
         db.commit()
 
         # Update progress
-        self.update_state(
-            state="PROGRESS",
-            meta={"progress": 0, "status": "Starting pipeline..."}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 0, "status": "Starting pipeline..."})
 
         # Send WebSocket update
         send_websocket_update(task_id, "running", 0.0, "Starting pipeline...")
@@ -208,9 +195,7 @@ def run_ngs_pipeline(
 
                 elif kind == "artifact":
                     # payload like: "kind=qc_report path=/data/... .html"
-                    parts = dict(
-                        p.split("=", 1) for p in payload.split() if "=" in p
-                    )
+                    parts = dict(p.split("=", 1) for p in payload.split() if "=" in p)
                     if "kind" in parts and "path" in parts:
                         _persist_artifact(db, task_id, parts["kind"], parts["path"])
 
@@ -233,19 +218,12 @@ def run_ngs_pipeline(
         task.progress = 100.0
         db.commit()
 
-        self.update_state(
-            state="SUCCESS",
-            meta={"progress": 100, "status": "Pipeline completed successfully"}
-        )
+        self.update_state(state="SUCCESS", meta={"progress": 100, "status": "Pipeline completed successfully"})
 
         # Send WebSocket update
         send_websocket_update(task_id, "completed", 100.0, "Pipeline completed successfully")
 
-        return {
-            "task_id": task_id,
-            "status": "completed",
-            "log_file": str(log_file)
-        }
+        return {"task_id": task_id, "status": "completed", "log_file": str(log_file)}
 
     except Exception as e:
         # Update task status
@@ -257,10 +235,7 @@ def run_ngs_pipeline(
             # Send WebSocket update
             send_websocket_update(task_id, "failed", task.progress, f"Pipeline failed: {str(e)}")
 
-        self.update_state(
-            state="FAILURE",
-            meta={"error": str(e)}
-        )
+        self.update_state(state="FAILURE", meta={"error": str(e)})
 
         raise
 
@@ -277,7 +252,7 @@ def cleanup_old_files(days: int = 30):
         days: Delete files older than this many days
     """
     import time
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     work_dir = Path(settings.NGS_WORK_DIR)
     cutoff_time = time.time() - (days * 86400)
@@ -293,7 +268,4 @@ def cleanup_old_files(days: int = 30):
                 except Exception as e:
                     logger.warning(f"Error deleting {file_path}: {e}")
 
-    return {
-        "deleted_files": deleted_count,
-        "cutoff_date": datetime.fromtimestamp(cutoff_time).isoformat()
-    }
+    return {"deleted_files": deleted_count, "cutoff_date": datetime.fromtimestamp(cutoff_time).isoformat()}

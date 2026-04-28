@@ -3,11 +3,11 @@ Mock AI provider used in development and tests.
 
 Returns plausible canned responses without contacting any external service.
 """
+
 import random
 from typing import Any, Dict, List, Optional
 
 from app.services.ai_providers.base import AIProvider
-
 
 _RESPONSES = [
     "Based on your data, I recommend using a quality threshold of 20 for optimal results.",

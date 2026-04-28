@@ -4,14 +4,15 @@ Data download model.
 Represents a single delivery file fetched from a sequencing vendor
 (联川 / 诺禾致源 / ...) into the local filesystem.
 """
+
 import uuid
-from sqlalchemy import Column, String, DateTime, BigInteger, Float, ForeignKey, Text
+
+from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
 from app.core.types import UUID
-
 
 # Status state machine:
 #   pending  -> queued, worker not yet picked up

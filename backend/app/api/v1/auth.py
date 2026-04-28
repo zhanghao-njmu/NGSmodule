@@ -1,25 +1,23 @@
 """
 Authentication API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.security import create_access_token, verify_password, get_password_hash
-from app.core.rate_limit import limiter, RateLimits
+from app.core.rate_limit import RateLimits, limiter
+from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, Token
+from app.schemas.user import Token, UserCreate, UserResponse
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit(RateLimits.REGISTER)
-async def register(
-    request: Request,
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
+async def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user
 
@@ -32,18 +30,12 @@ async def register(
     # Check if username already exists
     existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
 
     # Check if email already exists
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
     # Create new user
     user = User(
@@ -51,7 +43,7 @@ async def register(
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
         full_name=user_data.full_name,
-        organization=user_data.organization
+        organization=user_data.organization,
     )
 
     db.add(user)
@@ -63,11 +55,7 @@ async def register(
 
 @router.post("/login", response_model=Token)
 @limiter.limit(RateLimits.LOGIN)
-async def login(
-    request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Login to get access token
 
@@ -79,9 +67,7 @@ async def login(
     - **token_type**: Token type (bearer)
     """
     # Find user by username or email
-    user = db.query(User).filter(
-        (User.username == form_data.username) | (User.email == form_data.username)
-    ).first()
+    user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
 
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -91,18 +77,12 @@ async def login(
         )
 
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
     # Create access token
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/logout")

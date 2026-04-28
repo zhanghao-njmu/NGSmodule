@@ -1,13 +1,14 @@
 """
 Abstract base class for vendor data-download providers.
 """
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-
 # ---------------- exceptions ----------------
+
 
 class DataProviderError(Exception):
     """Base for provider errors. Surfaced as 4xx/5xx by the API layer."""
@@ -31,6 +32,7 @@ class DownloadFailedError(DataProviderError):
 
 # ---------------- value objects ----------------
 
+
 @dataclass
 class SessionInfo:
     active: bool
@@ -40,6 +42,7 @@ class SessionInfo:
 @dataclass
 class Progress:
     """Snapshot of an in-flight download parsed from the vendor's log file."""
+
     status: str  # "pending" | "running" | "completed" | "failed"
     percent: float  # 0.0 – 100.0
     bytes_downloaded: Optional[int] = None
@@ -48,6 +51,7 @@ class Progress:
 
 
 # ---------------- provider base ----------------
+
 
 class DataProviderBase(ABC):
     """Vendor-agnostic contract.

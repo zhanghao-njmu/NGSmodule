@@ -15,6 +15,13 @@ ignore =
     W503,
     # F401: module imported but unused (handled by autoflake)
     # F401,
+    # F403/F405: star imports — used intentionally for schema/api re-exports;
+    # __init__.py-style consolidation pattern, kept readable in callsites.
+    F403,
+    F405,
+    # E712: comparison to True/False with == — required by SQLAlchemy
+    # query filters (column == True must be SQL '=', not Python truthy).
+    E712,
 
 # Exclude patterns
 exclude =

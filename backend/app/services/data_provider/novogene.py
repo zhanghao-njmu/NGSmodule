@@ -14,13 +14,14 @@ To finish:
      `lc_bio.py`.
   3. Register in `factory.py` once tested end-to-end.
 """
+
 from pathlib import Path
 
 from app.services.data_provider.base import (
     DataProviderBase,
-    SessionInfo,
-    Progress,
     LoginFailedError,
+    Progress,
+    SessionInfo,
 )
 
 

@@ -6,8 +6,10 @@ Stored ciphertexts are fernet-encrypted with a key derived from
 `settings.SECRET_KEY`. Rotating SECRET_KEY invalidates stored
 credentials (intentional — forces re-entry).
 """
+
 import uuid
-from sqlalchemy import Column, String, DateTime, ForeignKey, UniqueConstraint
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -17,9 +19,7 @@ from app.core.types import UUID
 
 class VendorCredential(Base):
     __tablename__ = "vendor_credentials"
-    __table_args__ = (
-        UniqueConstraint("user_id", "vendor", "label", name="uq_vendor_cred_user_vendor_label"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "vendor", "label", name="uq_vendor_cred_user_vendor_label"),)
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

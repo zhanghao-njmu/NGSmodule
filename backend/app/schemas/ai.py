@@ -1,19 +1,22 @@
 """
 AI service schemas for intelligent features
 """
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Any
+
+import uuid
 from datetime import datetime
 from enum import Enum
-import uuid
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
 
 # ============================================================================
 # Enums
 # ============================================================================
 
+
 class AISystemStatusEnum(str, Enum):
     """AI system operational status"""
+
     OPERATIONAL = "operational"
     DEGRADED = "degraded"
     MAINTENANCE = "maintenance"
@@ -22,6 +25,7 @@ class AISystemStatusEnum(str, Enum):
 
 class QCStatusEnum(str, Enum):
     """QC analysis status"""
+
     PASS = "pass"
     WARNING = "warning"
     FAIL = "fail"
@@ -29,6 +33,7 @@ class QCStatusEnum(str, Enum):
 
 class AnomalySeverity(str, Enum):
     """Anomaly severity level"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -37,6 +42,7 @@ class AnomalySeverity(str, Enum):
 
 class AnomalyStatus(str, Enum):
     """Anomaly status"""
+
     DETECTED = "detected"
     INVESTIGATING = "investigating"
     RESOLVED = "resolved"
@@ -45,6 +51,7 @@ class AnomalyStatus(str, Enum):
 
 class InsightCategory(str, Enum):
     """Insight category"""
+
     QUALITY = "quality"
     PERFORMANCE = "performance"
     OPTIMIZATION = "optimization"
@@ -56,8 +63,10 @@ class InsightCategory(str, Enum):
 # Parameter Recommendations
 # ============================================================================
 
+
 class RecommendationRequest(BaseModel):
     """Pipeline recommendation request"""
+
     pipeline_type: str
     sample_count: Optional[int] = None
     data_size: Optional[int] = None
@@ -69,6 +78,7 @@ class RecommendationRequest(BaseModel):
 
 class ParameterValue(BaseModel):
     """Single parameter recommendation value"""
+
     name: str
     recommended_value: Any
     confidence: float = Field(..., ge=0.0, le=1.0)
@@ -78,6 +88,7 @@ class ParameterValue(BaseModel):
 
 class ParameterRecommendation(BaseModel):
     """Parameter recommendation for specific parameter"""
+
     parameter_name: str
     pipeline_type: str
     recommended_value: Any
@@ -89,6 +100,7 @@ class ParameterRecommendation(BaseModel):
 
 class PipelineRecommendation(BaseModel):
     """Complete pipeline parameter recommendations"""
+
     pipeline_type: str
     parameters: List[ParameterValue]
     overall_confidence: float
@@ -101,6 +113,7 @@ class PipelineRecommendation(BaseModel):
 
 class SimilarRun(BaseModel):
     """Similar successful pipeline run"""
+
     id: str
     similarity: float
     parameters: Dict[str, Any]
@@ -112,8 +125,10 @@ class SimilarRun(BaseModel):
 # Quality Control
 # ============================================================================
 
+
 class AutoQCRequest(BaseModel):
     """Auto QC analysis request"""
+
     sample_id: str
     file_id: Optional[str] = None
     qc_type: str = "comprehensive"  # basic, comprehensive, custom
@@ -122,6 +137,7 @@ class AutoQCRequest(BaseModel):
 
 class QCMetric(BaseModel):
     """Single QC metric"""
+
     name: str
     value: float
     threshold: Optional[float] = None
@@ -131,6 +147,7 @@ class QCMetric(BaseModel):
 
 class QCRecommendation(BaseModel):
     """QC improvement recommendation"""
+
     issue: str
     severity: str
     recommendation: str
@@ -139,6 +156,7 @@ class QCRecommendation(BaseModel):
 
 class QCReport(BaseModel):
     """Quality control report"""
+
     sample_id: str
     overall_status: QCStatusEnum
     overall_score: float = Field(..., ge=0.0, le=100.0)
@@ -150,6 +168,7 @@ class QCReport(BaseModel):
 
 class BatchQCRequest(BaseModel):
     """Batch QC request"""
+
     sampleIds: List[str] = Field(..., alias="sampleIds", min_length=1)
 
     model_config = {"populate_by_name": True}
@@ -157,6 +176,7 @@ class BatchQCRequest(BaseModel):
 
 class QCIssuePrediction(BaseModel):
     """Predicted QC issue"""
+
     issue: str
     probability: float = Field(..., ge=0.0, le=1.0)
     prevention: str
@@ -165,6 +185,7 @@ class QCIssuePrediction(BaseModel):
 
 class PredictQCRequest(BaseModel):
     """Predict QC issues request"""
+
     metadata: Dict[str, Any]
 
 
@@ -172,8 +193,10 @@ class PredictQCRequest(BaseModel):
 # Anomaly Detection
 # ============================================================================
 
+
 class AnomalyDetectionRequest(BaseModel):
     """Anomaly detection request"""
+
     project_id: Optional[str] = None
     sample_ids: Optional[List[str]] = None
     detection_type: str = "comprehensive"
@@ -183,6 +206,7 @@ class AnomalyDetectionRequest(BaseModel):
 
 class Anomaly(BaseModel):
     """Detected anomaly"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: str
     severity: AnomalySeverity
@@ -199,6 +223,7 @@ class Anomaly(BaseModel):
 
 class AnomalyDetectionReport(BaseModel):
     """Anomaly detection report"""
+
     detection_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: Optional[str] = None
     anomalies: List[Anomaly]
@@ -210,12 +235,14 @@ class AnomalyDetectionReport(BaseModel):
 
 class AnomalyFixRequest(BaseModel):
     """Anomaly fix request"""
+
     action: str
     parameters: Optional[Dict[str, Any]] = None
 
 
 class AnomalyFixResponse(BaseModel):
     """Anomaly fix result"""
+
     success: bool
     message: str
     anomaly_id: str
@@ -227,8 +254,10 @@ class AnomalyFixResponse(BaseModel):
 # Smart Sample Grouping
 # ============================================================================
 
+
 class SmartGroupingRequest(BaseModel):
     """Smart grouping request"""
+
     project_id: str
     sample_ids: Optional[List[str]] = None
     grouping_criteria: List[str] = []  # e.g., ["condition", "tissue", "time_point"]
@@ -238,6 +267,7 @@ class SmartGroupingRequest(BaseModel):
 
 class SampleGroup(BaseModel):
     """Sample group"""
+
     name: str
     sample_ids: List[str]
     common_attributes: Dict[str, Any]
@@ -246,6 +276,7 @@ class SampleGroup(BaseModel):
 
 class SmartGroupingResult(BaseModel):
     """Smart grouping result"""
+
     groups: List[SampleGroup]
     ungrouped_samples: List[str] = []
     grouping_quality: float
@@ -256,6 +287,7 @@ class SmartGroupingResult(BaseModel):
 
 class ComparisonSuggestion(BaseModel):
     """Comparison suggestion"""
+
     group1: str
     group2: str
     comparisonType: str
@@ -265,11 +297,13 @@ class ComparisonSuggestion(BaseModel):
 
 class GroupValidationRequest(BaseModel):
     """Group validation request"""
+
     groups: List[Dict[str, Any]]  # [{"name": "...", "sampleIds": [...]}]
 
 
 class GroupValidationResult(BaseModel):
     """Group validation result"""
+
     valid: bool
     issues: List[str] = []
     suggestions: List[str] = []
@@ -279,14 +313,17 @@ class GroupValidationResult(BaseModel):
 # AI Assistant
 # ============================================================================
 
+
 class AssistantMessageRequest(BaseModel):
     """Assistant message request"""
+
     message: str
     context: Optional[Dict[str, Any]] = None
 
 
 class AIAssistantMessage(BaseModel):
     """AI assistant message"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     conversation_id: str
     role: str  # user, assistant, system
@@ -297,6 +334,7 @@ class AIAssistantMessage(BaseModel):
 
 class AIAssistantConversation(BaseModel):
     """AI assistant conversation"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     messages: List[AIAssistantMessage] = []
@@ -307,6 +345,7 @@ class AIAssistantConversation(BaseModel):
 
 class CreateConversationRequest(BaseModel):
     """Create conversation request"""
+
     title: str
     context: Optional[Dict[str, Any]] = None
 
@@ -315,8 +354,10 @@ class CreateConversationRequest(BaseModel):
 # Analysis Insights
 # ============================================================================
 
+
 class AnalysisInsight(BaseModel):
     """Single analysis insight"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     category: InsightCategory
     title: str
@@ -331,6 +372,7 @@ class AnalysisInsight(BaseModel):
 
 class InsightsReport(BaseModel):
     """Insights report for a project"""
+
     project_id: str
     insights: List[AnalysisInsight]
     summary: str
@@ -341,6 +383,7 @@ class InsightsReport(BaseModel):
 
 class AnalyzeInsightsRequest(BaseModel):
     """Insights analysis request"""
+
     type: str
     data: Dict[str, Any]
 
@@ -349,8 +392,10 @@ class AnalyzeInsightsRequest(BaseModel):
 # Predictions
 # ============================================================================
 
+
 class ResourcePredictionRequest(BaseModel):
     """Resource prediction request"""
+
     pipelineType: str
     sampleCount: int
     dataSize: int
@@ -361,6 +406,7 @@ class ResourcePredictionRequest(BaseModel):
 
 class ResourcePrediction(BaseModel):
     """Resource requirement prediction"""
+
     cpu_cores: int
     memory_gb: float
     storage_gb: float
@@ -371,6 +417,7 @@ class ResourcePrediction(BaseModel):
 
 class SuccessPrediction(BaseModel):
     """Success probability prediction"""
+
     success_probability: float = Field(..., ge=0.0, le=1.0)
     risk_factors: List[str] = []
     success_factors: List[str] = []
@@ -380,6 +427,7 @@ class SuccessPrediction(BaseModel):
 
 class TimelineMilestone(BaseModel):
     """Timeline milestone"""
+
     name: str
     date: str
     confidence: float
@@ -387,6 +435,7 @@ class TimelineMilestone(BaseModel):
 
 class TimelinePrediction(BaseModel):
     """Project timeline prediction"""
+
     totalDuration: str
     milestones: List[TimelineMilestone]
     confidence: float
@@ -397,8 +446,10 @@ class TimelinePrediction(BaseModel):
 # System Status
 # ============================================================================
 
+
 class AICapability(BaseModel):
     """AI capability information"""
+
     name: str
     available: bool
     version: Optional[str] = None
@@ -407,6 +458,7 @@ class AICapability(BaseModel):
 
 class AISystemStatus(BaseModel):
     """AI system status"""
+
     status: AISystemStatusEnum
     version: str
     capabilities: List[AICapability]
@@ -420,8 +472,10 @@ class AISystemStatus(BaseModel):
 # Feedback
 # ============================================================================
 
+
 class FeedbackRequest(BaseModel):
     """Feedback request"""
+
     helpful: bool
     accuracy: Optional[float] = Field(None, ge=0.0, le=1.0)
     comments: Optional[str] = None
@@ -429,12 +483,14 @@ class FeedbackRequest(BaseModel):
 
 class IncorrectPredictionRequest(BaseModel):
     """Incorrect prediction report"""
+
     actualOutcome: Any
     comments: Optional[str] = None
 
 
 class FeedbackResponse(BaseModel):
     """Feedback acknowledgement"""
+
     success: bool
     message: str
     feedback_id: str = Field(default_factory=lambda: str(uuid.uuid4()))

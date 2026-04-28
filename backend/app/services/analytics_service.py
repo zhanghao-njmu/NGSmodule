@@ -1,18 +1,18 @@
 """
 Analytics service for data analysis and visualization
 """
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc, asc
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Any, Tuple
-import uuid
-from statistics import mean, median, stdev
-from collections import defaultdict
 
+from datetime import datetime, timedelta
+from statistics import mean, stdev
+from typing import List, Optional
+
+from sqlalchemy import and_, desc, func
+from sqlalchemy.orm import Session
+
+from app.models.file import File
 from app.models.project import Project
 from app.models.sample import Sample
 from app.models.task import PipelineTask
-from app.models.file import File
 from app.models.user import User
 from app.schemas.analytics import *
 
@@ -33,7 +33,7 @@ class AnalyticsService:
         time_range: TimeRange,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> TimeSeriesData:
         """Get time series data for a metric"""
 
@@ -70,7 +70,7 @@ class AnalyticsService:
                 "min": min(values),
                 "max": max(values),
                 "avg": mean(values),
-                "std": stdev(values) if len(values) > 1 else 0.0
+                "std": stdev(values) if len(values) > 1 else 0.0,
             }
 
         return TimeSeriesData(
@@ -80,96 +80,61 @@ class AnalyticsService:
             total_points=len(data_points),
             start_time=start_date,
             end_time=end_date,
-            statistics=statistics
+            statistics=statistics,
         )
 
     def _get_task_time_series(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        user_id: Optional[str]
+        self, start_date: datetime, end_date: datetime, user_id: Optional[str]
     ) -> List[TimeSeriesDataPoint]:
         """Get task count time series"""
 
         query = self.db.query(
-            func.date_trunc('day', PipelineTask.created_at).label('date'),
-            func.count(PipelineTask.id).label('count')
-        ).filter(
-            and_(
-                PipelineTask.created_at >= start_date,
-                PipelineTask.created_at <= end_date
-            )
-        )
+            func.date_trunc("day", PipelineTask.created_at).label("date"), func.count(PipelineTask.id).label("count")
+        ).filter(and_(PipelineTask.created_at >= start_date, PipelineTask.created_at <= end_date))
 
         if user_id:
             # Filter by user's projects
             query = query.join(Sample).join(Project).filter(Project.owner_id == user_id)
 
-        results = query.group_by('date').order_by('date').all()
+        results = query.group_by("date").order_by("date").all()
 
         return [
-            TimeSeriesDataPoint(
-                timestamp=row.date,
-                value=float(row.count),
-                label=row.date.strftime('%Y-%m-%d')
-            )
+            TimeSeriesDataPoint(timestamp=row.date, value=float(row.count), label=row.date.strftime("%Y-%m-%d"))
             for row in results
         ]
 
     def _get_sample_time_series(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        user_id: Optional[str]
+        self, start_date: datetime, end_date: datetime, user_id: Optional[str]
     ) -> List[TimeSeriesDataPoint]:
         """Get sample count time series"""
 
         query = self.db.query(
-            func.date_trunc('day', Sample.created_at).label('date'),
-            func.count(Sample.id).label('count')
-        ).filter(
-            and_(
-                Sample.created_at >= start_date,
-                Sample.created_at <= end_date
-            )
-        )
+            func.date_trunc("day", Sample.created_at).label("date"), func.count(Sample.id).label("count")
+        ).filter(and_(Sample.created_at >= start_date, Sample.created_at <= end_date))
 
         if user_id:
             query = query.join(Project).filter(Project.owner_id == user_id)
 
-        results = query.group_by('date').order_by('date').all()
+        results = query.group_by("date").order_by("date").all()
 
         return [
-            TimeSeriesDataPoint(
-                timestamp=row.date,
-                value=float(row.count),
-                label=row.date.strftime('%Y-%m-%d')
-            )
+            TimeSeriesDataPoint(timestamp=row.date, value=float(row.count), label=row.date.strftime("%Y-%m-%d"))
             for row in results
         ]
 
     def _get_storage_time_series(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        user_id: Optional[str]
+        self, start_date: datetime, end_date: datetime, user_id: Optional[str]
     ) -> List[TimeSeriesDataPoint]:
         """Get storage usage time series"""
 
         query = self.db.query(
-            func.date_trunc('day', File.created_at).label('date'),
-            func.sum(File.size).label('total_size')
-        ).filter(
-            and_(
-                File.created_at >= start_date,
-                File.created_at <= end_date
-            )
-        )
+            func.date_trunc("day", File.created_at).label("date"), func.sum(File.size).label("total_size")
+        ).filter(and_(File.created_at >= start_date, File.created_at <= end_date))
 
         if user_id:
             query = query.join(Sample).join(Project).filter(Project.owner_id == user_id)
 
-        results = query.group_by('date').order_by('date').all()
+        results = query.group_by("date").order_by("date").all()
 
         # Calculate cumulative storage
         cumulative = 0
@@ -177,11 +142,7 @@ class AnalyticsService:
         for row in results:
             cumulative += row.total_size or 0
             data_points.append(
-                TimeSeriesDataPoint(
-                    timestamp=row.date,
-                    value=float(cumulative),
-                    label=row.date.strftime('%Y-%m-%d')
-                )
+                TimeSeriesDataPoint(timestamp=row.date, value=float(cumulative), label=row.date.strftime("%Y-%m-%d"))
             )
 
         return data_points
@@ -191,9 +152,7 @@ class AnalyticsService:
     # ========================================================================
 
     def get_project_performance(
-        self,
-        project_id: str,
-        user_id: Optional[str] = None
+        self, project_id: str, user_id: Optional[str] = None
     ) -> Optional[ProjectPerformanceMetrics]:
         """Get performance metrics for a project"""
 
@@ -206,23 +165,22 @@ class AnalyticsService:
             return None
 
         # Count samples
-        total_samples = self.db.query(func.count(Sample.id)).filter(
-            Sample.project_id == project_id
-        ).scalar()
+        total_samples = self.db.query(func.count(Sample.id)).filter(Sample.project_id == project_id).scalar()
 
         # Count tasks
-        task_stats = self.db.query(
-            func.count(PipelineTask.id).label('total'),
-            func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0)).label('completed'),
-            func.sum(func.case((PipelineTask.status == 'failed', 1), else_=0)).label('failed'),
-            func.avg(
-                func.extract('epoch', PipelineTask.end_time - PipelineTask.start_time)
-            ).label('avg_duration')
-        ).join(Sample).filter(
-            Sample.project_id == project_id,
-            PipelineTask.start_time.isnot(None),
-            PipelineTask.end_time.isnot(None)
-        ).first()
+        task_stats = (
+            self.db.query(
+                func.count(PipelineTask.id).label("total"),
+                func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+                func.avg(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("avg_duration"),
+            )
+            .join(Sample)
+            .filter(
+                Sample.project_id == project_id, PipelineTask.start_time.isnot(None), PipelineTask.end_time.isnot(None)
+            )
+            .first()
+        )
 
         total_tasks = task_stats.total or 0
         completed_tasks = task_stats.completed or 0
@@ -230,29 +188,27 @@ class AnalyticsService:
         success_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
 
         # Calculate total processing time
-        total_processing = self.db.query(
-            func.sum(
-                func.extract('epoch', PipelineTask.end_time - PipelineTask.start_time)
+        total_processing = (
+            self.db.query(func.sum(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)))
+            .join(Sample)
+            .filter(
+                Sample.project_id == project_id, PipelineTask.start_time.isnot(None), PipelineTask.end_time.isnot(None)
             )
-        ).join(Sample).filter(
-            Sample.project_id == project_id,
-            PipelineTask.start_time.isnot(None),
-            PipelineTask.end_time.isnot(None)
-        ).scalar()
+            .scalar()
+        )
 
         # Calculate storage used
-        storage_used = self.db.query(
-            func.sum(File.size)
-        ).join(Sample).filter(
-            Sample.project_id == project_id
-        ).scalar() or 0
+        storage_used = (
+            self.db.query(func.sum(File.size)).join(Sample).filter(Sample.project_id == project_id).scalar() or 0
+        )
 
         # Get last activity
-        last_activity = self.db.query(
-            func.max(PipelineTask.updated_at)
-        ).join(Sample).filter(
-            Sample.project_id == project_id
-        ).scalar()
+        last_activity = (
+            self.db.query(func.max(PipelineTask.updated_at))
+            .join(Sample)
+            .filter(Sample.project_id == project_id)
+            .scalar()
+        )
 
         return ProjectPerformanceMetrics(
             project_id=str(project.id),
@@ -266,15 +222,10 @@ class AnalyticsService:
             total_processing_time=total_processing,
             storage_used=storage_used,
             created_at=project.created_at,
-            last_activity=last_activity
+            last_activity=last_activity,
         )
 
-    def compare_projects(
-        self,
-        project_ids: List[str],
-        metric: str,
-        user_id: Optional[str] = None
-    ) -> ProjectComparison:
+    def compare_projects(self, project_ids: List[str], metric: str, user_id: Optional[str] = None) -> ProjectComparison:
         """Compare multiple projects"""
 
         projects = []
@@ -283,21 +234,14 @@ class AnalyticsService:
             if metrics:
                 projects.append(metrics)
 
-        return ProjectComparison(
-            projects=projects,
-            comparison_metric=metric,
-            generated_at=datetime.utcnow()
-        )
+        return ProjectComparison(projects=projects, comparison_metric=metric, generated_at=datetime.utcnow())
 
     # ========================================================================
     # Sample Quality Analytics
     # ========================================================================
 
     def get_sample_quality_distribution(
-        self,
-        metric_name: str,
-        project_id: Optional[str] = None,
-        user_id: Optional[str] = None
+        self, metric_name: str, project_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> SampleQualityDistribution:
         """Get distribution of sample quality metrics"""
 
@@ -324,19 +268,10 @@ class AnalyticsService:
             {"range": "80-100", "count": int(total_samples * 0.15)},
         ]
 
-        statistics = {
-            "min": 0.0,
-            "max": 100.0,
-            "avg": 65.5,
-            "median": 70.0,
-            "std": 15.2
-        }
+        statistics = {"min": 0.0, "max": 100.0, "avg": 65.5, "median": 70.0, "std": 15.2}
 
         return SampleQualityDistribution(
-            metric_name=metric_name,
-            bins=bins,
-            total_samples=total_samples,
-            statistics=statistics
+            metric_name=metric_name, bins=bins, total_samples=total_samples, statistics=statistics
         )
 
     # ========================================================================
@@ -344,30 +279,19 @@ class AnalyticsService:
     # ========================================================================
 
     def get_pipeline_performance(
-        self,
-        pipeline_name: Optional[str] = None,
-        user_id: Optional[str] = None
+        self, pipeline_name: Optional[str] = None, user_id: Optional[str] = None
     ) -> List[PipelinePerformanceMetrics]:
         """Get pipeline performance metrics"""
 
         query = self.db.query(
             PipelineTask.pipeline,
-            func.count(PipelineTask.id).label('total'),
-            func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0)).label('successful'),
-            func.sum(func.case((PipelineTask.status == 'failed', 1), else_=0)).label('failed'),
-            func.avg(
-                func.extract('epoch', PipelineTask.end_time - PipelineTask.start_time)
-            ).label('avg_duration'),
-            func.min(
-                func.extract('epoch', PipelineTask.end_time - PipelineTask.start_time)
-            ).label('min_duration'),
-            func.max(
-                func.extract('epoch', PipelineTask.end_time - PipelineTask.start_time)
-            ).label('max_duration')
-        ).filter(
-            PipelineTask.start_time.isnot(None),
-            PipelineTask.end_time.isnot(None)
-        )
+            func.count(PipelineTask.id).label("total"),
+            func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("successful"),
+            func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+            func.avg(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("avg_duration"),
+            func.min(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("min_duration"),
+            func.max(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("max_duration"),
+        ).filter(PipelineTask.start_time.isnot(None), PipelineTask.end_time.isnot(None))
 
         if pipeline_name:
             query = query.filter(PipelineTask.pipeline == pipeline_name)
@@ -394,7 +318,7 @@ class AnalyticsService:
                     min_duration=row.min_duration,
                     max_duration=row.max_duration,
                     avg_cpu_usage=None,  # Would come from monitoring system
-                    avg_memory_usage=None
+                    avg_memory_usage=None,
                 )
             )
 
@@ -405,7 +329,7 @@ class AnalyticsService:
         time_range: TimeRange,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> TaskExecutionTrend:
         """Get task execution trend over time"""
 
@@ -420,49 +344,36 @@ class AnalyticsService:
                 start_date = end_date - timedelta(days=7)
 
         query = self.db.query(
-            func.date_trunc('day', PipelineTask.created_at).label('date'),
-            func.count(PipelineTask.id).label('total'),
-            func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0)).label('completed'),
-            func.sum(func.case((PipelineTask.status == 'failed', 1), else_=0)).label('failed'),
-            func.sum(func.case((PipelineTask.status == 'running', 1), else_=0)).label('running')
-        ).filter(
-            and_(
-                PipelineTask.created_at >= start_date,
-                PipelineTask.created_at <= end_date
-            )
-        )
+            func.date_trunc("day", PipelineTask.created_at).label("date"),
+            func.count(PipelineTask.id).label("total"),
+            func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+            func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+            func.sum(func.case((PipelineTask.status == "running", 1), else_=0)).label("running"),
+        ).filter(and_(PipelineTask.created_at >= start_date, PipelineTask.created_at <= end_date))
 
         if user_id:
             query = query.join(Sample).join(Project).filter(Project.owner_id == user_id)
 
-        results = query.group_by('date').order_by('date').all()
+        results = query.group_by("date").order_by("date").all()
 
         data = [
             {
-                "date": row.date.strftime('%Y-%m-%d'),
+                "date": row.date.strftime("%Y-%m-%d"),
                 "total": row.total,
                 "completed": row.completed or 0,
                 "failed": row.failed or 0,
-                "running": row.running or 0
+                "running": row.running or 0,
             }
             for row in results
         ]
 
-        return TaskExecutionTrend(
-            period=time_range,
-            data=data,
-            total_periods=len(data),
-            generated_at=datetime.utcnow()
-        )
+        return TaskExecutionTrend(period=time_range, data=data, total_periods=len(data), generated_at=datetime.utcnow())
 
     # ========================================================================
     # Resource Analytics
     # ========================================================================
 
-    def get_storage_analytics(
-        self,
-        user_id: Optional[str] = None
-    ) -> StorageAnalytics:
+    def get_storage_analytics(self, user_id: Optional[str] = None) -> StorageAnalytics:
         """Get storage analytics"""
 
         if user_id:
@@ -482,28 +393,24 @@ class AnalyticsService:
         usage_percentage = (used_storage / total_storage * 100) if total_storage > 0 else 0.0
 
         # Storage by project
-        project_storage = self.db.query(
-            Project.name,
-            func.sum(File.size).label('size')
-        ).join(Sample).join(File).group_by(Project.id, Project.name).order_by(
-            desc('size')
-        ).limit(10).all()
+        project_storage = (
+            self.db.query(Project.name, func.sum(File.size).label("size"))
+            .join(Sample)
+            .join(File)
+            .group_by(Project.id, Project.name)
+            .order_by(desc("size"))
+            .limit(10)
+            .all()
+        )
 
-        by_project = [
-            {"project": row.name, "size": row.size or 0}
-            for row in project_storage
-        ]
+        by_project = [{"project": row.name, "size": row.size or 0} for row in project_storage]
 
         # Storage by file type
-        file_type_storage = self.db.query(
-            File.file_type,
-            func.sum(File.size).label('size')
-        ).group_by(File.file_type).all()
+        file_type_storage = (
+            self.db.query(File.file_type, func.sum(File.size).label("size")).group_by(File.file_type).all()
+        )
 
-        by_file_type = {
-            row.file_type: row.size or 0
-            for row in file_type_storage
-        }
+        by_file_type = {row.file_type: row.size or 0 for row in file_type_storage}
 
         # Calculate growth rate (bytes per day) - simplified
         # In production, this would analyze historical data
@@ -518,7 +425,7 @@ class AnalyticsService:
             by_project=by_project,
             by_file_type=by_file_type,
             growth_rate=growth_rate,
-            projected_full_date=projected_full_date
+            projected_full_date=projected_full_date,
         )
 
     # ========================================================================
@@ -526,11 +433,7 @@ class AnalyticsService:
     # ========================================================================
 
     def get_comparative_analysis(
-        self,
-        entity_type: str,
-        metric: str,
-        limit: int = 10,
-        user_id: Optional[str] = None
+        self, entity_type: str, metric: str, limit: int = 10, user_id: Optional[str] = None
     ) -> ComparativeAnalysis:
         """Get comparative analysis for entities"""
 
@@ -538,29 +441,33 @@ class AnalyticsService:
 
         if entity_type == "project" and metric == "success_rate":
             # Get project success rates
-            query = self.db.query(
-                Project.id,
-                Project.name,
-                func.count(PipelineTask.id).label('total_tasks'),
-                func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0)).label('completed')
-            ).join(Sample).join(PipelineTask)
+            query = (
+                self.db.query(
+                    Project.id,
+                    Project.name,
+                    func.count(PipelineTask.id).label("total_tasks"),
+                    func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                )
+                .join(Sample)
+                .join(PipelineTask)
+            )
 
             if user_id:
                 query = query.filter(Project.owner_id == user_id)
 
-            results = query.group_by(Project.id, Project.name).having(
-                func.count(PipelineTask.id) > 0
-            ).order_by(desc('completed')).limit(limit).all()
+            results = (
+                query.group_by(Project.id, Project.name)
+                .having(func.count(PipelineTask.id) > 0)
+                .order_by(desc("completed"))
+                .limit(limit)
+                .all()
+            )
 
             for row in results:
                 success_rate = (row.completed / row.total_tasks * 100) if row.total_tasks > 0 else 0.0
                 entities.append(
                     ComparisonMetric(
-                        entity_id=str(row.id),
-                        entity_name=row.name,
-                        metric_name=metric,
-                        value=success_rate,
-                        unit="%"
+                        entity_id=str(row.id), entity_name=row.name, metric_name=metric, value=success_rate, unit="%"
                     )
                 )
 
@@ -575,7 +482,7 @@ class AnalyticsService:
                             entity_name=perf.pipeline_name,
                             metric_name=metric,
                             value=perf.avg_duration,
-                            unit="seconds"
+                            unit="seconds",
                         )
                     )
 
@@ -595,17 +502,14 @@ class AnalyticsService:
             best_performer=best,
             worst_performer=worst,
             average=avg,
-            generated_at=datetime.utcnow()
+            generated_at=datetime.utcnow(),
         )
 
     # ========================================================================
     # Dashboard Analytics
     # ========================================================================
 
-    def get_dashboard_analytics(
-        self,
-        user_id: Optional[str] = None
-    ) -> DashboardAnalytics:
+    def get_dashboard_analytics(self, user_id: Optional[str] = None) -> DashboardAnalytics:
         """Get dashboard analytics summary"""
 
         # Key metrics
@@ -618,18 +522,12 @@ class AnalyticsService:
         projects_total = projects_count.scalar()
 
         key_metrics.append(
-            DashboardMetric(
-                name="Total Projects",
-                value=float(projects_total),
-                unit="projects",
-                trend="stable"
-            )
+            DashboardMetric(name="Total Projects", value=float(projects_total), unit="projects", trend="stable")
         )
 
         # Tasks metric
         tasks_query = self.db.query(
-            func.count(PipelineTask.id),
-            func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0))
+            func.count(PipelineTask.id), func.sum(func.case((PipelineTask.status == "completed", 1), else_=0))
         )
         if user_id:
             tasks_query = tasks_query.join(Sample).join(Project).filter(Project.owner_id == user_id)
@@ -641,10 +539,7 @@ class AnalyticsService:
 
         key_metrics.append(
             DashboardMetric(
-                name="Task Success Rate",
-                value=success_rate,
-                unit="%",
-                trend="up" if success_rate > 90 else "down"
+                name="Task Success Rate", value=success_rate, unit="%", trend="up" if success_rate > 90 else "down"
             )
         )
 
@@ -656,7 +551,7 @@ class AnalyticsService:
                     name="Storage Usage",
                     value=storage.usage_percentage,
                     unit="%",
-                    trend="up" if storage.usage_percentage > 80 else "stable"
+                    trend="up" if storage.usage_percentage > 80 else "stable",
                 )
             )
 
@@ -671,7 +566,7 @@ class AnalyticsService:
                 "type": "task",
                 "action": f"{task.name} - {task.status}",
                 "timestamp": task.created_at.isoformat(),
-                "status": task.status
+                "status": task.status,
             }
             for task in recent_tasks
         ]
@@ -679,11 +574,13 @@ class AnalyticsService:
         # Alerts
         alerts = []
         if storage and storage.usage_percentage > 80:
-            alerts.append({
-                "type": "warning",
-                "message": f"Storage usage at {storage.usage_percentage:.1f}%",
-                "action": "Consider cleaning up old files"
-            })
+            alerts.append(
+                {
+                    "type": "warning",
+                    "message": f"Storage usage at {storage.usage_percentage:.1f}%",
+                    "action": "Consider cleaning up old files",
+                }
+            )
 
         # Recommendations
         recommendations = []
@@ -697,19 +594,14 @@ class AnalyticsService:
             recent_activity=recent_activity,
             alerts=alerts,
             recommendations=recommendations,
-            generated_at=datetime.utcnow()
+            generated_at=datetime.utcnow(),
         )
 
     # ========================================================================
     # Trend Analysis
     # ========================================================================
 
-    def get_trend_analysis(
-        self,
-        metric: str,
-        time_range: TimeRange,
-        user_id: Optional[str] = None
-    ) -> TrendAnalysis:
+    def get_trend_analysis(self, metric: str, time_range: TimeRange, user_id: Optional[str] = None) -> TrendAnalysis:
         """Get trend analysis for a metric"""
 
         # Get time series data
@@ -722,8 +614,8 @@ class AnalyticsService:
             confidence = 0.0
         else:
             values = [dp.value for dp in time_series.data_points]
-            first_half = mean(values[:len(values)//2])
-            second_half = mean(values[len(values)//2:])
+            first_half = mean(values[: len(values) // 2])
+            second_half = mean(values[len(values) // 2 :])
 
             if second_half > first_half * 1.1:
                 direction = "increasing"
@@ -743,5 +635,5 @@ class AnalyticsService:
             confidence=confidence,
             data_points=time_series.data_points,
             forecast=None,  # Could implement forecasting here
-            anomalies=None
+            anomalies=None,
         )

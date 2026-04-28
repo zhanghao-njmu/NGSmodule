@@ -3,6 +3,7 @@ OpenAI provider.
 
 Requires `pip install openai` and OPENAI_API_KEY in settings.
 """
+
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -24,15 +25,11 @@ class OpenAIProvider(AIProvider):
     def _get_client(self):
         if self._client is None:
             if not self._api_key:
-                raise AIProviderError(
-                    "OpenAI provider selected but OPENAI_API_KEY is not configured"
-                )
+                raise AIProviderError("OpenAI provider selected but OPENAI_API_KEY is not configured")
             try:
                 from openai import OpenAI
             except ImportError as exc:
-                raise AIProviderError(
-                    "openai SDK is not installed. Run: pip install openai"
-                ) from exc
+                raise AIProviderError("openai SDK is not installed. Run: pip install openai") from exc
             self._client = OpenAI(api_key=self._api_key)
         return self._client
 

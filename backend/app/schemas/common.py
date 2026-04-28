@@ -1,18 +1,22 @@
 """
 Common response schemas
 """
+
+from typing import Any, Generic, List, Optional, TypeVar
+
 from pydantic import BaseModel, Field
-from typing import Optional, Any, Generic, TypeVar, List
 
 
 class MessageResponse(BaseModel):
     """Generic message response"""
+
     message: str
     detail: Optional[str] = None
 
 
 class ErrorResponse(BaseModel):
     """Error response schema"""
+
     error: str
     detail: Optional[str] = None
     code: Optional[str] = None
@@ -20,13 +24,14 @@ class ErrorResponse(BaseModel):
 
 class SuccessResponse(BaseModel):
     """Success response schema"""
+
     success: bool = True
     message: str
     data: Optional[Any] = None
 
 
 # Generic type for pagination
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -34,6 +39,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     Unified paginated response schema
     统一的分页响应格式
     """
+
     total: int = Field(..., description="Total number of items")
     items: List[T] = Field(..., description="List of items")
     page: int = Field(..., description="Current page number (1-based)")
@@ -41,6 +47,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     has_more: bool = Field(False, description="Whether there are more pages")
 
     model_config = {"from_attributes": True}
+
     @classmethod
     def create(cls, items: List[T], total: int, page: int, page_size: int):
         """
@@ -55,13 +62,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
         Returns:
             PaginatedResponse instance
         """
-        return cls(
-            total=total,
-            items=items,
-            page=page,
-            page_size=page_size,
-            has_more=(page * page_size) < total
-        )
+        return cls(total=total, items=items, page=page, page_size=page_size, has_more=(page * page_size) < total)
 
 
 class PaginationParams(BaseModel):
@@ -69,6 +70,7 @@ class PaginationParams(BaseModel):
     Unified pagination parameters
     统一的分页参数
     """
+
     skip: int = Field(0, ge=0, description="Number of records to skip")
     limit: int = Field(20, ge=1, le=100, description="Number of records to return")
 

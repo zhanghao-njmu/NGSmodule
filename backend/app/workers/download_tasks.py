@@ -5,16 +5,17 @@ The actual byte-shuffling happens inside the vendor's daemon (lcbio's
 Java service); our task just tails the vendor log file, updates the
 DownloadJob row, and publishes realtime progress events.
 """
+
 import logging
 import time
 from pathlib import Path
 from typing import Optional
 
-from app.workers.celery_app import celery_app
 from app.core.database import SessionLocal
 from app.core.datetime_utils import utc_now_naive
 from app.models.data_download import DownloadJob
 from app.services.data_provider import get_provider
+from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +62,7 @@ def watch_progress(self, job_id: str) -> dict:
     """
     db = SessionLocal()
     try:
-        job: Optional[DownloadJob] = (
-            db.query(DownloadJob).filter(DownloadJob.id == job_id).first()
-        )
+        job: Optional[DownloadJob] = db.query(DownloadJob).filter(DownloadJob.id == job_id).first()
         if job is None:
             logger.warning(f"watch_progress: job {job_id} not found")
             return {"job_id": job_id, "status": "not_found"}
@@ -128,9 +127,7 @@ def watch_progress(self, job_id: str) -> dict:
                 _publish(job_id, snap.status, snap.percent, "")
             elif time.time() - last_change_at > _STALE_TIMEOUT:
                 job.status = "failed"
-                job.error_message = (
-                    f"no progress for {int(_STALE_TIMEOUT)}s; vendor daemon may have died"
-                )
+                job.error_message = f"no progress for {int(_STALE_TIMEOUT)}s; vendor daemon may have died"
                 job.finished_at = utc_now_naive()
                 db.commit()
                 _publish(job_id, "failed", job.progress_pct, job.error_message)
@@ -163,6 +160,7 @@ def _maybe_post_download_hook(db, job: DownloadJob) -> None:
 
     import tarfile
     from pathlib import Path
+
     from app.schemas.project import ProjectCreate
     from app.services.project_service import ProjectService
 
@@ -189,11 +187,7 @@ def _maybe_post_download_hook(db, job: DownloadJob) -> None:
         return
 
     # Pick a project name: user override → first segment of source_path → archive stem
-    name = (
-        job.project_name_hint
-        or job.source_path.split("/", 1)[0]
-        or archive.stem
-    )[:100]
+    name = (job.project_name_hint or job.source_path.split("/", 1)[0] or archive.stem)[:100]
 
     try:
         svc = ProjectService(db)

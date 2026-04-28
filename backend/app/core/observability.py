@@ -4,6 +4,7 @@ Observability: Prometheus metrics and Sentry error tracking.
 Both integrations are optional and gracefully degrade when their
 dependencies are missing.
 """
+
 import logging
 from typing import Optional
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 # Sentry
 # ----------------------------------------------------------------------
 
+
 def init_sentry() -> bool:
     """Initialize Sentry SDK if SENTRY_DSN is configured.
 
@@ -29,14 +31,13 @@ def init_sentry() -> bool:
 
     try:
         import sentry_sdk
-        from sentry_sdk.integrations.fastapi import FastApiIntegration
-        from sentry_sdk.integrations.starlette import StarletteIntegration
-        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
         from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
     except ImportError:
         logger.warning(
-            "SENTRY_DSN configured but sentry-sdk is not installed. "
-            "Run: pip install 'sentry-sdk[fastapi]'"
+            "SENTRY_DSN configured but sentry-sdk is not installed. " "Run: pip install 'sentry-sdk[fastapi]'"
         )
         return False
 
@@ -65,6 +66,7 @@ def init_sentry() -> bool:
 # ----------------------------------------------------------------------
 # Prometheus
 # ----------------------------------------------------------------------
+
 
 def init_prometheus(app: FastAPI) -> bool:
     """Mount Prometheus metrics endpoint at /metrics.
@@ -108,6 +110,7 @@ def init_prometheus(app: FastAPI) -> bool:
 # ----------------------------------------------------------------------
 # Public API
 # ----------------------------------------------------------------------
+
 
 def init_observability(app: Optional[FastAPI] = None) -> dict:
     """Initialize all observability backends.

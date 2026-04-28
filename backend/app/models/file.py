@@ -1,12 +1,15 @@
 """
 File model
 """
-from sqlalchemy import Column, String, DateTime, BigInteger, ForeignKey
-from app.core.types import UUID
-from sqlalchemy.orm import relationship
+
 import uuid
+
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String
+from sqlalchemy.orm import relationship
+
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class File(Base):

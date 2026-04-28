@@ -1,19 +1,18 @@
 """
 WebSocket endpoints for real-time updates
 """
-import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
-from typing import Dict, Set, Optional
-from uuid import UUID
-import json
-import asyncio
-from datetime import datetime
 
-from app.core.deps import get_current_user_ws
+import json
+import logging
+from datetime import datetime
+from typing import Dict, Optional, Set
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from app.core.database import SessionLocal
-from app.models.user import User
-from app.models.task import PipelineTask
+from app.core.deps import get_current_user_ws
 from app.models.project import Project
+from app.models.task import PipelineTask
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,7 @@ class ConnectionManager:
             "status": status,
             "progress": progress,
             "message": message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
         await self.broadcast_task_update(task_id, update_message)
 
@@ -99,16 +98,14 @@ manager = ConnectionManager()
 async def start_realtime_subscriber():
     """Hook called from the lifespan to start the Redis subscriber."""
     from app.services.realtime import RedisRealtimeSubscriber
+
     sub = RedisRealtimeSubscriber(manager)
     await sub.start()
     return sub
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    token: Optional[str] = Query(None)
-):
+async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = Query(None)):
     """
     WebSocket endpoint for real-time updates
 
@@ -155,24 +152,28 @@ async def websocket_endpoint(
                     # Verify task belongs to user
                     db = SessionLocal()
                     try:
-                        task = db.query(PipelineTask).join(Project).filter(
-                            PipelineTask.id == task_id,
-                            Project.user_id == user.id
-                        ).first()
+                        task = (
+                            db.query(PipelineTask)
+                            .join(Project)
+                            .filter(PipelineTask.id == task_id, Project.user_id == user.id)
+                            .first()
+                        )
 
                         if task:
                             manager.subscribe_to_task(task_id, user_id)
-                            await manager.send_personal_message({
-                                "type": "subscribed",
-                                "task_id": task_id,
-                                "status": task.status,
-                                "progress": task.progress
-                            }, user_id)
+                            await manager.send_personal_message(
+                                {
+                                    "type": "subscribed",
+                                    "task_id": task_id,
+                                    "status": task.status,
+                                    "progress": task.progress,
+                                },
+                                user_id,
+                            )
                         else:
-                            await manager.send_personal_message({
-                                "type": "error",
-                                "message": "Task not found or access denied"
-                            }, user_id)
+                            await manager.send_personal_message(
+                                {"type": "error", "message": "Task not found or access denied"}, user_id
+                            )
                     finally:
                         db.close()
 
@@ -181,17 +182,13 @@ async def websocket_endpoint(
                 task_id = message.get("task_id")
                 if task_id:
                     manager.unsubscribe_from_task(task_id, user_id)
-                    await manager.send_personal_message({
-                        "type": "unsubscribed",
-                        "task_id": task_id
-                    }, user_id)
+                    await manager.send_personal_message({"type": "unsubscribed", "task_id": task_id}, user_id)
 
             elif message_type == "ping":
                 # Keep-alive ping
-                await manager.send_personal_message({
-                    "type": "pong",
-                    "timestamp": datetime.utcnow().isoformat()
-                }, user_id)
+                await manager.send_personal_message(
+                    {"type": "pong", "timestamp": datetime.utcnow().isoformat()}, user_id
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)

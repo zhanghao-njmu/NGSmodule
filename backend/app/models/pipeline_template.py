@@ -3,12 +3,13 @@ Pipeline Template Model
 
 Represents predefined pipeline templates for common NGS analysis workflows.
 """
-from sqlalchemy import Column, String, Text, Boolean, JSON
-from app.core.types import UUID
-from sqlalchemy.orm import relationship
+
 import uuid
-from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, Column, String, Text
+
 from app.core.database import Base
+from app.core.types import UUID
 
 
 class PipelineTemplate(Base):
@@ -42,7 +43,7 @@ class PipelineTemplate(Base):
     is_builtin = Column(Boolean, default=True)  # Built-in templates cannot be deleted
 
     # Ordering and grouping
-    sort_order = Column(String(10), default='0')
+    sort_order = Column(String(10), default="0")
     tags = Column(JSON, default=[])  # e.g., ['quality-control', 'alignment']
 
     def __repr__(self):

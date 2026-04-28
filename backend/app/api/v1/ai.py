@@ -2,36 +2,51 @@
 AI Intelligence API Router
 Handles AI-powered features including recommendations, QC, anomaly detection, and grouping
 """
-from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db, get_current_user
+from app.core.deps import get_current_user, get_db
 from app.models.user import User
-from app.services.ai_service import ai_service
-from app.schemas.ai import (
-    # Parameter Recommendations
-    RecommendationRequest, ParameterRecommendation, PipelineRecommendation, SimilarRun,
-    # Quality Control
-    AutoQCRequest, QCReport, BatchQCRequest, QCIssuePrediction, PredictQCRequest,
-    # Anomaly Detection
-    AnomalyDetectionRequest, Anomaly, AnomalyDetectionReport,
-    AnomalyFixRequest, AnomalyFixResponse,
-    # Smart Sample Grouping
-    SmartGroupingRequest, SmartGroupingResult, ComparisonSuggestion,
-    GroupValidationRequest, GroupValidationResult,
-    # AI Assistant
-    AssistantMessageRequest, AIAssistantMessage, AIAssistantConversation,
-    CreateConversationRequest,
-    # Analysis Insights
-    AnalysisInsight, InsightsReport, AnalyzeInsightsRequest,
-    # Predictions
-    ResourcePredictionRequest, ResourcePrediction, SuccessPrediction, TimelinePrediction,
-    # System Status
+from app.schemas.ai import (  # Parameter Recommendations; Quality Control; Anomaly Detection; Smart Sample Grouping; AI Assistant; Analysis Insights; Predictions; System Status; Feedback
+    AIAssistantConversation,
+    AIAssistantMessage,
     AISystemStatus,
-    # Feedback
-    FeedbackRequest, IncorrectPredictionRequest, FeedbackResponse,
+    AnalysisInsight,
+    AnalyzeInsightsRequest,
+    Anomaly,
+    AnomalyDetectionReport,
+    AnomalyDetectionRequest,
+    AnomalyFixRequest,
+    AnomalyFixResponse,
+    AssistantMessageRequest,
+    AutoQCRequest,
+    BatchQCRequest,
+    ComparisonSuggestion,
+    CreateConversationRequest,
+    FeedbackRequest,
+    FeedbackResponse,
+    GroupValidationRequest,
+    GroupValidationResult,
+    IncorrectPredictionRequest,
+    InsightsReport,
+    ParameterRecommendation,
+    PipelineRecommendation,
+    PredictQCRequest,
+    QCIssuePrediction,
+    QCReport,
+    RecommendationRequest,
+    ResourcePrediction,
+    ResourcePredictionRequest,
+    SimilarRun,
+    SmartGroupingRequest,
+    SmartGroupingResult,
+    SuccessPrediction,
+    TimelinePrediction,
 )
+from app.services.ai_service import ai_service
 
 router = APIRouter()
 
@@ -40,11 +55,10 @@ router = APIRouter()
 # Parameter Recommendations
 # ============================================================================
 
+
 @router.post("/recommendations/parameters", response_model=PipelineRecommendation)
 async def get_parameter_recommendations(
-    request: RecommendationRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: RecommendationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get pipeline parameter recommendations based on context
@@ -54,16 +68,13 @@ async def get_parameter_recommendations(
     return ai_service.get_parameter_recommendations(request, db)
 
 
-@router.post(
-    "/recommendations/parameters/{pipeline_type}/{parameter_name}",
-    response_model=ParameterRecommendation
-)
+@router.post("/recommendations/parameters/{pipeline_type}/{parameter_name}", response_model=ParameterRecommendation)
 async def get_parameter_options(
     pipeline_type: str,
     parameter_name: str,
     request: Dict[str, Any] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get recommendations for specific parameter
@@ -76,9 +87,7 @@ async def get_parameter_options(
 
 @router.post("/recommendations/similar-runs", response_model=List[SimilarRun])
 async def get_similar_runs(
-    request: RecommendationRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: RecommendationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get similar successful pipeline runs
@@ -92,11 +101,10 @@ async def get_similar_runs(
 # Quality Control
 # ============================================================================
 
+
 @router.post("/qc/auto-analyze", response_model=QCReport)
 async def run_auto_qc(
-    request: AutoQCRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: AutoQCRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Run automatic quality control analysis
@@ -108,9 +116,7 @@ async def run_auto_qc(
 
 @router.get("/qc/recommendations/{sample_id}", response_model=List[str])
 async def get_qc_recommendations(
-    sample_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    sample_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get QC recommendations for a sample
@@ -122,9 +128,7 @@ async def get_qc_recommendations(
 
 @router.post("/qc/batch-analyze", response_model=List[QCReport])
 async def batch_qc_analysis(
-    request: BatchQCRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: BatchQCRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Batch QC analysis for multiple samples
@@ -136,9 +140,7 @@ async def batch_qc_analysis(
 
 @router.post("/qc/predict-issues", response_model=List[QCIssuePrediction])
 async def predict_qc_issues(
-    request: PredictQCRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: PredictQCRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Predict QC issues before sequencing
@@ -152,11 +154,10 @@ async def predict_qc_issues(
 # Anomaly Detection
 # ============================================================================
 
+
 @router.post("/anomaly/detect", response_model=AnomalyDetectionReport)
 async def detect_anomalies(
-    request: AnomalyDetectionRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: AnomalyDetectionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Detect anomalies in samples or project
@@ -168,9 +169,7 @@ async def detect_anomalies(
 
 @router.get("/anomaly/{anomaly_id}", response_model=Anomaly)
 async def get_anomaly_details(
-    anomaly_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    anomaly_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get anomaly details
@@ -185,7 +184,7 @@ async def apply_anomaly_fix(
     anomaly_id: str,
     request: AnomalyFixRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Apply automatic fix for anomaly
@@ -199,11 +198,10 @@ async def apply_anomaly_fix(
 # Smart Sample Grouping
 # ============================================================================
 
+
 @router.post("/grouping/smart-group", response_model=SmartGroupingResult)
 async def smart_group_samples(
-    request: SmartGroupingRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: SmartGroupingRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Perform smart sample grouping
@@ -215,9 +213,7 @@ async def smart_group_samples(
 
 @router.get("/grouping/suggest-comparisons/{project_id}", response_model=List[ComparisonSuggestion])
 async def suggest_comparisons(
-    project_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Suggest comparison groups
@@ -229,9 +225,7 @@ async def suggest_comparisons(
 
 @router.post("/grouping/validate", response_model=GroupValidationResult)
 async def validate_grouping(
-    request: GroupValidationRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: GroupValidationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Validate sample grouping
@@ -245,11 +239,10 @@ async def validate_grouping(
 # AI Assistant
 # ============================================================================
 
+
 @router.post("/assistant/conversations", response_model=AIAssistantConversation)
 async def create_conversation(
-    request: CreateConversationRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: CreateConversationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Create new AI assistant conversation
@@ -260,10 +253,7 @@ async def create_conversation(
 
 
 @router.get("/assistant/conversations", response_model=List[AIAssistantConversation])
-async def list_conversations(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+async def list_conversations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     List all AI assistant conversations
 
@@ -274,9 +264,7 @@ async def list_conversations(
 
 @router.get("/assistant/conversations/{conversation_id}", response_model=AIAssistantConversation)
 async def get_conversation(
-    conversation_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    conversation_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get conversation history
@@ -291,30 +279,24 @@ async def send_assistant_message(
     conversation_id: str,
     request: AssistantMessageRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Send message to AI assistant
 
     Sends a message and receives AI-generated response.
     """
-    return ai_service.send_assistant_message(
-        conversation_id,
-        request,
-        str(current_user.id),
-        db
-    )
+    return ai_service.send_assistant_message(conversation_id, request, str(current_user.id), db)
 
 
 # ============================================================================
 # Analysis Insights
 # ============================================================================
 
+
 @router.get("/insights/project/{project_id}", response_model=InsightsReport)
 async def get_project_insights(
-    project_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get AI-generated insights for a project
@@ -326,9 +308,7 @@ async def get_project_insights(
 
 @router.post("/insights/analyze", response_model=List[AnalysisInsight])
 async def get_analysis_insights(
-    request: AnalyzeInsightsRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: AnalyzeInsightsRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get insights for specific analysis
@@ -343,7 +323,7 @@ async def mark_insight_reviewed(
     insight_id: str,
     project_id: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Mark insight as reviewed
@@ -358,11 +338,10 @@ async def mark_insight_reviewed(
 # Predictions
 # ============================================================================
 
+
 @router.post("/predictions/resources", response_model=ResourcePrediction)
 async def predict_resources(
-    request: ResourcePredictionRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    request: ResourcePredictionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Predict resource requirements for pipeline
@@ -374,9 +353,7 @@ async def predict_resources(
 
 @router.post("/predictions/success", response_model=SuccessPrediction)
 async def predict_success(
-    analysis_config: Dict[str, Any],
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    analysis_config: Dict[str, Any], db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Predict success probability for analysis
@@ -388,9 +365,7 @@ async def predict_success(
 
 @router.get("/predictions/timeline/{project_id}", response_model=TimelinePrediction)
 async def predict_timeline(
-    project_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Predict optimal analysis timeline
@@ -404,11 +379,9 @@ async def predict_timeline(
 # System Status
 # ============================================================================
 
+
 @router.get("/status", response_model=AISystemStatus)
-async def get_system_status(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+async def get_system_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Get AI system status and capabilities
 
@@ -421,24 +394,20 @@ async def get_system_status(
 # Feedback & Learning
 # ============================================================================
 
+
 @router.post("/feedback/{recommendation_id}", response_model=FeedbackResponse)
 async def submit_feedback(
     recommendation_id: str,
     feedback: FeedbackRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Submit feedback on AI recommendation
 
     Allows users to provide feedback to improve AI model accuracy.
     """
-    return ai_service.submit_feedback(
-        recommendation_id,
-        feedback,
-        str(current_user.id),
-        db
-    )
+    return ai_service.submit_feedback(recommendation_id, feedback, str(current_user.id), db)
 
 
 @router.post("/feedback/prediction/{prediction_id}", response_model=FeedbackResponse)
@@ -446,16 +415,11 @@ async def report_incorrect_prediction(
     prediction_id: str,
     report: IncorrectPredictionRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Report incorrect prediction
 
     Reports when AI predictions don't match actual outcomes for model improvement.
     """
-    return ai_service.report_incorrect_prediction(
-        prediction_id,
-        report,
-        str(current_user.id),
-        db
-    )
+    return ai_service.report_incorrect_prediction(prediction_id, report, str(current_user.id), db)

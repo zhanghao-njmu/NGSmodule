@@ -1,24 +1,28 @@
 """
 Admin schemas for user management, system configuration, and logs
 """
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import List, Dict, Optional, Any
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ============================================================================
 # User Management
 # ============================================================================
 
+
 class UserRole(str, Enum):
     """User role enumeration"""
+
     USER = "user"
     ADMIN = "admin"
 
 
 class UserStatus(str, Enum):
     """User status enumeration"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     SUSPENDED = "suspended"
@@ -26,6 +30,7 @@ class UserStatus(str, Enum):
 
 class AdminUserList(BaseModel):
     """User in admin list view"""
+
     id: str
     username: str
     email: EmailStr
@@ -41,8 +46,11 @@ class AdminUserList(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
 class AdminUserDetail(AdminUserList):
     """Detailed user information for admin"""
+
     total_projects: int = 0
     total_samples: int = 0
     total_tasks: int = 0
@@ -53,6 +61,7 @@ class AdminUserDetail(AdminUserList):
 
 class UserListResponse(BaseModel):
     """Paginated user list response"""
+
     users: List[AdminUserList]
     total: int
     page: int
@@ -62,50 +71,55 @@ class UserListResponse(BaseModel):
 
 class UserUpdateRequest(BaseModel):
     """Admin update user request"""
+
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     full_name: Optional[str] = Field(None, max_length=100)
     organization: Optional[str] = Field(None, max_length=100)
     storage_quota: Optional[int] = Field(None, gt=0)
 
-    @field_validator('username')
+    @field_validator("username")
     @classmethod
     def validate_username(cls, v):
-        if v and not v.replace('_', '').replace('-', '').isalnum():
-            raise ValueError('Username must contain only letters, numbers, underscores, and hyphens')
+        if v and not v.replace("_", "").replace("-", "").isalnum():
+            raise ValueError("Username must contain only letters, numbers, underscores, and hyphens")
         return v
 
 
 class UserRoleUpdate(BaseModel):
     """Update user role"""
+
     role: UserRole
 
 
 class UserActivationRequest(BaseModel):
     """Activate or deactivate user"""
+
     is_active: bool
     reason: Optional[str] = None
 
 
 class PasswordResetRequest(BaseModel):
     """Admin reset user password"""
+
     new_password: str = Field(..., min_length=8, max_length=100)
     notify_user: bool = True  # Send email notification to user
 
-    @field_validator('new_password')
+    @field_validator("new_password")
     @classmethod
     def validate_password(cls, v):
         if not any(c.isupper() for c in v):
-            raise ValueError('Password must contain at least one uppercase letter')
+            raise ValueError("Password must contain at least one uppercase letter")
         if not any(c.islower() for c in v):
-            raise ValueError('Password must contain at least one lowercase letter')
+            raise ValueError("Password must contain at least one lowercase letter")
         if not any(c.isdigit() for c in v):
-            raise ValueError('Password must contain at least one digit')
+            raise ValueError("Password must contain at least one digit")
         return v
 
 
 class UserDeletionRequest(BaseModel):
     """Delete user request"""
+
     confirm: bool = True
     transfer_data_to: Optional[str] = None  # Transfer user's data to another user
     reason: Optional[str] = None
@@ -113,6 +127,7 @@ class UserDeletionRequest(BaseModel):
 
 class BulkUserOperation(BaseModel):
     """Bulk operation on multiple users"""
+
     user_ids: List[str] = Field(..., min_length=1)
     operation: str  # activate, deactivate, delete, change_role
     parameters: Optional[Dict[str, Any]] = None
@@ -122,8 +137,10 @@ class BulkUserOperation(BaseModel):
 # System Configuration
 # ============================================================================
 
+
 class SystemConfigCategory(str, Enum):
     """System configuration category"""
+
     GENERAL = "general"
     SECURITY = "security"
     STORAGE = "storage"
@@ -135,6 +152,7 @@ class SystemConfigCategory(str, Enum):
 
 class ConfigItem(BaseModel):
     """Single configuration item"""
+
     key: str
     value: Any
     category: SystemConfigCategory
@@ -149,6 +167,7 @@ class ConfigItem(BaseModel):
 
 class SystemConfig(BaseModel):
     """Complete system configuration"""
+
     general: Dict[str, Any]
     security: Dict[str, Any]
     storage: Dict[str, Any]
@@ -161,6 +180,7 @@ class SystemConfig(BaseModel):
 
 class ConfigUpdateRequest(BaseModel):
     """Update system configuration"""
+
     category: SystemConfigCategory
     updates: Dict[str, Any]
     reason: Optional[str] = None
@@ -168,6 +188,7 @@ class ConfigUpdateRequest(BaseModel):
 
 class ConfigResetRequest(BaseModel):
     """Reset configuration to defaults"""
+
     categories: Optional[List[SystemConfigCategory]] = None  # None = reset all
     confirm: bool = True
 
@@ -176,8 +197,10 @@ class ConfigResetRequest(BaseModel):
 # System Logs
 # ============================================================================
 
+
 class LogLevel(str, Enum):
     """Log level enumeration"""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -187,6 +210,7 @@ class LogLevel(str, Enum):
 
 class LogSource(str, Enum):
     """Log source enumeration"""
+
     API = "api"
     DATABASE = "database"
     CELERY = "celery"
@@ -197,6 +221,7 @@ class LogSource(str, Enum):
 
 class LogEntry(BaseModel):
     """Single log entry"""
+
     timestamp: datetime
     level: LogLevel
     source: LogSource
@@ -209,6 +234,7 @@ class LogEntry(BaseModel):
 
 class LogQueryRequest(BaseModel):
     """Query logs request"""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     levels: Optional[List[LogLevel]] = None
@@ -221,6 +247,7 @@ class LogQueryRequest(BaseModel):
 
 class LogResponse(BaseModel):
     """Log query response"""
+
     logs: List[LogEntry]
     total: int
     has_more: bool
@@ -228,6 +255,7 @@ class LogResponse(BaseModel):
 
 class LogDownloadRequest(BaseModel):
     """Download logs request"""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     levels: Optional[List[LogLevel]] = None
@@ -239,8 +267,10 @@ class LogDownloadRequest(BaseModel):
 # System Health & Maintenance
 # ============================================================================
 
+
 class ServiceStatus(str, Enum):
     """Service status"""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     DOWN = "down"
@@ -249,6 +279,7 @@ class ServiceStatus(str, Enum):
 
 class ServiceHealth(BaseModel):
     """Individual service health"""
+
     name: str
     status: ServiceStatus
     response_time: Optional[float] = None  # in milliseconds
@@ -259,6 +290,7 @@ class ServiceHealth(BaseModel):
 
 class SystemHealth(BaseModel):
     """Overall system health"""
+
     status: ServiceStatus
     services: List[ServiceHealth]
     timestamp: datetime
@@ -268,6 +300,7 @@ class SystemHealth(BaseModel):
 
 class CleanupOptions(BaseModel):
     """System cleanup options"""
+
     old_logs: bool = False  # Delete logs older than retention period
     temp_files: bool = False  # Delete temporary files
     failed_tasks: bool = False  # Clean up failed task data
@@ -279,6 +312,7 @@ class CleanupOptions(BaseModel):
 
 class CleanupResult(BaseModel):
     """Cleanup operation result"""
+
     operation: str
     items_deleted: int
     space_freed: int  # bytes
@@ -288,6 +322,7 @@ class CleanupResult(BaseModel):
 
 class CleanupResponse(BaseModel):
     """Complete cleanup response"""
+
     total_items_deleted: int
     total_space_freed: int
     total_duration: float
@@ -299,8 +334,10 @@ class CleanupResponse(BaseModel):
 # System Statistics (Admin)
 # ============================================================================
 
+
 class AdminSystemStats(BaseModel):
     """System-wide statistics for admin"""
+
     total_users: int
     active_users: int
     admin_users: int
@@ -326,6 +363,7 @@ class AdminSystemStats(BaseModel):
 
 class UserActivityReport(BaseModel):
     """User activity report"""
+
     user_id: str
     username: str
     email: str
@@ -341,6 +379,7 @@ class UserActivityReport(BaseModel):
 
 class SystemActivityReport(BaseModel):
     """System activity report"""
+
     period: str  # today, week, month, year
     new_users: int
     active_users: int
@@ -359,8 +398,10 @@ class SystemActivityReport(BaseModel):
 # Audit Log
 # ============================================================================
 
+
 class AuditAction(str, Enum):
     """Audit action types"""
+
     USER_CREATED = "user_created"
     USER_UPDATED = "user_updated"
     USER_DELETED = "user_deleted"
@@ -377,6 +418,7 @@ class AuditAction(str, Enum):
 
 class AuditLogEntry(BaseModel):
     """Audit log entry"""
+
     id: str
     timestamp: datetime
     action: AuditAction
@@ -391,6 +433,7 @@ class AuditLogEntry(BaseModel):
 
 class AuditLogResponse(BaseModel):
     """Audit log query response"""
+
     logs: List[AuditLogEntry]
     total: int
     page: int
@@ -401,8 +444,10 @@ class AuditLogResponse(BaseModel):
 # System Backup
 # ============================================================================
 
+
 class BackupType(str, Enum):
     """Backup type"""
+
     FULL = "full"
     INCREMENTAL = "incremental"
     DATABASE_ONLY = "database_only"
@@ -411,6 +456,7 @@ class BackupType(str, Enum):
 
 class BackupRequest(BaseModel):
     """Create backup request"""
+
     backup_type: BackupType = BackupType.FULL
     description: Optional[str] = None
     compress: bool = True
@@ -418,6 +464,7 @@ class BackupRequest(BaseModel):
 
 class BackupInfo(BaseModel):
     """Backup information"""
+
     id: str
     backup_type: BackupType
     file_path: str
@@ -431,12 +478,14 @@ class BackupInfo(BaseModel):
 
 class BackupListResponse(BaseModel):
     """List of backups"""
+
     backups: List[BackupInfo]
     total: int
 
 
 class RestoreRequest(BaseModel):
     """Restore from backup request"""
+
     backup_id: str
     confirm: bool = True
     restore_database: bool = True
@@ -447,8 +496,10 @@ class RestoreRequest(BaseModel):
 # Response Messages
 # ============================================================================
 
+
 class AdminOperationResponse(BaseModel):
     """Generic admin operation response"""
+
     success: bool
     message: str
     details: Optional[Dict[str, Any]] = None
@@ -459,8 +510,10 @@ class AdminOperationResponse(BaseModel):
 # System Metrics (Enhanced)
 # ============================================================================
 
+
 class SystemMetrics(BaseModel):
     """Detailed system metrics"""
+
     cpu: Dict[str, Any]  # {"usage": 45.2, "load": [1.2, 1.5, 1.8]}
     memory: Dict[str, Any]  # {"used": 8192, "total": 16384, "usagePercent": 50.0}
     disk: Dict[str, Any]  # {"used": 102400, "total": 512000, "usagePercent": 20.0}
@@ -472,8 +525,10 @@ class SystemMetrics(BaseModel):
 # System Alerts
 # ============================================================================
 
+
 class AlertType(str, Enum):
     """Alert type"""
+
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
@@ -481,6 +536,7 @@ class AlertType(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity"""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -489,6 +545,7 @@ class AlertSeverity(str, Enum):
 
 class Alert(BaseModel):
     """System alert"""
+
     id: str
     type: AlertType
     severity: AlertSeverity
@@ -504,6 +561,7 @@ class Alert(BaseModel):
 
 class AlertListResponse(BaseModel):
     """Alert list response"""
+
     alerts: List[Alert]
     total: int
     unresolved_count: int
@@ -513,8 +571,10 @@ class AlertListResponse(BaseModel):
 # Resource Management
 # ============================================================================
 
+
 class ResourceUsage(BaseModel):
     """System resource usage"""
+
     storage: Dict[str, int]  # {"total": 512000, "used": 102400}
     compute: Dict[str, int]  # {"active": 5, "limit": 10}
     memory: Dict[str, int]  # {"total": 16384, "used": 8192}
@@ -525,8 +585,10 @@ class ResourceUsage(BaseModel):
 # Job Management
 # ============================================================================
 
+
 class JobType(str, Enum):
     """Job type"""
+
     PIPELINE = "pipeline"
     BACKUP = "backup"
     CLEANUP = "cleanup"
@@ -537,6 +599,7 @@ class JobType(str, Enum):
 
 class JobStatus(str, Enum):
     """Job status"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -546,6 +609,7 @@ class JobStatus(str, Enum):
 
 class JobInfo(BaseModel):
     """Job information"""
+
     id: str
     type: JobType
     status: JobStatus
@@ -562,6 +626,7 @@ class JobInfo(BaseModel):
 
 class JobListResponse(BaseModel):
     """Job list response"""
+
     jobs: List[JobInfo]
     total: int
     page: int
@@ -570,6 +635,7 @@ class JobListResponse(BaseModel):
 
 class JobOperation(BaseModel):
     """Job operation request"""
+
     reason: Optional[str] = None
 
 
@@ -577,8 +643,10 @@ class JobOperation(BaseModel):
 # Audit Log Export
 # ============================================================================
 
+
 class AuditLogExportRequest(BaseModel):
     """Audit log export request"""
+
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     user_id: Optional[str] = None
@@ -588,6 +656,7 @@ class AuditLogExportRequest(BaseModel):
 
 class ExportResult(BaseModel):
     """Export result"""
+
     download_url: str
     file_name: str
     file_size: int

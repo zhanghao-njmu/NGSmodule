@@ -1,12 +1,15 @@
 """
 User model
 """
-from sqlalchemy import Column, String, Boolean, DateTime, BigInteger
-from app.core.types import UUID
-from sqlalchemy.orm import relationship
+
 import uuid
+
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String
+from sqlalchemy.orm import relationship
+
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class User(Base):
@@ -31,7 +34,9 @@ class User(Base):
     # Relationships
     projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
-    notification_settings = relationship("NotificationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    notification_settings = relationship(
+        "NotificationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<User {self.username}>"

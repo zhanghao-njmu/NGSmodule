@@ -5,6 +5,7 @@ Lets sync code (services, Celery tasks) publish events that get fanned out
 to all FastAPI replicas, which in turn push them to connected WebSocket
 clients.
 """
+
 import asyncio
 import json
 import logging
@@ -43,9 +44,7 @@ def _get_publisher():
             logger.debug("redis package not installed; realtime events disabled")
             return None
         try:
-            _redis_publisher = redis.Redis.from_url(
-                settings.REDIS_URL, decode_responses=True
-            )
+            _redis_publisher = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
             _redis_publisher.ping()
         except Exception as exc:
             logger.warning(f"Realtime publisher unavailable: {exc}")
@@ -87,6 +86,7 @@ def publish_task_event(task_id: str, event_type: str, data: Dict[str, Any]) -> b
 # Subscriber (async, runs inside the FastAPI process)
 # ----------------------------------------------------------------------
 
+
 class RedisRealtimeSubscriber:
     """Subscribes to Redis pub/sub and forwards events to WebSocket clients.
 
@@ -126,9 +126,7 @@ class RedisRealtimeSubscriber:
 
     async def _run(self, redis_async):
         try:
-            client = redis_async.Redis.from_url(
-                settings.REDIS_URL, decode_responses=True
-            )
+            client = redis_async.Redis.from_url(settings.REDIS_URL, decode_responses=True)
             pubsub = client.pubsub()
             await pubsub.psubscribe("realtime:user:*", "realtime:task:*")
 

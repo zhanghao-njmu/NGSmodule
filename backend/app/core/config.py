@@ -1,9 +1,11 @@
 """
 Application Configuration
 """
+
 from typing import List, Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import AnyHttpUrl, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -56,10 +58,7 @@ class Settings(BaseSettings):
     # File Storage
     UPLOAD_DIR: str = "/data/uploads"
     MAX_UPLOAD_SIZE: int = 53687091200  # 50GB
-    ALLOWED_EXTENSIONS: List[str] = [
-        ".fastq", ".fastq.gz", ".fq", ".fq.gz",
-        ".bam", ".sam", ".vcf", ".vcf.gz"
-    ]
+    ALLOWED_EXTENSIONS: List[str] = [".fastq", ".fastq.gz", ".fq", ".fq.gz", ".bam", ".sam", ".vcf", ".vcf.gz"]
 
     # NGS Pipeline
     NGS_PIPELINE_DIR: str

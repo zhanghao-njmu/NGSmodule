@@ -1,13 +1,15 @@
 """
 Notification database model
 """
-from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, JSON
-from sqlalchemy.orm import relationship
-from app.core.types import UUID
+
 import uuid
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class Notification(Base):
@@ -16,6 +18,7 @@ class Notification(Base):
 
     Stores system notifications, task updates, and user alerts
     """
+
     __tablename__ = "notifications"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
@@ -61,6 +64,7 @@ class NotificationSettings(Base):
 
     Controls which notifications a user wants to receive
     """
+
     __tablename__ = "notification_settings"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)

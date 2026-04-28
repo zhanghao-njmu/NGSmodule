@@ -13,22 +13,24 @@ Benefits:
 - Better code reuse
 - Centralized business logic
 """
-from fastapi import APIRouter, Depends, status, Query
-from sqlalchemy.orm import Session
+
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.schemas.common import MessageResponse
 from app.schemas.project import (
     ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
     ProjectListResponse,
+    ProjectResponse,
     ProjectStats,
+    ProjectUpdate,
 )
-from app.schemas.common import MessageResponse
 from app.services.project_service import ProjectService
 
 router = APIRouter()
@@ -41,8 +43,7 @@ def get_project_service(db: Session = Depends(get_db)) -> ProjectService:
 
 @router.get("/stats", response_model=ProjectStats)
 async def get_project_stats(
-    current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    current_user: User = Depends(get_current_user), service: ProjectService = Depends(get_project_service)
 ):
     """
     Get project statistics for current user
@@ -58,7 +59,7 @@ async def list_projects(
     project_type: Optional[str] = Query(None, description="Filter by type"),
     search: Optional[str] = Query(None, description="Search by name"),
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     List projects for current user with pagination and filters
@@ -72,19 +73,14 @@ async def list_projects(
         search=search,
     )
 
-    return ProjectListResponse(
-        total=total,
-        items=projects,
-        page=skip // limit + 1,
-        page_size=limit
-    )
+    return ProjectListResponse(total=total, items=projects, page=skip // limit + 1, page_size=limit)
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: ProjectCreate,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Create a new project
@@ -101,7 +97,7 @@ async def create_project(
 async def get_project(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Get project by ID.
@@ -120,7 +116,7 @@ async def update_project(
     project_id: UUID,
     project_update: ProjectUpdate,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Update project
@@ -138,7 +134,7 @@ async def update_project(
 async def delete_project(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Delete project (soft delete by setting status to 'deleted')
@@ -151,11 +147,11 @@ async def delete_project(
 
     # Update to deleted status
     from app.schemas.project import ProjectUpdate
+
     service.update(project_id, current_user.id, ProjectUpdate(status="deleted"))
 
     return MessageResponse(
-        message="Project deleted successfully",
-        detail=f"Project '{project.name}' has been marked as deleted"
+        message="Project deleted successfully", detail=f"Project '{project.name}' has been marked as deleted"
     )
 
 
@@ -163,7 +159,7 @@ async def delete_project(
 async def archive_project(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Archive project
@@ -175,7 +171,7 @@ async def archive_project(
 async def restore_project(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
 ):
     """
     Restore archived or deleted project

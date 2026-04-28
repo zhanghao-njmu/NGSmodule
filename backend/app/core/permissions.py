@@ -3,15 +3,18 @@ Generic permission and resource ownership verification utilities
 
 Provides reusable functions for checking user access to resources
 """
-from typing import TypeVar, Type, Optional, Callable
+
+from typing import Optional, Type, TypeVar
 from uuid import UUID
+
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session, Query
-from app.models.user import User
+from sqlalchemy.orm import Query, Session
+
 from app.models.project import Project
+from app.models.user import User
 
 # Generic type for database models
-ModelType = TypeVar('ModelType')
+ModelType = TypeVar("ModelType")
 
 
 def verify_resource_ownership(
@@ -21,7 +24,7 @@ def verify_resource_ownership(
     current_user: User,
     resource_name: str = "Resource",
     join_models: Optional[list] = None,
-    filter_field: Optional[str] = None
+    filter_field: Optional[str] = None,
 ) -> ModelType:
     """
     Generic function to verify user ownership of a resource
@@ -67,24 +70,15 @@ def verify_resource_ownership(
         # Apply filter
         if join_models and Project in join_models:
             # Filter by project user_id for nested resources
-            query = query.filter(
-                model.id == resource_id,
-                Project.user_id == current_user.id
-            )
+            query = query.filter(model.id == resource_id, Project.user_id == current_user.id)
         else:
             # Direct ownership - assume model has user_id
-            query = query.filter(
-                model.id == resource_id,
-                getattr(model, filter_field or 'user_id') == current_user.id
-            )
+            query = query.filter(model.id == resource_id, getattr(model, filter_field or "user_id") == current_user.id)
 
         resource = query.first()
 
     if not resource:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"{resource_name} not found or access denied"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{resource_name} not found or access denied")
 
     return resource
 
@@ -140,10 +134,7 @@ def require_admin(current_user: User) -> None:
         HTTPException: 403 if user is not admin
     """
     if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
 def require_active_user(current_user: User) -> None:
@@ -157,17 +148,11 @@ def require_active_user(current_user: User) -> None:
         HTTPException: 403 if user account is inactive
     """
     if not current_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
 
 def check_resource_quota(
-    current_user: User,
-    quota_field: str,
-    limit_field: str,
-    resource_name: str = "resource"
+    current_user: User, quota_field: str, limit_field: str, resource_name: str = "resource"
 ) -> None:
     """
     Check if user has quota available for creating resources
@@ -190,21 +175,17 @@ def check_resource_quota(
         )
     """
     current = getattr(current_user, quota_field, 0)
-    limit = getattr(current_user, limit_field, float('inf'))
+    limit = getattr(current_user, limit_field, float("inf"))
 
     if current >= limit:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"{resource_name.capitalize()} quota exceeded. "
-                   f"Current: {current}, Limit: {limit}"
+            detail=f"{resource_name.capitalize()} quota exceeded. " f"Current: {current}, Limit: {limit}",
         )
 
 
 def build_user_filter(
-    query: Query,
-    current_user: User,
-    ownership_model: Type = None,
-    ownership_field: str = "user_id"
+    query: Query, current_user: User, ownership_model: Type = None, ownership_field: str = "user_id"
 ) -> Query:
     """
     Add user ownership filter to a query (admin sees all)
@@ -230,5 +211,5 @@ def build_user_filter(
     if current_user.is_admin:
         return query
 
-    model = ownership_model if ownership_model else query.column_descriptions[0]['type']
+    model = ownership_model if ownership_model else query.column_descriptions[0]["type"]
     return query.filter(getattr(model, ownership_field) == current_user.id)

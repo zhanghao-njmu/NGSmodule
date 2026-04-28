@@ -1,9 +1,11 @@
 """
 Celery application configuration
 """
+
 from celery import Celery
 from celery.schedules import crontab
 from kombu import Queue
+
 from app.core.config import settings
 
 # Create Celery app
@@ -54,7 +56,7 @@ celery_app.conf.update(
     task_soft_time_limit=82800,  # 23 hours
     # Worker hardening for multi-replica deployments
     worker_prefetch_multiplier=1,  # fetch one task at a time so heavy tasks
-                                   # don't get hoarded by a single worker
+    # don't get hoarded by a single worker
     task_acks_late=True,  # ack only after success → safer with replicas
     task_reject_on_worker_lost=True,
     broker_connection_retry_on_startup=True,

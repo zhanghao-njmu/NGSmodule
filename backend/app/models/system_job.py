@@ -1,13 +1,15 @@
 """
 System Job database model for tracking background operations
 """
-from sqlalchemy import Column, String, Text, Float, DateTime, ForeignKey, JSON, Index
-from sqlalchemy.orm import relationship
-from app.core.types import UUID
+
 import uuid
+
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Index, String, Text
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class SystemJob(Base):
@@ -17,13 +19,16 @@ class SystemJob(Base):
     Tracks all system-level jobs including pipeline tasks,
     backups, cleanups, exports, and other administrative operations.
     """
+
     __tablename__ = "system_jobs"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Job classification
     type = Column(String(50), nullable=False, index=True)  # pipeline, backup, cleanup, export, import, system_task
-    status = Column(String(20), nullable=False, default="pending", index=True)  # pending, running, completed, failed, cancelled
+    status = Column(
+        String(20), nullable=False, default="pending", index=True
+    )  # pending, running, completed, failed, cancelled
 
     # Job ownership
     user_id = Column(UUID(), ForeignKey("users.id"), nullable=True, index=True)
@@ -55,8 +60,8 @@ class SystemJob(Base):
     parent_job = relationship("SystemJob", remote_side=[id])
 
     __table_args__ = (
-        Index('ix_jobs_type_status', 'type', 'status'),
-        Index('ix_jobs_user_created', 'user_id', 'created_at'),
+        Index("ix_jobs_type_status", "type", "status"),
+        Index("ix_jobs_user_created", "user_id", "created_at"),
     )
 
     def __repr__(self):

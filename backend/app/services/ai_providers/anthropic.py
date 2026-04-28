@@ -4,6 +4,7 @@ Anthropic AI provider.
 Uses the Anthropic Python SDK with prompt caching enabled. Requires
 `pip install anthropic` and ANTHROPIC_API_KEY in settings.
 """
+
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -28,15 +29,11 @@ class AnthropicProvider(AIProvider):
     def _get_client(self):
         if self._client is None:
             if not self._api_key:
-                raise AIProviderError(
-                    "Anthropic provider selected but ANTHROPIC_API_KEY is not configured"
-                )
+                raise AIProviderError("Anthropic provider selected but ANTHROPIC_API_KEY is not configured")
             try:
                 from anthropic import Anthropic
             except ImportError as exc:
-                raise AIProviderError(
-                    "anthropic SDK is not installed. Run: pip install anthropic"
-                ) from exc
+                raise AIProviderError("anthropic SDK is not installed. Run: pip install anthropic") from exc
             self._client = Anthropic(api_key=self._api_key)
         return self._client
 

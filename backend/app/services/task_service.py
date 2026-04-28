@@ -1,21 +1,23 @@
 """
 Task Service - Business logic for pipeline task management
 """
+
 import logging
-from typing import List, Optional, Dict, Any, Tuple
-from uuid import UUID
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional, Tuple
+from uuid import UUID
 
-from app.models.task import PipelineTask
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.models.project import Project
+from app.models.task import PipelineTask
 from app.schemas.task import (
     TaskCreate,
-    TaskUpdate,
-    TaskStats,
     TaskExecuteRequest,
+    TaskStats,
+    TaskUpdate,
 )
 from app.workers.pipeline_tasks import run_ngs_pipeline
 
@@ -47,10 +49,12 @@ class TaskService:
         Returns:
             Task if found and belongs to user, None otherwise
         """
-        task = self.db.query(PipelineTask).join(Project).filter(
-            PipelineTask.id == task_id,
-            Project.user_id == user_id
-        ).first()
+        task = (
+            self.db.query(PipelineTask)
+            .join(Project)
+            .filter(PipelineTask.id == task_id, Project.user_id == user_id)
+            .first()
+        )
 
         return task
 
@@ -70,10 +74,7 @@ class TaskService:
         """
         task = self.get_by_id(task_id, user_id)
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {task_id} not found")
         return task
 
     def list_tasks(
@@ -95,9 +96,7 @@ class TaskService:
         Returns:
             List of tasks
         """
-        query = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id
-        )
+        query = self.db.query(PipelineTask).join(Project).filter(Project.user_id == user_id)
 
         # Apply filters
         if project_id:
@@ -113,11 +112,7 @@ class TaskService:
 
         return tasks
 
-    def get_stats(
-        self,
-        user_id: UUID,
-        project_id: Optional[UUID] = None
-    ) -> TaskStats:
+    def get_stats(self, user_id: UUID, project_id: Optional[UUID] = None) -> TaskStats:
         """
         Get task statistics for a user
 
@@ -128,9 +123,7 @@ class TaskService:
         Returns:
             Task statistics
         """
-        query = self.db.query(PipelineTask).join(Project).filter(
-            Project.user_id == user_id
-        )
+        query = self.db.query(PipelineTask).join(Project).filter(Project.user_id == user_id)
 
         if project_id:
             query = query.filter(PipelineTask.project_id == project_id)
@@ -148,7 +141,7 @@ class TaskService:
             running_tasks=running_tasks,
             completed_tasks=completed_tasks,
             failed_tasks=failed_tasks,
-            cancelled_tasks=cancelled_tasks
+            cancelled_tasks=cancelled_tasks,
         )
 
     # ============= CREATE OPERATIONS =============
@@ -168,16 +161,10 @@ class TaskService:
             HTTPException: If project not found
         """
         # Verify project belongs to user
-        project = self.db.query(Project).filter(
-            Project.id == task_data.project_id,
-            Project.user_id == user_id
-        ).first()
+        project = self.db.query(Project).filter(Project.id == task_data.project_id, Project.user_id == user_id).first()
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Create task
         task = PipelineTask(
@@ -185,7 +172,7 @@ class TaskService:
             task_name=task_data.task_name,
             task_type=task_data.task_type,
             config=task_data.config,
-            status="pending"
+            status="pending",
         )
 
         self.db.add(task)
@@ -196,12 +183,7 @@ class TaskService:
 
     # ============= UPDATE OPERATIONS =============
 
-    def update(
-        self,
-        task_id: UUID,
-        user_id: UUID,
-        update_data: TaskUpdate
-    ) -> PipelineTask:
+    def update(self, task_id: UUID, user_id: UUID, update_data: TaskUpdate) -> PipelineTask:
         """
         Update task details
 
@@ -230,12 +212,7 @@ class TaskService:
 
     # ============= EXECUTION OPERATIONS =============
 
-    def execute(
-        self,
-        task_id: UUID,
-        user_id: UUID,
-        execute_data: TaskExecuteRequest
-    ) -> Tuple[str, str]:
+    def execute(self, task_id: UUID, user_id: UUID, execute_data: TaskExecuteRequest) -> Tuple[str, str]:
         """
         Execute a pipeline task
 
@@ -254,10 +231,7 @@ class TaskService:
 
         # Check if task is already running or completed
         if task.status in ["running", "completed"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Task is already {task.status}"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Task is already {task.status}")
 
         # Update task configuration
         task.config = {**task.config, **execute_data.config}
@@ -268,18 +242,13 @@ class TaskService:
         # Submit to Celery
         try:
             celery_task = run_ngs_pipeline.delay(
-                task_id=str(task.id),
-                pipeline_script=execute_data.pipeline_script,
-                config=task.config
+                task_id=str(task.id), pipeline_script=execute_data.pipeline_script, config=task.config
             )
 
             task.celery_task_id = celery_task.id
             self.db.commit()
 
-            return (
-                f"Task execution started with Celery ID: {celery_task.id}",
-                celery_task.id
-            )
+            return (f"Task execution started with Celery ID: {celery_task.id}", celery_task.id)
 
         except Exception as e:
             task.status = "failed"
@@ -287,8 +256,7 @@ class TaskService:
             self.db.commit()
 
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error starting task: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error starting task: {str(e)}"
             )
 
     def cancel(self, task_id: UUID, user_id: UUID) -> str:
@@ -309,14 +277,14 @@ class TaskService:
 
         if task.status not in ["pending", "running"]:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot cancel task with status: {task.status}"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Cannot cancel task with status: {task.status}"
             )
 
         # Revoke Celery task if exists
         if task.celery_task_id:
             try:
                 from app.workers.celery_app import celery_app
+
                 celery_app.control.revoke(task.celery_task_id, terminate=True)
             except Exception as e:
                 logger.warning(f"Error revoking Celery task: {e}")
@@ -362,8 +330,7 @@ class TaskService:
 
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error reading log file: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error reading log file: {str(e)}"
             )
 
     # ============= DELETE OPERATIONS =============
@@ -383,8 +350,7 @@ class TaskService:
 
         if task.status == "running":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete running task. Cancel it first."
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete running task. Cancel it first."
             )
 
         # Delete log file if exists
@@ -403,10 +369,7 @@ class TaskService:
     # ============= HELPER METHODS =============
 
     def get_tasks_by_project(
-        self,
-        project_id: UUID,
-        user_id: UUID,
-        status_filter: Optional[str] = None
+        self, project_id: UUID, user_id: UUID, status_filter: Optional[str] = None
     ) -> List[PipelineTask]:
         """
         Get all tasks for a specific project
@@ -423,20 +386,12 @@ class TaskService:
             HTTPException: If project not found
         """
         # Verify project belongs to user
-        project = self.db.query(Project).filter(
-            Project.id == project_id,
-            Project.user_id == user_id
-        ).first()
+        project = self.db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-        query = self.db.query(PipelineTask).filter(
-            PipelineTask.project_id == project_id
-        )
+        query = self.db.query(PipelineTask).filter(PipelineTask.project_id == project_id)
 
         if status_filter:
             query = query.filter(PipelineTask.status == status_filter)
@@ -445,12 +400,7 @@ class TaskService:
 
         return tasks
 
-    def update_progress(
-        self,
-        task_id: UUID,
-        progress: float,
-        status: Optional[str] = None
-    ) -> PipelineTask:
+    def update_progress(self, task_id: UUID, progress: float, status: Optional[str] = None) -> PipelineTask:
         """
         Update task progress (for use by workers)
 
@@ -465,15 +415,10 @@ class TaskService:
         Raises:
             HTTPException: If task not found
         """
-        task = self.db.query(PipelineTask).filter(
-            PipelineTask.id == task_id
-        ).first()
+        task = self.db.query(PipelineTask).filter(PipelineTask.id == task_id).first()
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {task_id} not found")
 
         task.progress = progress
 

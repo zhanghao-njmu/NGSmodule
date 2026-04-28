@@ -1,26 +1,25 @@
 """
 Admin service for user management, system configuration, and logs
 """
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Any, Tuple
-import uuid
-import os
+
 import json
 import logging
-from pathlib import Path
 import math
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from app.models.user import User
+from sqlalchemy import and_, desc, func, or_
+from sqlalchemy.orm import Session
+
+from app.core.security import get_password_hash
+from app.models.file import File
+from app.models.notification import Notification
 from app.models.project import Project
 from app.models.sample import Sample
 from app.models.task import PipelineTask
-from app.models.file import File
-from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.admin import *
-from app.core.security import get_password_hash
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class AdminService:
         is_active: Optional[bool] = None,
         search: Optional[str] = None,
         sort_by: str = "created_at",
-        sort_order: str = "desc"
+        sort_order: str = "desc",
     ) -> UserListResponse:
         """Get paginated list of all users"""
 
@@ -63,7 +62,7 @@ class AdminService:
                     User.username.ilike(search_term),
                     User.email.ilike(search_term),
                     User.full_name.ilike(search_term),
-                    User.organization.ilike(search_term)
+                    User.organization.ilike(search_term),
                 )
             )
 
@@ -97,20 +96,14 @@ class AdminService:
                     storage_percent=user.storage_percent_used,
                     last_login=user.last_login,
                     created_at=user.created_at,
-                    updated_at=user.updated_at
+                    updated_at=user.updated_at,
                 )
             )
 
         total_pages = math.ceil(total / limit) if limit > 0 else 0
         page = (skip // limit) + 1 if limit > 0 else 1
 
-        return UserListResponse(
-            users=user_list,
-            total=total,
-            page=page,
-            page_size=limit,
-            total_pages=total_pages
-        )
+        return UserListResponse(users=user_list, total=total, page=page, page_size=limit, total_pages=total_pages)
 
     def get_user_detail(self, user_id: str) -> Optional[AdminUserDetail]:
         """Get detailed information about a user"""
@@ -120,26 +113,34 @@ class AdminService:
             return None
 
         # Count user's resources
-        total_projects = self.db.query(func.count(Project.id)).filter(
-            Project.owner_id == user_id
-        ).scalar() or 0
+        total_projects = self.db.query(func.count(Project.id)).filter(Project.owner_id == user_id).scalar() or 0
 
-        total_samples = self.db.query(func.count(Sample.id)).join(Project).filter(
-            Project.owner_id == user_id
-        ).scalar() or 0
+        total_samples = (
+            self.db.query(func.count(Sample.id)).join(Project).filter(Project.owner_id == user_id).scalar() or 0
+        )
 
-        total_tasks = self.db.query(func.count(PipelineTask.id)).join(Sample).join(Project).filter(
-            Project.owner_id == user_id
-        ).scalar() or 0
+        total_tasks = (
+            self.db.query(func.count(PipelineTask.id))
+            .join(Sample)
+            .join(Project)
+            .filter(Project.owner_id == user_id)
+            .scalar()
+            or 0
+        )
 
-        total_files = self.db.query(func.count(File.id)).join(Sample).join(Project).filter(
-            Project.owner_id == user_id
-        ).scalar() or 0
+        total_files = (
+            self.db.query(func.count(File.id)).join(Sample).join(Project).filter(Project.owner_id == user_id).scalar()
+            or 0
+        )
 
         # Get last activity
-        last_activity = self.db.query(func.max(PipelineTask.updated_at)).join(Sample).join(Project).filter(
-            Project.owner_id == user_id
-        ).scalar()
+        last_activity = (
+            self.db.query(func.max(PipelineTask.updated_at))
+            .join(Sample)
+            .join(Project)
+            .filter(Project.owner_id == user_id)
+            .scalar()
+        )
 
         return AdminUserDetail(
             id=str(user.id),
@@ -160,14 +161,10 @@ class AdminService:
             total_tasks=total_tasks,
             total_files=total_files,
             last_activity=last_activity,
-            login_count=0  # Would need login tracking table
+            login_count=0,  # Would need login tracking table
         )
 
-    def update_user(
-        self,
-        user_id: str,
-        update_data: UserUpdateRequest
-    ) -> Optional[AdminUserDetail]:
+    def update_user(self, user_id: str, update_data: UserUpdateRequest) -> Optional[AdminUserDetail]:
         """Update user information"""
 
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -205,10 +202,7 @@ class AdminService:
         return self.get_user_detail(str(user.id))
 
     def activate_deactivate_user(
-        self,
-        user_id: str,
-        is_active: bool,
-        reason: Optional[str] = None
+        self, user_id: str, is_active: bool, reason: Optional[str] = None
     ) -> Optional[AdminUserDetail]:
         """Activate or deactivate a user"""
 
@@ -227,12 +221,7 @@ class AdminService:
 
         return self.get_user_detail(str(user.id))
 
-    def reset_user_password(
-        self,
-        user_id: str,
-        new_password: str,
-        notify_user: bool = True
-    ) -> bool:
+    def reset_user_password(self, user_id: str, new_password: str, notify_user: bool = True) -> bool:
         """Reset user password"""
 
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -251,11 +240,7 @@ class AdminService:
 
         return True
 
-    def delete_user(
-        self,
-        user_id: str,
-        transfer_data_to: Optional[str] = None
-    ) -> bool:
+    def delete_user(self, user_id: str, transfer_data_to: Optional[str] = None) -> bool:
         """Delete a user (with optional data transfer)"""
 
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -267,9 +252,7 @@ class AdminService:
             target_user = self.db.query(User).filter(User.id == transfer_data_to).first()
             if target_user:
                 # Transfer projects
-                self.db.query(Project).filter(Project.owner_id == user_id).update(
-                    {"owner_id": transfer_data_to}
-                )
+                self.db.query(Project).filter(Project.owner_id == user_id).update({"owner_id": transfer_data_to})
                 logger.info(f"Transferred user {user.username} data to {target_user.username}")
 
         # Delete user (cascade will handle related records)
@@ -345,14 +328,11 @@ class AdminService:
                 "cache_enabled": True,
                 "cache_ttl": 300,  # 5 minutes
             },
-            last_updated=datetime.utcnow()
+            last_updated=datetime.utcnow(),
         )
 
     def update_system_config(
-        self,
-        category: SystemConfigCategory,
-        updates: Dict[str, Any],
-        admin_id: str
+        self, category: SystemConfigCategory, updates: Dict[str, Any], admin_id: str
     ) -> SystemConfig:
         """Update system configuration"""
 
@@ -364,10 +344,7 @@ class AdminService:
 
         return self.get_system_config()
 
-    def reset_system_config(
-        self,
-        categories: Optional[List[SystemConfigCategory]] = None
-    ) -> SystemConfig:
+    def reset_system_config(self, categories: Optional[List[SystemConfigCategory]] = None) -> SystemConfig:
         """Reset system configuration to defaults"""
 
         if categories:
@@ -391,7 +368,7 @@ class AdminService:
         sources: Optional[List[LogSource]] = None,
         search: Optional[str] = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> LogResponse:
         """Query system logs"""
 
@@ -429,7 +406,7 @@ class AdminService:
                     source=log_sources[i % len(log_sources)],
                     message=sample_messages[i % len(sample_messages)],
                     details={"request_id": f"req_{i}", "duration_ms": 150 + i * 10},
-                    ip_address="192.168.1.1"
+                    ip_address="192.168.1.1",
                 )
             )
 
@@ -441,13 +418,9 @@ class AdminService:
         has_more = total > (offset + limit)
 
         # Apply pagination
-        logs = logs[offset:offset + limit]
+        logs = logs[offset : offset + limit]
 
-        return LogResponse(
-            logs=logs,
-            total=total,
-            has_more=has_more
-        )
+        return LogResponse(logs=logs, total=total, has_more=has_more)
 
     def download_logs(
         self,
@@ -455,16 +428,12 @@ class AdminService:
         end_date: Optional[datetime] = None,
         levels: Optional[List[LogLevel]] = None,
         sources: Optional[List[LogSource]] = None,
-        format: str = "json"
+        format: str = "json",
     ) -> str:
         """Generate log file for download"""
 
         logs_response = self.get_logs(
-            start_date=start_date,
-            end_date=end_date,
-            levels=levels,
-            sources=sources,
-            limit=10000
+            start_date=start_date, end_date=end_date, levels=levels, sources=sources, limit=10000
         )
 
         # In production, this would create a file and return a download URL
@@ -477,13 +446,15 @@ class AdminService:
                 log_data += f"{log.timestamp},{log.level.value},{log.source.value},{log.message}\n"
         else:  # txt
             log_data = "\n".join(
-                [f"[{log.timestamp}] {log.level.value.upper()} [{log.source.value}] {log.message}"
-                 for log in logs_response.logs]
+                [
+                    f"[{log.timestamp}] {log.level.value.upper()} [{log.source.value}] {log.message}"
+                    for log in logs_response.logs
+                ]
             )
 
         # Save to temp file and return path
         temp_file = f"/tmp/logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}"
-        with open(temp_file, 'w') as f:
+        with open(temp_file, "w") as f:
             f.write(log_data)
 
         return temp_file
@@ -506,7 +477,7 @@ class AdminService:
                     status=ServiceStatus.HEALTHY,
                     response_time=5.2,
                     last_check=datetime.utcnow(),
-                    message="Database is responsive"
+                    message="Database is responsive",
                 )
             )
         except Exception as e:
@@ -515,7 +486,7 @@ class AdminService:
                     name="PostgreSQL",
                     status=ServiceStatus.DOWN,
                     last_check=datetime.utcnow(),
-                    message=f"Database error: {str(e)}"
+                    message=f"Database error: {str(e)}",
                 )
             )
 
@@ -526,7 +497,7 @@ class AdminService:
                 status=ServiceStatus.HEALTHY,
                 response_time=1.5,
                 last_check=datetime.utcnow(),
-                message="Cache is operational"
+                message="Cache is operational",
             )
         )
 
@@ -537,7 +508,7 @@ class AdminService:
                 status=ServiceStatus.HEALTHY,
                 response_time=8.3,
                 last_check=datetime.utcnow(),
-                message="Object storage is available"
+                message="Object storage is available",
             )
         )
 
@@ -548,7 +519,7 @@ class AdminService:
                 status=ServiceStatus.HEALTHY,
                 response_time=3.1,
                 last_check=datetime.utcnow(),
-                message="Task queue is processing"
+                message="Task queue is processing",
             )
         )
 
@@ -565,7 +536,7 @@ class AdminService:
             services=services,
             timestamp=datetime.utcnow(),
             uptime=86400.0,  # Mock 1 day uptime
-            version="1.0.0"
+            version="1.0.0",
         )
 
     def cleanup_system(self, options: CleanupOptions) -> CleanupResponse:
@@ -591,11 +562,7 @@ class AdminService:
 
             results.append(
                 CleanupResult(
-                    operation="old_logs",
-                    items_deleted=items_deleted,
-                    space_freed=space_freed,
-                    duration=0.5,
-                    errors=[]
+                    operation="old_logs", items_deleted=items_deleted, space_freed=space_freed, duration=0.5, errors=[]
                 )
             )
             total_items += items_deleted
@@ -623,7 +590,7 @@ class AdminService:
                     items_deleted=items_deleted,
                     space_freed=space_freed,
                     duration=0.3,
-                    errors=[]
+                    errors=[],
                 )
             )
             total_items += items_deleted
@@ -635,22 +602,17 @@ class AdminService:
 
             if not options.dry_run:
                 # Delete failed tasks older than cutoff
-                deleted = self.db.query(PipelineTask).filter(
-                    and_(
-                        PipelineTask.status == "failed",
-                        PipelineTask.created_at < cutoff_date
-                    )
-                ).delete()
+                deleted = (
+                    self.db.query(PipelineTask)
+                    .filter(and_(PipelineTask.status == "failed", PipelineTask.created_at < cutoff_date))
+                    .delete()
+                )
                 self.db.commit()
                 items_deleted = deleted
 
             results.append(
                 CleanupResult(
-                    operation="failed_tasks",
-                    items_deleted=items_deleted,
-                    space_freed=0,
-                    duration=0.8,
-                    errors=[]
+                    operation="failed_tasks", items_deleted=items_deleted, space_freed=0, duration=0.8, errors=[]
                 )
             )
             total_items += items_deleted
@@ -661,22 +623,17 @@ class AdminService:
 
             if not options.dry_run:
                 # Delete read notifications older than cutoff
-                deleted = self.db.query(Notification).filter(
-                    and_(
-                        Notification.read == True,
-                        Notification.created_at < cutoff_date
-                    )
-                ).delete()
+                deleted = (
+                    self.db.query(Notification)
+                    .filter(and_(Notification.read == True, Notification.created_at < cutoff_date))
+                    .delete()
+                )
                 self.db.commit()
                 items_deleted = deleted
 
             results.append(
                 CleanupResult(
-                    operation="old_notifications",
-                    items_deleted=items_deleted,
-                    space_freed=0,
-                    duration=0.4,
-                    errors=[]
+                    operation="old_notifications", items_deleted=items_deleted, space_freed=0, duration=0.4, errors=[]
                 )
             )
             total_items += items_deleted
@@ -688,7 +645,7 @@ class AdminService:
             total_space_freed=total_space,
             total_duration=duration,
             results=results,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
     # ========================================================================
@@ -719,24 +676,26 @@ class AdminService:
         week_ago = today - timedelta(days=7)
         month_ago = today - timedelta(days=30)
 
-        tasks_today = self.db.query(func.count(PipelineTask.id)).filter(
-            PipelineTask.created_at >= today
-        ).scalar() or 0
+        tasks_today = self.db.query(func.count(PipelineTask.id)).filter(PipelineTask.created_at >= today).scalar() or 0
 
-        tasks_this_week = self.db.query(func.count(PipelineTask.id)).filter(
-            PipelineTask.created_at >= week_ago
-        ).scalar() or 0
+        tasks_this_week = (
+            self.db.query(func.count(PipelineTask.id)).filter(PipelineTask.created_at >= week_ago).scalar() or 0
+        )
 
-        tasks_this_month = self.db.query(func.count(PipelineTask.id)).filter(
-            PipelineTask.created_at >= month_ago
-        ).scalar() or 0
+        tasks_this_month = (
+            self.db.query(func.count(PipelineTask.id)).filter(PipelineTask.created_at >= month_ago).scalar() or 0
+        )
 
         # Success rates
         def calculate_success_rate(start_date):
-            result = self.db.query(
-                func.count(PipelineTask.id).label('total'),
-                func.sum(func.case((PipelineTask.status == 'completed', 1), else_=0)).label('completed')
-            ).filter(PipelineTask.created_at >= start_date).first()
+            result = (
+                self.db.query(
+                    func.count(PipelineTask.id).label("total"),
+                    func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                )
+                .filter(PipelineTask.created_at >= start_date)
+                .first()
+            )
 
             if result and result.total > 0:
                 return (result.completed / result.total) * 100
@@ -748,9 +707,10 @@ class AdminService:
 
         # System metrics (mock - in production would come from monitoring system)
         import psutil
+
         cpu_usage = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         return AdminSystemStats(
             total_users=total_users,
@@ -773,7 +733,7 @@ class AdminService:
             cpu_usage=cpu_usage,
             memory_usage=memory.percent,
             disk_usage=disk.percent,
-            generated_at=datetime.utcnow()
+            generated_at=datetime.utcnow(),
         )
 
     # ========================================================================
@@ -786,13 +746,13 @@ class AdminService:
 
         # CPU metrics
         cpu_percent = psutil.cpu_percent(interval=1)
-        load_avg = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else [0, 0, 0]
+        load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else [0, 0, 0]
 
         # Memory metrics
         memory = psutil.virtual_memory()
 
         # Disk metrics
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         # Network metrics (optional)
         try:
@@ -801,27 +761,16 @@ class AdminService:
                 "bytes_sent": network.bytes_sent,
                 "bytes_recv": network.bytes_recv,
                 "packets_sent": network.packets_sent,
-                "packets_recv": network.packets_recv
+                "packets_recv": network.packets_recv,
             }
-        except:
+        except Exception:
             network_info = None
 
         return SystemMetrics(
-            cpu={
-                "usage": cpu_percent,
-                "load": list(load_avg)
-            },
-            memory={
-                "used": memory.used,
-                "total": memory.total,
-                "usagePercent": memory.percent
-            },
-            disk={
-                "used": disk.used,
-                "total": disk.total,
-                "usagePercent": disk.percent
-            },
-            network=network_info
+            cpu={"usage": cpu_percent, "load": list(load_avg)},
+            memory={"used": memory.used, "total": memory.total, "usagePercent": memory.percent},
+            disk={"used": disk.used, "total": disk.total, "usagePercent": disk.percent},
+            network=network_info,
         )
 
     def get_alerts(self, resolved: bool = False) -> AlertListResponse:
@@ -894,7 +843,7 @@ class AdminService:
         user_id: Optional[str] = None,
         action: Optional[str] = None,
         skip: int = 0,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[AuditLogEntry]:
         """Get audit logs from the database."""
         from app.services.audit_service import AuditService
@@ -913,7 +862,11 @@ class AdminService:
             AuditLogEntry(
                 id=str(log.id),
                 timestamp=log.timestamp,
-                action=AuditAction(log.action) if log.action in [a.value for a in AuditAction] else AuditAction.CONFIG_UPDATED,
+                action=(
+                    AuditAction(log.action)
+                    if log.action in [a.value for a in AuditAction]
+                    else AuditAction.CONFIG_UPDATED
+                ),
                 admin_user_id=str(log.admin_user_id),
                 admin_username=log.admin_username,
                 target_user_id=str(log.target_user_id) if log.target_user_id else None,
@@ -931,12 +884,13 @@ class AdminService:
         end_date: Optional[datetime] = None,
         user_id: Optional[str] = None,
         action: Optional[AuditAction] = None,
-        format: str = "json"
+        format: str = "json",
     ) -> ExportResult:
         """Export audit logs to a downloadable file."""
-        from app.services.audit_service import AuditService
         import json
         from pathlib import Path
+
+        from app.services.audit_service import AuditService
 
         audit_service = AuditService(self.db)
 
@@ -952,6 +906,7 @@ class AdminService:
 
         # Determine export directory (use BACKUP_DIR/exports as a safe location)
         from app.core.config import settings
+
         export_dir = Path(settings.BACKUP_DIR) / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)
 
@@ -980,16 +935,17 @@ class AdminService:
             download_url=f"/api/v1/admin/downloads/{filename}",
             file_name=filename,
             file_size=file_size,
-            expires_at=datetime.utcnow() + timedelta(hours=24)
+            expires_at=datetime.utcnow() + timedelta(hours=24),
         )
 
     def get_resource_usage(self) -> ResourceUsage:
         """Get resource usage summary using real metrics."""
         import psutil
+
         from app.services.job_service import JobService
 
         # Storage usage
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
         storage_used = self.db.query(func.sum(User.storage_used)).scalar() or 0
 
         # Compute usage from actual job queue
@@ -997,9 +953,10 @@ class AdminService:
         active_jobs = job_service.get_active_jobs_count()
 
         # Active pipeline tasks
-        active_tasks = self.db.query(func.count(PipelineTask.id)).filter(
-            PipelineTask.status.in_(['pending', 'running'])
-        ).scalar() or 0
+        active_tasks = (
+            self.db.query(func.count(PipelineTask.id)).filter(PipelineTask.status.in_(["pending", "running"])).scalar()
+            or 0
+        )
 
         # Compute limit from CPU count (rough estimate)
         cpu_count = psutil.cpu_count() or 4
@@ -1009,26 +966,13 @@ class AdminService:
         memory = psutil.virtual_memory()
 
         return ResourceUsage(
-            storage={
-                "total": int(disk.total),
-                "used": int(storage_used)
-            },
-            compute={
-                "active": int(active_jobs + active_tasks),
-                "limit": compute_limit
-            },
-            memory={
-                "total": int(memory.total),
-                "used": int(memory.used)
-            }
+            storage={"total": int(disk.total), "used": int(storage_used)},
+            compute={"active": int(active_jobs + active_tasks), "limit": compute_limit},
+            memory={"total": int(memory.total), "used": int(memory.used)},
         )
 
     def create_backup(
-        self,
-        backup_type: BackupType,
-        description: Optional[str],
-        admin_user_id: str,
-        compress: bool = True
+        self, backup_type: BackupType, description: Optional[str], admin_user_id: str, compress: bool = True
     ) -> BackupInfo:
         """
         Create system backup asynchronously via Celery.
@@ -1036,9 +980,9 @@ class AdminService:
         Returns a SystemBackup record with status='pending' that will be
         updated by the Celery task as the backup progresses.
         """
-        from app.services.job_service import JobService
-        from app.models.backup import SystemBackup
         from app.core.config import settings as app_settings
+        from app.models.backup import SystemBackup
+        from app.services.job_service import JobService
 
         # Create initial backup record
         backup = SystemBackup(
@@ -1082,6 +1026,7 @@ class AdminService:
             logger.error(f"Failed to dispatch backup task: {e}")
             # Fallback: run synchronously
             from app.services.backup_service import BackupService
+
             backup_service = BackupService(self.db)
             backup = backup_service.create_backup(
                 backup_type=backup_type.value,
@@ -1129,12 +1074,7 @@ class AdminService:
             total=len(backups),
         )
 
-    def list_jobs(
-        self,
-        status: Optional[JobStatus] = None,
-        skip: int = 0,
-        limit: int = 50
-    ) -> JobListResponse:
+    def list_jobs(self, status: Optional[JobStatus] = None, skip: int = 0, limit: int = 50) -> JobListResponse:
         """List system jobs from the database, syncing with Celery state."""
         from app.services.job_service import JobService
 
@@ -1216,6 +1156,7 @@ class AdminService:
         try:
             if new_job.type == "backup":
                 from app.workers.admin_tasks import create_backup_task
+
                 params = new_job.parameters or {}
                 celery_result = create_backup_task.delay(
                     backup_id=params.get("backup_id"),

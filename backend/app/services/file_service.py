@@ -1,21 +1,22 @@
 """
 File Service - Business logic for file management
 """
-from typing import List, Optional, Tuple
-from uuid import UUID
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status, UploadFile
-import os
+
 import hashlib
 import io
+import os
+from typing import List, Optional
+from uuid import UUID
 
-from app.models.file import File
-from app.models.sample import Sample
-from app.models.project import Project
-from app.models.user import User
-from app.schemas.file import FileCreate
-from app.services.storage import storage_service
+from fastapi import HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
+from app.models.file import File
+from app.models.project import Project
+from app.models.sample import Sample
+from app.models.user import User
+from app.services.storage import storage_service
 
 
 class FileService:
@@ -43,10 +44,13 @@ class FileService:
         Returns:
             File if found and belongs to user, None otherwise
         """
-        file = self.db.query(File).join(Sample).join(Project).filter(
-            File.id == file_id,
-            Project.user_id == user_id
-        ).first()
+        file = (
+            self.db.query(File)
+            .join(Sample)
+            .join(Project)
+            .filter(File.id == file_id, Project.user_id == user_id)
+            .first()
+        )
 
         return file
 
@@ -66,10 +70,7 @@ class FileService:
         """
         file = self.get_by_id(file_id, user_id)
         if not file:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"File {file_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File {file_id} not found")
         return file
 
     def list_files(
@@ -91,9 +92,7 @@ class FileService:
         Returns:
             List of files
         """
-        query = self.db.query(File).join(Sample).join(Project).filter(
-            Project.user_id == user_id
-        )
+        query = self.db.query(File).join(Sample).join(Project).filter(Project.user_id == user_id)
 
         # Apply filters
         if sample_id:
@@ -111,12 +110,7 @@ class FileService:
 
     # ============= CREATE OPERATIONS =============
 
-    async def upload(
-        self,
-        user_id: UUID,
-        sample_id: UUID,
-        file: UploadFile
-    ) -> File:
+    async def upload(self, user_id: UUID, sample_id: UUID, file: UploadFile) -> File:
         """
         Upload a file and associate with sample
 
@@ -132,24 +126,15 @@ class FileService:
             HTTPException: If sample not found, file type not allowed, or storage quota exceeded
         """
         # Verify sample belongs to user
-        sample = self.db.query(Sample).join(Project).filter(
-            Sample.id == sample_id,
-            Project.user_id == user_id
-        ).first()
+        sample = self.db.query(Sample).join(Project).filter(Sample.id == sample_id, Project.user_id == user_id).first()
 
         if not sample:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Sample not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sample not found")
 
         # Get user
         user = self.db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Check file extension
         file_ext = os.path.splitext(file.filename)[1].lower()
@@ -158,7 +143,7 @@ class FileService:
         if file_ext not in allowed_extensions:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File type '{file_ext}' not allowed. Allowed: {', '.join(allowed_extensions)}"
+                detail=f"File type '{file_ext}' not allowed. Allowed: {', '.join(allowed_extensions)}",
             )
 
         # Check storage quota
@@ -169,8 +154,7 @@ class FileService:
 
             if user.storage_used + file_size > user.storage_quota:
                 raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="Storage quota exceeded"
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Storage quota exceeded"
                 )
 
             # Reset file pointer
@@ -179,19 +163,13 @@ class FileService:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error reading file: {str(e)}"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error reading file: {str(e)}")
 
         # Save to storage
         try:
             file_stream = io.BytesIO(file_contents)
             object_path = await storage_service.save_upload_file(
-                file=file_stream,
-                user_id=str(user_id),
-                filename=file.filename,
-                project_id=str(sample.project_id)
+                file=file_stream, user_id=str(user_id), filename=file.filename, project_id=str(sample.project_id)
             )
 
             # Calculate MD5
@@ -202,10 +180,10 @@ class FileService:
                 sample_id=sample_id,
                 filename=file.filename,
                 file_path=object_path,
-                file_type=file_ext.lstrip('.'),
+                file_type=file_ext.lstrip("."),
                 file_size=file_size,
                 md5_checksum=md5_hash,
-                upload_status="completed"
+                upload_status="completed",
             )
 
             self.db.add(file_record)
@@ -220,8 +198,7 @@ class FileService:
 
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error uploading file: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error uploading file: {str(e)}"
             )
 
     # ============= DOWNLOAD OPERATIONS =============
@@ -249,8 +226,7 @@ class FileService:
 
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error generating download URL: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error generating download URL: {str(e)}"
             )
 
     # ============= DELETE OPERATIONS =============
@@ -271,10 +247,7 @@ class FileService:
         # Get user
         user = self.db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         try:
             # Delete from storage
@@ -290,8 +263,7 @@ class FileService:
 
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error deleting file: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error deleting file: {str(e)}"
             )
 
     # ============= HELPER METHODS =============
@@ -333,19 +305,11 @@ class FileService:
             HTTPException: If sample not found
         """
         # Verify sample belongs to user
-        sample = self.db.query(Sample).join(Project).filter(
-            Sample.id == sample_id,
-            Project.user_id == user_id
-        ).first()
+        sample = self.db.query(Sample).join(Project).filter(Sample.id == sample_id, Project.user_id == user_id).first()
 
         if not sample:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Sample not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sample not found")
 
-        files = self.db.query(File).filter(
-            File.sample_id == sample_id
-        ).order_by(File.created_at.desc()).all()
+        files = self.db.query(File).filter(File.sample_id == sample_id).order_by(File.created_at.desc()).all()
 
         return files

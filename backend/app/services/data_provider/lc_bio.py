@@ -10,6 +10,7 @@ The Java daemon (`obs_service-...-SNAPSHOT.jar`) is process-level singleton;
 this adapter expects it to be reachable via the shared `LC_BIO_BIN_DIR`
 mountpoint when the backend runs containerised.
 """
+
 import os
 import re
 import subprocess
@@ -20,14 +21,13 @@ from typing import Optional
 from app.core.config import settings
 from app.services.data_provider.base import (
     DataProviderBase,
-    SessionInfo,
+    DownloadFailedError,
+    LoginFailedError,
+    NoSessionError,
     Progress,
     SessionExistsError,
-    NoSessionError,
-    LoginFailedError,
-    DownloadFailedError,
+    SessionInfo,
 )
-
 
 # JAR name used for `ps` detection
 JAR_MARKER = "obs_service-0.0.1-SNAPSHOT.jar"
@@ -35,16 +35,14 @@ JAR_MARKER = "obs_service-0.0.1-SNAPSHOT.jar"
 # Progress line examples (Chinese):
 #   <obs> ：已下载：50.00 MB  0.39%      2026-04-27-16:20:56.441
 #   <obs> ：已下载：1.03 GB  8.15%       2026-04-27-16:22:32.392
-_PROGRESS_RE = re.compile(
-    r"已下载：([\d.]+)\s*(MB|GB|TB|KB)\s+([\d.]+)%"
-)
+_PROGRESS_RE = re.compile(r"已下载：([\d.]+)\s*(MB|GB|TB|KB)\s+([\d.]+)%")
 _DONE_MARKER = "下载已完成"
 _FAIL_MARKERS = ("下载失败", "Error", "失败", "网络异常")
 _RUNNING_MARKER = "下载中"
 
 
 def _to_bytes(amount: float, unit: str) -> int:
-    multipliers = {"KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3, "TB": 1024 ** 4}
+    multipliers = {"KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
     return int(amount * multipliers.get(unit, 1))
 
 
@@ -53,7 +51,9 @@ class LcBioProvider(DataProviderBase):
 
     def __init__(self, bin_dir: Optional[Path] = None):
         # Resolve at construction so tests can override; settings provides default.
-        self.bin_dir = Path(bin_dir or getattr(settings, "LC_BIO_BIN_DIR", "/home/zhanghao/programs/lcbio/linux_download/bin"))
+        self.bin_dir = Path(
+            bin_dir or getattr(settings, "LC_BIO_BIN_DIR", "/home/zhanghao/programs/lcbio/linux_download/bin")
+        )
         self.run_bin = self.bin_dir / "run"
         self.download_bin = self.bin_dir / "download"
         self.stop_bin = self.bin_dir / "stop"

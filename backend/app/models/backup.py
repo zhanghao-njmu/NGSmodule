@@ -1,13 +1,15 @@
 """
 System Backup database model
 """
-from sqlalchemy import Column, String, Text, Boolean, BigInteger, DateTime, ForeignKey, JSON, Index
-from sqlalchemy.orm import relationship
-from app.core.types import UUID
+
 import uuid
+
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class SystemBackup(Base):
@@ -17,13 +19,16 @@ class SystemBackup(Base):
     Tracks all system backups including database dumps, file backups,
     and full system snapshots.
     """
+
     __tablename__ = "system_backups"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
 
     # Backup classification
     backup_type = Column(String(50), nullable=False, index=True)  # full, incremental, database_only, files_only
-    status = Column(String(20), nullable=False, default="pending", index=True)  # pending, in_progress, completed, failed
+    status = Column(
+        String(20), nullable=False, default="pending", index=True
+    )  # pending, in_progress, completed, failed
 
     # Backup file info
     file_path = Column(String(1024), nullable=True)
@@ -50,8 +55,8 @@ class SystemBackup(Base):
     creator = relationship("User", foreign_keys=[created_by])
 
     __table_args__ = (
-        Index('ix_backups_type_status', 'backup_type', 'status'),
-        Index('ix_backups_created_by_at', 'created_by', 'created_at'),
+        Index("ix_backups_type_status", "backup_type", "status"),
+        Index("ix_backups_created_by_at", "created_by", "created_at"),
     )
 
     def __repr__(self):

@@ -4,6 +4,7 @@ Base AI provider interface.
 All concrete providers (Anthropic, OpenAI, local mock) implement this contract
 so the rest of the system can swap them at runtime.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 

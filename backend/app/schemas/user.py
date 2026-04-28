@@ -1,14 +1,17 @@
 """
 User schemas for API request/response
 """
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
     """Base user schema"""
+
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     full_name: Optional[str] = None
@@ -17,11 +20,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for creating a new user"""
+
     password: str = Field(..., min_length=8)
 
 
 class UserUpdate(BaseModel):
     """Schema for updating user"""
+
     full_name: Optional[str] = None
     organization: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -29,6 +34,7 @@ class UserUpdate(BaseModel):
 
 class UserAdminUpdate(BaseModel):
     """Schema for admin updating user"""
+
     full_name: Optional[str] = None
     organization: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -39,6 +45,7 @@ class UserAdminUpdate(BaseModel):
 
 class UserResponse(UserBase):
     """Schema for user response"""
+
     id: UUID
     role: str
     is_active: bool
@@ -47,19 +54,24 @@ class UserResponse(UserBase):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
 class Token(BaseModel):
     """Schema for authentication token"""
+
     access_token: str
     token_type: str = "bearer"
 
 
 class TokenPayload(BaseModel):
     """Schema for token payload"""
+
     sub: Optional[str] = None  # user_id
 
 
 class UserStats(BaseModel):
     """Schema for user statistics"""
+
     user_id: UUID
     username: str
     total_projects: int
@@ -74,6 +86,7 @@ class UserStats(BaseModel):
 
 class SystemStats(BaseModel):
     """Schema for system-wide statistics"""
+
     total_users: int
     active_users: int
     total_projects: int

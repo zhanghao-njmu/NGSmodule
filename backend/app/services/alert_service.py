@@ -2,16 +2,17 @@
 Alert Service
 Real implementation for system alert monitoring and persistence.
 """
+
 import logging
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import timedelta
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import and_, desc
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_
 
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
 from app.models.alert import SystemAlert
-
 
 logger = logging.getLogger(__name__)
 
@@ -98,12 +99,7 @@ class AlertService:
         if source:
             query = query.filter(SystemAlert.source == source)
 
-        return (
-            query.order_by(desc(SystemAlert.timestamp))
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(desc(SystemAlert.timestamp)).offset(skip).limit(limit).all()
 
     def count_alerts(self, resolved: Optional[bool] = None) -> int:
         """Count alerts matching filter"""
@@ -143,11 +139,12 @@ class AlertService:
         This should be run periodically (e.g., every minute via Celery beat).
         """
         import psutil
+
         new_alerts = []
 
         # Check disk space
         try:
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
             if disk.percent >= settings.ALERT_DISK_CRITICAL_PERCENT:
                 alert = self.create_alert(
                     type="error",

@@ -1,21 +1,21 @@
 """
 Notification service for managing user notifications
 """
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from typing import List, Optional, Dict
+
 from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
+
 from app.models.notification import Notification, NotificationSettings
-from app.models.user import User
 from app.schemas.notification import (
+    MarkAllReadResponse,
     NotificationCreate,
-    NotificationUpdate,
-    NotificationSettingsCreate,
     NotificationSettingsUpdate,
+    NotificationUpdate,
     UnreadCount,
-    MarkAllReadResponse
 )
 
 
@@ -36,6 +36,7 @@ class NotificationService:
         # immediate push updates (best-effort: failures are silent).
         try:
             from app.services.realtime import publish_user_event
+
             publish_user_event(
                 str(db_notification.user_id),
                 "notification",
@@ -52,7 +53,7 @@ class NotificationService:
         skip: int = 0,
         limit: int = 20,
         unread_only: bool = False,
-        notification_type: Optional[str] = None
+        notification_type: Optional[str] = None,
     ) -> tuple[List[Notification], int]:
         """
         Get user notifications with pagination
@@ -79,9 +80,7 @@ class NotificationService:
         total = query.count()
 
         # Get paginated results
-        notifications = query.order_by(
-            Notification.created_at.desc()
-        ).offset(skip).limit(limit).all()
+        notifications = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
 
         return notifications, total
 
@@ -96,18 +95,14 @@ class NotificationService:
         Returns:
             Notification or None
         """
-        return self.db.query(Notification).filter(
-            and_(
-                Notification.id == notification_id,
-                Notification.user_id == user_id
-            )
-        ).first()
+        return (
+            self.db.query(Notification)
+            .filter(and_(Notification.id == notification_id, Notification.user_id == user_id))
+            .first()
+        )
 
     def update_notification(
-        self,
-        notification_id: UUID,
-        user_id: UUID,
-        notification_update: NotificationUpdate
+        self, notification_id: UUID, user_id: UUID, notification_update: NotificationUpdate
     ) -> Optional[Notification]:
         """
         Update a notification
@@ -164,21 +159,14 @@ class NotificationService:
             Response with count of marked notifications
         """
         now = datetime.utcnow()
-        result = self.db.query(Notification).filter(
-            and_(
-                Notification.user_id == user_id,
-                Notification.read == False
-            )
-        ).update(
-            {"read": True, "read_at": now},
-            synchronize_session=False
+        result = (
+            self.db.query(Notification)
+            .filter(and_(Notification.user_id == user_id, Notification.read == False))
+            .update({"read": True, "read_at": now}, synchronize_session=False)
         )
         self.db.commit()
 
-        return MarkAllReadResponse(
-            count=result,
-            message=f"Marked {result} notifications as read"
-        )
+        return MarkAllReadResponse(count=result, message=f"Marked {result} notifications as read")
 
     def delete_notification(self, notification_id: UUID, user_id: UUID) -> bool:
         """
@@ -209,23 +197,20 @@ class NotificationService:
         Returns:
             UnreadCount with total and breakdown by type
         """
-        total = self.db.query(func.count(Notification.id)).filter(
-            and_(
-                Notification.user_id == user_id,
-                Notification.read == False
-            )
-        ).scalar() or 0
+        total = (
+            self.db.query(func.count(Notification.id))
+            .filter(and_(Notification.user_id == user_id, Notification.read == False))
+            .scalar()
+            or 0
+        )
 
         # Get count by type
-        by_type_query = self.db.query(
-            Notification.type,
-            func.count(Notification.id)
-        ).filter(
-            and_(
-                Notification.user_id == user_id,
-                Notification.read == False
-            )
-        ).group_by(Notification.type).all()
+        by_type_query = (
+            self.db.query(Notification.type, func.count(Notification.id))
+            .filter(and_(Notification.user_id == user_id, Notification.read == False))
+            .group_by(Notification.type)
+            .all()
+        )
 
         by_type = {notification_type: count for notification_type, count in by_type_query}
 
@@ -243,9 +228,7 @@ class NotificationService:
         Returns:
             NotificationSettings (creates default if not exists)
         """
-        settings = self.db.query(NotificationSettings).filter(
-            NotificationSettings.user_id == user_id
-        ).first()
+        settings = self.db.query(NotificationSettings).filter(NotificationSettings.user_id == user_id).first()
 
         if not settings:
             # Create default settings
@@ -256,11 +239,7 @@ class NotificationService:
 
         return settings
 
-    def update_settings(
-        self,
-        user_id: UUID,
-        settings_update: NotificationSettingsUpdate
-    ) -> NotificationSettings:
+    def update_settings(self, user_id: UUID, settings_update: NotificationSettingsUpdate) -> NotificationSettings:
         """
         Update notification settings
 
@@ -284,13 +263,7 @@ class NotificationService:
 
     # ========== Notification Helpers ==========
 
-    def create_task_notification(
-        self,
-        user_id: UUID,
-        task_id: UUID,
-        task_name: str,
-        status: str
-    ) -> Notification:
+    def create_task_notification(self, user_id: UUID, task_id: UUID, task_name: str, status: str) -> Notification:
         """
         Helper to create task status notification
 
@@ -310,8 +283,7 @@ class NotificationService:
         }
 
         notif_type, title, message = notification_types.get(
-            status,
-            ("info", "Task Update", f"Task '{task_name}' status: {status}")
+            status, ("info", "Task Update", f"Task '{task_name}' status: {status}")
         )
 
         notification_data = NotificationCreate(
@@ -321,17 +293,13 @@ class NotificationService:
             message=message,
             data={"task_id": str(task_id), "task_name": task_name, "status": status},
             action_url=f"/tasks/{task_id}",
-            priority="normal" if status == "running" else "high"
+            priority="normal" if status == "running" else "high",
         )
 
         return self.create_notification(notification_data)
 
     def create_system_notification(
-        self,
-        user_id: UUID,
-        title: str,
-        message: str,
-        priority: str = "normal"
+        self, user_id: UUID, title: str, message: str, priority: str = "normal"
     ) -> Notification:
         """
         Helper to create system notification
@@ -346,11 +314,7 @@ class NotificationService:
             Created notification
         """
         notification_data = NotificationCreate(
-            user_id=user_id,
-            type="system",
-            title=title,
-            message=message,
-            priority=priority
+            user_id=user_id, type="system", title=title, message=message, priority=priority
         )
 
         return self.create_notification(notification_data)

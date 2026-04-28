@@ -4,25 +4,28 @@ Results API endpoints (Refactored with Service Layer)
 This is the refactored version using ResultService for business logic.
 Routers are now thin HTTP adapters that delegate to the service layer.
 """
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.services.result_service import ResultService
 from app.schemas.result import (
-    ResultResponse,
     ResultListResponse,
+    ResultResponse,
     ResultVisualizationData,
 )
+from app.services.result_service import ResultService
 
 router = APIRouter()
 
 
 # ============= DEPENDENCY INJECTION =============
+
 
 def get_result_service(db: Session = Depends(get_db)) -> ResultService:
     """Dependency to get ResultService instance"""
@@ -31,6 +34,7 @@ def get_result_service(db: Session = Depends(get_db)) -> ResultService:
 
 # ============= ENDPOINTS =============
 
+
 @router.get("", response_model=ResultListResponse)
 async def list_results(
     task_id: Optional[UUID] = Query(None, description="Filter by task ID"),
@@ -38,7 +42,7 @@ async def list_results(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
-    service: ResultService = Depends(get_result_service)
+    service: ResultService = Depends(get_result_service),
 ):
     """
     List results with optional filtering
@@ -53,26 +57,17 @@ async def list_results(
     - List of results accessible to the current user
     """
     results, total = service.list_results(
-        user_id=current_user.id,
-        skip=skip,
-        limit=limit,
-        task_id=task_id,
-        result_type=result_type
+        user_id=current_user.id, skip=skip, limit=limit, task_id=task_id, result_type=result_type
     )
 
-    return ResultListResponse(
-        results=results,
-        total=total,
-        skip=skip,
-        limit=limit
-    )
+    return ResultListResponse(results=results, total=total, skip=skip, limit=limit)
 
 
 @router.get("/{result_id}", response_model=ResultResponse)
 async def get_result(
     result_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ResultService = Depends(get_result_service)
+    service: ResultService = Depends(get_result_service),
 ):
     """
     Get a specific result by ID
@@ -94,7 +89,7 @@ async def get_result(
 async def get_visualization_data(
     result_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: ResultService = Depends(get_result_service)
+    service: ResultService = Depends(get_result_service),
 ):
     """
     Get visualization data for a specific result
@@ -119,9 +114,7 @@ async def get_visualization_data(
 
 @router.get("/task/{task_id}/summary")
 async def get_task_results_summary(
-    task_id: UUID,
-    current_user: User = Depends(get_current_user),
-    service: ResultService = Depends(get_result_service)
+    task_id: UUID, current_user: User = Depends(get_current_user), service: ResultService = Depends(get_result_service)
 ):
     """
     Get a summary of all results for a specific task

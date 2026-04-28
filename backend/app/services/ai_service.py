@@ -2,39 +2,60 @@
 AI Intelligence Service
 Provides AI-powered features including recommendations, QC, anomaly detection, and grouping
 """
-from typing import List, Dict, Optional, Any
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+
 import random
 import uuid
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from app.schemas.ai import (
-    # Enums
-    AISystemStatusEnum, QCStatusEnum, AnomalySeverity, AnomalyStatus, InsightCategory,
-    # Parameter Recommendations
-    RecommendationRequest, ParameterValue, ParameterRecommendation,
-    PipelineRecommendation, SimilarRun,
-    # Quality Control
-    AutoQCRequest, QCMetric, QCRecommendation, QCReport,
-    BatchQCRequest, QCIssuePrediction, PredictQCRequest,
-    # Anomaly Detection
-    AnomalyDetectionRequest, Anomaly, AnomalyDetectionReport,
-    AnomalyFixRequest, AnomalyFixResponse,
-    # Smart Sample Grouping
-    SmartGroupingRequest, SampleGroup, SmartGroupingResult,
-    ComparisonSuggestion, GroupValidationRequest, GroupValidationResult,
-    # AI Assistant
-    AssistantMessageRequest, AIAssistantMessage, AIAssistantConversation,
+from sqlalchemy.orm import Session
+
+from app.schemas.ai import (  # Enums; Parameter Recommendations; Quality Control; Anomaly Detection; Smart Sample Grouping; AI Assistant; Analysis Insights; Predictions; System Status; Feedback
+    AIAssistantConversation,
+    AIAssistantMessage,
+    AICapability,
+    AISystemStatus,
+    AISystemStatusEnum,
+    AnalysisInsight,
+    AnalyzeInsightsRequest,
+    Anomaly,
+    AnomalyDetectionReport,
+    AnomalyDetectionRequest,
+    AnomalyFixRequest,
+    AnomalyFixResponse,
+    AnomalySeverity,
+    AnomalyStatus,
+    AssistantMessageRequest,
+    AutoQCRequest,
+    BatchQCRequest,
+    ComparisonSuggestion,
     CreateConversationRequest,
-    # Analysis Insights
-    AnalysisInsight, InsightsReport, AnalyzeInsightsRequest,
-    # Predictions
-    ResourcePredictionRequest, ResourcePrediction, SuccessPrediction,
-    TimelineMilestone, TimelinePrediction,
-    # System Status
-    AICapability, AISystemStatus,
-    # Feedback
-    FeedbackRequest, IncorrectPredictionRequest, FeedbackResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    GroupValidationRequest,
+    GroupValidationResult,
+    IncorrectPredictionRequest,
+    InsightCategory,
+    InsightsReport,
+    ParameterRecommendation,
+    ParameterValue,
+    PipelineRecommendation,
+    PredictQCRequest,
+    QCIssuePrediction,
+    QCMetric,
+    QCRecommendation,
+    QCReport,
+    QCStatusEnum,
+    RecommendationRequest,
+    ResourcePrediction,
+    ResourcePredictionRequest,
+    SampleGroup,
+    SimilarRun,
+    SmartGroupingRequest,
+    SmartGroupingResult,
+    SuccessPrediction,
+    TimelineMilestone,
+    TimelinePrediction,
 )
 
 
@@ -54,11 +75,7 @@ class AIService:
     # Parameter Recommendations
     # ============================================================================
 
-    def get_parameter_recommendations(
-        self,
-        request: RecommendationRequest,
-        db: Session
-    ) -> PipelineRecommendation:
+    def get_parameter_recommendations(self, request: RecommendationRequest, db: Session) -> PipelineRecommendation:
         """Get pipeline parameter recommendations based on context"""
 
         # Mock parameter recommendations
@@ -71,21 +88,21 @@ class AIService:
                     recommended_value=20,
                     confidence=0.92,
                     reasoning="Based on 156 similar successful runs",
-                    alternative_values=[15, 25, 30]
+                    alternative_values=[15, 25, 30],
                 ),
                 ParameterValue(
                     name="adapter_sequence",
                     recommended_value="AGATCGGAAGAG",
                     confidence=0.88,
                     reasoning="Most common adapter for Illumina sequencing",
-                    alternative_values=["CTGTCTCTTATA", "AGATGTGTATAAGA"]
+                    alternative_values=["CTGTCTCTTATA", "AGATGTGTATAAGA"],
                 ),
                 ParameterValue(
                     name="threads",
                     recommended_value=8,
                     confidence=0.95,
                     reasoning="Optimal balance between speed and resource usage",
-                    alternative_values=[4, 16, 32]
+                    alternative_values=[4, 16, 32],
                 ),
             ]
         elif request.pipeline_type == "wgs":
@@ -95,14 +112,14 @@ class AIService:
                     recommended_value=30,
                     confidence=0.90,
                     reasoning="Higher quality threshold for variant calling",
-                    alternative_values=[20, 25, 35]
+                    alternative_values=[20, 25, 35],
                 ),
                 ParameterValue(
                     name="min_mapping_quality",
                     recommended_value=20,
                     confidence=0.85,
                     reasoning="Standard mapping quality for WGS",
-                    alternative_values=[10, 30, 40]
+                    alternative_values=[10, 30, 40],
                 ),
             ]
         else:
@@ -112,7 +129,7 @@ class AIService:
                     recommended_value=0.8,
                     confidence=0.80,
                     reasoning="General quality threshold",
-                    alternative_values=[0.7, 0.85, 0.9]
+                    alternative_values=[0.7, 0.85, 0.9],
                 ),
             ]
 
@@ -125,30 +142,30 @@ class AIService:
             estimated_runtime=3600.0 if request.sample_count else None,
             notes=[
                 "Recommendations based on similar successful runs",
-                "Consider organism-specific parameters for better results"
-            ]
+                "Consider organism-specific parameters for better results",
+            ],
         )
 
     def get_parameter_options(
-        self,
-        pipeline_type: str,
-        parameter_name: str,
-        context: Optional[Dict[str, Any]],
-        db: Session
+        self, pipeline_type: str, parameter_name: str, context: Optional[Dict[str, Any]], db: Session
     ) -> ParameterRecommendation:
         """Get recommendations for specific parameter"""
 
         # Mock parameter options based on parameter name
         if parameter_name == "min_quality":
             recommended = 20
-            alternatives = [{"value": 15, "pros": "More reads retained"},
-                          {"value": 25, "pros": "Higher quality"},
-                          {"value": 30, "pros": "Maximum quality"}]
+            alternatives = [
+                {"value": 15, "pros": "More reads retained"},
+                {"value": 25, "pros": "Higher quality"},
+                {"value": 30, "pros": "Maximum quality"},
+            ]
         elif parameter_name == "threads":
             recommended = 8
-            alternatives = [{"value": 4, "pros": "Lower resource usage"},
-                          {"value": 16, "pros": "Faster processing"},
-                          {"value": 32, "pros": "Maximum speed"}]
+            alternatives = [
+                {"value": 4, "pros": "Lower resource usage"},
+                {"value": 16, "pros": "Faster processing"},
+                {"value": 32, "pros": "Maximum speed"},
+            ]
         else:
             recommended = "auto"
             alternatives = [{"value": "manual", "pros": "More control"}]
@@ -160,29 +177,27 @@ class AIService:
             confidence=0.87,
             reasoning=f"Based on {random.randint(50, 200)} similar runs",
             alternatives=alternatives,
-            based_on_runs=random.randint(50, 200)
+            based_on_runs=random.randint(50, 200),
         )
 
-    def get_similar_runs(
-        self,
-        request: RecommendationRequest,
-        db: Session
-    ) -> List[SimilarRun]:
+    def get_similar_runs(self, request: RecommendationRequest, db: Session) -> List[SimilarRun]:
         """Get similar successful pipeline runs"""
 
         similar_runs = []
         for i in range(5):
-            similar_runs.append(SimilarRun(
-                id=f"run_{uuid.uuid4().hex[:8]}",
-                similarity=round(random.uniform(0.75, 0.95), 2),
-                parameters={
-                    "min_quality": random.choice([15, 20, 25, 30]),
-                    "threads": random.choice([4, 8, 16]),
-                    "adapter_sequence": "AGATCGGAAGAG"
-                },
-                outcome="success",
-                success_metric=round(random.uniform(0.85, 0.98), 2)
-            ))
+            similar_runs.append(
+                SimilarRun(
+                    id=f"run_{uuid.uuid4().hex[:8]}",
+                    similarity=round(random.uniform(0.75, 0.95), 2),
+                    parameters={
+                        "min_quality": random.choice([15, 20, 25, 30]),
+                        "threads": random.choice([4, 8, 16]),
+                        "adapter_sequence": "AGATCGGAAGAG",
+                    },
+                    outcome="success",
+                    success_metric=round(random.uniform(0.85, 0.98), 2),
+                )
+            )
 
         return sorted(similar_runs, key=lambda x: x.similarity, reverse=True)
 
@@ -190,11 +205,7 @@ class AIService:
     # Quality Control
     # ============================================================================
 
-    def run_auto_qc(
-        self,
-        request: AutoQCRequest,
-        db: Session
-    ) -> QCReport:
+    def run_auto_qc(self, request: AutoQCRequest, db: Session) -> QCReport:
         """Run automatic quality control analysis"""
 
         # Mock QC metrics
@@ -204,28 +215,28 @@ class AIService:
                 value=32.5,
                 threshold=30.0,
                 status=QCStatusEnum.PASS,
-                description="Average Phred quality score"
+                description="Average Phred quality score",
             ),
             QCMetric(
                 name="GC Content",
                 value=48.2,
                 threshold=None,
                 status=QCStatusEnum.PASS,
-                description="Percentage of G+C bases"
+                description="Percentage of G+C bases",
             ),
             QCMetric(
                 name="Duplication Rate",
                 value=12.5,
                 threshold=15.0,
                 status=QCStatusEnum.PASS,
-                description="Percentage of duplicate reads"
+                description="Percentage of duplicate reads",
             ),
             QCMetric(
                 name="Adapter Content",
                 value=2.1,
                 threshold=5.0,
                 status=QCStatusEnum.WARNING if random.random() > 0.7 else QCStatusEnum.PASS,
-                description="Percentage of reads with adapter sequences"
+                description="Percentage of reads with adapter sequences",
             ),
         ]
 
@@ -244,12 +255,14 @@ class AIService:
         # Generate recommendations if needed
         recommendations = []
         if overall_status != QCStatusEnum.PASS:
-            recommendations.append(QCRecommendation(
-                issue="Adapter contamination detected",
-                severity="medium",
-                recommendation="Run adapter trimming with Trimmomatic or Cutadapt",
-                expected_impact="Improve mapping rate by 5-10%"
-            ))
+            recommendations.append(
+                QCRecommendation(
+                    issue="Adapter contamination detected",
+                    severity="medium",
+                    recommendation="Run adapter trimming with Trimmomatic or Cutadapt",
+                    expected_impact="Improve mapping rate by 5-10%",
+                )
+            )
 
         return QCReport(
             sample_id=request.sample_id,
@@ -258,45 +271,30 @@ class AIService:
             metrics=metrics,
             recommendations=recommendations,
             summary=f"QC analysis completed with {overall_status.value} status. "
-                   f"Overall quality score: {overall_score:.1f}/100"
+            f"Overall quality score: {overall_score:.1f}/100",
         )
 
-    def get_qc_recommendations(
-        self,
-        sample_id: str,
-        db: Session
-    ) -> List[str]:
+    def get_qc_recommendations(self, sample_id: str, db: Session) -> List[str]:
         """Get QC recommendations for a sample"""
 
         return [
             "Consider increasing read quality threshold to 25",
             "Remove adapter sequences before alignment",
             "Check for contamination in low-quality regions",
-            "Validate library preparation protocol"
+            "Validate library preparation protocol",
         ]
 
-    def batch_qc_analysis(
-        self,
-        request: BatchQCRequest,
-        db: Session
-    ) -> List[QCReport]:
+    def batch_qc_analysis(self, request: BatchQCRequest, db: Session) -> List[QCReport]:
         """Batch QC analysis for multiple samples"""
 
         reports = []
         for sample_id in request.sampleIds:
-            report = self.run_auto_qc(
-                AutoQCRequest(sample_id=sample_id),
-                db
-            )
+            report = self.run_auto_qc(AutoQCRequest(sample_id=sample_id), db)
             reports.append(report)
 
         return reports
 
-    def predict_qc_issues(
-        self,
-        request: PredictQCRequest,
-        db: Session
-    ) -> List[QCIssuePrediction]:
+    def predict_qc_issues(self, request: PredictQCRequest, db: Session) -> List[QCIssuePrediction]:
         """Predict QC issues before sequencing"""
 
         predictions = [
@@ -304,13 +302,13 @@ class AIService:
                 issue="Low yield risk",
                 probability=0.23,
                 prevention="Verify library concentration before sequencing",
-                impact="May result in insufficient coverage"
+                impact="May result in insufficient coverage",
             ),
             QCIssuePrediction(
                 issue="Adapter dimer formation",
                 probability=0.15,
                 prevention="Perform size selection to remove short fragments",
-                impact="Reduces effective sequencing depth"
+                impact="Reduces effective sequencing depth",
             ),
         ]
 
@@ -320,11 +318,7 @@ class AIService:
     # Anomaly Detection
     # ============================================================================
 
-    def detect_anomalies(
-        self,
-        request: AnomalyDetectionRequest,
-        db: Session
-    ) -> AnomalyDetectionReport:
+    def detect_anomalies(self, request: AnomalyDetectionRequest, db: Session) -> AnomalyDetectionReport:
         """Detect anomalies in samples or project"""
 
         anomalies = []
@@ -341,10 +335,10 @@ class AIService:
                 suggested_actions=[
                     "Review sample preparation protocol",
                     "Check sequencing instrument calibration",
-                    "Compare with control samples"
+                    "Compare with control samples",
                 ],
                 auto_fixable=False,
-                confidence=0.87
+                confidence=0.87,
             )
             anomalies.append(anomaly)
             self.anomalies_store[anomaly.id] = anomaly
@@ -357,23 +351,14 @@ class AIService:
                 description="Task consumed 3x more memory than similar runs",
                 affected_resource={"type": "task", "id": str(uuid.uuid4())},
                 metric_values={"memory_gb": 48, "expected": 16, "ratio": 3.0},
-                suggested_actions=[
-                    "Check for memory leaks in pipeline",
-                    "Reduce batch size",
-                    "Review input data size"
-                ],
+                suggested_actions=["Check for memory leaks in pipeline", "Reduce batch size", "Review input data size"],
                 auto_fixable=False,
-                confidence=0.92
+                confidence=0.92,
             )
             anomalies.append(anomaly)
             self.anomalies_store[anomaly.id] = anomaly
 
-        by_severity = {
-            "low": 0,
-            "medium": 0,
-            "high": 0,
-            "critical": 0
-        }
+        by_severity = {"low": 0, "medium": 0, "high": 0, "critical": 0}
         for a in anomalies:
             by_severity[a.severity.value] += 1
 
@@ -383,14 +368,10 @@ class AIService:
             total_detected=len(anomalies),
             by_severity=by_severity,
             summary=f"Detected {len(anomalies)} anomalies. "
-                   f"{by_severity['high'] + by_severity['critical']} require immediate attention."
+            f"{by_severity['high'] + by_severity['critical']} require immediate attention.",
         )
 
-    def get_anomaly_details(
-        self,
-        anomaly_id: str,
-        db: Session
-    ) -> Anomaly:
+    def get_anomaly_details(self, anomaly_id: str, db: Session) -> Anomaly:
         """Get anomaly details"""
 
         if anomaly_id in self.anomalies_store:
@@ -404,15 +385,10 @@ class AIService:
             title="Anomaly not found",
             description="The requested anomaly details are not available",
             affected_resource={"type": "unknown", "id": "unknown"},
-            confidence=0.0
+            confidence=0.0,
         )
 
-    def apply_anomaly_fix(
-        self,
-        anomaly_id: str,
-        request: AnomalyFixRequest,
-        db: Session
-    ) -> AnomalyFixResponse:
+    def apply_anomaly_fix(self, anomaly_id: str, request: AnomalyFixRequest, db: Session) -> AnomalyFixResponse:
         """Apply automatic fix for anomaly"""
 
         # Update anomaly status if exists
@@ -420,21 +396,14 @@ class AIService:
             self.anomalies_store[anomaly_id].status = AnomalyStatus.RESOLVED
 
         return AnomalyFixResponse(
-            success=True,
-            message=f"Applied fix: {request.action}",
-            anomaly_id=anomaly_id,
-            fix_applied=request.action
+            success=True, message=f"Applied fix: {request.action}", anomaly_id=anomaly_id, fix_applied=request.action
         )
 
     # ============================================================================
     # Smart Sample Grouping
     # ============================================================================
 
-    def smart_group_samples(
-        self,
-        request: SmartGroupingRequest,
-        db: Session
-    ) -> SmartGroupingResult:
+    def smart_group_samples(self, request: SmartGroupingRequest, db: Session) -> SmartGroupingResult:
         """Perform smart sample grouping"""
 
         # Mock sample grouping
@@ -447,16 +416,18 @@ class AIService:
             start_idx = i * samples_per_group
             end_idx = start_idx + samples_per_group if i < 3 else len(sample_ids)
 
-            groups.append(SampleGroup(
-                name=f"Group {chr(65 + i)}",  # A, B, C, D
-                sample_ids=sample_ids[start_idx:end_idx],
-                common_attributes={
-                    "condition": ["control", "treatment", "vehicle", "drug"][i % 4],
-                    "tissue": "liver" if i < 2 else "kidney",
-                    "time_point": f"day_{i+1}"
-                },
-                confidence=round(random.uniform(0.75, 0.95), 2)
-            ))
+            groups.append(
+                SampleGroup(
+                    name=f"Group {chr(65 + i)}",  # A, B, C, D
+                    sample_ids=sample_ids[start_idx:end_idx],
+                    common_attributes={
+                        "condition": ["control", "treatment", "vehicle", "drug"][i % 4],
+                        "tissue": "liver" if i < 2 else "kidney",
+                        "time_point": f"day_{i+1}",
+                    },
+                    confidence=round(random.uniform(0.75, 0.95), 2),
+                )
+            )
 
         return SmartGroupingResult(
             groups=groups,
@@ -466,15 +437,11 @@ class AIService:
             suggestions=[
                 "Consider validating group assignments manually",
                 "Groups show clear separation by condition",
-                "Recommended for differential expression analysis"
-            ]
+                "Recommended for differential expression analysis",
+            ],
         )
 
-    def suggest_comparisons(
-        self,
-        project_id: str,
-        db: Session
-    ) -> List[ComparisonSuggestion]:
+    def suggest_comparisons(self, project_id: str, db: Session) -> List[ComparisonSuggestion]:
         """Suggest comparison groups"""
 
         return [
@@ -483,22 +450,18 @@ class AIService:
                 group2="Treatment",
                 comparisonType="differential_expression",
                 reason="Standard treatment vs control comparison",
-                confidence=0.95
+                confidence=0.95,
             ),
             ComparisonSuggestion(
                 group1="Day 1",
                 group2="Day 7",
                 comparisonType="time_series",
                 reason="Temporal progression analysis",
-                confidence=0.88
+                confidence=0.88,
             ),
         ]
 
-    def validate_grouping(
-        self,
-        request: GroupValidationRequest,
-        db: Session
-    ) -> GroupValidationResult:
+    def validate_grouping(self, request: GroupValidationRequest, db: Session) -> GroupValidationResult:
         """Validate sample grouping"""
 
         issues = []
@@ -513,22 +476,14 @@ class AIService:
         if max(group_sizes) > 50:
             suggestions.append("Large groups may benefit from subsampling for computational efficiency")
 
-        return GroupValidationResult(
-            valid=len(issues) == 0,
-            issues=issues,
-            suggestions=suggestions
-        )
+        return GroupValidationResult(valid=len(issues) == 0, issues=issues, suggestions=suggestions)
 
     # ============================================================================
     # AI Assistant
     # ============================================================================
 
     def send_assistant_message(
-        self,
-        conversation_id: str,
-        request: AssistantMessageRequest,
-        user_id: str,
-        db: Session
+        self, conversation_id: str, request: AssistantMessageRequest, user_id: str, db: Session
     ) -> AIAssistantMessage:
         """Send message to AI assistant via the configured provider."""
         from app.services.ai_providers import get_ai_provider
@@ -568,10 +523,7 @@ class AIService:
             )
             metadata = {"provider": provider.name}
         except Exception as exc:
-            response_text = (
-                "I encountered an issue contacting the AI service. "
-                f"Details: {exc}"
-            )
+            response_text = "I encountered an issue contacting the AI service. " f"Details: {exc}"
             metadata = {"provider": provider.name, "error": str(exc)}
 
         assistant_msg = AIAssistantMessage(
@@ -590,45 +542,25 @@ class AIService:
         return assistant_msg
 
     def create_conversation(
-        self,
-        request: CreateConversationRequest,
-        user_id: str,
-        db: Session
+        self, request: CreateConversationRequest, user_id: str, db: Session
     ) -> AIAssistantConversation:
         """Create new conversation"""
 
-        conversation = AIAssistantConversation(
-            title=request.title,
-            context=request.context,
-            messages=[]
-        )
+        conversation = AIAssistantConversation(title=request.title, context=request.context, messages=[])
 
         self.conversations_store[conversation.id] = conversation
         return conversation
 
-    def get_conversation(
-        self,
-        conversation_id: str,
-        user_id: str,
-        db: Session
-    ) -> AIAssistantConversation:
+    def get_conversation(self, conversation_id: str, user_id: str, db: Session) -> AIAssistantConversation:
         """Get conversation history"""
 
         if conversation_id in self.conversations_store:
             return self.conversations_store[conversation_id]
 
         # Return mock conversation if not found
-        return AIAssistantConversation(
-            id=conversation_id,
-            title="Conversation not found",
-            messages=[]
-        )
+        return AIAssistantConversation(id=conversation_id, title="Conversation not found", messages=[])
 
-    def list_conversations(
-        self,
-        user_id: str,
-        db: Session
-    ) -> List[AIAssistantConversation]:
+    def list_conversations(self, user_id: str, db: Session) -> List[AIAssistantConversation]:
         """List all conversations"""
 
         return list(self.conversations_store.values())
@@ -637,11 +569,7 @@ class AIService:
     # Analysis Insights
     # ============================================================================
 
-    def get_project_insights(
-        self,
-        project_id: str,
-        db: Session
-    ) -> InsightsReport:
+    def get_project_insights(self, project_id: str, db: Session) -> InsightsReport:
         """Get AI-generated insights for a project"""
 
         insights = [
@@ -651,11 +579,8 @@ class AIService:
                 description="Average quality score is 5% below similar projects",
                 importance="medium",
                 confidence=0.82,
-                actions=[
-                    "Review quality control parameters",
-                    "Consider re-sequencing low-quality samples"
-                ],
-                related_data={"current_avg": 82, "expected_avg": 87}
+                actions=["Review quality control parameters", "Consider re-sequencing low-quality samples"],
+                related_data={"current_avg": 82, "expected_avg": 87},
             ),
             AnalysisInsight(
                 category=InsightCategory.PERFORMANCE,
@@ -663,11 +588,8 @@ class AIService:
                 description="Tasks are taking 20% longer than expected",
                 importance="high",
                 confidence=0.89,
-                actions=[
-                    "Enable parallel processing",
-                    "Increase allocated resources"
-                ],
-                related_data={"avg_runtime": 3600, "expected": 3000}
+                actions=["Enable parallel processing", "Increase allocated resources"],
+                related_data={"avg_runtime": 3600, "expected": 3000},
             ),
         ]
 
@@ -682,14 +604,10 @@ class AIService:
             insights=insights,
             summary=f"Generated {len(insights)} actionable insights for project optimization",
             total_insights=len(insights),
-            by_category=by_category
+            by_category=by_category,
         )
 
-    def get_analysis_insights(
-        self,
-        request: AnalyzeInsightsRequest,
-        db: Session
-    ) -> List[AnalysisInsight]:
+    def get_analysis_insights(self, request: AnalyzeInsightsRequest, db: Session) -> List[AnalysisInsight]:
         """Get insights for specific analysis"""
 
         return [
@@ -699,16 +617,11 @@ class AIService:
                 description="AI-detected optimization opportunity",
                 importance="medium",
                 confidence=0.78,
-                actions=["Review analysis parameters"]
+                actions=["Review analysis parameters"],
             )
         ]
 
-    def mark_insight_reviewed(
-        self,
-        insight_id: str,
-        project_id: str,
-        db: Session
-    ) -> None:
+    def mark_insight_reviewed(self, insight_id: str, project_id: str, db: Session) -> None:
         """Mark insight as reviewed"""
 
         if project_id in self.insights_store:
@@ -721,11 +634,7 @@ class AIService:
     # Predictions
     # ============================================================================
 
-    def predict_resources(
-        self,
-        request: ResourcePredictionRequest,
-        db: Session
-    ) -> ResourcePrediction:
+    def predict_resources(self, request: ResourcePredictionRequest, db: Session) -> ResourcePrediction:
         """Predict resource requirements for pipeline"""
 
         # Simple mock prediction based on pipeline type
@@ -746,17 +655,10 @@ class AIService:
             storage_gb=round(storage_gb, 1),
             estimated_duration_seconds=duration,
             confidence=0.85,
-            notes=[
-                "Estimates based on historical data",
-                "Actual usage may vary based on data characteristics"
-            ]
+            notes=["Estimates based on historical data", "Actual usage may vary based on data characteristics"],
         )
 
-    def predict_success(
-        self,
-        analysis_config: Dict[str, Any],
-        db: Session
-    ) -> SuccessPrediction:
+    def predict_success(self, analysis_config: Dict[str, Any], db: Session) -> SuccessPrediction:
         """Predict success probability for analysis"""
 
         # Mock success prediction
@@ -778,42 +680,22 @@ class AIService:
             success_factors=success_factors,
             recommendations=[
                 "Validate input data quality before proceeding",
-                "Ensure sufficient computational resources are available"
+                "Ensure sufficient computational resources are available",
             ],
-            confidence=0.82
+            confidence=0.82,
         )
 
-    def predict_timeline(
-        self,
-        project_id: str,
-        db: Session
-    ) -> TimelinePrediction:
+    def predict_timeline(self, project_id: str, db: Session) -> TimelinePrediction:
         """Predict optimal analysis timeline"""
 
         now = datetime.utcnow()
         milestones = [
-            TimelineMilestone(
-                name="QC Complete",
-                date=(now + timedelta(days=2)).isoformat(),
-                confidence=0.90
-            ),
-            TimelineMilestone(
-                name="Alignment Complete",
-                date=(now + timedelta(days=5)).isoformat(),
-                confidence=0.85
-            ),
-            TimelineMilestone(
-                name="Analysis Complete",
-                date=(now + timedelta(days=10)).isoformat(),
-                confidence=0.78
-            ),
+            TimelineMilestone(name="QC Complete", date=(now + timedelta(days=2)).isoformat(), confidence=0.90),
+            TimelineMilestone(name="Alignment Complete", date=(now + timedelta(days=5)).isoformat(), confidence=0.85),
+            TimelineMilestone(name="Analysis Complete", date=(now + timedelta(days=10)).isoformat(), confidence=0.78),
         ]
 
-        return TimelinePrediction(
-            totalDuration="10 days",
-            milestones=milestones,
-            confidence=0.82
-        )
+        return TimelinePrediction(totalDuration="10 days", milestones=milestones, confidence=0.82)
 
     # ============================================================================
     # System Status
@@ -827,37 +709,34 @@ class AIService:
                 name="Parameter Recommendations",
                 available=True,
                 version="1.0.0",
-                description="AI-powered pipeline parameter suggestions"
+                description="AI-powered pipeline parameter suggestions",
             ),
             AICapability(
-                name="Auto QC",
-                available=True,
-                version="1.0.0",
-                description="Automatic quality control analysis"
+                name="Auto QC", available=True, version="1.0.0", description="Automatic quality control analysis"
             ),
             AICapability(
                 name="Anomaly Detection",
                 available=True,
                 version="1.0.0",
-                description="Real-time anomaly detection in pipelines"
+                description="Real-time anomaly detection in pipelines",
             ),
             AICapability(
                 name="Smart Grouping",
                 available=True,
                 version="1.0.0",
-                description="Intelligent sample grouping and comparison suggestions"
+                description="Intelligent sample grouping and comparison suggestions",
             ),
             AICapability(
                 name="AI Assistant",
                 available=True,
                 version="1.0.0",
-                description="Interactive AI assistant for guidance"
+                description="Interactive AI assistant for guidance",
             ),
             AICapability(
                 name="Resource Prediction",
                 available=True,
                 version="1.0.0",
-                description="Predictive resource requirement estimation"
+                description="Predictive resource requirement estimation",
             ),
         ]
 
@@ -867,7 +746,7 @@ class AIService:
             capabilities=capabilities,
             models_loaded=["mock_recommendation_model", "mock_qc_model", "mock_anomaly_model"],
             uptime_seconds=86400.0,
-            notes=["Mock implementation for frontend integration testing"]
+            notes=["Mock implementation for frontend integration testing"],
         )
 
     # ============================================================================
@@ -875,31 +754,19 @@ class AIService:
     # ============================================================================
 
     def submit_feedback(
-        self,
-        recommendation_id: str,
-        feedback: FeedbackRequest,
-        user_id: str,
-        db: Session
+        self, recommendation_id: str, feedback: FeedbackRequest, user_id: str, db: Session
     ) -> FeedbackResponse:
         """Submit feedback on AI recommendation"""
 
-        return FeedbackResponse(
-            success=True,
-            message="Thank you for your feedback! It helps improve our AI models."
-        )
+        return FeedbackResponse(success=True, message="Thank you for your feedback! It helps improve our AI models.")
 
     def report_incorrect_prediction(
-        self,
-        prediction_id: str,
-        report: IncorrectPredictionRequest,
-        user_id: str,
-        db: Session
+        self, prediction_id: str, report: IncorrectPredictionRequest, user_id: str, db: Session
     ) -> FeedbackResponse:
         """Report incorrect prediction"""
 
         return FeedbackResponse(
-            success=True,
-            message="Prediction correction recorded. Our models will learn from this feedback."
+            success=True, message="Prediction correction recorded. Our models will learn from this feedback."
         )
 
 

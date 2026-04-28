@@ -1,24 +1,26 @@
 """
 Notifications API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+
 from typing import Optional
 from uuid import UUID
 
-from app.core.deps import get_db, get_current_active_user
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from app.core.deps import get_current_active_user, get_db
 from app.models.user import User
-from app.services.notification_service import NotificationService
 from app.schemas.notification import (
+    MarkAllReadResponse,
     Notification,
-    NotificationCreate,
-    NotificationUpdate,
     NotificationList,
-    NotificationSettings as NotificationSettingsSchema,
+)
+from app.schemas.notification import NotificationSettings as NotificationSettingsSchema
+from app.schemas.notification import (
     NotificationSettingsUpdate,
     UnreadCount,
-    MarkAllReadResponse
 )
+from app.services.notification_service import NotificationService
 
 router = APIRouter()
 
@@ -30,7 +32,7 @@ async def get_notifications(
     unread_only: bool = Query(False, description="Show only unread notifications"),
     type: Optional[str] = Query(None, description="Filter by notification type"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get user notifications with pagination
@@ -43,30 +45,19 @@ async def get_notifications(
     service = NotificationService(db)
 
     notifications, total = service.get_notifications(
-        user_id=current_user.id,
-        skip=skip,
-        limit=limit,
-        unread_only=unread_only,
-        notification_type=type
+        user_id=current_user.id, skip=skip, limit=limit, unread_only=unread_only, notification_type=type
     )
 
     # Get unread count
     unread_count_obj = service.get_unread_count(current_user.id)
 
     return NotificationList(
-        items=notifications,
-        total=total,
-        page=skip // limit + 1,
-        page_size=limit,
-        unread_count=unread_count_obj.count
+        items=notifications, total=total, page=skip // limit + 1, page_size=limit, unread_count=unread_count_obj.count
     )
 
 
 @router.get("/unread/count", response_model=UnreadCount)
-async def get_unread_count(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
+async def get_unread_count(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """
     Get count of unread notifications
 
@@ -78,9 +69,7 @@ async def get_unread_count(
 
 @router.get("/{notification_id}", response_model=Notification)
 async def get_notification(
-    notification_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    notification_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Get a specific notification by ID
@@ -89,19 +78,14 @@ async def get_notification(
     notification = service.get_notification(notification_id, current_user.id)
 
     if not notification:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Notification not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
 
     return notification
 
 
 @router.put("/{notification_id}/read", response_model=Notification)
 async def mark_notification_as_read(
-    notification_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    notification_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Mark a notification as read
@@ -110,18 +94,14 @@ async def mark_notification_as_read(
     notification = service.mark_as_read(notification_id, current_user.id)
 
     if not notification:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Notification not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
 
     return notification
 
 
 @router.put("/read-all", response_model=MarkAllReadResponse)
 async def mark_all_notifications_as_read(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Mark all notifications as read
@@ -132,9 +112,7 @@ async def mark_all_notifications_as_read(
 
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_notification(
-    notification_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    notification_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Delete a notification
@@ -143,20 +121,17 @@ async def delete_notification(
     deleted = service.delete_notification(notification_id, current_user.id)
 
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Notification not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
 
     return None
 
 
 # ========== Notification Settings ==========
 
+
 @router.get("/settings/current", response_model=NotificationSettingsSchema)
 async def get_notification_settings(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """
     Get current user's notification settings
@@ -169,7 +144,7 @@ async def get_notification_settings(
 async def update_notification_settings(
     settings_update: NotificationSettingsUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Update notification settings

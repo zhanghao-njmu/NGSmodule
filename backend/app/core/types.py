@@ -5,9 +5,12 @@ Provides type aliases that gracefully degrade when running against SQLite
 (used in unit tests) while preserving native PostgreSQL behavior in
 production.
 """
-from sqlalchemy import JSON, CHAR, TypeDecorator
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB as PG_JSONB
+
 import uuid as _uuid
+
+from sqlalchemy import CHAR, JSON, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 class GUID(TypeDecorator):

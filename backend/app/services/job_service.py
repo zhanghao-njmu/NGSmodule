@@ -2,15 +2,15 @@
 Job Service
 Real implementation for system job tracking with Celery integration.
 """
+
 import logging
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.core.datetime_utils import utc_now_naive
 from app.models.system_job import SystemJob
-
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +103,7 @@ class JobService:
         if user_id:
             query = query.filter(SystemJob.user_id == user_id)
 
-        return (
-            query.order_by(desc(SystemJob.created_at))
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(desc(SystemJob.created_at)).offset(skip).limit(limit).all()
 
     def count_jobs(
         self,
@@ -129,11 +124,7 @@ class JobService:
 
     def get_job_by_celery_id(self, celery_task_id: str) -> Optional[SystemJob]:
         """Get job by Celery task ID"""
-        return (
-            self.db.query(SystemJob)
-            .filter(SystemJob.celery_task_id == celery_task_id)
-            .first()
-        )
+        return self.db.query(SystemJob).filter(SystemJob.celery_task_id == celery_task_id).first()
 
     def cancel_job(self, job_id: str) -> Optional[SystemJob]:
         """
@@ -153,6 +144,7 @@ class JobService:
         if job.celery_task_id:
             try:
                 from app.workers.celery_app import celery_app
+
                 celery_app.control.revoke(job.celery_task_id, terminate=True)
                 logger.info(f"Revoked Celery task {job.celery_task_id}")
             except Exception as e:
@@ -209,6 +201,7 @@ class JobService:
 
         try:
             from celery.result import AsyncResult
+
             from app.workers.celery_app import celery_app
 
             result = AsyncResult(job.celery_task_id, app=celery_app)
@@ -233,7 +226,9 @@ class JobService:
                     job.completed_at = utc_now_naive()
                     if result.result is not None:
                         try:
-                            job.result = result.result if isinstance(result.result, dict) else {"output": str(result.result)}
+                            job.result = (
+                                result.result if isinstance(result.result, dict) else {"output": str(result.result)}
+                            )
                         except Exception:
                             pass
                 elif celery_state == "FAILURE":
@@ -251,8 +246,4 @@ class JobService:
 
     def get_active_jobs_count(self) -> int:
         """Count jobs that are pending or running"""
-        return (
-            self.db.query(SystemJob)
-            .filter(SystemJob.status.in_(["pending", "running"]))
-            .count()
-        )
+        return self.db.query(SystemJob).filter(SystemJob.status.in_(["pending", "running"])).count()

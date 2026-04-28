@@ -1,12 +1,15 @@
 """
 Pipeline Task model
 """
-from sqlalchemy import Column, String, DateTime, Float, Text, ForeignKey
-from app.core.types import UUID, JSONB
-from sqlalchemy.orm import relationship
+
 import uuid
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
+
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import JSONB, UUID
 
 
 class PipelineTask(Base):

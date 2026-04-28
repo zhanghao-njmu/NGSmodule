@@ -1,13 +1,13 @@
 """
 Admin Celery tasks for backups, monitoring, and cleanup
 """
+
 import logging
+
 from celery import shared_task
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.workers.celery_app import celery_app
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,10 @@ def create_backup_task(
     Updates the existing SystemBackup record (created with status='pending')
     by performing the backup and updating its final state.
     """
+    from app.core.datetime_utils import utc_now_naive
+    from app.models.backup import SystemBackup
     from app.services.backup_service import BackupService
     from app.services.job_service import JobService
-    from app.models.backup import SystemBackup
-    from app.core.datetime_utils import utc_now_naive
 
     db = _get_db()
     try:
@@ -49,13 +49,7 @@ def create_backup_task(
         backup.started_at = utc_now_naive()
         db.commit()
 
-        # Update job status if linked
         job_service = JobService(db)
-        job = (
-            db.query(SystemBackup)
-            .filter(SystemBackup.id == backup_id)
-            .first()
-        )
 
         # Perform actual backup
         backup_service = BackupService(db)
@@ -173,8 +167,8 @@ def sync_celery_jobs_task():
 
     Detects jobs that may have been lost or where state diverged.
     """
-    from app.services.job_service import JobService
     from app.models.system_job import SystemJob
+    from app.services.job_service import JobService
 
     db = _get_db()
     try:

@@ -1,14 +1,17 @@
 """
 Notification schemas for API requests and responses
 """
-from typing import Optional, Any, Dict
-from pydantic import BaseModel, Field
+
 from datetime import datetime
+from typing import Any, Dict, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class NotificationBase(BaseModel):
     """Base notification schema"""
+
     type: str = Field(..., description="Notification type", json_schema_extra={"example": "info"})
     title: str = Field(..., max_length=255, description="Notification title")
     message: str = Field(..., description="Notification message")
@@ -19,12 +22,14 @@ class NotificationBase(BaseModel):
 
 class NotificationCreate(NotificationBase):
     """Schema for creating a notification"""
+
     user_id: UUID = Field(..., description="Target user ID")
     expires_at: Optional[datetime] = Field(None, description="Expiration datetime")
 
 
 class NotificationUpdate(BaseModel):
     """Schema for updating a notification"""
+
     read: Optional[bool] = Field(None, description="Mark as read/unread")
     title: Optional[str] = Field(None, max_length=255)
     message: Optional[str] = None
@@ -33,6 +38,7 @@ class NotificationUpdate(BaseModel):
 
 class NotificationInDB(NotificationBase):
     """Schema for notification stored in database"""
+
     id: UUID
     user_id: UUID
     read: bool
@@ -41,13 +47,15 @@ class NotificationInDB(NotificationBase):
     read_at: Optional[datetime]
 
     model_config = {"from_attributes": True}
+
+
 class Notification(NotificationInDB):
     """Schema for notification API response"""
-    pass
 
 
 class NotificationList(BaseModel):
     """Schema for paginated notification list"""
+
     items: list[Notification]
     total: int
     page: int
@@ -57,6 +65,7 @@ class NotificationList(BaseModel):
 
 class NotificationSettingsBase(BaseModel):
     """Base notification settings schema"""
+
     email_enabled: bool = True
     email_task_completed: bool = True
     email_task_failed: bool = True
@@ -70,11 +79,13 @@ class NotificationSettingsBase(BaseModel):
 
 class NotificationSettingsCreate(NotificationSettingsBase):
     """Schema for creating notification settings"""
+
     user_id: UUID
 
 
 class NotificationSettingsUpdate(BaseModel):
     """Schema for updating notification settings"""
+
     email_enabled: Optional[bool] = None
     email_task_completed: Optional[bool] = None
     email_task_failed: Optional[bool] = None
@@ -88,29 +99,34 @@ class NotificationSettingsUpdate(BaseModel):
 
 class NotificationSettingsInDB(NotificationSettingsBase):
     """Schema for notification settings in database"""
+
     id: UUID
     user_id: UUID
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
 class NotificationSettings(NotificationSettingsInDB):
     """Schema for notification settings API response"""
-    pass
 
 
 class UnreadCount(BaseModel):
     """Schema for unread notification count"""
+
     count: int
     by_type: Dict[str, int] = Field(default_factory=dict)
 
 
 class MarkAllReadResponse(BaseModel):
     """Schema for mark all as read response"""
+
     count: int = Field(..., description="Number of notifications marked as read")
     message: str = Field(..., description="Success message")
 
 
 class WebSocketNotification(BaseModel):
     """Schema for WebSocket notification push"""
+
     event: str = Field("notification", description="Event type")
     data: Notification = Field(..., description="Notification data")

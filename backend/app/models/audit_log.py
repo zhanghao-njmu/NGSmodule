@@ -1,13 +1,15 @@
 """
 Audit Log database model for tracking admin actions
 """
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Index
-from sqlalchemy.orm import relationship
-from app.core.types import UUID
+
 import uuid
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.datetime_utils import utc_now_naive
+from app.core.types import UUID
 
 
 class AuditLog(Base):
@@ -17,6 +19,7 @@ class AuditLog(Base):
     Records all sensitive operations performed by administrators
     for compliance and security monitoring.
     """
+
     __tablename__ = "audit_logs"
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
@@ -49,8 +52,8 @@ class AuditLog(Base):
     target_user = relationship("User", foreign_keys=[target_user_id])
 
     __table_args__ = (
-        Index('ix_audit_logs_action_timestamp', 'action', 'timestamp'),
-        Index('ix_audit_logs_admin_timestamp', 'admin_user_id', 'timestamp'),
+        Index("ix_audit_logs_action_timestamp", "action", "timestamp"),
+        Index("ix_audit_logs_admin_timestamp", "admin_user_id", "timestamp"),
     )
 
     def __repr__(self):

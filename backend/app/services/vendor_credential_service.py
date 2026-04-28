@@ -1,6 +1,7 @@
 """
 Vendor credential service — CRUD + decrypt-on-demand.
 """
+
 from typing import List, Optional, Tuple
 from uuid import UUID
 
@@ -8,7 +9,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.datetime_utils import utc_now_naive
-from app.core.security import encrypt_secret, decrypt_secret
+from app.core.security import decrypt_secret, encrypt_secret
 from app.models.vendor_credential import VendorCredential
 from app.schemas.vendor_credential import VendorCredentialCreate, mask_email
 
@@ -81,10 +82,7 @@ class VendorCredentialService:
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_410_GONE,
-                detail=(
-                    "Stored credential could not be decrypted "
-                    "(SECRET_KEY may have rotated); please re-enter."
-                ),
+                detail=("Stored credential could not be decrypted " "(SECRET_KEY may have rotated); please re-enter."),
             ) from exc
         cred.last_used_at = utc_now_naive()
         self.db.commit()

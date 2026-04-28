@@ -1,26 +1,42 @@
 """
 Main application entry point
 """
+
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from sqlalchemy.exc import IntegrityError, DBAPIError
 from pydantic import ValidationError
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy.exc import DBAPIError, IntegrityError
+
+from app.api.v1 import (
+    admin,
+    ai,
+    analytics,
+    auth,
+    data_downloads,
+    files,
+    notifications,
+    pipelines,
+    projects,
+    results,
+    samples,
+    stats,
+    tasks,
+    users,
+    vendor_credentials,
+    websocket,
+)
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
-from app.api.v1 import auth, users, projects, samples, files, tasks, websocket, pipelines, results, stats, notifications, analytics, admin, ai, data_downloads, vendor_credentials
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +52,7 @@ async def lifespan(app: FastAPI):
     # don't break startup
     try:
         from app.core.observability import init_observability
+
         init_observability(app)
     except Exception as e:
         logger.warning(f"Observability initialization skipped: {e}")
@@ -44,6 +61,7 @@ async def lifespan(app: FastAPI):
     realtime_sub = None
     try:
         from app.api.v1.websocket import start_realtime_subscriber
+
         realtime_sub = await start_realtime_subscriber()
     except Exception as e:
         logger.warning(f"Realtime subscriber not started: {e}")
@@ -94,8 +112,8 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
         content={
             "error": "Database constraint violation",
             "detail": "A unique constraint was violated. The resource may already exist.",
-            "code": "INTEGRITY_ERROR"
-        }
+            "code": "INTEGRITY_ERROR",
+        },
     )
 
 
@@ -108,8 +126,8 @@ async def database_error_handler(request: Request, exc: DBAPIError):
         content={
             "error": "Database error",
             "detail": "Unable to connect to database or execute query. Please try again later.",
-            "code": "DATABASE_ERROR"
-        }
+            "code": "DATABASE_ERROR",
+        },
     )
 
 
@@ -119,11 +137,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.warning(f"Validation error: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        content={
-            "error": "Validation error",
-            "detail": exc.errors(),
-            "code": "VALIDATION_ERROR"
-        }
+        content={"error": "Validation error", "detail": exc.errors(), "code": "VALIDATION_ERROR"},
     )
 
 
@@ -133,11 +147,7 @@ async def pydantic_validation_error_handler(request: Request, exc: ValidationErr
     logger.warning(f"Pydantic validation error: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        content={
-            "error": "Validation error",
-            "detail": exc.errors(),
-            "code": "VALIDATION_ERROR"
-        }
+        content={"error": "Validation error", "detail": exc.errors(), "code": "VALIDATION_ERROR"},
     )
 
 
@@ -151,11 +161,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": "Internal server error",
-            "detail": detail,
-            "code": "INTERNAL_ERROR"
-        }
+        content={"error": "Internal server error", "detail": detail, "code": "INTERNAL_ERROR"},
     )
 
 
@@ -166,7 +172,7 @@ async def root():
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "running",
-        "docs": f"{settings.API_V1_PREFIX}/docs"
+        "docs": f"{settings.API_V1_PREFIX}/docs",
     }
 
 
@@ -177,108 +183,42 @@ async def health_check():
 
 
 # Include routers
-app.include_router(
-    auth.router,
-    prefix=f"{settings.API_V1_PREFIX}/auth",
-    tags=["Authentication"]
-)
+app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Authentication"])
+
+app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["Users"])
+
+app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["Projects"])
+
+app.include_router(samples.router, prefix=f"{settings.API_V1_PREFIX}/samples", tags=["Samples"])
+
+app.include_router(files.router, prefix=f"{settings.API_V1_PREFIX}/files", tags=["Files"])
+
+app.include_router(tasks.router, prefix=f"{settings.API_V1_PREFIX}/tasks", tags=["Tasks"])
+
+app.include_router(websocket.router, prefix=f"{settings.API_V1_PREFIX}", tags=["WebSocket"])
+
+app.include_router(pipelines.router, prefix=f"{settings.API_V1_PREFIX}/pipelines", tags=["Pipelines"])
+
+app.include_router(results.router, prefix=f"{settings.API_V1_PREFIX}/results", tags=["Results"])
+
+app.include_router(stats.router, prefix=f"{settings.API_V1_PREFIX}/stats", tags=["Statistics"])
+
+app.include_router(notifications.router, prefix=f"{settings.API_V1_PREFIX}/notifications", tags=["Notifications"])
+
+app.include_router(analytics.router, prefix=f"{settings.API_V1_PREFIX}/analytics", tags=["Analytics"])
+
+app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["Admin"])
+
+app.include_router(ai.router, prefix=f"{settings.API_V1_PREFIX}/ai", tags=["AI Intelligence"])
+
+app.include_router(data_downloads.router, prefix=f"{settings.API_V1_PREFIX}/data-downloads", tags=["Data Downloads"])
 
 app.include_router(
-    users.router,
-    prefix=f"{settings.API_V1_PREFIX}/users",
-    tags=["Users"]
-)
-
-app.include_router(
-    projects.router,
-    prefix=f"{settings.API_V1_PREFIX}/projects",
-    tags=["Projects"]
-)
-
-app.include_router(
-    samples.router,
-    prefix=f"{settings.API_V1_PREFIX}/samples",
-    tags=["Samples"]
-)
-
-app.include_router(
-    files.router,
-    prefix=f"{settings.API_V1_PREFIX}/files",
-    tags=["Files"]
-)
-
-app.include_router(
-    tasks.router,
-    prefix=f"{settings.API_V1_PREFIX}/tasks",
-    tags=["Tasks"]
-)
-
-app.include_router(
-    websocket.router,
-    prefix=f"{settings.API_V1_PREFIX}",
-    tags=["WebSocket"]
-)
-
-app.include_router(
-    pipelines.router,
-    prefix=f"{settings.API_V1_PREFIX}/pipelines",
-    tags=["Pipelines"]
-)
-
-app.include_router(
-    results.router,
-    prefix=f"{settings.API_V1_PREFIX}/results",
-    tags=["Results"]
-)
-
-app.include_router(
-    stats.router,
-    prefix=f"{settings.API_V1_PREFIX}/stats",
-    tags=["Statistics"]
-)
-
-app.include_router(
-    notifications.router,
-    prefix=f"{settings.API_V1_PREFIX}/notifications",
-    tags=["Notifications"]
-)
-
-app.include_router(
-    analytics.router,
-    prefix=f"{settings.API_V1_PREFIX}/analytics",
-    tags=["Analytics"]
-)
-
-app.include_router(
-    admin.router,
-    prefix=f"{settings.API_V1_PREFIX}/admin",
-    tags=["Admin"]
-)
-
-app.include_router(
-    ai.router,
-    prefix=f"{settings.API_V1_PREFIX}/ai",
-    tags=["AI Intelligence"]
-)
-
-app.include_router(
-    data_downloads.router,
-    prefix=f"{settings.API_V1_PREFIX}/data-downloads",
-    tags=["Data Downloads"]
-)
-
-app.include_router(
-    vendor_credentials.router,
-    prefix=f"{settings.API_V1_PREFIX}/vendor-credentials",
-    tags=["Vendor Credentials"]
+    vendor_credentials.router, prefix=f"{settings.API_V1_PREFIX}/vendor-credentials", tags=["Vendor Credentials"]
 )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG
-    )
+
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)

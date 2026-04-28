@@ -1,27 +1,27 @@
 """
 Dependencies for dependency injection
 """
+
 from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+
 from app.core.config import settings
-from app.core.security import verify_token
+from app.core.database import get_db
 from app.core.permissions import verify_resource_ownership
-from app.models.user import User
+from app.core.security import verify_token
+from app.models.file import File as FileModel
 from app.models.project import Project
 from app.models.sample import Sample
 from app.models.task import PipelineTask
-from app.models.file import File as FileModel
+from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Get current authenticated user
 
@@ -54,10 +54,7 @@ async def get_current_user(
         raise credentials_exception
 
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
     return user
 
@@ -67,9 +64,7 @@ async def get_current_user(
 get_current_active_user = get_current_user
 
 
-async def get_current_admin(
-    current_user: User = Depends(get_current_user)
-) -> User:
+async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     """
     Get current admin user
 
@@ -83,10 +78,7 @@ async def get_current_admin(
         HTTPException: If user is not admin
     """
     if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     return current_user
 
@@ -131,9 +123,7 @@ async def get_current_user_ws(token: str) -> User:
 # Resource Ownership Verification Dependencies
 # Refactored to use generic verify_resource_ownership function
 async def get_user_project(
-    project_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    project_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> Project:
     """
     Verify user ownership of a project
@@ -155,14 +145,12 @@ async def get_user_project(
         resource_id=project_id,
         current_user=current_user,
         resource_name="Project",
-        filter_field="user_id"
+        filter_field="user_id",
     )
 
 
 async def get_user_sample(
-    sample_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    sample_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> Sample:
     """
     Verify user ownership of a sample (through project)
@@ -184,14 +172,12 @@ async def get_user_sample(
         resource_id=sample_id,
         current_user=current_user,
         resource_name="Sample",
-        join_models=[Project]
+        join_models=[Project],
     )
 
 
 async def get_user_task(
-    task_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    task_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> PipelineTask:
     """
     Verify user ownership of a task (through project)
@@ -213,14 +199,12 @@ async def get_user_task(
         resource_id=task_id,
         current_user=current_user,
         resource_name="Task",
-        join_models=[Project]
+        join_models=[Project],
     )
 
 
 async def get_user_file(
-    file_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    file_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> FileModel:
     """
     Verify user ownership of a file (through sample and project)
@@ -242,5 +226,5 @@ async def get_user_file(
         resource_id=file_id,
         current_user=current_user,
         resource_name="File",
-        join_models=[Sample, Project]
+        join_models=[Sample, Project],
     )

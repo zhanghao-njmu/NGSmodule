@@ -1,20 +1,22 @@
 """
 Sample Service - Business logic for sample management
 """
-from typing import List, Optional, Dict, Any, Tuple
-from uuid import UUID
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from fastapi import HTTPException, status
+
 import csv
 import io
+from typing import List, Optional, Tuple
+from uuid import UUID
 
-from app.models.sample import Sample
-from app.models.project import Project
+from fastapi import HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.models.file import File as FileModel
+from app.models.project import Project
+from app.models.sample import Sample
 from app.schemas.sample import (
-    SampleCreate,
     SampleBase,
+    SampleCreate,
     SampleUpdate,
 )
 
@@ -44,10 +46,7 @@ class SampleService:
         Returns:
             Sample if found and belongs to user, None otherwise
         """
-        sample = self.db.query(Sample).join(Project).filter(
-            Sample.id == sample_id,
-            Project.user_id == user_id
-        ).first()
+        sample = self.db.query(Sample).join(Project).filter(Sample.id == sample_id, Project.user_id == user_id).first()
 
         if sample:
             # Add computed fields
@@ -71,10 +70,7 @@ class SampleService:
         """
         sample = self.get_by_id(sample_id, user_id)
         if not sample:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Sample {sample_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sample {sample_id} not found")
         return sample
 
     def list_samples(
@@ -98,22 +94,14 @@ class SampleService:
         Returns:
             Tuple of (list of samples, total count)
         """
-        query = self.db.query(Sample).join(Project).filter(
-            Project.user_id == user_id
-        )
+        query = self.db.query(Sample).join(Project).filter(Project.user_id == user_id)
 
         # Apply filters
         if project_id:
             # Verify project belongs to user
-            project = self.db.query(Project).filter(
-                Project.id == project_id,
-                Project.user_id == user_id
-            ).first()
+            project = self.db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
             if not project:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
             query = query.filter(Sample.project_id == project_id)
 
         if group_name:
@@ -148,27 +136,24 @@ class SampleService:
             HTTPException: If project not found or sample_id already exists
         """
         # Verify project belongs to user
-        project = self.db.query(Project).filter(
-            Project.id == sample_data.project_id,
-            Project.user_id == user_id
-        ).first()
+        project = (
+            self.db.query(Project).filter(Project.id == sample_data.project_id, Project.user_id == user_id).first()
+        )
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Check if sample_id already exists in this project
-        existing = self.db.query(Sample).filter(
-            Sample.project_id == sample_data.project_id,
-            Sample.sample_id == sample_data.sample_id
-        ).first()
+        existing = (
+            self.db.query(Sample)
+            .filter(Sample.project_id == sample_data.project_id, Sample.sample_id == sample_data.sample_id)
+            .first()
+        )
 
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Sample '{sample_data.sample_id}' already exists in this project"
+                detail=f"Sample '{sample_data.sample_id}' already exists in this project",
             )
 
         # Create sample
@@ -179,7 +164,7 @@ class SampleService:
             group_name=sample_data.group_name,
             layout=sample_data.layout,
             batch_id=sample_data.batch_id,
-            sample_metadata=sample_data.metadata or {}
+            sample_metadata=sample_data.metadata or {},
         )
 
         self.db.add(sample)
@@ -191,12 +176,7 @@ class SampleService:
 
         return sample
 
-    def create_batch(
-        self,
-        user_id: UUID,
-        project_id: UUID,
-        samples_data: List[SampleBase]
-    ) -> int:
+    def create_batch(self, user_id: UUID, project_id: UUID, samples_data: List[SampleBase]) -> int:
         """
         Create multiple samples at once
 
@@ -212,21 +192,13 @@ class SampleService:
             HTTPException: If project not found or duplicate sample IDs
         """
         # Verify project belongs to user
-        project = self.db.query(Project).filter(
-            Project.id == project_id,
-            Project.user_id == user_id
-        ).first()
+        project = self.db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Get existing sample IDs
-        existing_samples = self.db.query(Sample.sample_id).filter(
-            Sample.project_id == project_id
-        ).all()
+        existing_samples = self.db.query(Sample.sample_id).filter(Sample.project_id == project_id).all()
         existing_ids = {s.sample_id for s in existing_samples}
 
         # Check for duplicates
@@ -235,8 +207,7 @@ class SampleService:
 
         if duplicates:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Duplicate sample IDs found: {', '.join(duplicates)}"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Duplicate sample IDs found: {', '.join(duplicates)}"
             )
 
         # Create samples
@@ -249,7 +220,7 @@ class SampleService:
                 group_name=sample_data.group_name,
                 layout=sample_data.layout,
                 batch_id=sample_data.batch_id,
-                sample_metadata={}
+                sample_metadata={},
             )
             samples_to_add.append(sample)
 
@@ -258,12 +229,7 @@ class SampleService:
 
         return len(samples_to_add)
 
-    def import_from_csv(
-        self,
-        user_id: UUID,
-        project_id: UUID,
-        csv_content: bytes
-    ) -> Tuple[int, str]:
+    def import_from_csv(self, user_id: UUID, project_id: UUID, csv_content: bytes) -> Tuple[int, str]:
         """
         Import samples from CSV file
 
@@ -279,40 +245,32 @@ class SampleService:
             HTTPException: If project not found or CSV parsing errors
         """
         # Verify project belongs to user
-        project = self.db.query(Project).filter(
-            Project.id == project_id,
-            Project.user_id == user_id
-        ).first()
+        project = self.db.query(Project).filter(Project.id == project_id, Project.user_id == user_id).first()
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Read CSV content
         try:
-            decoded = csv_content.decode('utf-8')
+            decoded = csv_content.decode("utf-8")
             csv_reader = csv.DictReader(io.StringIO(decoded))
 
             # Validate headers
-            required_headers = {'sample_id'}
+            required_headers = {"sample_id"}
             if not required_headers.issubset(csv_reader.fieldnames or []):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"CSV must contain at least: {', '.join(required_headers)}"
+                    detail=f"CSV must contain at least: {', '.join(required_headers)}",
                 )
 
             # Get existing sample IDs
-            existing_samples = self.db.query(Sample.sample_id).filter(
-                Sample.project_id == project_id
-            ).all()
+            existing_samples = self.db.query(Sample.sample_id).filter(Sample.project_id == project_id).all()
             existing_ids = {s.sample_id for s in existing_samples}
 
             # Parse and create samples
             samples_to_add = []
             for row in csv_reader:
-                sample_id = row.get('sample_id', '').strip()
+                sample_id = row.get("sample_id", "").strip()
                 if not sample_id:
                     continue
 
@@ -322,11 +280,11 @@ class SampleService:
                 sample = Sample(
                     project_id=project_id,
                     sample_id=sample_id,
-                    run_id=row.get('run_id', '').strip() or None,
-                    group_name=row.get('group_name', '').strip() or None,
-                    layout=row.get('layout', '').strip() or None,
-                    batch_id=row.get('batch_id', '').strip() or None,
-                    sample_metadata={}
+                    run_id=row.get("run_id", "").strip() or None,
+                    group_name=row.get("group_name", "").strip() or None,
+                    layout=row.get("layout", "").strip() or None,
+                    batch_id=row.get("batch_id", "").strip() or None,
+                    sample_metadata={},
                 )
                 samples_to_add.append(sample)
                 existing_ids.add(sample_id)
@@ -334,7 +292,7 @@ class SampleService:
             if not samples_to_add:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No valid samples found in CSV or all samples already exist"
+                    detail="No valid samples found in CSV or all samples already exist",
                 )
 
             self.db.add_all(samples_to_add)
@@ -344,25 +302,16 @@ class SampleService:
 
         except UnicodeDecodeError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid CSV file encoding. Please use UTF-8 encoding."
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid CSV file encoding. Please use UTF-8 encoding."
             )
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error parsing CSV: {str(e)}"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error parsing CSV: {str(e)}")
 
     # ============= UPDATE OPERATIONS =============
 
-    def update(
-        self,
-        sample_id: UUID,
-        user_id: UUID,
-        update_data: SampleUpdate
-    ) -> Sample:
+    def update(self, sample_id: UUID, user_id: UUID, update_data: SampleUpdate) -> Sample:
         """
         Update sample information
 
@@ -381,16 +330,20 @@ class SampleService:
 
         # Check if new sample_id conflicts
         if update_data.sample_id and update_data.sample_id != sample.sample_id:
-            existing = self.db.query(Sample).filter(
-                Sample.project_id == sample.project_id,
-                Sample.sample_id == update_data.sample_id,
-                Sample.id != sample_id
-            ).first()
+            existing = (
+                self.db.query(Sample)
+                .filter(
+                    Sample.project_id == sample.project_id,
+                    Sample.sample_id == update_data.sample_id,
+                    Sample.id != sample_id,
+                )
+                .first()
+            )
 
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Sample '{update_data.sample_id}' already exists in this project"
+                    detail=f"Sample '{update_data.sample_id}' already exists in this project",
                 )
 
         # Update fields
@@ -437,9 +390,7 @@ class SampleService:
         Returns:
             File count
         """
-        return self.db.query(FileModel).filter(
-            FileModel.sample_id == sample_id
-        ).count()
+        return self.db.query(FileModel).filter(FileModel.sample_id == sample_id).count()
 
     def _add_computed_fields(self, samples: List[Sample]) -> None:
         """

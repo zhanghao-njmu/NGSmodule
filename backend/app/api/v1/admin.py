@@ -1,19 +1,20 @@
 """
 Admin API endpoints for user management, system configuration, and logs
 """
+
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, Response
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import Optional, List
 
 from app.core.database import get_db
 from app.core.deps import get_current_admin
 from app.models.user import User
+from app.schemas.admin import *
 from app.services.admin_service import AdminService
 from app.services.audit_service import AuditService
-from app.schemas.admin import *
-
 
 router = APIRouter()
 
@@ -55,6 +56,7 @@ def _audit_log(
 # User Management Endpoints
 # ============================================================================
 
+
 @router.get("/users", response_model=UserListResponse)
 async def get_all_users(
     skip: int = Query(0, ge=0),
@@ -65,7 +67,7 @@ async def get_all_users(
     sort_by: str = Query("created_at", pattern="^(created_at|username|email|role|storage_used)$"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get paginated list of all users (Admin only)
@@ -85,22 +87,12 @@ async def get_all_users(
     service = AdminService(db)
 
     return service.get_users(
-        skip=skip,
-        limit=limit,
-        role=role,
-        is_active=is_active,
-        search=search,
-        sort_by=sort_by,
-        sort_order=sort_order
+        skip=skip, limit=limit, role=role, is_active=is_active, search=search, sort_by=sort_by, sort_order=sort_order
     )
 
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
-async def get_user_by_id(
-    user_id: str,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_user_by_id(user_id: str, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get detailed information about a specific user (Admin only)
 
@@ -111,10 +103,7 @@ async def get_user_by_id(
 
     user_detail = service.get_user_detail(user_id)
     if not user_detail:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     return user_detail
 
@@ -125,7 +114,7 @@ async def update_user_by_admin(
     update_data: UserUpdateRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update user information (Admin only)
@@ -145,16 +134,15 @@ async def update_user_by_admin(
     # Check if user exists
     user = service.get_user_detail(user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Update user
     updated_user = service.update_user(user_id, update_data)
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.USER_UPDATED.value,
         target_user_id=user_id,
         target_username=updated_user.username if updated_user else user.username,
@@ -172,7 +160,7 @@ async def change_user_role(
     role_update: UserRoleUpdate,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Change user role (Admin only)
@@ -190,20 +178,16 @@ async def change_user_role(
 
     # Prevent admin from demoting themselves
     if str(current_admin.id) == user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot change your own role"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot change your own role")
 
     user = service.change_user_role(user_id, role_update.role)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.USER_ROLE_CHANGED.value,
         target_user_id=user_id,
         target_username=user.username,
@@ -221,7 +205,7 @@ async def activate_deactivate_user(
     activation: UserActivationRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Activate or deactivate a user (Admin only)
@@ -240,20 +224,16 @@ async def activate_deactivate_user(
 
     # Prevent admin from deactivating themselves
     if str(current_admin.id) == user_id and not activation.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot deactivate your own account"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate your own account")
 
     user = service.activate_deactivate_user(user_id, activation.is_active, activation.reason)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=(AuditAction.USER_ACTIVATED if activation.is_active else AuditAction.USER_DEACTIVATED).value,
         target_user_id=user_id,
         target_username=user.username,
@@ -271,7 +251,7 @@ async def reset_user_password(
     password_reset: PasswordResetRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Reset user password (Admin only)
@@ -289,20 +269,15 @@ async def reset_user_password(
     """
     service = AdminService(db)
 
-    success = service.reset_user_password(
-        user_id,
-        password_reset.new_password,
-        password_reset.notify_user
-    )
+    success = service.reset_user_password(user_id, password_reset.new_password, password_reset.notify_user)
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.PASSWORD_RESET.value,
         target_user_id=user_id,
         target_resource_type="user",
@@ -311,9 +286,7 @@ async def reset_user_password(
     )
 
     return AdminOperationResponse(
-        success=True,
-        message="Password reset successfully",
-        details={"notify_user": password_reset.notify_user}
+        success=True, message="Password reset successfully", details={"notify_user": password_reset.notify_user}
     )
 
 
@@ -323,7 +296,7 @@ async def delete_user_by_admin(
     deletion: UserDeletionRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Delete a user account (Admin only)
@@ -348,17 +321,11 @@ async def delete_user_by_admin(
 
     # Validate confirmation
     if not deletion.confirm:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Deletion must be confirmed"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Deletion must be confirmed")
 
     # Prevent admin from deleting themselves
     if str(current_admin.id) == user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot delete your own account"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot delete your own account")
 
     # Capture username before deletion for audit log
     target = service.get_user_detail(user_id)
@@ -367,13 +334,12 @@ async def delete_user_by_admin(
     success = service.delete_user(user_id, deletion.transfer_data_to)
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.USER_DELETED.value,
         target_user_id=user_id,
         target_username=target_username,
@@ -391,8 +357,8 @@ async def delete_user_by_admin(
         details={
             "user_id": user_id,
             "data_transferred": deletion.transfer_data_to is not None,
-            "reason": deletion.reason
-        }
+            "reason": deletion.reason,
+        },
     )
 
 
@@ -400,11 +366,9 @@ async def delete_user_by_admin(
 # System Configuration Endpoints
 # ============================================================================
 
+
 @router.get("/config", response_model=SystemConfig)
-async def get_system_configuration(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_system_configuration(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get complete system configuration (Admin only)
 
@@ -428,7 +392,7 @@ async def update_system_configuration(
     config_update: ConfigUpdateRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update system configuration (Admin only)
@@ -446,7 +410,9 @@ async def update_system_configuration(
     """
     service = AdminService(db)
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.CONFIG_UPDATED.value,
         target_resource_type="config",
         target_resource_id=config_update.category.value,
@@ -458,9 +424,7 @@ async def update_system_configuration(
     )
 
     return service.update_system_config(
-        category=config_update.category,
-        updates=config_update.updates,
-        admin_id=str(current_admin.id)
+        category=config_update.category, updates=config_update.updates, admin_id=str(current_admin.id)
     )
 
 
@@ -469,7 +433,7 @@ async def reset_system_configuration(
     reset_request: ConfigResetRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Reset system configuration to defaults (Admin only)
@@ -485,17 +449,16 @@ async def reset_system_configuration(
     - This will reset configuration to factory defaults!
     """
     if not reset_request.confirm:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Configuration reset must be confirmed"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Configuration reset must be confirmed")
 
     service = AdminService(db)
 
     result = service.reset_system_config(reset_request.categories)
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.CONFIG_RESET.value,
         target_resource_type="config",
         details={
@@ -510,6 +473,7 @@ async def reset_system_configuration(
 # System Logs Endpoints
 # ============================================================================
 
+
 @router.get("/logs", response_model=LogResponse)
 async def get_system_logs(
     start_date: Optional[datetime] = None,
@@ -520,7 +484,7 @@ async def get_system_logs(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Query system logs (Admin only)
@@ -546,7 +510,7 @@ async def get_system_logs(
         sources=sources,
         search=search,
         limit=limit,
-        offset=offset
+        offset=offset,
     )
 
 
@@ -558,7 +522,7 @@ async def download_system_logs(
     sources: Optional[List[LogSource]] = Query(None),
     format: str = Query("json", pattern="^(json|csv|txt)$"),
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Download system logs as a file (Admin only)
@@ -576,17 +540,13 @@ async def download_system_logs(
     service = AdminService(db)
 
     log_file_path = service.download_logs(
-        start_date=start_date,
-        end_date=end_date,
-        levels=levels,
-        sources=sources,
-        format=format
+        start_date=start_date, end_date=end_date, levels=levels, sources=sources, format=format
     )
 
     return FileResponse(
         path=log_file_path,
         filename=f"system_logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}",
-        media_type="application/octet-stream"
+        media_type="application/octet-stream",
     )
 
 
@@ -594,11 +554,9 @@ async def download_system_logs(
 # System Health & Maintenance Endpoints
 # ============================================================================
 
+
 @router.get("/system/health", response_model=SystemHealth)
-async def get_system_health(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_system_health(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get system health status (Admin only)
 
@@ -628,7 +586,7 @@ async def cleanup_system(
     cleanup_options: CleanupOptions,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Perform system cleanup (Admin only)
@@ -657,7 +615,9 @@ async def cleanup_system(
 
     if not cleanup_options.dry_run:
         _audit_log(
-            db, request, current_admin,
+            db,
+            request,
+            current_admin,
             action=AuditAction.SYSTEM_CLEANUP.value,
             target_resource_type="system",
             details={
@@ -674,11 +634,9 @@ async def cleanup_system(
 # System Statistics (Admin)
 # ============================================================================
 
+
 @router.get("/system/stats", response_model=AdminSystemStats)
-async def get_admin_system_statistics(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_admin_system_statistics(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get comprehensive system statistics (Admin only)
 
@@ -705,11 +663,9 @@ async def get_admin_system_statistics(
 # Enhanced Features
 # ============================================================================
 
+
 @router.get("/system/metrics", response_model=SystemMetrics)
-async def get_system_metrics(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_system_metrics(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get detailed system metrics (Admin only)
 
@@ -730,9 +686,7 @@ async def get_system_metrics(
 
 @router.get("/alerts", response_model=AlertListResponse)
 async def get_alerts(
-    resolved: bool = False,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    resolved: bool = False, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)
 ):
     """
     Get system alerts (Admin only)
@@ -761,11 +715,7 @@ async def get_alerts(
 
 
 @router.post("/alerts/{alert_id}/resolve")
-async def resolve_alert(
-    alert_id: str,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def resolve_alert(alert_id: str, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Resolve an alert (Admin only)
 
@@ -780,11 +730,7 @@ async def resolve_alert(
     service = AdminService(db)
     alert = service.resolve_alert(alert_id, str(current_admin.id))
 
-    return {
-        "success": True,
-        "message": "Alert resolved successfully",
-        "alert": alert
-    }
+    return {"success": True, "message": "Alert resolved successfully", "alert": alert}
 
 
 @router.get("/audit-logs", response_model=List[AuditLogEntry])
@@ -796,7 +742,7 @@ async def get_audit_logs(
     skip: int = 0,
     limit: int = 50,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get audit logs (Admin only)
@@ -828,20 +774,13 @@ async def get_audit_logs(
     """
     service = AdminService(db)
     return service.get_audit_logs(
-        start_date=start_date,
-        end_date=end_date,
-        user_id=user_id,
-        action=action,
-        skip=skip,
-        limit=limit
+        start_date=start_date, end_date=end_date, user_id=user_id, action=action, skip=skip, limit=limit
     )
 
 
 @router.post("/audit-logs/export", response_model=ExportResult)
 async def export_audit_logs(
-    request: AuditLogExportRequest,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    request: AuditLogExportRequest, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)
 ):
     """
     Export audit logs (Admin only)
@@ -869,15 +808,12 @@ async def export_audit_logs(
         end_date=request.end_date,
         user_id=request.user_id,
         action=request.action,
-        format=request.format
+        format=request.format,
     )
 
 
 @router.get("/resources/usage", response_model=ResourceUsage)
-async def get_resource_usage(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def get_resource_usage(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Get resource usage summary (Admin only)
 
@@ -900,7 +836,7 @@ async def create_backup(
     backup_request: BackupRequest,
     request: Request,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create system backup (Admin only)
@@ -932,11 +868,13 @@ async def create_backup(
         backup_type=backup_request.backup_type,
         description=backup_request.description,
         admin_user_id=str(current_admin.id),
-        compress=backup_request.compress
+        compress=backup_request.compress,
     )
 
     _audit_log(
-        db, request, current_admin,
+        db,
+        request,
+        current_admin,
         action=AuditAction.BACKUP_CREATED.value,
         target_resource_type="backup",
         target_resource_id=result.id,
@@ -951,10 +889,7 @@ async def create_backup(
 
 
 @router.get("/backups", response_model=BackupListResponse)
-async def list_backups(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def list_backups(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     List all backups (Admin only)
 
@@ -983,7 +918,7 @@ async def list_jobs(
     skip: int = 0,
     limit: int = 50,
     current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     List system jobs (Admin only)
@@ -1014,11 +949,7 @@ async def list_jobs(
 
 
 @router.post("/jobs/{job_id}/cancel")
-async def cancel_job(
-    job_id: str,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def cancel_job(job_id: str, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Cancel a running job (Admin only)
 
@@ -1036,19 +967,11 @@ async def cancel_job(
     service = AdminService(db)
     job = service.cancel_job(job_id)
 
-    return {
-        "success": True,
-        "message": "Job cancelled successfully",
-        "job": job
-    }
+    return {"success": True, "message": "Job cancelled successfully", "job": job}
 
 
 @router.post("/jobs/{job_id}/retry")
-async def retry_job(
-    job_id: str,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
+async def retry_job(job_id: str, current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """
     Retry a failed job (Admin only)
 
@@ -1066,26 +989,17 @@ async def retry_job(
     service = AdminService(db)
     job = service.retry_job(job_id)
 
-    return {
-        "success": True,
-        "message": "Job queued for retry",
-        "job": job
-    }
+    return {"success": True, "message": "Job queued for retry", "job": job}
 
 
 # ============================================================================
 # Health Check
 # ============================================================================
 
+
 @router.get("/health")
-async def admin_health_check(
-    current_admin: User = Depends(get_current_admin)
-):
+async def admin_health_check(current_admin: User = Depends(get_current_admin)):
     """
     Health check endpoint for admin service
     """
-    return {
-        "status": "healthy",
-        "service": "admin",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"status": "healthy", "service": "admin", "timestamp": datetime.utcnow().isoformat()}
