@@ -21,7 +21,7 @@ psycopg2-binary>=2.9.12   # Python 3.13 wheel
 asyncpg>=0.30             # Python 3.13 wheel
 
 # Authentication
-python-jose[cryptography]>=3.5  # security: ECDSA confusion fix
+pyjwt[crypto]>=2.8  # replaces python-jose: cuts ecdsa transitive dep (Minerva P-256 timing attack, no upstream patch)
 passlib[bcrypt]>=1.7
 bcrypt>=4.1
 

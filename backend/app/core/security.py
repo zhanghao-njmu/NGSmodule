@@ -8,7 +8,7 @@ from functools import lru_cache
 from typing import Any, Union
 import bcrypt
 from cryptography.fernet import Fernet, InvalidToken
-from jose import jwt
+import jwt
 from app.core.config import settings
 from app.core.datetime_utils import utc_now_naive
 
@@ -69,7 +69,7 @@ def verify_token(token: str) -> dict[str, Any] | None:
             algorithms=[settings.JWT_ALGORITHM]
         )
         return payload
-    except jwt.JWTError:
+    except jwt.PyJWTError:
         return None
 
 
