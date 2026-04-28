@@ -32,6 +32,9 @@ const AnalyticsDashboard = lazy(() =>
   import('@/pages/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })),
 )
 const KnowledgeBase = lazy(() => import('@/pages/knowledge/KnowledgeBase').then((m) => ({ default: m.KnowledgeBase })))
+const DataDownloadsPage = lazy(() =>
+  import('@/pages/data-downloads/DataDownloadsPage').then((m) => ({ default: m.DataDownloadsPage })),
+)
 
 // Loading fallback component
 const PageLoader = () => (
@@ -232,6 +235,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <KnowledgeBase />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/data-downloads"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <DataDownloadsPage />
                   </Suspense>
                 </ErrorBoundary>
               }

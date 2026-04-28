@@ -20,6 +20,7 @@ import {
   RobotOutlined,
   FundOutlined,
   BookOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons'
 import { authStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/common'
@@ -67,6 +68,11 @@ export const MainLayout: React.FC = () => {
       key: '/files',
       icon: <FileOutlined />,
       label: 'Files',
+    },
+    {
+      key: '/data-downloads',
+      icon: <CloudDownloadOutlined />,
+      label: 'Data Downloads',
     },
     {
       key: '/pipelines',
