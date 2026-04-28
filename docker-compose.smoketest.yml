@@ -1,0 +1,52 @@
+# Smoke test override — runs core stack (postgres + redis + minio + backend +
+# celery worker) on docker's internal network only, without binding host
+# ports. Use this to verify the production image actually boots end-to-end
+# without colliding with whatever else the host machine has on 5432/6379/etc.
+#
+# Usage:
+#   docker compose -p ngs-smoke -f docker-compose.yml -f docker-compose.smoketest.yml \
+#     up -d --build --scale flower=0 --scale frontend=0
+#
+# Tear down:
+#   docker compose -p ngs-smoke -f docker-compose.yml -f docker-compose.smoketest.yml down -v
+
+services:
+  postgres:
+    container_name: ngs-smoke-postgres
+    ports: !reset []
+
+  redis:
+    container_name: ngs-smoke-redis
+    ports: !reset []
+
+  minio:
+    container_name: ngs-smoke-minio
+    ports: !reset []
+
+  backend:
+    container_name: ngs-smoke-backend
+    ports: !reset []
+    # Smoke test: don't mount host /opt/lcbio (may not exist); instead point
+    # at a tmpfs path inside the container. Vendor downloads aren't exercised
+    # by the smoke test.
+    volumes: !reset
+      - ./backend:/app
+      - ./:/app/NGSmodule
+      - upload_data:/data/uploads
+      - work_data:/data/ngsmodule_work
+      - result_data:/data/ngsmodule_results
+
+  celery-worker:
+    container_name: ngs-smoke-celery
+    volumes: !reset
+      - ./backend:/app
+      - ./:/app/NGSmodule
+      - work_data:/data/ngsmodule_work
+      - result_data:/data/ngsmodule_results
+
+  # Skip flower + frontend: they aren't on the smoke-test critical path.
+  flower:
+    profiles: ["full-stack-only"]
+
+  frontend:
+    profiles: ["full-stack-only"]

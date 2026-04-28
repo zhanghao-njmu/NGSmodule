@@ -108,6 +108,11 @@ services:
       - DATABASE_URL=postgresql://ngsmodule:ngsmodule_dev_password@postgres:5432/ngsmodule
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
       - NGS_PIPELINE_DIR=/app/NGSmodule
     volumes:
       - ./backend:/app
@@ -128,7 +133,18 @@ services:
     container_name: ngsmodule-flower
     command: celery -A app.workers.celery_app flower --port=5555
     environment:
+      # Flower imports app.workers.celery_app which transitively loads
+      # the full Settings (config.py top-level), so it needs the same
+      # required env vars as backend, even though it only uses the broker.
+      - DATABASE_URL=postgresql://ngsmodule:ngsmodule_dev_password@postgres:5432/ngsmodule
+      - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+      - NGS_PIPELINE_DIR=/app/NGSmodule
     ports:
       - "5555:5555"
     depends_on:

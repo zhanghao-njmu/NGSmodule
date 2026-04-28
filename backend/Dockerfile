@@ -13,11 +13,17 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Build Python deps inside a virtualenv at /opt/venv. This puts both
+# site-packages and the bin/ scripts (uvicorn, celery, alembic, ...) at
+# a path that the non-root runtime user can read in stage 2 — installing
+# with `pip install --user` would put them under /root/.local, which is
+# 0700 root-owned and crashes the container with EACCES on uvicorn at boot.
+RUN python -m venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -30,11 +36,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
-
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy the prepared venv from the builder. /opt/venv is world-readable,
+# so the non-root user we add below can invoke uvicorn/celery/alembic.
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH
 
 # Copy application code
 COPY . .
