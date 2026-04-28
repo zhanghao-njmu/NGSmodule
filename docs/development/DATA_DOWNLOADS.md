@@ -1,0 +1,126 @@
+# Vendor Data Downloads
+
+NGSmodule has a unified API for fetching sequencing deliveries from
+external partners (联川生物 / 诺禾致源 / ...) directly into the platform.
+The frontend talks to this API; users no longer need to ssh in and run
+the vendor's CLI manually.
+
+## Architecture
+
+```
+Frontend ──HTTP──▶ Backend (FastAPI)
+                       │
+                       ├── data_download_service ──▶ DataProviderBase
+                       │                              ├── LcBioProvider  (subprocess wraps lcbio bash CLI)
+                       │                              └── NovogeneProvider (stub)
+                       │
+                       └── Celery worker (data_downloads.watch_progress)
+                                  │
+                                  ├── tails vendor log file
+                                  ├── updates DownloadJob row
+                                  └── publishes realtime:task:<id> events
+                                                │
+Frontend ◀──WebSocket────────────────────────────
+```
+
+## Endpoints
+
+All under `/api/v1/data-downloads/` unless noted; require a logged-in user.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET    | `/vendors`                     | list supported vendor ids |
+| GET    | `/sessions/{vendor}`           | is the vendor daemon up? |
+| POST   | `/sessions`                    | open a session (email+pw OR `credential_id`) |
+| DELETE | `/sessions/{vendor}`           | kill the vendor daemon |
+| POST   | `/jobs`                        | start a download |
+| GET    | `/jobs`                        | list current user's jobs (refreshes in-flight) |
+| GET    | `/jobs/{id}`                   | single job (re-parses log) |
+| DELETE | `/jobs/{id}`                   | cancel (lcbio: kills daemon, affects all in-flight) |
+
+Saved-credentials API (under `/api/v1/vendor-credentials/`):
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST   | `/`            | save / update credential (email+password) |
+| GET    | `/`            | list (masked) |
+| DELETE | `/{id}`        | remove |
+
+## Quickstart (UI flow)
+
+1. **Save credential** (one-time): `POST /vendor-credentials` with
+   `{vendor: "lc_bio", email, password, label: "default"}`.
+2. **Open session**: `POST /data-downloads/sessions` with either
+   `{vendor, email, password}` or `{vendor, credential_id}`. Returns
+   `{active: true, pid: 12345}`.
+3. **Find delivery on vendor's web UI**, click the linux-download button,
+   copy the `obs_path` (the part inside the quotes after `download`).
+4. **Start download**: `POST /data-downloads/jobs` with
+   `{vendor: "lc_bio", source_path: "<obs_path>", dest_path: "/data/.../rawdata", auto_register: true, project_name?: "..."}`.
+   Returns a `DownloadJob` with id + log_path.
+5. **Watch progress**: subscribe via WebSocket to
+   `realtime:task:<job_id>` (frontend uses the existing `/ws` endpoint
+   with `subscribe_to_task` on the job's id), or poll
+   `GET /data-downloads/jobs/{id}`.
+6. **On completion**: if `auto_register=true`, the worker untars the
+   delivery into `dest_path/extracted/` and creates an NGSmodule
+   `Project` linked back to the download. The project's `config`
+   carries `fastq_inventory` for the user to review and bind to samples.
+
+## 联川 (lcbio) specifics
+
+The Java daemon (`obs_service-...-SNAPSHOT.jar`) is **process-level
+singleton** — only one session per backend host. Concurrent downloads
+inside one session are sequential (the daemon reads `linuxDown.txt`
+which is overwritten by each new request).
+
+Configure path with `LC_BIO_BIN_DIR` (default
+`/home/zhanghao/programs/lcbio/linux_download/bin`).
+
+Log format parsed for progress (see `services/data_provider/lc_bio.py`):
+
+```
+已开始下载，请耐心等待......
+<obs_path> ：下载中......       <ts>
+<obs_path> ：已下载：50.00 MB  0.39%      <ts>     ← progress line
+<obs_path> ：已下载：1.03 GB  8.15%       <ts>
+<obs_path> ： 下载已完成！      <ts>                ← terminal marker
+```
+
+## Adding a new vendor
+
+1. Subclass `DataProviderBase` in `app/services/data_provider/<name>.py`
+   and implement `session_status / login / logout / start_download /
+   parse_progress`.
+2. Register in `app/services/data_provider/factory.py`.
+3. The rest of the stack (DB, API, worker, WebSocket) requires no
+   changes — `DataDownloadService` is vendor-agnostic.
+
+A `NovogeneProvider` stub lives in `novogene.py`; the actual delivery
+channel (sftp / OBS / vendor CLI) needs to be confirmed before that
+adapter can be filled in.
+
+## Security
+
+- Vendor passwords saved via `POST /vendor-credentials` are
+  **fernet-encrypted at rest** with a key derived from
+  `settings.SECRET_KEY` (SHA-256 → base64). Rotating SECRET_KEY
+  invalidates stored ciphertexts (intentional — forces re-entry).
+- Plaintext passwords are **never returned by the API**; only masked
+  email previews (`us***@example.com`).
+- `linuxLogin.txt` (lcbio's plaintext credential file) is owned by the
+  user that runs the backend, NOT by the API caller. The lcbio Java
+  service truncates it to 0 bytes after reading, so it's only briefly
+  on disk; restrict the backend host's filesystem accordingly.
+
+## Known limitations
+
+- lcbio's `download` CLI has no list-deliveries endpoint, so the
+  frontend can't enumerate available files — the user must paste the
+  `obs_path` copied from the vendor's web UI.
+- `cancel` for lcbio kills the entire Java daemon (and any other
+  in-flight downloads sharing the session). For finer control we'd
+  need to call OBS directly, bypassing lcbio.
+- Stale job timeout is hard-coded at 10 min without progress; tune
+  `_STALE_TIMEOUT` in `workers/download_tasks.py` if you regularly
+  download from slow OBS regions.
