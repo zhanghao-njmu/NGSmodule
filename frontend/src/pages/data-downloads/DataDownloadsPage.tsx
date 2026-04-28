@@ -39,6 +39,22 @@ const STATUS_COLOR: Record<DownloadStatus, string> = {
   cancelled: 'warning',
 }
 
+const STATUS_LABEL: Record<DownloadStatus, string> = {
+  pending: '等待中',
+  running: '下载中',
+  completed: '已完成',
+  failed: '失败',
+  cancelled: '已取消',
+}
+
+// Vendor id → display name. Falls back to id for unknown vendors.
+const VENDOR_LABEL: Record<string, string> = {
+  lc_bio: '联川生物 (lcbio)',
+  novogene: '诺禾致源 (即将支持)',
+}
+
+const formatVendor = (id: string) => VENDOR_LABEL[id] ?? id
+
 export function DataDownloadsPage() {
   const qc = useQueryClient()
   const [vendor, setVendor] = useState<string>('lc_bio')
@@ -86,7 +102,7 @@ export function DataDownloadsPage() {
   const openSessionMutation = useMutation({
     mutationFn: (req: SessionLoginRequest) => dataDownloadService.openSession(req),
     onSuccess: () => {
-      message.success('Session opened')
+      message.success('会话已开启')
       qc.invalidateQueries({ queryKey: ['data-downloads', 'session', vendor] })
     },
     onError: (e: Error & { response?: { data?: { detail?: string } } }) =>
@@ -96,7 +112,7 @@ export function DataDownloadsPage() {
   const closeSessionMutation = useMutation({
     mutationFn: () => dataDownloadService.closeSession(vendor),
     onSuccess: () => {
-      message.success('Session closed')
+      message.success('会话已关闭')
       qc.invalidateQueries({ queryKey: ['data-downloads', 'session', vendor] })
     },
   })
@@ -104,7 +120,7 @@ export function DataDownloadsPage() {
   const createJobMutation = useMutation({
     mutationFn: (req: DownloadJobCreateRequest) => dataDownloadService.createJob(req),
     onSuccess: () => {
-      message.success('Download started')
+      message.success('下载任务已创建')
       qc.invalidateQueries({ queryKey: ['data-downloads', 'jobs'] })
     },
     onError: (e: Error & { response?: { data?: { detail?: string } } }) =>
@@ -120,36 +136,35 @@ export function DataDownloadsPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={3}>Data Downloads</Title>
+      <Title level={3}>数据下载</Title>
       <Paragraph type="secondary">
-        Pull sequencing deliveries from vendors (联川 / 诺禾致源 / ...) directly into NGSmodule. Copy the obs path from
-        the vendor&apos;s web download button — anything in quotes after <Text code>download</Text> — and paste it
-        below.
+        从测序公司（联川 / 诺禾致源 / ...）直接将原始数据下载到 NGSmodule。 在公司网页的下载按钮上复制 obs 路径（
+        <Text code>download</Text> 后引号里的部分），粘贴到下面即可。
       </Paragraph>
 
       <Card
         title={
           <Space>
-            <span>Vendor</span>
+            <span>厂商</span>
             <Select
               size="small"
-              style={{ minWidth: 160 }}
+              style={{ minWidth: 200 }}
               loading={vendorsQuery.isLoading}
               value={vendor}
               onChange={setVendor}
-              options={(vendorsQuery.data ?? []).map((v: string) => ({ value: v, label: v }))}
+              options={(vendorsQuery.data ?? []).map((v: string) => ({ value: v, label: formatVendor(v) }))}
             />
-            <Tag color={sessionActive ? 'success' : 'default'}>session {sessionActive ? 'active' : 'inactive'}</Tag>
+            <Tag color={sessionActive ? 'success' : 'default'}>{sessionActive ? '会话已开启' : '会话未开启'}</Tag>
           </Space>
         }
         extra={
           <Space>
             <Button icon={<KeyOutlined />} onClick={() => setCredentialModalOpen(true)}>
-              Saved logins ({credsQuery.data?.length ?? 0})
+              已保存登录（{credsQuery.data?.length ?? 0}）
             </Button>
             {sessionActive && (
               <Button danger onClick={() => closeSessionMutation.mutate()}>
-                Close session
+                关闭会话
               </Button>
             )}
           </Space>
@@ -165,7 +180,7 @@ export function DataDownloadsPage() {
         />
       </Card>
 
-      <Card title="New download" style={{ marginBottom: 16 }}>
+      <Card title="新建下载" style={{ marginBottom: 16 }}>
         <DownloadForm
           vendor={vendor}
           disabled={!sessionActive}
@@ -175,13 +190,13 @@ export function DataDownloadsPage() {
       </Card>
 
       <Card
-        title={`Jobs (${jobsQuery.data?.length ?? 0})`}
+        title={`下载任务（${jobsQuery.data?.length ?? 0}）`}
         extra={
           <Button
             icon={<ReloadOutlined />}
             onClick={() => qc.invalidateQueries({ queryKey: ['data-downloads', 'jobs'] })}
           >
-            Refresh
+            刷新
           </Button>
         }
       >
@@ -228,11 +243,11 @@ function SessionForm({
         }
       }}
     >
-      <Form.Item label="Use saved">
+      <Form.Item label="使用已保存">
         <Select
           allowClear
-          style={{ minWidth: 200 }}
-          placeholder="(none — type below)"
+          style={{ minWidth: 220 }}
+          placeholder="（无 — 下方手动输入）"
           value={credentialId}
           onChange={setCredentialId}
           options={credentials.map((c) => ({
@@ -243,17 +258,17 @@ function SessionForm({
       </Form.Item>
       {!credentialId && (
         <>
-          <Form.Item name="email" rules={[{ required: !credentialId }]}>
-            <Input placeholder="email" autoComplete="off" style={{ width: 220 }} />
+          <Form.Item name="email" rules={[{ required: !credentialId, message: '请填写邮箱' }]}>
+            <Input placeholder="邮箱" autoComplete="off" style={{ width: 220 }} />
           </Form.Item>
-          <Form.Item name="password" rules={[{ required: !credentialId }]}>
-            <Input.Password placeholder="password" autoComplete="off" style={{ width: 200 }} />
+          <Form.Item name="password" rules={[{ required: !credentialId, message: '请填写密码' }]}>
+            <Input.Password placeholder="密码" autoComplete="off" style={{ width: 200 }} />
           </Form.Item>
         </>
       )}
       <Form.Item>
         <Button type="primary" htmlType="submit" icon={<PlayCircleOutlined />} loading={submitting}>
-          Open session
+          开启会话
         </Button>
       </Form.Item>
     </Form>
@@ -297,27 +312,23 @@ function DownloadForm({
     >
       <Form.Item
         name="source_path"
-        label="Source path (obs path from vendor's web UI)"
-        rules={[{ required: true, message: 'paste the obs path' }]}
+        label="源路径（公司网页复制的 obs 路径）"
+        rules={[{ required: true, message: '请粘贴 obs 路径' }]}
       >
         <Input placeholder="LC-P20260327047-.../2026-04-21_17:24:55/Data.tar" />
       </Form.Item>
-      <Form.Item
-        name="dest_path"
-        label="Local destination directory"
-        rules={[{ required: true, message: 'where to save' }]}
-      >
+      <Form.Item name="dest_path" label="本地保存目录" rules={[{ required: true, message: '请填写保存路径' }]}>
         <Input placeholder="/data/lab/.../rawdata" />
       </Form.Item>
-      <Form.Item name="auto_register" label="Auto-register as NGSmodule project on completion" valuePropName="checked">
+      <Form.Item name="auto_register" label="完成后自动注册为 NGSmodule 项目" valuePropName="checked">
         <Switch />
       </Form.Item>
-      <Form.Item name="project_name" label="Project name (optional, auto-derived if blank)">
+      <Form.Item name="project_name" label="项目名称（可选，留空则按源路径自动推断）">
         <Input maxLength={100} />
       </Form.Item>
       <Form.Item>
         <Button type="primary" htmlType="submit" loading={submitting} disabled={disabled}>
-          Start download
+          开始下载
         </Button>
       </Form.Item>
     </Form>
@@ -338,7 +349,7 @@ function JobsTable({
   const columns = useMemo(
     () => [
       {
-        title: 'Source',
+        title: '源文件',
         dataIndex: 'source_path',
         key: 'source_path',
         ellipsis: true,
@@ -349,21 +360,21 @@ function JobsTable({
         ),
       },
       {
-        title: 'Destination',
+        title: '保存目录',
         dataIndex: 'dest_path',
         key: 'dest_path',
         ellipsis: true,
         width: 220,
       },
       {
-        title: 'Status',
+        title: '状态',
         dataIndex: 'status',
         key: 'status',
         width: 110,
-        render: (s: DownloadStatus) => <Tag color={STATUS_COLOR[s]}>{s}</Tag>,
+        render: (s: DownloadStatus) => <Tag color={STATUS_COLOR[s]}>{STATUS_LABEL[s]}</Tag>,
       },
       {
-        title: 'Progress',
+        title: '进度',
         dataIndex: 'progress_pct',
         key: 'progress_pct',
         width: 200,
@@ -376,7 +387,7 @@ function JobsTable({
         ),
       },
       {
-        title: 'Started',
+        title: '开始时间',
         dataIndex: 'started_at',
         key: 'started_at',
         width: 170,
@@ -389,7 +400,7 @@ function JobsTable({
         render: (_: unknown, row: DownloadJob) =>
           row.status === 'running' || row.status === 'pending' ? (
             <Button size="small" danger icon={<DeleteOutlined />} onClick={() => onCancel(row.id)}>
-              Cancel
+              取消
             </Button>
           ) : null,
       },
@@ -424,7 +435,7 @@ function CredentialsModal({ vendor, open, onClose }: { vendor: string; open: boo
     mutationFn: (req: { vendor: string; email: string; password: string; label: string }) =>
       vendorCredentialService.create(req),
     onSuccess: () => {
-      message.success('Saved')
+      message.success('已保存')
       form.resetFields()
       qc.invalidateQueries({ queryKey: ['vendor-credentials', vendor] })
     },
@@ -436,15 +447,22 @@ function CredentialsModal({ vendor, open, onClose }: { vendor: string; open: boo
   })
 
   return (
-    <Modal open={open} onCancel={onClose} title={`Saved logins (${vendor})`} footer={null} width={620}>
+    <Modal
+      open={open}
+      onCancel={onClose}
+      title={`已保存的登录信息（${formatVendor(vendor)}）`}
+      footer={null}
+      width={640}
+    >
       <Table
         rowKey="id"
         size="small"
         dataSource={credsQuery.data ?? []}
         pagination={false}
+        locale={{ emptyText: '暂无保存的登录信息' }}
         columns={[
-          { title: 'Label', dataIndex: 'label' },
-          { title: 'Email', dataIndex: 'email_preview' },
+          { title: '标签', dataIndex: 'label' },
+          { title: '邮箱', dataIndex: 'email_preview' },
           {
             title: '',
             width: 70,
@@ -461,17 +479,17 @@ function CredentialsModal({ vendor, open, onClose }: { vendor: string; open: boo
         onFinish={(v) => createMutation.mutate({ vendor, ...v, label: v.label || 'default' })}
       >
         <Form.Item name="label">
-          <Input placeholder="label (default)" style={{ width: 130 }} />
+          <Input placeholder="标签（默认 default）" style={{ width: 150 }} />
         </Form.Item>
-        <Form.Item name="email" rules={[{ required: true }]}>
-          <Input placeholder="email" style={{ width: 180 }} autoComplete="off" />
+        <Form.Item name="email" rules={[{ required: true, message: '邮箱必填' }]}>
+          <Input placeholder="邮箱" style={{ width: 180 }} autoComplete="off" />
         </Form.Item>
-        <Form.Item name="password" rules={[{ required: true }]}>
-          <Input.Password placeholder="password" style={{ width: 160 }} autoComplete="off" />
+        <Form.Item name="password" rules={[{ required: true, message: '密码必填' }]}>
+          <Input.Password placeholder="密码" style={{ width: 160 }} autoComplete="off" />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
-            Save
+            保存
           </Button>
         </Form.Item>
       </Form>

@@ -72,7 +72,7 @@ export const MainLayout: React.FC = () => {
     {
       key: '/data-downloads',
       icon: <CloudDownloadOutlined />,
-      label: 'Data Downloads',
+      label: '数据下载',
     },
     {
       key: '/pipelines',
