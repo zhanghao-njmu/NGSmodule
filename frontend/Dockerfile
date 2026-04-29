@@ -49,8 +49,12 @@ USER nginx-user
 EXPOSE 80
 
 # Health check
+# Use 127.0.0.1 instead of localhost: in this image, BusyBox wget resolves
+# `localhost` to IPv6 `::1`, but nginx only listens on IPv4 0.0.0.0:80,
+# so the resolver-IPv6-first behaviour causes a permanent ECONNREFUSED.
+# /health is defined in nginx.conf and returns 200 "healthy".
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1/health || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

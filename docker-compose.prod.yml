@@ -239,6 +239,14 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
+      # Same Settings()-needs-everything constraint as celery-worker:
+      # importing app.workers.celery_app loads app.core.config.
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - MINIO_URL=${MINIO_URL:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      - NGS_PIPELINE_DIR=/app/NGSmodule
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       - logs:/app/logs
@@ -246,6 +254,11 @@ services:
       - postgres
       - redis
       - backend
+    # The base image's HEALTHCHECK probes /health on port 8000, but beat
+    # is a scheduler — no HTTP server, no port. Disable to let container
+    # status reflect process liveness instead of a wrong probe.
+    healthcheck:
+      disable: true
     networks:
       - ngsmodule_network
     logging:
@@ -308,7 +321,10 @@ services:
     expose:
       - "80"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      # 127.0.0.1 not localhost: in alpine the BusyBox wget resolves
+      # `localhost` as IPv6 ::1 first but nginx only listens on IPv4
+      # 0.0.0.0:80 → permanent ECONNREFUSED.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

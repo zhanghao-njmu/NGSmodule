@@ -44,6 +44,12 @@ services:
     container_name: ngsmodule-backend
     ports: !override
       - '127.0.0.1:4180:8000' # localhost-only; expose via nginx-proxy-manager
+    # Container user is `ngsmodule` (uid=1000 from the Dockerfile). On
+    # this host, /ssd/lab is `drwxrws--- shared:1002` — only members of
+    # the `shared` group can enter it. Add gid 1002 as a supplementary
+    # group so the backend can read/write user working directories.
+    group_add:
+      - '1002'
     volumes: !override
       # Application code, read-only at runtime.
       - /home/zhanghao/programs/NGSmodule:/app/NGSmodule:ro
@@ -62,6 +68,9 @@ services:
 
   celery-worker:
     container_name: ngsmodule-celery-worker
+    # Same shared-group access as backend — pipelines run here.
+    group_add:
+      - '1002'
     volumes: !override
       - /home/zhanghao/programs/NGSmodule:/app/NGSmodule:ro
       - /ssd/docker/services/ngsmodule/data/storage:/data/storage:ro
@@ -78,5 +87,15 @@ services:
 
   frontend:
     container_name: ngsmodule-frontend
+    # Prod-image frontend is an nginx serving the SPA on container port
+    # 80; expose it on host 127.0.0.1:4173 (nginx-proxy-manager will
+    # reverse-proxy 80/443 here).
     ports: !override
-      - '127.0.0.1:4173:3000'
+      - '127.0.0.1:4173:80'
+
+  # The bundled nginx service wants 80/443 — those belong to nginx-proxy-
+  # manager on this server. Disable it via a profile that we never opt in.
+  # Public traffic flow is: NPM (80/443) -> 127.0.0.1:4173 (frontend)
+  # which already speaks fine HTTP for an internal-network upstream.
+  nginx:
+    profiles: ['use-bundled-nginx']
