@@ -1,0 +1,82 @@
+# Host-specific override for the BREAL server (zhanghao@BREAL-server).
+# Layered on top of docker-compose.prod.yml; encodes:
+#
+# - This server's published-port budget (3000/8000/etc are taken by other
+#   services; we use the 4173/4180/4181 segment).
+# - Internal services (postgres/redis/minio) bind only inside the docker
+#   network — no host port — so they don't collide with breal-postgres etc.
+# - Bind mounts to the canonical NGS data layout:
+#     /data/lab/{user}/{type}/{project}/rawdata   raw fastq.gz (cold, /data 29T)
+#     /ssd/reference                              shared reference genomes
+#     /ssd/lab/{user}/{type}/{project}            hot working tree
+#
+# Usage:
+#   cd /ssd/docker/services/ngsmodule
+#   docker compose \
+#     -f /home/zhanghao/programs/NGSmodule/docker-compose.prod.yml \
+#     -f /home/zhanghao/programs/NGSmodule/docker-compose.host.yml \
+#     --env-file .env up -d --build
+#
+# Once nginx-proxy-manager is enabled, set up a Proxy Host pointing at
+# 127.0.0.1:4173 and turn on Let's Encrypt SSL.
+
+services:
+  postgres:
+    container_name: ngsmodule-postgres
+    ports: !override []
+    volumes: !override
+      - /ssd/docker/services/ngsmodule/data/postgres:/var/lib/postgresql/data
+      - /ssd/docker/services/ngsmodule/backups/postgres:/backups
+
+  redis:
+    container_name: ngsmodule-redis
+    ports: !override []
+    volumes: !override
+      - /ssd/docker/services/ngsmodule/data/redis:/data
+
+  minio:
+    container_name: ngsmodule-minio
+    ports: !override []
+    volumes: !override
+      - /ssd/docker/services/ngsmodule/data/minio:/data
+
+  backend:
+    container_name: ngsmodule-backend
+    ports: !override
+      - '127.0.0.1:4180:8000' # localhost-only; expose via nginx-proxy-manager
+    volumes: !override
+      # Application code, read-only at runtime.
+      - /home/zhanghao/programs/NGSmodule:/app/NGSmodule:ro
+      # Persistent stores on /ssd (hot, NVMe).
+      - /ssd/docker/services/ngsmodule/data/uploads:/data/uploads
+      - /ssd/docker/services/ngsmodule/data/storage:/data/storage
+      - /ssd/docker/services/ngsmodule/logs:/app/logs
+      # NGS pipeline data layout — both /data (cold) and /ssd (hot)
+      # are exposed to the container so the backend can register raw
+      # files, kick off pipelines, and read their work/analysis outputs.
+      - /data/lab:/data/lab:rw
+      - /ssd/lab:/ssd/lab:rw
+      - /ssd/reference:/ssd/reference:ro
+      # lcbio (联川) data-download daemon binaries.
+      - ${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio
+
+  celery-worker:
+    container_name: ngsmodule-celery-worker
+    volumes: !override
+      - /home/zhanghao/programs/NGSmodule:/app/NGSmodule:ro
+      - /ssd/docker/services/ngsmodule/data/storage:/data/storage:ro
+      - /ssd/docker/services/ngsmodule/logs:/app/logs
+      - /data/lab:/data/lab:rw
+      - /ssd/lab:/ssd/lab:rw
+      - /ssd/reference:/ssd/reference:ro
+      - ${LCBIO_HOST_DIR:-/opt/lcbio}:/opt/lcbio:ro
+
+  flower:
+    container_name: ngsmodule-flower
+    ports: !override
+      - '127.0.0.1:4181:5555'
+
+  frontend:
+    container_name: ngsmodule-frontend
+    ports: !override
+      - '127.0.0.1:4173:3000'
