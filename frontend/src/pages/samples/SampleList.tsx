@@ -68,7 +68,7 @@ export const SampleList: React.FC = () => {
 
   // ---- queries -------------------------------------------------------------
 
-  const { data: projectList } = useProjectList({ limit: 200 })
+  const { data: projectList } = useProjectList({ limit: 100 })
   const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
   // List is enabled only after a project is selected (matches old behavior)

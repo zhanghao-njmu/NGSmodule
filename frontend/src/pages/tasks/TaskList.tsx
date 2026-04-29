@@ -55,7 +55,7 @@ export const TaskList: React.FC = () => {
   // ---- queries -------------------------------------------------------------
 
   // Project dropdown options
-  const { data: projectList } = useProjectList({ limit: 200 })
+  const { data: projectList } = useProjectList({ limit: 100 })
   const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
   // Task list — query key changes when filter changes, so refetch is automatic

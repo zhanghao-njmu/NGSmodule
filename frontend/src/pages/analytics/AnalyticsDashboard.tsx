@@ -106,16 +106,23 @@ export const AnalyticsDashboard: React.FC = () => {
             message="关键趋势"
             description={
               <Space direction="vertical" style={{ width: '100%' }} size="small">
-                {trends.map((trend, idx) => (
-                  <Text key={idx}>
-                    {getTrendIcon(trend.trend)} <Text strong>{trend.metric}</Text>:{' '}
-                    <Text style={{ color: getTrendColor(trend.trend, trend.metric) }}>
-                      {trend.change > 0 ? '+' : ''}
-                      {trend.change.toFixed(1)} ({trend.changePercent > 0 ? '+' : ''}
-                      {trend.changePercent.toFixed(1)}%)
+                {trends.map((trend, idx) => {
+                  // Backend returns null change/changePercent when there's
+                  // no baseline yet (fresh DB, no historical samples).
+                  // toFixed on undefined throws — guard with `?? 0`.
+                  const change = trend.change ?? 0
+                  const changePercent = trend.changePercent ?? 0
+                  return (
+                    <Text key={idx}>
+                      {getTrendIcon(trend.trend)} <Text strong>{trend.metric}</Text>:{' '}
+                      <Text style={{ color: getTrendColor(trend.trend, trend.metric) }}>
+                        {change > 0 ? '+' : ''}
+                        {change.toFixed(1)} ({changePercent > 0 ? '+' : ''}
+                        {changePercent.toFixed(1)}%)
+                      </Text>
                     </Text>
-                  </Text>
-                ))}
+                  )
+                })}
               </Space>
             }
             type="info"

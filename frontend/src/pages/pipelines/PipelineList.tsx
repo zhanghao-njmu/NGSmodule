@@ -66,7 +66,7 @@ export const PipelineList: React.FC = () => {
   const [selectedProjectInForm, setSelectedProjectInForm] = useState<string>('')
   const [form] = Form.useForm()
 
-  const { data: projectList } = useProjectList({ limit: 200 })
+  const { data: projectList } = useProjectList({ limit: 100 })
   const items = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
   const { data: samplesData } = useSampleList(selectedProjectInForm || undefined)

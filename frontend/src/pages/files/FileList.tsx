@@ -34,7 +34,7 @@ export const FileList: React.FC = () => {
 
   // ---- queries -------------------------------------------------------------
 
-  const { data: projectList } = useProjectList({ limit: 200 })
+  const { data: projectList } = useProjectList({ limit: 100 })
   const projects = (projectList as any)?.items ?? (projectList as any)?.data ?? []
 
   const { data: filesData, isLoading, isFetching } = useFilesByProject(selectedProject || undefined)
