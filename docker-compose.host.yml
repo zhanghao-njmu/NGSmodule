@@ -87,11 +87,15 @@ services:
 
   frontend:
     container_name: ngsmodule-frontend
-    # Prod-image frontend is an nginx serving the SPA on container port
-    # 80; expose it on host 127.0.0.1:4173 (nginx-proxy-manager will
-    # reverse-proxy 80/443 here).
+    # Prod frontend is an nginx serving the SPA on container port 80
+    # AND reverse-proxying /api/v1 + /api/v1/ws to the backend service
+    # (see frontend/nginx.conf). That means everything a user needs is
+    # reachable through this single port — including API + WebSocket —
+    # so we publish on 0.0.0.0 to make it reachable across the LAN
+    # (10.0.3.194:4173). nginx-proxy-manager, when enabled, can later
+    # reverse-proxy 80/443 → 4173 for HTTPS.
     ports: !override
-      - '127.0.0.1:4173:80'
+      - '0.0.0.0:4173:80'
 
   # The bundled nginx service wants 80/443 — those belong to nginx-proxy-
   # manager on this server. Disable it via a profile that we never opt in.
