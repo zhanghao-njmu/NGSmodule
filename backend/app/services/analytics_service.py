@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from statistics import mean, stdev
 from typing import List, Optional
 
-from sqlalchemy import and_, desc, func
+from sqlalchemy import and_, case, desc, func
 from sqlalchemy.orm import Session
 
 from app.models.file import File
@@ -171,8 +171,8 @@ class AnalyticsService:
         task_stats = (
             self.db.query(
                 func.count(PipelineTask.id).label("total"),
-                func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
-                func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+                func.sum(case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                func.sum(case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
                 func.avg(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("avg_duration"),
             )
             .join(Sample)
@@ -286,8 +286,8 @@ class AnalyticsService:
         query = self.db.query(
             PipelineTask.pipeline,
             func.count(PipelineTask.id).label("total"),
-            func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("successful"),
-            func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+            func.sum(case((PipelineTask.status == "completed", 1), else_=0)).label("successful"),
+            func.sum(case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
             func.avg(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("avg_duration"),
             func.min(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("min_duration"),
             func.max(func.extract("epoch", PipelineTask.end_time - PipelineTask.start_time)).label("max_duration"),
@@ -346,9 +346,9 @@ class AnalyticsService:
         query = self.db.query(
             func.date_trunc("day", PipelineTask.created_at).label("date"),
             func.count(PipelineTask.id).label("total"),
-            func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
-            func.sum(func.case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
-            func.sum(func.case((PipelineTask.status == "running", 1), else_=0)).label("running"),
+            func.sum(case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+            func.sum(case((PipelineTask.status == "failed", 1), else_=0)).label("failed"),
+            func.sum(case((PipelineTask.status == "running", 1), else_=0)).label("running"),
         ).filter(and_(PipelineTask.created_at >= start_date, PipelineTask.created_at <= end_date))
 
         if user_id:
@@ -392,11 +392,14 @@ class AnalyticsService:
         available_storage = total_storage - used_storage
         usage_percentage = (used_storage / total_storage * 100) if total_storage > 0 else 0.0
 
-        # Storage by project
+        # Storage by project. SQLAlchemy 2.x can't auto-figure the join
+        # path because Project<->File goes through Sample (no direct FK)
+        # — declare each step explicitly.
         project_storage = (
             self.db.query(Project.name, func.sum(File.file_size).label("size"))
-            .join(Sample)
-            .join(File)
+            .select_from(Project)
+            .join(Sample, Sample.project_id == Project.id)
+            .join(File, File.sample_id == Sample.id)
             .group_by(Project.id, Project.name)
             .order_by(desc("size"))
             .limit(10)
@@ -446,7 +449,7 @@ class AnalyticsService:
                     Project.id,
                     Project.name,
                     func.count(PipelineTask.id).label("total_tasks"),
-                    func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                    func.sum(case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
                 )
                 .join(Sample)
                 .join(PipelineTask)
@@ -527,7 +530,7 @@ class AnalyticsService:
 
         # Tasks metric
         tasks_query = self.db.query(
-            func.count(PipelineTask.id), func.sum(func.case((PipelineTask.status == "completed", 1), else_=0))
+            func.count(PipelineTask.id), func.sum(case((PipelineTask.status == "completed", 1), else_=0))
         )
         if user_id:
             tasks_query = tasks_query.join(Sample).join(Project).filter(Project.owner_id == user_id)

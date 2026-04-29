@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import and_, desc, func, or_
+from sqlalchemy import and_, case, desc, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
@@ -691,7 +691,7 @@ class AdminService:
             result = (
                 self.db.query(
                     func.count(PipelineTask.id).label("total"),
-                    func.sum(func.case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
+                    func.sum(case((PipelineTask.status == "completed", 1), else_=0)).label("completed"),
                 )
                 .filter(PipelineTask.created_at >= start_date)
                 .first()

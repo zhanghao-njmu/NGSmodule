@@ -188,88 +188,76 @@ class AnalyticsService {
 
   // ============================================================
   // Knowledge Base
+  //
+  // The /api/v1/knowledge/* router is not yet implemented on the
+  // backend (planned but the module ships empty). These calls 404.
+  // Until the backend lands, swallow ENOENT so the dashboard widget
+  // renders an empty state instead of throwing into the console
+  // sentinel on every page load.
   // ============================================================
 
-  /**
-   * Search knowledge base
-   */
+  private async _knowledgeFetch<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+      return await fn()
+    } catch (e: unknown) {
+      const status = (e as { status?: number })?.status
+      if (status === 404 || status === 501) {
+        return fallback
+      }
+      throw e
+    }
+  }
+
   async searchKnowledge(query: string, category?: KnowledgeCategory): Promise<KnowledgeArticle[]> {
-    const articles = await apiClient.get<KnowledgeArticle[]>('/knowledge/search', {
-      params: { q: query, category },
-    })
-    return articles
+    return this._knowledgeFetch(
+      () => apiClient.get<KnowledgeArticle[]>('/knowledge/search', { params: { q: query, category } }),
+      [],
+    )
   }
 
-  /**
-   * Get article by ID
-   */
-  async getArticle(articleId: string): Promise<KnowledgeArticle> {
-    const article = await apiClient.get<KnowledgeArticle>(`/knowledge/articles/${articleId}`)
-    return article
+  async getArticle(articleId: string): Promise<KnowledgeArticle | null> {
+    return this._knowledgeFetch(() => apiClient.get<KnowledgeArticle | null>(`/knowledge/articles/${articleId}`), null)
   }
 
-  /**
-   * Get articles by category
-   */
   async getArticlesByCategory(category: KnowledgeCategory): Promise<KnowledgeArticle[]> {
-    const articles = await apiClient.get<KnowledgeArticle[]>(`/knowledge/categories/${category}`)
-    return articles
+    return this._knowledgeFetch(() => apiClient.get<KnowledgeArticle[]>(`/knowledge/categories/${category}`), [])
   }
 
-  /**
-   * Get popular articles
-   */
   async getPopularArticles(limit = 10): Promise<KnowledgeArticle[]> {
-    const articles = await apiClient.get<KnowledgeArticle[]>('/knowledge/popular', {
-      params: { limit },
-    })
-    return articles
+    return this._knowledgeFetch(
+      () => apiClient.get<KnowledgeArticle[]>('/knowledge/popular', { params: { limit } }),
+      [],
+    )
   }
 
-  /**
-   * Mark article as helpful
-   */
   async markArticleHelpful(articleId: string, helpful: boolean): Promise<void> {
-    await apiClient.post(`/knowledge/articles/${articleId}/feedback`, {
-      helpful,
-    })
+    await this._knowledgeFetch(
+      () => apiClient.post(`/knowledge/articles/${articleId}/feedback`, { helpful }),
+      undefined,
+    )
   }
 
   // ============================================================
   // Tutorials
   // ============================================================
 
-  /**
-   * Get all tutorials
-   */
   async getTutorials(category?: KnowledgeCategory): Promise<Tutorial[]> {
-    const tutorials = await apiClient.get<Tutorial[]>('/knowledge/tutorials', {
-      params: { category },
-    })
-    return tutorials
+    return this._knowledgeFetch(() => apiClient.get<Tutorial[]>('/knowledge/tutorials', { params: { category } }), [])
   }
 
-  /**
-   * Get tutorial by ID
-   */
-  async getTutorial(tutorialId: string): Promise<Tutorial> {
-    const tutorial = await apiClient.get<Tutorial>(`/knowledge/tutorials/${tutorialId}`)
-    return tutorial
+  async getTutorial(tutorialId: string): Promise<Tutorial | null> {
+    return this._knowledgeFetch(() => apiClient.get<Tutorial | null>(`/knowledge/tutorials/${tutorialId}`), null)
   }
 
-  /**
-   * Mark tutorial step as completed
-   */
   async completeTutorialStep(tutorialId: string, stepId: string): Promise<void> {
-    await apiClient.post(`/knowledge/tutorials/${tutorialId}/steps/${stepId}/complete`)
+    await this._knowledgeFetch(
+      () => apiClient.post(`/knowledge/tutorials/${tutorialId}/steps/${stepId}/complete`),
+      undefined,
+    )
   }
 
-  /**
-   * Get user's tutorial progress
-   */
   async getTutorialProgress(): Promise<Array<{ tutorialId: string; progress: number; completed: boolean }>> {
-    const progress = await apiClient.get('/knowledge/tutorials/progress')
-    return progress
+    return this._knowledgeFetch(() => apiClient.get('/knowledge/tutorials/progress'), [])
   }
 
   // ============================================================

@@ -8,45 +8,27 @@ import { createCrudService, extendService } from './crud.factory'
 import apiClient from './api'
 import type { Project, ProjectCreate, ProjectUpdate, ProjectStats } from '@/types/project'
 
-/**
- * Base CRUD service for items
- */
+// The backend registers /api/v1/projects/* (see backend/app/api/v1/projects.py).
+// An earlier rename of this UI page from "Projects" -> "Items" left the
+// service-layer endpoint pointed at /items, which 404s in production.
+// The route table for *frontend* navigation still uses /items (see App.tsx)
+// but that's fine — those are React-Router paths, unrelated to API URLs.
+
 const baseCrudService = createCrudService<Project, ProjectCreate, ProjectUpdate>({
-  endpoint: 'items',
+  endpoint: 'projects',
 })
 
-/**
- * Extended project service with domain-specific methods
- */
 export const projectService = extendService(baseCrudService, {
-  /**
-   * Get project statistics
-   * Returns aggregated stats for all items
-   */
   async getStats(): Promise<ProjectStats> {
-    return apiClient.get<ProjectStats>('/items/stats')
+    return apiClient.get<ProjectStats>('/projects/stats')
   },
 
-  /**
-   * Archive a project
-   * Moves project to archived status
-   *
-   * @param id - Project ID
-   * @returns Success message
-   */
   async archiveProject(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/items/${id}/archive`)
+    return apiClient.post<{ message: string }>(`/projects/${id}/archive`)
   },
 
-  /**
-   * Restore an archived project
-   * Moves project back to active status
-   *
-   * @param id - Project ID
-   * @returns Success message
-   */
   async restoreProject(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/items/${id}/restore`)
+    return apiClient.post<{ message: string }>(`/projects/${id}/restore`)
   },
 
   /**
@@ -67,7 +49,7 @@ export const projectService = extendService(baseCrudService, {
       }
     }
   > {
-    return apiClient.get(`/items/${id}/details`)
+    return apiClient.get(`/projects/${id}/details`)
   },
 })
 
