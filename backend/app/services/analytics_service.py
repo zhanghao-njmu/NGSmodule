@@ -128,7 +128,7 @@ class AnalyticsService:
         """Get storage usage time series"""
 
         query = self.db.query(
-            func.date_trunc("day", File.created_at).label("date"), func.sum(File.size).label("total_size")
+            func.date_trunc("day", File.created_at).label("date"), func.sum(File.file_size).label("total_size")
         ).filter(and_(File.created_at >= start_date, File.created_at <= end_date))
 
         if user_id:
@@ -199,7 +199,7 @@ class AnalyticsService:
 
         # Calculate storage used
         storage_used = (
-            self.db.query(func.sum(File.size)).join(Sample).filter(Sample.project_id == project_id).scalar() or 0
+            self.db.query(func.sum(File.file_size)).join(Sample).filter(Sample.project_id == project_id).scalar() or 0
         )
 
         # Get last activity
@@ -387,14 +387,14 @@ class AnalyticsService:
         else:
             # Get system-wide storage
             total_storage = 1099511627776  # 1TB default
-            used_storage = self.db.query(func.sum(File.size)).scalar() or 0
+            used_storage = self.db.query(func.sum(File.file_size)).scalar() or 0
 
         available_storage = total_storage - used_storage
         usage_percentage = (used_storage / total_storage * 100) if total_storage > 0 else 0.0
 
         # Storage by project
         project_storage = (
-            self.db.query(Project.name, func.sum(File.size).label("size"))
+            self.db.query(Project.name, func.sum(File.file_size).label("size"))
             .join(Sample)
             .join(File)
             .group_by(Project.id, Project.name)
@@ -407,7 +407,7 @@ class AnalyticsService:
 
         # Storage by file type
         file_type_storage = (
-            self.db.query(File.file_type, func.sum(File.size).label("size")).group_by(File.file_type).all()
+            self.db.query(File.file_type, func.sum(File.file_size).label("size")).group_by(File.file_type).all()
         )
 
         by_file_type = {row.file_type: row.size or 0 for row in file_type_storage}

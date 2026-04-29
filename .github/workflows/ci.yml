@@ -75,10 +75,7 @@ jobs:
   frontend-e2e:
     name: Frontend E2E (Playwright)
     runs-on: ubuntu-latest
-    needs: frontend-lint
-    defaults:
-      run:
-        working-directory: ./frontend
+    needs: [frontend-lint, backend-lint]
 
     steps:
       - name: Checkout code
@@ -91,14 +88,46 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
+        working-directory: ./frontend
         run: npm ci
 
       - name: Install Playwright Chromium + system deps
+        working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
+      # Bring up real backend stack (postgres+redis+minio+fastapi+celery)
+      # so E2E specs run against the same code path users will hit. The
+      # smoke override publishes only backend on host port 8765.
+      - name: Start smoke docker stack
+        run: |
+          docker compose -p ngs-smoke \
+            -f docker-compose.yml -f docker-compose.smoketest.yml \
+            up -d --build --quiet-pull
+
+      - name: Wait for backend healthy
+        run: |
+          for i in {1..30}; do
+            status=$(docker inspect ngs-smoke-backend --format '{{.State.Health.Status}}' 2>/dev/null || echo missing)
+            if [ "$status" = "healthy" ]; then echo "ready after ${i}s"; exit 0; fi
+            sleep 2
+          done
+          docker logs ngs-smoke-backend --tail 50
+          exit 1
+
+      - name: Apply alembic migrations
+        run: docker exec ngs-smoke-backend alembic upgrade head
+
       - name: Run E2E tests
+        working-directory: ./frontend
         run: npm run test:e2e
+
+      - name: Tear down smoke stack
+        if: always()
+        run: |
+          docker compose -p ngs-smoke \
+            -f docker-compose.yml -f docker-compose.smoketest.yml \
+            down -v
 
       - name: Upload Playwright report on failure
         if: failure()

@@ -103,7 +103,7 @@ class StatsService:
     def get_file_stats(self) -> FileStats:
         """Get file statistics"""
         total = self.db.query(func.count(File.id)).scalar() or 0
-        total_size = self.db.query(func.sum(File.size)).scalar() or 0
+        total_size = self.db.query(func.sum(File.file_size)).scalar() or 0
 
         # Group files by type
         file_types = self.db.query(File.file_type, func.count(File.id)).group_by(File.file_type).all()
@@ -115,7 +115,7 @@ class StatsService:
     def get_storage_stats(self) -> StorageStats:
         """Get storage usage statistics"""
         # Get total file size from database
-        total_files_size = self.db.query(func.sum(File.size)).scalar() or 0
+        total_files_size = self.db.query(func.sum(File.file_size)).scalar() or 0
         files_count = self.db.query(func.count(File.id)).scalar() or 0
 
         # Try to get actual disk usage
@@ -134,7 +134,7 @@ class StatsService:
 
         # Calculate space usage by category
         projects_space = (
-            self.db.query(func.sum(File.size))
+            self.db.query(func.sum(File.file_size))
             .join(Sample, File.sample_id == Sample.id)
             .join(Project, Sample.project_id == Project.id)
             .scalar()
@@ -264,7 +264,7 @@ class StatsService:
         running_tasks = self.db.query(func.count(Task.id)).filter(Task.status == "running").scalar() or 0
 
         # Storage stats
-        storage_used = self.db.query(func.sum(File.size)).scalar() or 0
+        storage_used = self.db.query(func.sum(File.file_size)).scalar() or 0
         storage_quota = 1000000000000  # 1TB default, should come from user settings
 
         return QuickStats(

@@ -41,13 +41,16 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     proxy: {
+      // Default to localhost:8000 for `npm run dev`. E2E sets
+      // BACKEND_PROXY_TARGET to point at the smoke docker stack
+      // (typically http://127.0.0.1:8765) so tests run same-origin
+      // and avoid the backend's CORS preflight altogether.
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.BACKEND_PROXY_TARGET || 'http://localhost:8000',
         changeOrigin: true,
       },
-      // WebSocket endpoint forwarded with upgrade
       '/api/v1/ws': {
-        target: 'ws://localhost:8000',
+        target: (process.env.BACKEND_PROXY_TARGET || 'http://localhost:8000').replace(/^http/, 'ws'),
         ws: true,
         changeOrigin: true,
       },

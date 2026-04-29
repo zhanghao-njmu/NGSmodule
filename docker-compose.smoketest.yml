@@ -1,11 +1,10 @@
 # Smoke test override — runs core stack (postgres + redis + minio + backend +
-# celery worker) on docker's internal network only, without binding host
-# ports. Use this to verify the production image actually boots end-to-end
-# without colliding with whatever else the host machine has on 5432/6379/etc.
+# celery worker) on docker's internal network. Internal services don't bind
+# host ports (so they don't collide with whatever else is on 5432/6379), but
+# the BACKEND publishes 8000 so E2E tests outside docker can hit it.
 #
 # Usage:
-#   docker compose -p ngs-smoke -f docker-compose.yml -f docker-compose.smoketest.yml \
-#     up -d --build --scale flower=0 --scale frontend=0
+#   docker compose -p ngs-smoke -f docker-compose.yml -f docker-compose.smoketest.yml up -d
 #
 # Tear down:
 #   docker compose -p ngs-smoke -f docker-compose.yml -f docker-compose.smoketest.yml down -v
@@ -25,10 +24,12 @@ services:
 
   backend:
     container_name: ngs-smoke-backend
-    ports: !reset []
-    # Smoke test: don't mount host /opt/lcbio (may not exist); instead point
-    # at a tmpfs path inside the container. Vendor downloads aren't exercised
-    # by the smoke test.
+    # Replace the parent's '8000:8000' (host port commonly busy) with
+    # an override that publishes the container's 8000 on host 8765 only.
+    # The !override tag tells compose to replace, not merge, the list.
+    ports: !override
+      - '127.0.0.1:8765:8000'
+    # Smoke-only: don't mount /opt/lcbio host dir (may not exist).
     volumes: !reset
       - ./backend:/app
       - ./:/app/NGSmodule
@@ -46,7 +47,7 @@ services:
 
   # Skip flower + frontend: they aren't on the smoke-test critical path.
   flower:
-    profiles: ["full-stack-only"]
+    profiles: ['full-stack-only']
 
   frontend:
-    profiles: ["full-stack-only"]
+    profiles: ['full-stack-only']

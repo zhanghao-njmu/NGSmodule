@@ -9,6 +9,13 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <!--
+      Do NOT add a <script src="/src/main.tsx"> tag here. rsbuild injects
+      the correct build artifacts (react-vendor / antd-vendor / index.js)
+      automatically based on rsbuild.config.ts source.entry. A leftover
+      Vite-style script tag causes dev server to MIME-mismatch (returns
+      index.html for /src/main.tsx → browser refuses to execute as module)
+      and is a 404 in production. Caught by the E2E console sentinel.
+    -->
   </body>
 </html>
